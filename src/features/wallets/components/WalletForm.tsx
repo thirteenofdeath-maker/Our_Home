@@ -1,0 +1,78 @@
+"use client";
+
+import { useActionState, useState } from "react";
+
+import { Field, Input, Select } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { initialActionState } from "@/lib/types/action-state";
+
+import { createWalletAction } from "../actions";
+
+const WALLET_TYPES = [
+  { value: "BANK", label: "บัญชีธนาคาร" },
+  { value: "CASH", label: "เงินสด" },
+  { value: "CREDIT_CARD", label: "บัตรเครดิต" },
+  { value: "E_WALLET", label: "e-Wallet" },
+  { value: "OTHER", label: "อื่น ๆ" },
+] as const;
+
+export function WalletForm({
+  defaultScope,
+  hasHousehold,
+}: {
+  defaultScope: "PERSONAL" | "HOUSEHOLD";
+  hasHousehold: boolean;
+}) {
+  const [state, formAction] = useActionState(createWalletAction, initialActionState);
+  const [scope, setScope] = useState(defaultScope);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <Field label="ชื่อกระเป๋าเงิน" htmlFor="name">
+        <Input id="name" name="name" type="text" placeholder="เช่น KBank, เงินสด" required />
+      </Field>
+
+      <Field label="ประเภท" htmlFor="walletType">
+        <Select id="walletType" name="walletType" defaultValue="BANK">
+          {WALLET_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      <Field label="สกุลเงิน" htmlFor="currency">
+        <Input id="currency" name="currency" type="text" defaultValue="THB" maxLength={3} required />
+      </Field>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภทกระเป๋าเงิน</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="scope"
+            value="PERSONAL"
+            checked={scope === "PERSONAL"}
+            onChange={() => setScope("PERSONAL")}
+          />
+          ส่วนตัว — เห็นเฉพาะคุณ
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="scope"
+            value="HOUSEHOLD"
+            checked={scope === "HOUSEHOLD"}
+            onChange={() => setScope("HOUSEHOLD")}
+            disabled={!hasHousehold}
+          />
+          ครอบครัว — สมาชิกครอบครัวเห็นร่วมกัน{!hasHousehold ? " (สร้างครอบครัวก่อน)" : ""}
+        </label>
+      </fieldset>
+
+      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      <SubmitButton size="lg">สร้างกระเป๋าเงิน</SubmitButton>
+    </form>
+  );
+}
