@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
+import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 
 import { archiveCategory, createCategory, renameCategory, restoreCategory } from "./api";
@@ -24,11 +25,20 @@ import { archiveCategory, createCategory, renameCategory, restoreCategory } from
 const createCategorySchema = z.object({
   name: z.string().trim().min(1, "Category name is required").max(60, "Keep it under 60 characters"),
   transactionType: z.enum(["INCOME", "EXPENSE"]),
-  parentId: z
-    .string()
-    .uuid()
-    .nullish()
-    .transform((v) => v || null),
+  // A root category's parentId arrives as "" from a <select> with an empty
+  // option (AddCategoryForm) or is simply absent (CategoryPicker only sets
+  // the field when adding a subcategory) — normalize both to null BEFORE
+  // UUID validation runs. Without the preprocess step, "".uuid() fails
+  // validation outright (an empty string is never a valid UUID), so every
+  // root-category creation was rejected as "Invalid uuid" before reaching
+  // the `|| null` fallback that was supposed to handle exactly this case.
+  // Non-empty values still go through full z.string().uuid() validation —
+  // this only widens what counts as "no parent", not what counts as a
+  // valid parent id.
+  parentId: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : v),
+    z.string().uuid("Invalid parent category").nullable(),
+  ),
   walletId: z
     .string()
     .uuid()
@@ -90,7 +100,8 @@ export async function createCategoryAction(_prevState: ActionState, formData: Fo
       createdBy: user.id,
     });
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Could not create category" };
+    logDatabaseErrorInDev("createCategory failed", err);
+    return { error: "Could not create category" };
   }
 
   revalidatePath("/categories");
@@ -129,7 +140,8 @@ export async function renameCategoryAction(_prevState: ActionState, formData: Fo
   try {
     await renameCategory(supabase, parsed.data.id, parsed.data.name);
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Could not rename category" };
+    logDatabaseErrorInDev("renameCategory failed", err);
+    return { error: "Could not rename category" };
   }
 
   revalidatePath("/categories");

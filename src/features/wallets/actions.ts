@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { requireUser } from "@/lib/auth/require-user";
+import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 
 import { createWallet } from "./api";
@@ -56,7 +57,8 @@ export async function createWalletAction(_prevState: ActionState, formData: Form
       createdBy: user.id,
     });
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Could not create wallet" };
+    logDatabaseErrorInDev("createWallet failed", err);
+    return { error: "Could not create wallet" };
   }
 
   redirect(`/wallets/${wallet.id}`);
