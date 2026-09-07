@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { buildCategoryTree } from "@/features/categories/domain/tree";
-import { listCategories } from "@/features/categories/api";
+import { listCategoriesForWallet } from "@/features/categories/api";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
 import { getWallet } from "@/features/wallets/api";
@@ -24,7 +24,7 @@ export default async function NewTransactionPage({
 
   const [pockets, categories] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
-    listCategories(supabase, { transactionType }),
+    listCategoriesForWallet(supabase, { transactionType, wallet }),
   ]);
 
   return (
@@ -33,7 +33,6 @@ export default async function NewTransactionPage({
       <TransactionForm
         walletId={walletId}
         transactionType={transactionType}
-        scope={wallet.scope}
         pockets={pockets}
         categories={buildCategoryTree(categories)}
       />

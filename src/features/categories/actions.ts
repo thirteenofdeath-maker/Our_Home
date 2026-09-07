@@ -4,11 +4,23 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 import type { ActionState } from "@/lib/types/action-state";
 
 import { archiveCategory, createCategory, renameCategory, restoreCategory } from "./api";
 
+// Two ways to call this action, matching the two places a category can be
+// created from:
+//  - from the standalone /categories management screen: `scope` alone,
+//    resolved against the user's own id (PERSONAL) or their primary
+//    household (HOUSEHOLD) — see docs/ARCHITECTURE.md "Milestone 1
+//    simplifications" for why "primary household" specifically.
+//  - from the transaction form's inline category picker: `walletId`.
+//    scope/owner_user_id/household_id are derived from that wallet, loaded
+//    server-side through RLS, NOT from a client-supplied `scope` value —
+//    a wallet's owning household is not necessarily the user's "primary"
+//    one, since the data model supports belonging to several.
 const createCategorySchema = z.object({
   name: z.string().trim().min(1, "Category name is required").max(60, "Keep it under 60 characters"),
   transactionType: z.enum(["INCOME", "EXPENSE"]),
@@ -17,7 +29,12 @@ const createCategorySchema = z.object({
     .uuid()
     .nullish()
     .transform((v) => v || null),
-  scope: z.enum(["PERSONAL", "HOUSEHOLD"]),
+  walletId: z
+    .string()
+    .uuid()
+    .nullish()
+    .transform((v) => v || null),
+  scope: z.enum(["PERSONAL", "HOUSEHOLD"]).nullish(),
 });
 
 export async function createCategoryAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -27,19 +44,39 @@ export async function createCategoryAction(_prevState: ActionState, formData: Fo
     name: formData.get("name"),
     transactionType: formData.get("transactionType"),
     parentId: formData.get("parentId"),
+    walletId: formData.get("walletId"),
     scope: formData.get("scope"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  let householdId: string | null = null;
-  if (parsed.data.scope === "HOUSEHOLD") {
+  let scope: "PERSONAL" | "HOUSEHOLD";
+  let ownerUserId: string | null;
+  let householdId: string | null;
+
+  if (parsed.data.walletId) {
+    const wallet = await getWallet(supabase, parsed.data.walletId);
+    if (!wallet) {
+      return { error: "Wallet not found or not accessible" };
+    }
+    scope = wallet.scope;
+    ownerUserId = wallet.owner_user_id;
+    householdId = wallet.household_id;
+  } else if (parsed.data.scope === "HOUSEHOLD") {
     const household = await getMyPrimaryHousehold(supabase, user.id);
     if (!household) {
       return { error: "Create a household first before adding a household category" };
     }
+    scope = "HOUSEHOLD";
+    ownerUserId = null;
     householdId = household.id;
+  } else if (parsed.data.scope === "PERSONAL") {
+    scope = "PERSONAL";
+    ownerUserId = user.id;
+    householdId = null;
+  } else {
+    return { error: "Missing wallet or scope" };
   }
 
   try {
@@ -47,8 +84,8 @@ export async function createCategoryAction(_prevState: ActionState, formData: Fo
       name: parsed.data.name,
       transactionType: parsed.data.transactionType,
       parentId: parsed.data.parentId,
-      scope: parsed.data.scope,
-      ownerUserId: parsed.data.scope === "PERSONAL" ? user.id : null,
+      scope,
+      ownerUserId,
       householdId,
       createdBy: user.id,
     });

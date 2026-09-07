@@ -14,13 +14,11 @@ import { createIncomeExpenseAction } from "../actions";
 export function TransactionForm({
   walletId,
   transactionType,
-  scope,
   pockets,
   categories,
 }: {
   walletId: string;
   transactionType: "INCOME" | "EXPENSE";
-  scope: "PERSONAL" | "HOUSEHOLD";
   pockets: Pocket[];
   categories: CategoryNode[];
 }) {
@@ -47,7 +45,7 @@ export function TransactionForm({
       </Field>
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
-        <CategoryPicker name="categoryId" categories={categories} transactionType={transactionType} scope={scope} />
+        <CategoryPicker name="categoryId" categories={categories} transactionType={transactionType} walletId={walletId} />
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">

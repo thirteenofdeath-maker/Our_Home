@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isNegative } from "@/lib/utils/money";
 import type { Database } from "@/types/database";
 
 import type { TransactionHistoryItem } from "./types";
@@ -85,16 +86,34 @@ export async function createWalletTransfer(
 interface RawHistoryRow {
   id: string;
   amount: string;
+  pocket: { name: string } | null;
   transaction: {
     id: string;
     transaction_type: Database["public"]["Tables"]["transactions"]["Row"]["transaction_type"];
     title: string | null;
     note: string | null;
     occurred_at: string;
+    deleted_at: string | null;
     category: { name: string } | null;
   } | null;
 }
 
+/**
+ * The ledger stores one row per money movement (transaction_entries), so a
+ * pocket transfer within this wallet naturally produces two rows sharing
+ * one transaction_id. Presented as-is, that reads as two unrelated history
+ * lines for what is, to the person looking at their wallet, one event —
+ * see docs/DOMAIN_RULES.md "Pocket transfer" and Milestone 1 hardening
+ * item 12. This groups entries by transaction_id and collapses a same-
+ * wallet pair back into a single "Main → Travel" row. This is a
+ * presentation/query fix only: the underlying ledger rows are untouched.
+ *
+ * Note: `limit` bounds the number of raw ledger rows fetched, not the
+ * number of history rows returned (a pocket transfer collapses two rows
+ * into one) — acceptable for Milestone 1's simple, unpaginated history
+ * view; a transfer that happened to straddle the limit boundary would show
+ * only its one fetched side until pagination is added.
+ */
 export async function listTransactionsForWallet(
   supabase: SupabaseClient<Database>,
   walletId: string,
@@ -103,7 +122,7 @@ export async function listTransactionsForWallet(
   const { data, error } = await supabase
     .from("transaction_entries")
     .select(
-      "id, amount, transaction:transactions(id, transaction_type, title, note, occurred_at, deleted_at, category:categories(name))",
+      "id, amount, pocket:pockets(name), transaction:transactions(id, transaction_type, title, note, occurred_at, deleted_at, category:categories(name))",
     )
     .eq("wallet_id", walletId)
     .order("created_at", { ascending: false })
@@ -111,16 +130,52 @@ export async function listTransactionsForWallet(
 
   if (error || !data) return [];
 
-  return (data as unknown as (RawHistoryRow & { transaction: RawHistoryRow["transaction"] & { deleted_at: string | null } })[])
-    .filter((row) => row.transaction && row.transaction.deleted_at === null)
-    .map((row) => ({
-      entryId: row.id,
-      amount: row.amount,
-      transactionId: row.transaction!.id,
-      transactionType: row.transaction!.transaction_type,
-      title: row.transaction!.title,
-      note: row.transaction!.note,
-      occurredAt: row.transaction!.occurred_at,
-      categoryName: row.transaction!.category?.name ?? null,
-    }));
+  const rows = (data as unknown as RawHistoryRow[]).filter(
+    (row) => row.transaction && row.transaction.deleted_at === null,
+  );
+
+  const order: string[] = [];
+  const groups = new Map<string, RawHistoryRow[]>();
+  for (const row of rows) {
+    const transactionId = row.transaction!.id;
+    if (!groups.has(transactionId)) {
+      groups.set(transactionId, []);
+      order.push(transactionId);
+    }
+    groups.get(transactionId)!.push(row);
+  }
+
+  return order.map((transactionId) => {
+    const entries = groups.get(transactionId)!;
+    const t = entries[0].transaction!;
+
+    if (entries.length === 2 && t.transaction_type === "TRANSFER") {
+      const from = entries.find((e) => isNegative(e.amount)) ?? entries[0];
+      const to = entries.find((e) => !isNegative(e.amount)) ?? entries[1];
+      return {
+        transactionId,
+        transactionType: "TRANSFER",
+        title: t.title,
+        note: t.note,
+        occurredAt: t.occurred_at,
+        categoryName: null,
+        amount: to.amount,
+        pocketTransfer: {
+          fromPocketName: from.pocket?.name ?? "?",
+          toPocketName: to.pocket?.name ?? "?",
+          amount: to.amount,
+        },
+      };
+    }
+
+    return {
+      transactionId,
+      transactionType: t.transaction_type,
+      title: t.title,
+      note: t.note,
+      occurredAt: t.occurred_at,
+      categoryName: t.category?.name ?? null,
+      amount: entries[0].amount,
+    };
+  });
 }

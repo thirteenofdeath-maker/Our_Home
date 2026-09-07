@@ -32,6 +32,40 @@ export async function listCategories(
   return data;
 }
 
+/**
+ * Categories applicable to a specific wallet: personal categories owned by
+ * that wallet's owner, or categories belonging to that exact household —
+ * never "every category visible through RLS" (a user can own personal
+ * categories from unrelated contexts, or belong to more than one
+ * household, and RLS alone does not narrow to the one wallet in play).
+ * `is_system` categories (none seeded in Milestone 1) are included for
+ * every wallet regardless of scope, once they exist.
+ */
+export async function listCategoriesForWallet(
+  supabase: SupabaseClient<Database>,
+  params: {
+    transactionType: CategoryTransactionType;
+    wallet: { scope: "PERSONAL" | "HOUSEHOLD"; owner_user_id: string | null; household_id: string | null };
+    includeArchived?: boolean;
+  },
+): Promise<Category[]> {
+  let query = supabase.from("categories").select("*").eq("transaction_type", params.transactionType);
+
+  query =
+    params.wallet.scope === "PERSONAL"
+      ? query.or(`is_system.eq.true,and(scope.eq.PERSONAL,owner_user_id.eq.${params.wallet.owner_user_id})`)
+      : query.or(`is_system.eq.true,and(scope.eq.HOUSEHOLD,household_id.eq.${params.wallet.household_id})`);
+
+  if (!params.includeArchived) {
+    query = query.is("archived_at", null);
+  }
+  query = query.order("sort_order", { ascending: true });
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return data;
+}
+
 export async function createCategory(
   supabase: SupabaseClient<Database>,
   params: {

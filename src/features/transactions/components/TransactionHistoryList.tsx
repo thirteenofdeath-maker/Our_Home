@@ -22,25 +22,40 @@ export function TransactionHistoryList({
 
   return (
     <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
-      {items.map((item) => (
-        <li key={item.entryId} className="flex items-center justify-between px-4 py-3">
-          <div>
-            <p className="text-sm font-medium">{item.title || item.categoryName || TYPE_LABEL[item.transactionType]}</p>
-            <p className="text-xs text-foreground-muted">
-              {TYPE_LABEL[item.transactionType]}
-              {item.categoryName ? ` · ${item.categoryName}` : ""} ·{" "}
-              {new Date(item.occurredAt).toLocaleDateString("th-TH")}
-            </p>
-          </div>
-          <span
-            className={
-              "tabular-nums " + (item.amount.startsWith("-") ? "text-expense" : "text-income")
-            }
-          >
-            {formatCurrency(item.amount, currency)}
-          </span>
-        </li>
-      ))}
+      {items.map((item) => {
+        const isTransfer = item.transactionType === "TRANSFER";
+        const amountClassName = isTransfer
+          ? "text-transfer"
+          : item.amount.startsWith("-")
+            ? "text-expense"
+            : "text-income";
+
+        const title = item.pocketTransfer
+          ? `${item.pocketTransfer.fromPocketName} → ${item.pocketTransfer.toPocketName}`
+          : item.title || item.categoryName || TYPE_LABEL[item.transactionType];
+
+        const subtitle = item.pocketTransfer
+          ? "โอนเงินระหว่างช่อง"
+          : isTransfer
+            ? item.amount.startsWith("-")
+              ? "โอนเงินออก"
+              : "โอนเงินเข้า"
+            : `${TYPE_LABEL[item.transactionType]}${item.categoryName ? ` · ${item.categoryName}` : ""}`;
+
+        return (
+          <li key={item.transactionId} className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">{title}</p>
+              <p className="text-xs text-foreground-muted">
+                {subtitle} · {new Date(item.occurredAt).toLocaleDateString("th-TH")}
+              </p>
+            </div>
+            <span className={`tabular-nums ${amountClassName}`}>
+              {formatCurrency(item.pocketTransfer?.amount ?? item.amount, currency)}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

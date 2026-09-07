@@ -22,12 +22,16 @@ export function CategoryPicker({
   name,
   categories,
   transactionType,
-  scope,
+  walletId,
 }: {
   name: string;
   categories: CategoryNode[];
   transactionType: "INCOME" | "EXPENSE";
-  scope: "PERSONAL" | "HOUSEHOLD";
+  /** The wallet this transaction is for. A new inline category is scoped
+   * to this wallet's owner/household — never to the client's own idea of
+   * "current scope", since that can't be trusted and doesn't account for
+   * a user belonging to more than one household. */
+  walletId: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -47,7 +51,7 @@ export function CategoryPicker({
     const formData = new FormData();
     formData.set("name", newName.trim());
     formData.set("transactionType", transactionType);
-    formData.set("scope", scope);
+    formData.set("walletId", walletId);
     if (addingUnder?.parentId) formData.set("parentId", addingUnder.parentId);
 
     startTransition(async () => {
