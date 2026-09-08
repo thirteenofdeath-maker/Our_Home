@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .oh { fill:none; stroke:#5A4337; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+    </style>
+
+    <symbol id="icon-wallet" viewBox="0 0 64 64">
+      <g class="oh"><path d="M17 18v-4c0-3 2-5 5-5h22c4 0 7 3 7 7v3" fill="#FDE1D7"/><rect x="9" y="18" width="46" height="32" rx="8" fill="#BFD5E8"/><rect x="40" y="27" width="15" height="13" rx="5" fill="#F5D47B"/><circle cx="45" cy="33.5" r="1.7" fill="#5A4337" stroke="none"/></g>
+    </symbol>
+
+    <symbol id="icon-cash" viewBox="0 0 64 64">
+      <g class="oh"><rect x="10" y="19" width="42" height="27" rx="5" fill="#A9C97F" transform="rotate(-6 31 32)"/><rect x="15" y="15" width="39" height="27" rx="5" fill="#DDECC9"/><circle cx="34.5" cy="28.5" r="7" fill="#FFF8EC"/><path d="M20 20h6M43 37h6"/></g>
+    </symbol>
+
+    <symbol id="icon-bank" viewBox="0 0 64 64">
+      <g class="oh"><path d="M8 25h48L32 9 8 25Z" fill="#BFD5E8"/><path d="M13 27h38v22H13z" fill="#FFF8EC"/><path d="M17 29v16M27 29v16M37 29v16M47 29v16"/><path d="M9 49h46"/></g>
+    </symbol>
+
+    <symbol id="icon-card" viewBox="0 0 64 64">
+      <g class="oh"><rect x="7" y="15" width="50" height="34" rx="7" fill="#BFD5E8"/><path d="M7 24h50"/><rect x="14" y="30" width="11" height="8" rx="2" fill="#F5D47B"/><circle cx="45" cy="39" r="4" fill="#F6A88F" stroke="none"/><circle cx="50" cy="39" r="4" fill="#F5D47B" stroke="none"/></g>
+    </symbol>
+
+    <symbol id="icon-income" viewBox="0 0 64 64">
+      <g class="oh"><path d="M17 48c-4-7-3-15 3-20 6-5 18-5 24 0 6 5 7 13 3 20Z" fill="#A9C97F"/><path d="M24 27c3-6 13-6 16 0"/><circle cx="44" cy="45" r="8" fill="#F5D47B"/><path d="M32 34V21M26 27l6-6 6 6"/></g>
+    </symbol>
+
+    <symbol id="icon-expense" viewBox="0 0 64 64">
+      <g class="oh"><path d="M13 23h38l-4 25H17Z" fill="#FDE1D7"/><path d="M20 23l5-9h14l5 9"/><circle cx="23" cy="51" r="3" fill="#CDB9A6"/><circle cx="45" cy="51" r="3" fill="#CDB9A6"/><path d="M32 26v14M26 33h12"/></g>
+    </symbol>
+
+    <symbol id="icon-transfer" viewBox="0 0 64 64">
+      <g class="oh"><path d="M12 21h31l-7-7" fill="#E4EFF7"/><path d="M43 21l-7 7"/><path d="M52 43H21l7 7" fill="#DDECC9"/><path d="M21 43l7-7"/></g>
+    </symbol>
+
+    <symbol id="icon-budget" viewBox="0 0 64 64">
+      <g class="oh"><circle cx="32" cy="32" r="20" fill="#FFF8EC"/><path d="M32 12v20h20" fill="#F5D47B"/><path d="M32 32 18 46" fill="#A9C97F"/><path d="M32 32 16 20" fill="#BFD5E8"/></g>
+    </symbol>
+
+    <symbol id="icon-bill" viewBox="0 0 64 64">
+      <g class="oh"><path d="M16 10h32v44l-5-4-5 4-6-4-6 4-5-4-5 4Z" fill="#FFF8EC"/><path d="M23 23h18M23 31h18M23 39h11"/><path d="M20 16h8" stroke="#F5D47B"/></g>
+    </symbol>
+
+    <symbol id="icon-savings" viewBox="0 0 64 64">
+      <g class="oh"><path d="M12 36c0-11 8-18 20-18 11 0 19 6 19 16 0 8-6 14-15 16H24c-8-2-12-7-12-14Z" fill="#F4A7B8"/><circle cx="39" cy="17" r="5" fill="#F5D47B"/><path d="M18 30h5M46 34h5M28 49v5M40 48v6"/></g>
+    </symbol>
+
+    <symbol id="icon-calendar" viewBox="0 0 64 64">
+      <g class="oh"><rect x="9" y="14" width="46" height="40" rx="7" fill="#FFF8EC"/><path d="M9 24h46M20 10v8M44 10v8"/><circle cx="43" cy="42" r="9" fill="#DDECC9"/><path d="M43 37v6l4 2"/></g>
+    </symbol>
+
+    <symbol id="icon-task" viewBox="0 0 64 64">
+      <g class="oh"><rect x="13" y="11" width="38" height="44" rx="6" fill="#FFF8EC"/><rect x="24" y="8" width="16" height="7" rx="3" fill="#F5D47B"/><path d="M21 25l3 3 5-6M33 25h10M21 37l3 3 5-6M33 37h10"/></g>
+    </symbol>
+
+    <symbol id="icon-shopping" viewBox="0 0 64 64">
+      <g class="oh"><path d="M12 25h40l-4 27H16Z" fill="#F5D47B"/><path d="M20 25c0-9 5-14 12-14s12 5 12 14"/><path d="M24 34v10M32 34v10M40 34v10"/></g>
+    </symbol>
+
+    <symbol id="icon-note" viewBox="0 0 64 64">
+      <g class="oh"><rect x="13" y="14" width="34" height="38" rx="5" fill="#FFF8EC"/><path d="M21 24h18M21 32h18M21 40h12"/><path d="M38 47 50 35l5 5-12 12-7 2Z" fill="#F6A88F"/></g>
+    </symbol>
+
+    <symbol id="icon-members" viewBox="0 0 64 64">
+      <g class="oh"><circle cx="21" cy="24" r="7" fill="#BFD5E8"/><circle cx="43" cy="24" r="7" fill="#FDE1D7"/><circle cx="32" cy="19" r="8" fill="#A9C97F"/><path d="M10 51c1-9 6-14 13-14M54 51c-1-9-6-14-13-14"/><path d="M19 52c1-11 6-17 13-17s12 6 13 17" fill="#DDECC9"/></g>
+    </symbol>
+
+    <symbol id="icon-home" viewBox="0 0 64 64">
+      <g class="oh"><path d="M8 30 32 10l24 20" fill="#F6A88F"/><path d="M14 27v25h36V27" fill="#FFF8EC"/><rect x="27" y="37" width="10" height="15" rx="3" fill="#F5D47B"/><path d="M32 31c-4-3-8-6-8-10 0-3 2-5 5-5 2 0 3 1 3 3 1-2 2-3 4-3 3 0 5 2 5 5 0 4-5 7-9 10Z" fill="#F4A7B8" stroke="none"/></g>
+    </symbol>
+
+    <symbol id="icon-alert" viewBox="0 0 64 64">
+      <g class="oh"><path d="M20 43c3-4 4-8 4-15 0-7 4-12 8-12s8 5 8 12c0 7 1 11 4 15Z" fill="#F5D47B"/><path d="M27 48c1 4 3 6 5 6s4-2 5-6"/><circle cx="44" cy="18" r="7" fill="#F6A88F"/><path d="M44 15v4M44 22h.01"/></g>
+    </symbol>
+
+    <symbol id="icon-habit" viewBox="0 0 64 64">
+      <g class="oh"><path d="M32 54V31"/><path d="M32 31c-10 0-16-7-15-16 9-1 16 5 15 16Z" fill="#DDECC9"/><path d="M32 31c10 0 16-7 15-16-9-1-16 5-15 16Z" fill="#A9C97F"/><path d="M24 54h16"/></g>
+    </symbol>
+
+    <symbol id="icon-food" viewBox="0 0 64 64">
+      <g class="oh"><path d="M20 10v18M15 10v10c0 4 2 7 5 8M25 10v10c0 4-2 7-5 8M20 28v26"/><ellipse cx="43" cy="20" rx="7" ry="10" fill="#E4EFF7"/><path d="M43 30v24"/></g>
+    </symbol>
+
+    <symbol id="icon-pets" viewBox="0 0 64 64">
+      <g class="oh"><path d="M17 26 13 15l10 5M47 26l4-11-10 5"/><path d="M16 31c0-10 7-17 16-17s16 7 16 17c0 12-7 20-16 20S16 43 16 31Z" fill="#FFF8EC"/><circle cx="26" cy="31" r="1.8" fill="#5A4337" stroke="none"/><circle cx="38" cy="31" r="1.8" fill="#5A4337" stroke="none"/><path d="M29 38c2 2 4 2 6 0M32 34v4"/></g>
+    </symbol>
+
+    <symbol id="icon-travel" viewBox="0 0 64 64">
+      <g class="oh"><rect x="13" y="16" width="38" height="38" rx="6" fill="#BFD5E8"/><path d="M24 16v-5h16v5M17 25h30"/><path d="M33 26c2 5 5 8 10 10-5 1-8 3-10 8-1-5-3-7-8-8 5-2 7-5 8-10Z" fill="#FFFFFF"/></g>
+    </symbol>
+
+    <symbol id="icon-utilities" viewBox="0 0 64 64">
+      <g class="oh"><path d="M23 26c0-7 4-13 9-13s9 6 9 13c0 5-3 9-6 12v6h-6v-6c-3-3-6-7-6-12Z" fill="#F5D47B"/><path d="M28 49h8M29 53h6M14 22h4M46 22h4M17 13l3 3M44 13l-3 3"/></g>
+    </symbol>
+
+    <symbol id="icon-health" viewBox="0 0 64 64">
+      <g class="oh"><path d="M32 51S11 39 11 24c0-8 5-13 12-13 4 0 7 2 9 6 2-4 5-6 9-6 7 0 12 5 12 13 0 15-21 27-21 27Z" fill="#F4A7B8"/><path d="M32 22v14M25 29h14" stroke="#FFFFFF" stroke-width="4"/></g>
+    </symbol>
+
+    <symbol id="icon-family" viewBox="0 0 64 64">
+      <g class="oh"><circle cx="21" cy="25" r="8" fill="#BFD5E8"/><circle cx="43" cy="25" r="8" fill="#FDE1D7"/><circle cx="32" cy="35" r="7" fill="#A9C97F"/><path d="M8 52c1-9 6-14 13-14 4 0 7 2 9 5M56 52c-1-9-6-14-13-14-4 0-7 2-9 5"/><path d="M20 54c1-8 5-12 12-12s11 4 12 12" fill="#DDECC9"/></g>
+    </symbol>
+  </defs>
+</svg>
