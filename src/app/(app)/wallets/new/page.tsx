@@ -12,8 +12,8 @@ export default async function NewWalletPage({
   const household = await getMyPrimaryHousehold(supabase, user.id);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">เพิ่มกระเป๋าเงิน</h1>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      <PageHeader title="เพิ่มกระเป๋าเงิน" fallbackHref="/wallets" />
       <WalletForm
         defaultScope={scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL"}
         hasHousehold={Boolean(household)}
@@ -21,3 +21,4 @@ export default async function NewWalletPage({
     </div>
   );
 }
+import { PageHeader } from "@/components/shared/PageHeader";

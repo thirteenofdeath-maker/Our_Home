@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { buttonClassName } from "@/components/ui/Button";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { listArchivedPocketsForWallet, listPocketsWithBalances } from "@/features/pockets/api";
 import { PocketCreateLink } from "@/features/pockets/components/PocketCreateLink";
 import { PocketManagerList } from "@/features/pockets/components/PocketManagerList";
@@ -33,38 +33,43 @@ export default async function WalletDetailPage({
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-sm text-foreground-muted">{wallet.name}</p>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+      <PageHeader
+        title={wallet.name}
+        fallbackHref="/finance"
+        rightAction={<a href="#wallet-management" aria-label="จัดการกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full text-2xl hover:bg-surface-muted">⋯</a>}
+      />
+
+      <div className="flex flex-col items-center gap-2 rounded-card bg-primary/10 p-5 text-center">
+        <div aria-hidden="true" className="flex size-12 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">{wallet.name.trim().charAt(0) || "W"}</div>
+        <p className="font-medium">{wallet.name}</p>
         <p className="text-3xl font-semibold tabular-nums">{formatCurrency(balance, wallet.currency)}</p>
       </div>
 
-      <WalletLifecycleControls wallet={wallet} />
-
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2" aria-label="รายการด่วน">
         <Link
           href={`/wallets/${walletId}/transactions/new?type=INCOME`}
-          className={buttonClassName("secondary", "md", "px-2 text-income")}
+          className="flex min-h-12 items-center justify-center rounded-control border border-income/20 bg-income/10 px-2 text-sm font-medium text-income"
         >
           + รายรับ
         </Link>
         <Link
           href={`/wallets/${walletId}/transactions/new?type=EXPENSE`}
-          className={buttonClassName("secondary", "md", "px-2 text-expense")}
+          className="flex min-h-12 items-center justify-center rounded-control border border-expense/20 bg-expense/10 px-2 text-sm font-medium text-expense"
         >
           - รายจ่าย
         </Link>
-        <Link href={`/wallets/${walletId}/transfer`} className={buttonClassName("secondary", "md", "px-2")}>
+        <Link href={`/wallets/${walletId}/transfer`} className="flex min-h-12 items-center justify-center rounded-control border border-transfer/20 bg-transfer/10 px-2 text-sm font-medium text-transfer">
           โอนเงิน
         </Link>
       </div>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground-muted">ช่อง (Pockets)</h2>
+          <h2 className="font-semibold">ช่อง (Pockets)</h2>
+          <PocketCreateLink walletId={wallet.id} />
         </div>
         <PocketManagerList walletId={wallet.id} pockets={pockets} archivedPockets={archivedPockets} currency={wallet.currency} />
-        <PocketCreateLink walletId={wallet.id} />
       </section>
 
       <section className="flex flex-col gap-2">
@@ -74,9 +79,10 @@ export default async function WalletDetailPage({
         <TransactionHistoryList items={history} currency={wallet.currency} />
       </section>
 
-      <section className="flex flex-col gap-2">
+      <section id="wallet-management" className="flex flex-col gap-2 scroll-mt-4">
         <h2 className="text-sm font-medium text-foreground-muted">จัดการกระเป๋าเงิน</h2>
         <RenameWalletForm wallet={wallet} />
+        <WalletLifecycleControls wallet={wallet} />
       </section>
     </div>
   );

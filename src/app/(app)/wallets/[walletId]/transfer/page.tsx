@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
@@ -11,8 +12,8 @@ export default async function TransferChooserPage({
   const { walletId } = await params;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">โอนเงิน</h1>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      <PageHeader title="โอนเงิน" fallbackHref={`/wallets/${walletId}`} />
       <Card className="flex flex-col gap-2">
         <h2 className="font-medium">ระหว่างช่องในกระเป๋านี้</h2>
         <p className="text-sm text-foreground-muted">ย้ายเงินระหว่างช่อง (Pocket) โดยยอดรวมกระเป๋าเงินไม่เปลี่ยนแปลง</p>

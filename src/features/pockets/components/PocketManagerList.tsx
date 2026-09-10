@@ -20,11 +20,11 @@ export function PocketManagerList({
     <div className="flex flex-col gap-2">
       <ul className="divide-y divide-border rounded-card border border-border bg-surface px-4">
         {pockets.map((pocket) => (
-          <li key={pocket.id} className="flex items-center justify-between gap-3 py-2">
-            <div>
+          <li key={pocket.id} className="flex min-h-20 items-center justify-between gap-3 py-3">
+            <div className="min-w-0 flex-1">
               <p className="font-medium">{pocket.name}</p>
               <p className="tabular-nums text-sm text-foreground-muted">{formatCurrency(pocket.balance, currency)}</p>
-              <div className="mt-1">
+              <div className="mt-2">
                 <RenamePocketForm pocketId={pocket.id} walletId={walletId} currentName={pocket.name} />
               </div>
             </div>

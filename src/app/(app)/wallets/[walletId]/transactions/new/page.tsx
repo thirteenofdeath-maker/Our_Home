@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { listCategoriesForWallet } from "@/features/categories/api";
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
@@ -95,8 +96,8 @@ export default async function NewTransactionPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"}</h1>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      <PageHeader title={transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"} fallbackHref={`/wallets/${walletId}`} />
       <TransactionForm
         walletId={walletId}
         wallets={wallets.map(({ id, name, currency, scope }) => ({ id, name, currency, scope }))}

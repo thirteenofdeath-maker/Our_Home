@@ -14,12 +14,11 @@ export default async function NewPocketPage({ params }: { params: Promise<{ wall
   if (!wallet) notFound();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <p className="text-sm text-foreground-muted">{wallet.name}</p>
-        <h1 className="text-xl font-semibold">เพิ่ม Pocket</h1>
-      </div>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      <PageHeader title="เพิ่ม Pocket" fallbackHref={`/wallets/${walletId}`} />
+      <p className="text-center text-sm text-foreground-muted">ในกระเป๋าเงิน {wallet.name}</p>
       <AddPocketForm walletId={walletId} />
     </div>
   );
 }
+import { PageHeader } from "@/components/shared/PageHeader";
