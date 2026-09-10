@@ -484,7 +484,7 @@ begin
   end if;
 
   if v_transaction.deleted_at is not null then
-    raise exception 'Transaction % is already voided' using errcode = '22023';
+    raise exception 'Transaction % is already voided', p_transaction_id using errcode = '22023';
   end if;
 
   v_active_adjustment_total := public.get_expense_adjustment_total(p_transaction_id);
@@ -537,7 +537,7 @@ begin
   select * into v_transaction from public.transactions where id = p_transaction_id;
 
   if v_transaction.deleted_at is null then
-    raise exception 'Transaction % is not voided' using errcode = '22023';
+    raise exception 'Transaction % is not voided', p_transaction_id using errcode = '22023';
   end if;
 
   -- If this transaction is itself a refund/reimbursement, re-validate the

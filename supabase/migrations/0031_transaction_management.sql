@@ -22,8 +22,8 @@
 -- ---------------------------------------------------------------------
 
 alter table public.transactions
-  add column voided_by uuid references public.profiles (id),
-  add column void_reason text;
+  add column if not exists voided_by uuid references public.profiles (id),
+  add column if not exists void_reason text;
 
 comment on column public.transactions.voided_by is
   'Who voided this transaction (set together with deleted_at). Null while active, and cleared on restore.';
@@ -42,7 +42,7 @@ comment on column public.transactions.void_reason is
 -- it — not only its original creator.
 -- ---------------------------------------------------------------------
 
-create function public.is_transaction_authorized(p_transaction_id uuid)
+create or replace function public.is_transaction_authorized(p_transaction_id uuid)
 returns boolean
 language plpgsql
 security definer
@@ -87,7 +87,7 @@ grant execute on function public.is_transaction_authorized(uuid) to authenticate
 -- entry's wallet_id in the UPDATE below is set to itself.
 -- ---------------------------------------------------------------------
 
-create function public.update_income_expense_transaction(
+create or replace function public.update_income_expense_transaction(
   p_transaction_id uuid,
   p_pocket_id uuid,
   p_category_id uuid,
@@ -213,7 +213,7 @@ grant execute on function public.update_income_expense_transaction(uuid, uuid, u
 -- void_transaction
 -- ---------------------------------------------------------------------
 
-create function public.void_transaction(
+create or replace function public.void_transaction(
   p_transaction_id uuid,
   p_void_reason text default null
 )
@@ -240,7 +240,7 @@ begin
   end if;
 
   if v_transaction.deleted_at is not null then
-    raise exception 'Transaction % is already voided' using errcode = '22023';
+    raise exception 'Transaction % is already voided', p_transaction_id using errcode = '22023';
   end if;
 
   update public.transactions
@@ -261,7 +261,7 @@ grant execute on function public.void_transaction(uuid, text) to authenticated;
 -- restore_transaction
 -- ---------------------------------------------------------------------
 
-create function public.restore_transaction(p_transaction_id uuid)
+create or replace function public.restore_transaction(p_transaction_id uuid)
 returns uuid
 language plpgsql
 security definer
@@ -284,7 +284,7 @@ begin
   select * into v_transaction from public.transactions where id = p_transaction_id;
 
   if v_transaction.deleted_at is null then
-    raise exception 'Transaction % is not voided' using errcode = '22023';
+    raise exception 'Transaction % is not voided', p_transaction_id using errcode = '22023';
   end if;
 
   -- Reactivating must restore the exact original financial effect, so
