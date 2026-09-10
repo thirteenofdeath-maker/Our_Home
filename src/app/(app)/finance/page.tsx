@@ -54,7 +54,9 @@ export default async function FinancePage() {
     return rank(a.displayStatus) - rank(b.displayStatus) || a.dueDate.localeCompare(b.dueDate);
   });
   const balanceByWallet = new Map(summary.walletBalances.map((item) => [item.walletId, item.amount]));
-  const primaryWallet = wallets[0];
+  // Initial route convenience only. TransactionForm visibly exposes all active
+  // wallets and persists no default-wallet preference.
+  const initialWallet = wallets[0];
   const monthLabel = new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric", timeZone: "Asia/Bangkok" }).format(
     new Date(`${month}-01T00:00:00+07:00`),
   );
@@ -116,15 +118,15 @@ export default async function FinancePage() {
 
       {finalHub.trend.length?<section className="flex flex-col gap-2"><div className="flex justify-between"><h2 className="font-semibold">แนวโน้ม 6 เดือน</h2><Link href="/finance/reports" className="text-primary">ดูรายงาน</Link></div>{finalHub.trend.slice(-3).map(x=><Card key={`${x.month}-${x.currency}`} className="flex justify-between"><span>{x.month} · {x.currency}</span><span className="text-sm">+{formatCurrency(x.income,x.currency)} / −{formatCurrency(x.expense,x.currency)}</span></Card>)}</section>:null}
 
-      {primaryWallet ? (
+      {initialWallet ? (
         <section className="grid grid-cols-3 gap-2" aria-label="เพิ่มรายการด่วน">
-          <Link href={financeIncomeHref(primaryWallet.id)} className={buttonClassName("secondary", "md", "px-2 text-income")}>
+          <Link href={financeIncomeHref(initialWallet.id)} className={buttonClassName("secondary", "md", "px-2 text-income")}>
             + รายรับ
           </Link>
-          <Link href={financeExpenseHref(primaryWallet.id)} className={buttonClassName("secondary", "md", "px-2 text-expense")}>
+          <Link href={financeExpenseHref(initialWallet.id)} className={buttonClassName("secondary", "md", "px-2 text-expense")}>
             - รายจ่าย
           </Link>
-          <Link href={financeTransferHref(primaryWallet.id)} className={buttonClassName("secondary", "md", "px-2")}>
+          <Link href={financeTransferHref(initialWallet.id)} className={buttonClassName("secondary", "md", "px-2")}>
             โอนเงิน
           </Link>
         </section>
@@ -264,8 +266,8 @@ export default async function FinancePage() {
           <Link href="/finance/export" className="flex min-h-11 items-center text-primary">ส่งออก CSV</Link>
           <Link href="/finance/net-worth" className="flex min-h-11 items-center text-primary">มูลค่าสุทธิ</Link>
           <Link href="/finance/insights" className="flex min-h-11 items-center text-primary">ข้อมูลเชิงลึก</Link>
-          {primaryWallet ? (
-            <Link href={financeTransferHref(primaryWallet.id)} className="flex min-h-11 items-center text-primary">
+          {initialWallet ? (
+            <Link href={financeTransferHref(initialWallet.id)} className="flex min-h-11 items-center text-primary">
               โอนเงิน
             </Link>
           ) : null}

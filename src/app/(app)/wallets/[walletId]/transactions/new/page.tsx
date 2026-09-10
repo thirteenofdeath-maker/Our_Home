@@ -8,7 +8,7 @@ import { getOccurrence } from "@/features/recurring/api";
 import { getTemplate } from "@/features/templates/api";
 import { listTags } from "@/features/tags/api";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
-import { getWallet } from "@/features/wallets/api";
+import { getWallet, listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
 export default async function NewTransactionPage({
@@ -26,7 +26,7 @@ export default async function NewTransactionPage({
   const safeReturnTo = returnTo === FINANCE_RETURN_TO ? FINANCE_RETURN_TO : undefined;
 
   const { supabase } = await requireUser();
-  const wallet = await getWallet(supabase, walletId);
+  const [wallet, wallets] = await Promise.all([getWallet(supabase, walletId), listMyWallets(supabase)]);
   if (!wallet) notFound();
 
   const [pockets, categories, tags] = await Promise.all([
@@ -99,6 +99,7 @@ export default async function NewTransactionPage({
       <h1 className="text-xl font-semibold">{transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"}</h1>
       <TransactionForm
         walletId={walletId}
+        wallets={wallets.map(({ id, name, currency, scope }) => ({ id, name, currency, scope }))}
         transactionType={transactionType}
         pockets={pockets}
         categories={buildCategoryTree(categories)}
@@ -137,6 +138,8 @@ export default async function NewTransactionPage({
         }
         staleNotices={staleNotices.length > 0 ? staleNotices : undefined}
         postOccurrence={occurrenceApplies ? { occurrenceId: occurrence!.occurrenceId, dueDate: occurrence!.dueDate } : undefined}
+        templateId={templateApplies ? templateId : undefined}
+        occurrenceId={occurrenceApplies ? occurrenceId : undefined}
       />
     </div>
   );

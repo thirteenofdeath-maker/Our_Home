@@ -13,10 +13,12 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { createIncomeExpenseAction } from "../actions";
 import { ExpenseCategorySelect } from "./ExpenseCategorySelect";
+import { TransactionWalletSelect, type TransactionWalletOption } from "./TransactionWalletSelect";
 import { postRecurringOccurrenceAction } from "@/features/recurring/actions";
 
 export function TransactionForm({
   walletId,
+  wallets,
   transactionType,
   pockets,
   categories,
@@ -31,8 +33,11 @@ export function TransactionForm({
   defaultTagIds,
   staleNotices,
   postOccurrence,
+  templateId,
+  occurrenceId,
 }: {
   walletId: string;
+  wallets: TransactionWalletOption[];
   transactionType: "INCOME" | "EXPENSE";
   pockets: Pocket[];
   categories: CategoryNode[];
@@ -69,6 +74,8 @@ export function TransactionForm({
    * date (docs/FINANCE.md Phase G "Date behavior").
    */
   postOccurrence?: { occurrenceId: string; dueDate: string };
+  templateId?: string;
+  occurrenceId?: string;
 }) {
   const [state, formAction] = useActionState(postOccurrence ? postRecurringOccurrenceAction : createIncomeExpenseAction, initialActionState);
   // UI convenience only — pre-selects the first pocket in the (stable,
@@ -113,7 +120,16 @@ export function TransactionForm({
         <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={defaultAmount ?? ""} placeholder="0.00" required autoFocus />
       </Field>
 
-      <Field label="ช่อง (Pocket)" htmlFor="pocketId">
+      <TransactionWalletSelect
+        wallets={wallets}
+        currentWalletId={walletId}
+        transactionType={transactionType}
+        returnTo={returnTo}
+        templateId={templateId}
+        occurrenceId={occurrenceId}
+      />
+
+      <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
         <Select id="pocketId" name="pocketId" defaultValue={initialPocketId} required>
           {pockets.map((pocket) => (
             <option key={pocket.id} value={pocket.id}>
