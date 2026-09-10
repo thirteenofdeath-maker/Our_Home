@@ -12,6 +12,8 @@ function fakeTable(onCall: (method: string, args: unknown[]) => void, resolved: 
   builder.update = chain("update");
   builder.delete = chain("delete");
   builder.eq = chain("eq");
+  builder.select = chain("select");
+  builder.single = () => Promise.resolve(resolved);
   builder.then = (resolve: (v: { data: unknown; error: unknown }) => void) => resolve(resolved);
   return builder;
 }
@@ -86,13 +88,34 @@ describe("listPocketsWithBalances", () => {
 });
 
 describe("updatePocket", () => {
-  it("sends only name/icon, no is_default field to ever set", async () => {
+  it("renames only the intended Pocket inside its actual Wallet", async () => {
     const calls: Array<{ method: string; args: unknown[] }> = [];
-    const supabase = { from: () => fakeTable((m, a) => calls.push({ method: m, args: a }), { data: null, error: null }) };
+    const supabase = { from: () => fakeTable((m, a) => calls.push({ method: m, args: a }), { data: { id: "p1" }, error: null }) };
 
-    await updatePocket(supabase as never, "p1", { name: "Renamed" });
+    await updatePocket(supabase as never, "p1", walletId, { name: "Renamed" });
 
-    expect(calls.find((c) => c.method === "update")?.args[0]).toEqual({ name: "Renamed", icon: undefined });
+    expect(calls.find((c) => c.method === "update")?.args[0]).toEqual({ name: "Renamed" });
+    expect(calls.filter((c) => c.method === "eq")).toEqual([
+      { method: "eq", args: ["id", "p1"] },
+      { method: "eq", args: ["wallet_id", walletId] },
+    ]);
+    expect(calls).toContainEqual({ method: "select", args: ["id"] });
+  });
+
+  it("treats an RLS-filtered or wallet-mismatched zero-row update as failure", async () => {
+    const noRows = {
+      from: () => fakeTable(() => {}, { data: null, error: { code: "PGRST116", message: "0 rows" } }),
+    };
+    await expect(updatePocket(noRows as never, "p1", "wrong-wallet", { name: "Renamed" })).rejects.toMatchObject({
+      code: "PGRST116",
+    });
+  });
+
+  it("rejects an unexpected returned row instead of reporting false success", async () => {
+    const wrongRow = { from: () => fakeTable(() => {}, { data: { id: "p2" }, error: null }) };
+    await expect(updatePocket(wrongRow as never, "p1", walletId, { name: "Renamed" })).rejects.toThrow(
+      "Pocket update did not return the intended row",
+    );
   });
 });
 

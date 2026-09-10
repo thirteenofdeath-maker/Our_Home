@@ -74,10 +74,18 @@ export async function listArchivedPocketsForWallet(
 export async function updatePocket(
   supabase: SupabaseClient<Database>,
   pocketId: string,
-  params: { name?: string; icon?: string | null },
+  walletId: string,
+  params: { name: string },
 ): Promise<void> {
-  const { error } = await supabase.from("pockets").update({ name: params.name, icon: params.icon }).eq("id", pocketId);
+  const { data, error } = await supabase
+    .from("pockets")
+    .update({ name: params.name })
+    .eq("id", pocketId)
+    .eq("wallet_id", walletId)
+    .select("id")
+    .single();
   if (error) throw error;
+  if (!data || data.id !== pocketId) throw new Error("Pocket update did not return the intended row");
 }
 
 /** Rejected by `pockets_require_active_sibling_to_archive` (0030) if this is the wallet's last active pocket. */

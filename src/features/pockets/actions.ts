@@ -57,14 +57,14 @@ export async function renamePocketAction(_prevState: ActionState, formData: Form
   }
 
   try {
-    await updatePocket(supabase, parsed.data.pocketId, { name: parsed.data.name });
+    await updatePocket(supabase, parsed.data.pocketId, parsed.data.walletId, { name: parsed.data.name });
   } catch (err) {
     logDatabaseErrorInDev("renamePocket failed", err);
-    return { error: "Could not rename pocket" };
+    return { error: "เปลี่ยนชื่อ Pocket ไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);
-  return {};
+  redirect(`/wallets/${parsed.data.walletId}`);
 }
 
 const pocketMutationSchema = z.object({
