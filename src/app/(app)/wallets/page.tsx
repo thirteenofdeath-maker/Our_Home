@@ -3,13 +3,13 @@ import Link from "next/link";
 import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { getWalletBalance, listMyWallets } from "@/features/wallets/api";
+import { getWalletBalance, listArchivedWallets, listMyWallets } from "@/features/wallets/api";
 import { formatCurrency } from "@/lib/utils/money";
 import { requireUser } from "@/lib/auth/require-user";
 
 export default async function WalletsPage() {
   const { supabase } = await requireUser();
-  const wallets = await listMyWallets(supabase);
+  const [wallets, archivedWallets] = await Promise.all([listMyWallets(supabase), listArchivedWallets(supabase)]);
 
   const withBalance = await Promise.all(
     wallets.map(async (wallet) => ({ wallet, balance: await getWalletBalance(supabase, wallet.id) })),
@@ -44,6 +44,24 @@ export default async function WalletsPage() {
           household.map(({ wallet, balance }) => <WalletCard key={wallet.id} id={wallet.id} name={wallet.name} balance={balance} currency={wallet.currency} />)
         )}
       </section>
+
+      {archivedWallets.length > 0 ? (
+        <details className="rounded-card border border-border bg-surface-muted px-4 py-2">
+          <summary className="cursor-pointer text-sm text-foreground-muted">กระเป๋าเงินที่เก็บถาวร ({archivedWallets.length})</summary>
+          <ul className="mt-2 flex flex-col gap-2">
+            {archivedWallets.map((wallet) => (
+              <li key={wallet.id}>
+                <Link href={`/wallets/${wallet.id}`}>
+                  <Card className="flex items-center justify-between">
+                    <span className="text-foreground-muted line-through">{wallet.name}</span>
+                    <span className="text-xs text-foreground-muted">{wallet.currency}</span>
+                  </Card>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }

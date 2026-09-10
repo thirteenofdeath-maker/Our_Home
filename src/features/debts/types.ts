@@ -1,0 +1,1 @@
+export interface DebtSummary{id:string;scope:"PERSONAL"|"HOUSEHOLD";householdId:string|null;debtType:"LIABILITY"|"RECEIVABLE";name:string;counterparty:string|null;currency:string;apr:string|null;dueDate:string|null;note:string|null;archivedAt:string|null;outstanding:string}

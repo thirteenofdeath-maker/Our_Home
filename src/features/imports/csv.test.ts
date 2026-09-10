@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{parseCsv}from"./csv";describe("CSV parser",()=>{it("handles quoted commas, escaped quotes, and CRLF",()=>{expect(parseCsv('date,title\r\n2026-01-01,"Food, \"\"home\"\""')).toEqual([["date","title"],["2026-01-01",'Food, "home"']])});it("keeps empty cells",()=>{expect(parseCsv("a,b,c\n1,,3")[1]).toEqual(["1","","3"])})});

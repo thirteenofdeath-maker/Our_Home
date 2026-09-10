@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { CategoryTransactionType, Database } from "@/types/database";
 
 import type { Category } from "./types";
@@ -28,8 +29,8 @@ export async function listCategories(
   }
 
   const { data, error } = await query;
-  if (error || !data) return [];
-  return data;
+  if (error) logDatabaseErrorInDev("listCategories failed", error);
+  return data ?? [];
 }
 
 /**
@@ -38,8 +39,19 @@ export async function listCategories(
  * never "every category visible through RLS" (a user can own personal
  * categories from unrelated contexts, or belong to more than one
  * household, and RLS alone does not narrow to the one wallet in play).
- * `is_system` categories (none seeded in Milestone 1) are included for
- * every wallet regardless of scope, once they exist.
+ *
+ * Deliberately plain chained `.eq()` filters, not a hand-built PostgREST
+ * `or(...,and(...))` string. PERSONAL and HOUSEHOLD are mutually
+ * exclusive, so there is no OR to express in the first place — the
+ * previous version's `is_system.eq.true,and(scope.eq...,owner_user_id.eq...)`
+ * was solving a problem ("also include is_system categories") that
+ * doesn't exist yet (Milestone 1 seeds none), while making the one filter
+ * that DOES matter — "this wallet's own categories" — needlessly fragile
+ * to get right and silently swallowed into an empty result on any query
+ * error (see the `error ? [] : data` below). When `is_system` categories
+ * are actually introduced, add them back as a small, separately-tested
+ * second query merged in, rather than reintroducing string-built logical
+ * operators.
  */
 export async function listCategoriesForWallet(
   supabase: SupabaseClient<Database>,
@@ -49,12 +61,16 @@ export async function listCategoriesForWallet(
     includeArchived?: boolean;
   },
 ): Promise<Category[]> {
-  let query = supabase.from("categories").select("*").eq("transaction_type", params.transactionType);
+  let query = supabase
+    .from("categories")
+    .select("*")
+    .eq("transaction_type", params.transactionType)
+    .eq("scope", params.wallet.scope);
 
   query =
     params.wallet.scope === "PERSONAL"
-      ? query.or(`is_system.eq.true,and(scope.eq.PERSONAL,owner_user_id.eq.${params.wallet.owner_user_id})`)
-      : query.or(`is_system.eq.true,and(scope.eq.HOUSEHOLD,household_id.eq.${params.wallet.household_id})`);
+      ? query.eq("owner_user_id", params.wallet.owner_user_id!)
+      : query.eq("household_id", params.wallet.household_id!);
 
   if (!params.includeArchived) {
     query = query.is("archived_at", null);
@@ -62,8 +78,11 @@ export async function listCategoriesForWallet(
   query = query.order("sort_order", { ascending: true });
 
   const { data, error } = await query;
-  if (error || !data) return [];
-  return data;
+  if (error) {
+    logDatabaseErrorInDev("listCategoriesForWallet failed", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 export async function createCategory(

@@ -1,0 +1,2 @@
+import Link from "next/link";import { Card } from "@/components/ui/Card";import { formatCurrency } from "@/lib/utils/money";import type { BillSummary } from "../types";
+export function BillCard({item}:{item:BillSummary}){return <Link href={`/finance/bills/${item.billId}`}><Card className="flex justify-between"><div><p className="font-medium">{item.name}</p><p className="text-xs text-foreground-muted">{item.recurrenceType==="ONE_TIME"?"ครั้งเดียว":item.pausedAt?"หยุดชั่วคราว":"ตามรอบ"}</p></div><span>{formatCurrency(item.amount,item.currency)}</span></Card></Link>}

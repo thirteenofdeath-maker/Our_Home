@@ -23,6 +23,7 @@ export function CategoryPicker({
   categories,
   transactionType,
   walletId,
+  defaultSelected = null,
 }: {
   name: string;
   categories: CategoryNode[];
@@ -32,10 +33,12 @@ export function CategoryPicker({
    * "current scope", since that can't be trusted and doesn't account for
    * a user belonging to more than one household. */
   walletId: string;
+  /** Pre-selects an existing category — used when editing a transaction. */
+  defaultSelected?: { id: string; label: string } | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<{ id: string; label: string } | null>(null);
+  const [selected, setSelected] = useState<{ id: string; label: string } | null>(defaultSelected);
   const [addingUnder, setAddingUnder] = useState<{ parentId: string | null } | null>(null);
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);

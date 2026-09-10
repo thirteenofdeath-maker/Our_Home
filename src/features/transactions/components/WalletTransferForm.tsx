@@ -5,6 +5,8 @@ import { useActionState, useMemo, useState } from "react";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { Pocket } from "@/features/pockets/types";
+import { TagPicker } from "@/features/tags/components/TagPicker";
+import type { TagOption } from "@/features/tags/types";
 import type { Wallet } from "@/features/wallets/types";
 import { initialActionState } from "@/lib/types/action-state";
 
@@ -15,15 +17,18 @@ export function WalletTransferForm({
   fromPockets,
   otherWallets,
   pocketsByWallet,
+  tags,
 }: {
   fromWallet: Wallet;
   fromPockets: Pocket[];
   otherWallets: Wallet[];
   pocketsByWallet: Record<string, Pocket[]>;
+  tags: TagOption[];
 }) {
   const [state, formAction] = useActionState(createWalletTransferAction, initialActionState);
   const [toWalletId, setToWalletId] = useState(otherWallets[0]?.id ?? "");
   const toPockets = useMemo(() => pocketsByWallet[toWalletId] ?? [], [pocketsByWallet, toWalletId]);
+  const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -68,6 +73,14 @@ export function WalletTransferForm({
 
       <Field label="จำนวนเงิน" htmlFor="amount">
         <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />
+      </Field>
+
+      <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title"><Input id="title" name="title" type="text" /></Field>
+      <Field label="โน้ต (ถ้ามี)" htmlFor="note"><Input id="note" name="note" type="text" /></Field>
+      <Field label="วันที่" htmlFor="occurredAt"><Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required /></Field>
+
+      <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
+        <TagPicker name="tagIds" tags={tags} walletId={fromWallet.id} />
       </Field>
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}

@@ -4,7 +4,7 @@ export type Household = Database["public"]["Tables"]["households"]["Row"];
 export type HouseholdMemberRow = Database["public"]["Tables"]["household_members"]["Row"];
 
 export interface HouseholdMemberWithProfile extends HouseholdMemberRow {
-  profile: { display_name: string; email: string } | null;
+  profile: { display_name: string; email: string; avatar_url: string | null } | null;
 }
 
 export interface HouseholdWithRole extends Household {

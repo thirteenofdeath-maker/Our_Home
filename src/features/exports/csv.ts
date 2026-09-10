@@ -1,0 +1,1 @@
+export function csvCell(value:unknown){const text=value==null?"":String(value);return /[",\r\n]/.test(text)?`"${text.replaceAll('"','""')}"`:text}export function rowsToCsv(rows:Record<string,unknown>[],headers:string[]){return `\uFEFF${headers.map(csvCell).join(",")}\r\n${rows.map(row=>headers.map(h=>csvCell(row[h])).join(",")).join("\r\n")}`}

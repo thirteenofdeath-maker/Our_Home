@@ -46,6 +46,10 @@ export function WalletForm({
         <Input id="currency" name="currency" type="text" defaultValue="THB" maxLength={3} required />
       </Field>
 
+      <Field label="ช่องแรก (Pocket)" htmlFor="firstPocketName">
+        <Input id="firstPocketName" name="firstPocketName" type="text" placeholder="เช่น ใช้จ่าย, เงินเก็บ" required />
+      </Field>
+
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภทกระเป๋าเงิน</legend>
         <label className="flex items-center gap-2 text-sm">

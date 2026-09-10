@@ -8,7 +8,7 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { addHouseholdMemberAction } from "../actions";
 
-export function AddMemberForm({ householdId }: { householdId: string }) {
+export function AddMemberForm({ householdId, canInviteAdmin = false }: { householdId: string; canInviteAdmin?: boolean }) {
   const [state, formAction] = useActionState(addHouseholdMemberAction, initialActionState);
 
   return (
@@ -20,7 +20,7 @@ export function AddMemberForm({ householdId }: { householdId: string }) {
       <Field label="บทบาท" htmlFor="role">
         <Select id="role" name="role" defaultValue="member">
           <option value="member">สมาชิก</option>
-          <option value="admin">ผู้ดูแล</option>
+          {canInviteAdmin ? <option value="admin">ผู้ดูแล</option> : null}
         </Select>
       </Field>
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
