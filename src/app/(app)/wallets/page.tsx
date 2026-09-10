@@ -2,10 +2,9 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getWalletBalance, listArchivedWallets, listMyWallets } from "@/features/wallets/api";
-import { formatCurrency } from "@/lib/utils/money";
+import { WalletVisualCard } from "@/features/wallets/components/WalletVisualCard";
 import { requireUser } from "@/lib/auth/require-user";
 
 export default async function WalletsPage() {
@@ -20,42 +19,48 @@ export default async function WalletsPage() {
   const household = withBalance.filter((w) => w.wallet.scope === "HOUSEHOLD");
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="finance-scope -mx-4 flex w-full flex-col gap-6 px-4 pb-8 pt-2">
       <PageHeader
         title="กระเป๋าเงิน"
         fallbackHref="/finance"
-        rightAction={<Link href="/wallets/new" aria-label="เพิ่มกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full text-primary hover:bg-primary-soft"><AppIcon name="plus" /></Link>}
+        rightAction={<Link href="/wallets/new" aria-label="เพิ่มกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft"><AppIcon name="plus" /></Link>}
       />
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-foreground-muted">ส่วนตัว</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-finance-muted">ส่วนตัว</h2>
         {personal.length === 0 ? (
           <EmptyState title="ยังไม่มีกระเป๋าเงินส่วนตัว" description="เพิ่มบัญชีธนาคารหรือเงินสดของคุณ" />
         ) : (
-          personal.map(({ wallet, balance }) => <WalletCard key={wallet.id} id={wallet.id} name={wallet.name} balance={balance} currency={wallet.currency} scope="ส่วนตัว" />)
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {personal.map(({ wallet, balance }, index) => (
+              <WalletVisualCard key={wallet.id} id={wallet.id} name={wallet.name} currency={wallet.currency} scopeLabel="ส่วนตัว" balance={balance} index={index} />
+            ))}
+          </div>
         )}
       </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-foreground-muted">ครอบครัว</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-finance-muted">ครอบครัว</h2>
         {household.length === 0 ? (
           <EmptyState title="ยังไม่มีกระเป๋าเงินครอบครัว" description="สร้างครอบครัวก่อนเพื่อเพิ่มกระเป๋าเงินร่วมกัน" />
         ) : (
-          household.map(({ wallet, balance }) => <WalletCard key={wallet.id} id={wallet.id} name={wallet.name} balance={balance} currency={wallet.currency} scope="ครอบครัว" />)
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {household.map(({ wallet, balance }, index) => (
+              <WalletVisualCard key={wallet.id} id={wallet.id} name={wallet.name} currency={wallet.currency} scopeLabel="ครอบครัว" balance={balance} index={index} />
+            ))}
+          </div>
         )}
       </section>
 
       {archivedWallets.length > 0 ? (
-        <details className="rounded-card border border-border bg-surface-muted px-4 py-2">
-          <summary className="cursor-pointer text-sm text-foreground-muted">กระเป๋าเงินที่เก็บถาวร ({archivedWallets.length})</summary>
+        <details className="rounded-[1.25rem] bg-finance-surface-strong px-4 py-2 shadow-sm">
+          <summary className="cursor-pointer text-sm text-finance-muted">กระเป๋าเงินที่เก็บถาวร ({archivedWallets.length})</summary>
           <ul className="mt-2 flex flex-col gap-2">
             {archivedWallets.map((wallet) => (
               <li key={wallet.id}>
-                <Link href={`/wallets/${wallet.id}`}>
-                  <Card className="flex items-center justify-between">
-                    <span className="text-foreground-muted line-through">{wallet.name}</span>
-                    <span className="text-xs text-foreground-muted">{wallet.currency}</span>
-                  </Card>
+                <Link href={`/wallets/${wallet.id}`} className="flex min-h-11 items-center justify-between rounded-[1rem] bg-finance-background px-3 py-2">
+                  <span className="text-finance-muted line-through">{wallet.name}</span>
+                  <span className="text-xs text-finance-muted">{wallet.currency}</span>
                 </Link>
               </li>
             ))}
@@ -63,16 +68,5 @@ export default async function WalletsPage() {
         </details>
       ) : null}
     </div>
-  );
-}
-
-function WalletCard({ id, name, balance, currency, scope }: { id: string; name: string; balance: string; currency: string; scope: string }) {
-  return (
-    <Link href={`/wallets/${id}`} className="block min-h-11 rounded-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-      <Card className="flex min-h-18 items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><AppIcon name="wallet" /></span><span><span className="block truncate font-medium">{name}</span><span className="text-xs text-foreground-muted">{currency} · {scope}</span></span></span>
-        <span className="flex shrink-0 items-center gap-2"><span className="tabular-nums font-semibold">{formatCurrency(balance, currency)}</span><AppIcon name="chevron" className="size-5 text-foreground-muted" /></span>
-      </Card>
-    </Link>
   );
 }

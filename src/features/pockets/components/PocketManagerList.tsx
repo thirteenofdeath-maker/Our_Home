@@ -26,8 +26,8 @@ export function PocketManagerList({
         {pockets.map((pocket) => (
           <li key={pocket.id} id={`pocket-${pocket.id}`} className="rounded-card bg-surface shadow-card">
             {compact ? (
-              <Link href={`/wallets/${walletId}/manage#pocket-${pocket.id}`} className="flex min-h-18 items-center gap-3 p-4">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><AppIcon name="pocket" /></span>
+              <Link href={`/wallets/${walletId}/manage#pocket-${pocket.id}`} className="flex min-h-[76px] items-center gap-3 px-4 py-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><AppIcon name="pocket" className="size-4" /></span>
                 <span className="min-w-0 flex-1 truncate font-medium">{pocket.name}</span>
                 <span className="shrink-0 tabular-nums font-semibold">{formatCurrency(pocket.balance, currency)}</span>
                 <AppIcon name="chevron" className="size-4 text-foreground-muted" />

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 
 const SECTION_TITLES: Record<string, string> = {
   "quick-add": "เพิ่มรายการ",
-  transactions: "ประวัติรายการ",
+  transactions: "รายการทั้งหมด",
   tags: "แท็ก",
   budgets: "งบประมาณ",
   templates: "Template รายการ",

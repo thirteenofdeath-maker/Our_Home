@@ -26,8 +26,18 @@ describe("approved mobile Finance UI", () => {
   it("preserves Personal and Household Wallet grouping with tappable cards", () => {
     expect(wallets).toContain('w.wallet.scope === "PERSONAL"');
     expect(wallets).toContain('w.wallet.scope === "HOUSEHOLD"');
-    expect(wallets).toContain("min-h-18");
+    // Finance Design V2 (Phase 1 correction): a compact two-column
+    // gallery, not the old fixed-height single-line row or a full-width
+    // stack — see WalletVisualCard.
+    expect(wallets).toContain("<WalletVisualCard");
+    expect(wallets).toContain("grid-cols-2");
     expect(wallets).toContain("PageHeader");
+  });
+
+  it("keeps the compact Pocket row within its requested height/icon budget", () => {
+    const pocketManagerList = read("src/features/pockets/components/PocketManagerList.tsx");
+    expect(pocketManagerList).toContain("min-h-[76px]"); // within the 72-84px target band
+    expect(pocketManagerList).toContain("size-10"); // 40px icon, within the 40-44px target band
   });
 
   it("gives Wallet detail a back header and keeps Pocket rename", () => {

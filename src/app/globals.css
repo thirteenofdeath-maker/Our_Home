@@ -54,6 +54,42 @@
   }
 }
 
+/*
+ * Finance Design V2 (Phase 1) — a distinct, self-contained token set for
+ * the "soft finance dashboard" direction, scoped to `.finance-scope`
+ * rather than touching the tokens above. Pets/Calendar/Household (and
+ * every finance subpage not yet redesigned — budgets/bills/etc.) never
+ * apply this class, so they render exactly as before. Only the four
+ * Phase 1 screens (/finance, /finance/transactions, /wallets,
+ * /wallets/[walletId]) wrap their content in `.finance-scope`.
+ *
+ * No dark-mode variant yet — these four screens render with this light
+ * palette regardless of system theme for now (the reference direction is
+ * an explicitly light dashboard); revisit if/when the rest of Finance
+ * moves to this system.
+ */
+.finance-scope {
+  --finance-background: #eef1f4;
+  --finance-surface: #fafbfc;
+  --finance-surface-strong: #ffffff;
+
+  --finance-primary: #819aae;
+  --finance-primary-strong: #667f93;
+  --finance-primary-soft: #d7e2ec;
+
+  --finance-text: #44505c;
+  --finance-muted: #8995a2;
+
+  --finance-income: #7ea852;
+  --finance-expense: #ff6b55;
+  --finance-transfer: #7996aa;
+
+  --finance-warning: #c99a3d;
+
+  background-color: var(--finance-background);
+  color: var(--finance-text);
+}
+
 @theme inline {
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
@@ -77,6 +113,19 @@
   --shadow-card: var(--shadow-card);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-finance-background: var(--finance-background);
+  --color-finance-surface: var(--finance-surface);
+  --color-finance-surface-strong: var(--finance-surface-strong);
+  --color-finance-primary: var(--finance-primary);
+  --color-finance-primary-strong: var(--finance-primary-strong);
+  --color-finance-primary-soft: var(--finance-primary-soft);
+  --color-finance-text: var(--finance-text);
+  --color-finance-muted: var(--finance-muted);
+  --color-finance-income: var(--finance-income);
+  --color-finance-expense: var(--finance-expense);
+  --color-finance-transfer: var(--finance-transfer);
+  --color-finance-warning: var(--finance-warning);
 }
 
 body {

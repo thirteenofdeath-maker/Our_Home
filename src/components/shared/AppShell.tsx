@@ -15,8 +15,10 @@ export function AppShell({ children, globalHeader, financeQuickAdd }: { children
     <div className="flex min-h-full flex-1 flex-col">
       {isTopLevel ? globalHeader : null}
       <main className={`mx-auto w-full max-w-xl flex-1 px-4 ${isTopLevel ? "pb-36 pt-2" : "pb-8 pt-1"}`}>{children}</main>
-      {pathname === "/finance" ? financeQuickAdd : null}
-      {isTopLevel ? <BottomNav /> : null}
+      {/* BottomNav itself decides whether centerAction actually renders
+          (only on /finance) — see BottomNav.tsx. Passing it unconditionally
+          here keeps that single decision in one place. */}
+      {isTopLevel ? <BottomNav centerAction={financeQuickAdd} /> : null}
     </div>
   );
 }

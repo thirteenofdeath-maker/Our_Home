@@ -11,8 +11,11 @@ describe("AppShell visibility", () => {
     expect(source).not.toContain("startsWith");
   });
 
-  it("shows the global finance quick add only on finance home", () => {
-    expect(source).toContain('pathname === "/finance" ? financeQuickAdd : null');
-    expect(source).toContain("isTopLevel ? <BottomNav /> : null");
+  it("hands the finance quick add to BottomNav as a center action, not a separate floating element", () => {
+    // BottomNav itself decides whether /finance is the active route (see
+    // BottomNav.test.ts) — AppShell's job is only to wire the prop through.
+    expect(source).toContain("<BottomNav centerAction={financeQuickAdd} />");
+    expect(source).toContain("isTopLevel ?");
+    expect(source).not.toMatch(/pathname === "\/finance" \? financeQuickAdd/);
   });
 });

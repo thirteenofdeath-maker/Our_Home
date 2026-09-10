@@ -1,6 +1,21 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type AppIconName = "back" | "plus" | "income" | "expense" | "transfer" | "wallet" | "pocket" | "chevron" | "more" | "finance" | "pets" | "calendar" | "household";
+export type AppIconName =
+  | "back"
+  | "plus"
+  | "income"
+  | "expense"
+  | "transfer"
+  | "wallet"
+  | "pocket"
+  | "chevron"
+  | "more"
+  | "finance"
+  | "pets"
+  | "calendar"
+  | "household"
+  | "search"
+  | "filter";
 
 const paths: Record<AppIconName, ReactNode> = {
   back: <path d="m15 18-6-6 6-6" />,
@@ -16,6 +31,8 @@ const paths: Record<AppIconName, ReactNode> = {
   pets: <><circle cx="7" cy="8" r="2" /><circle cx="17" cy="8" r="2" /><circle cx="12" cy="5" r="2" /><path d="M7 16c0-3 2-5 5-5s5 2 5 5c0 2-2 3-5 3s-5-1-5-3Z" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4m8-4v4M3 10h18" /></>,
   household: <><path d="m3 11 9-7 9 7" /><path d="M5 10v10h14V10m-9 10v-6h4v6" /></>,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-4.3-4.3" /></>,
+  filter: <path d="M4 6h16M7 12h10M10 18h4" />,
 };
 
 export function AppIcon({ name, ...props }: { name: AppIconName } & SVGProps<SVGSVGElement>) {

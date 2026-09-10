@@ -3,12 +3,22 @@ import Link from "next/link";
 import { financeExpenseHref, financeIncomeHref, financeTransferHref } from "@/features/finance/domain/finance";
 import { AppIcon } from "@/components/ui/AppIcon";
 
+/**
+ * Rendered by BottomNav as a genuine center grid cell (see BottomNav.tsx)
+ * — not `fixed`/floating and not overlapping the four real nav
+ * destinations, so no z-index trick is needed to keep it clear of their
+ * labels. Raised above the bar visually via a negative margin applied by
+ * the parent grid cell, not by this component itself. Only ever actually
+ * shown on /finance (see BottomNav's `showCenterAction`), inside its
+ * `finance-scope` <nav> — so the Finance V2 blue-gray palette below
+ * always has its --finance-* variables in scope.
+ */
 export function GlobalQuickAdd({ walletId }: { walletId: string | null }) {
   return (
     <Link
       aria-label="เพิ่มรายการการเงิน"
       href={walletId ? `/finance/quick-add?walletId=${walletId}` : "/wallets/new"}
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+2.5rem)] left-1/2 z-20 flex size-14 -translate-x-1/2 items-center justify-center rounded-full border-4 border-surface bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(57_65_61_/_0.28)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="flex size-14 items-center justify-center rounded-full border-4 border-finance-surface-strong bg-finance-primary text-white shadow-[0_8px_24px_rgb(68_80_92_/_0.32)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
     >
       <AppIcon name="plus" />
     </Link>
