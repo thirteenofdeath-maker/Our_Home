@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
@@ -14,24 +15,58 @@ export function RenamePocketForm({ pocketId, walletId, currentName }: { pocketId
 
   if (!editing) {
     return (
-      <button type="button" onClick={() => setEditing(true)} className="text-xs text-primary">
+      <Button
+        type="button"
+        variant="secondary"
+        size="md"
+        className="w-auto px-3"
+        aria-expanded={false}
+        onClick={() => setEditing(true)}
+      >
         แก้ไขชื่อ
-      </button>
+      </Button>
     );
   }
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <PocketRenameEditor
+      pocketId={pocketId}
+      walletId={walletId}
+      currentName={currentName}
+      error={state.error}
+      formAction={formAction}
+      onCancel={() => setEditing(false)}
+    />
+  );
+}
+
+export function PocketRenameEditor({
+  pocketId,
+  walletId,
+  currentName,
+  error,
+  formAction,
+  onCancel,
+}: {
+  pocketId: string;
+  walletId: string;
+  currentName: string;
+  error?: string;
+  formAction: (formData: FormData) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <form action={formAction} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="pocketId" value={pocketId} />
       <input type="hidden" name="walletId" value={walletId} />
-      <Input name="name" defaultValue={currentName} className="h-9" autoFocus />
+      <Input aria-label="ชื่อ Pocket" name="name" defaultValue={currentName} className="min-w-44 flex-1" autoFocus required />
       <SubmitButton size="md" className="w-auto px-3 text-xs">
         บันทึก
       </SubmitButton>
-      <button type="button" onClick={() => setEditing(false)} className="text-xs text-foreground-muted">
+      <Button type="button" variant="ghost" size="md" className="w-auto px-3" onClick={onCancel}>
         ยกเลิก
-      </button>
-      {state.error ? <p className="text-xs text-danger">{state.error}</p> : null}
+      </Button>
+      {error ? <p className="w-full text-xs text-danger">{error}</p> : null}
     </form>
   );
 }
