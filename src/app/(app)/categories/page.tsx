@@ -26,7 +26,7 @@ export default async function CategoriesPage({
     includeArchived: true,
   });
   const tree = buildCategoryTree(categories);
-  const topLevelActive = tree.filter((c) => !c.archived_at);
+  const topLevelActive = tree.filter((c) => !c.is_system && !c.archived_at);
 
   return (
     <div className="flex flex-col gap-4">

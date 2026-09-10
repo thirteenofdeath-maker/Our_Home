@@ -15,22 +15,32 @@ export async function listCategories(
     includeArchived?: boolean;
   },
 ): Promise<Category[]> {
-  let query = supabase
+  let customQuery = supabase
     .from("categories")
     .select("*")
     .eq("transaction_type", params.transactionType)
+    .eq("is_system", false)
     .order("sort_order", { ascending: true });
 
   if (params.scope) {
-    query = query.eq("scope", params.scope);
+    customQuery = customQuery.eq("scope", params.scope);
   }
   if (!params.includeArchived) {
-    query = query.is("archived_at", null);
+    customQuery = customQuery.is("archived_at", null);
   }
 
-  const { data, error } = await query;
-  if (error) logDatabaseErrorInDev("listCategories failed", error);
-  return data ?? [];
+  let systemQuery = supabase
+    .from("categories")
+    .select("*")
+    .eq("transaction_type", params.transactionType)
+    .eq("is_system", true)
+    .order("sort_order", { ascending: true });
+  if (!params.includeArchived) systemQuery = systemQuery.is("archived_at", null);
+
+  const [systemResult, customResult] = await Promise.all([systemQuery, customQuery]);
+  if (systemResult.error) logDatabaseErrorInDev("listCategories system query failed", systemResult.error);
+  if (customResult.error) logDatabaseErrorInDev("listCategories custom query failed", customResult.error);
+  return mergeAndSortCategories(systemResult.data, customResult.data);
 }
 
 /**
@@ -61,28 +71,42 @@ export async function listCategoriesForWallet(
     includeArchived?: boolean;
   },
 ): Promise<Category[]> {
-  let query = supabase
+  let systemQuery = supabase
     .from("categories")
     .select("*")
     .eq("transaction_type", params.transactionType)
+    .eq("is_system", true);
+  let customQuery = supabase
+    .from("categories")
+    .select("*")
+    .eq("transaction_type", params.transactionType)
+    .eq("is_system", false)
     .eq("scope", params.wallet.scope);
 
-  query =
+  customQuery =
     params.wallet.scope === "PERSONAL"
-      ? query.eq("owner_user_id", params.wallet.owner_user_id!)
-      : query.eq("household_id", params.wallet.household_id!);
+      ? customQuery.eq("owner_user_id", params.wallet.owner_user_id!)
+      : customQuery.eq("household_id", params.wallet.household_id!);
 
   if (!params.includeArchived) {
-    query = query.is("archived_at", null);
+    systemQuery = systemQuery.is("archived_at", null);
+    customQuery = customQuery.is("archived_at", null);
   }
-  query = query.order("sort_order", { ascending: true });
+  systemQuery = systemQuery.order("sort_order", { ascending: true });
+  customQuery = customQuery.order("sort_order", { ascending: true });
 
-  const { data, error } = await query;
-  if (error) {
-    logDatabaseErrorInDev("listCategoriesForWallet failed", error);
-    return [];
-  }
-  return data ?? [];
+  const [systemResult, customResult] = await Promise.all([systemQuery, customQuery]);
+  if (systemResult.error) logDatabaseErrorInDev("listCategoriesForWallet system query failed", systemResult.error);
+  if (customResult.error) logDatabaseErrorInDev("listCategoriesForWallet custom query failed", customResult.error);
+  return mergeAndSortCategories(systemResult.data, customResult.data);
+}
+
+function mergeAndSortCategories(system: Category[] | null, custom: Category[] | null): Category[] {
+  const unique = new Map<string, Category>();
+  for (const category of [...(system ?? []), ...(custom ?? [])]) unique.set(category.id, category);
+  return [...unique.values()].sort(
+    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "th") || a.id.localeCompare(b.id),
+  );
 }
 
 export async function createCategory(

@@ -15,6 +15,7 @@ function makeCategory(overrides: Partial<Category>): Category {
     icon: null,
     sort_order: 0,
     is_system: false,
+    system_key: null,
     archived_at: null,
     created_by: "u1",
     created_at: "2026-01-01",

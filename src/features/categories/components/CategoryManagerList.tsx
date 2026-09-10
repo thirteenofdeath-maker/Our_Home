@@ -6,12 +6,17 @@ function CategoryRow({ category, indent }: { category: CategoryNode; indent: boo
   return (
     <li className={`flex items-center justify-between py-2 ${indent ? "pl-6" : ""}`}>
       <div>
-        <p className={category.archived_at ? "text-foreground-muted line-through" : ""}>{category.name}</p>
+        <p className={category.archived_at ? "text-foreground-muted line-through" : ""}>
+          {category.name}
+          {category.is_system ? <span className="ml-2 text-xs text-foreground-muted">ค่าเริ่มต้น</span> : null}
+        </p>
         <div className="mt-1 flex gap-3">
-          {!category.archived_at ? <RenameCategoryForm id={category.id} currentName={category.name} /> : null}
+          {!category.is_system && !category.archived_at ? (
+            <RenameCategoryForm id={category.id} currentName={category.name} />
+          ) : null}
         </div>
       </div>
-      {category.archived_at ? (
+      {category.is_system ? null : category.archived_at ? (
         <form action={restoreCategoryAction}>
           <input type="hidden" name="id" value={category.id} />
           <button type="submit" className="text-xs font-medium text-primary">

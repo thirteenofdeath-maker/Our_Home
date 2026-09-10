@@ -18,6 +18,7 @@ function category(id: string, name: string): CategoryNode {
     icon: null,
     sort_order: 0,
     is_system: false,
+    system_key: null,
     archived_at: null,
     created_by: "00000000-0000-0000-0000-000000000001",
     created_at: "2026-09-08T00:00:00Z",

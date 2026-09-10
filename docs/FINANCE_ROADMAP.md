@@ -958,6 +958,13 @@ These invariants must remain permanently tested as the roadmap advances:
 
 # Live verification policy
 
+## Phase U — Default System Category Pack
+Status: `STATIC_VERIFIED`
+
+Global ownerless Thai Income/Expense categories use stable `system_key` values. They are selectable for both Personal and Household finance flows, remain read-only, and never represent transfers, debt principal, refunds, or reimbursements.
+
+---
+
 Static verification may advance development, but each migration/feature remains live-pending until tested against the real Supabase project.
 
 When a live verification batch is eventually run:

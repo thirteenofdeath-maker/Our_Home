@@ -194,7 +194,7 @@ export interface Database {
       categories: {
         Row: {
           id: string;
-          scope: MoneyScope;
+          scope: MoneyScope | null;
           owner_user_id: string | null;
           household_id: string | null;
           name: string;
@@ -204,7 +204,8 @@ export interface Database {
           sort_order: number;
           is_system: boolean;
           archived_at: string | null;
-          created_by: string;
+          created_by: string | null;
+          system_key: string | null;
           created_at: string;
           updated_at: string;
         };

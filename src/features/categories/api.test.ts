@@ -15,6 +15,7 @@ function makeCategory(overrides: Partial<Category>): Category {
     icon: null,
     sort_order: 0,
     is_system: false,
+    system_key: null,
     archived_at: null,
     created_by: "user-a",
     created_at: "2026-01-01T00:00:00Z",
@@ -70,6 +71,15 @@ const OWNER_B = "22222222-2222-2222-2222-222222222222";
 const HOUSEHOLD_ID = "33333333-3333-3333-3333-333333333333";
 
 const fixtures: Category[] = [
+  makeCategory({
+    id: "system-expense",
+    scope: null,
+    owner_user_id: null,
+    is_system: true,
+    system_key: "expense.food",
+    created_by: null,
+    name: "อาหารและเครื่องดื่ม",
+  }),
   makeCategory({ id: "expense-own", transaction_type: "EXPENSE", owner_user_id: OWNER_A }),
   makeCategory({
     id: "expense-archived",
@@ -103,7 +113,7 @@ describe("listCategoriesForWallet: personal wallet", () => {
     // Excludes: another owner's expense category, and the archived one —
     // proves requirements 1 (EXPENSE only), 3 (this wallet's owner only),
     // and 5 (archived excluded) together.
-    expect(result.map((c) => c.id)).toEqual(["expense-own"]);
+    expect(result.map((c) => c.id)).toEqual(["system-expense", "expense-own"]);
   });
 
   it("lists only active INCOME categories owned by the wallet's owner, including subcategories", async () => {
@@ -127,6 +137,6 @@ describe("listCategoriesForWallet: household wallet", () => {
       wallet: { scope: "HOUSEHOLD", owner_user_id: null, household_id: HOUSEHOLD_ID },
     });
 
-    expect(result.map((c) => c.id)).toEqual(["household-expense"]);
+    expect(result.map((c) => c.id)).toEqual(["system-expense", "household-expense"]);
   });
 });
