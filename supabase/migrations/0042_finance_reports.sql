@@ -8,18 +8,18 @@ with base as(
  where t.deleted_at is null and t.transaction_type in('INCOME','EXPENSE') and t.occurred_at>=p_start and t.occurred_at<p_end
  and t.scope=p_scope and(p_scope='PERSONAL'or t.household_id=p_household_id)
 ),months as(
- select to_char(date_trunc('month',occurred_at at time zone 'Asia/Bangkok'),'YYYY-MM')month,currency,
- coalesce(sum(amount)filter(where transaction_type='INCOME'),0)::text income,
- coalesce(sum(-amount)filter(where transaction_type='EXPENSE'),0)::text expense
+ select to_char(date_trunc('month',occurred_at at time zone 'Asia/Bangkok'),'YYYY-MM') as month_key,currency,
+ coalesce(sum(amount) filter (where transaction_type='INCOME'),0)::text as income,
+ coalesce(sum(-amount) filter (where transaction_type='EXPENSE'),0)::text as expense
  from base group by 1,currency order by 1,currency
 ),categories as(
- select b.transaction_type,b.category_id,coalesce(c.name,'ไม่ทราบหมวดหมู่')name,b.currency,
- (case when b.transaction_type='EXPENSE'then sum(-b.amount)else sum(b.amount)end)::text amount
+ select b.transaction_type,b.category_id,coalesce(c.name,'ไม่ทราบหมวดหมู่') as name,b.currency,
+ (case when b.transaction_type='EXPENSE'then sum(-b.amount)else sum(b.amount)end)::text as amount
  from base b left join public.categories c on c.id=b.category_id
  group by b.transaction_type,b.category_id,c.name,b.currency order by b.transaction_type,b.currency,sum(abs(b.amount))desc
 )
 select jsonb_build_object(
- 'months',coalesce((select jsonb_agg(jsonb_build_object('month',month,'currency',currency,'income',income,'expense',expense)order by month,currency)from months),'[]'::jsonb),
+ 'months',coalesce((select jsonb_agg(jsonb_build_object('month',month_key,'currency',currency,'income',income,'expense',expense) order by month_key,currency) from months),'[]'::jsonb),
  'categories',coalesce((select jsonb_agg(jsonb_build_object('type',transaction_type,'category_id',category_id,'name',name,'currency',currency,'amount',amount))from categories),'[]'::jsonb)
 )
 $$;
