@@ -31,7 +31,7 @@ export function WalletTransferForm({
   const today = new Date().toLocaleDateString("en-CA");
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
       <input type="hidden" name="fromWalletId" value={fromWallet.id} />
 
       <Field label="จากกระเป๋าเงิน" htmlFor="fromPocketId">

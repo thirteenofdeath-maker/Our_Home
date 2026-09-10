@@ -8,6 +8,7 @@ import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { cn } from "@/lib/utils/cn";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export default async function CategoriesPage({
   searchParams,
@@ -30,7 +31,7 @@ export default async function CategoriesPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">หมวดหมู่</h1>
+      <PageHeader title="หมวดหมู่" fallbackHref="/finance" />
 
       <div className="flex gap-2">
         <TabLink href={`/categories?type=EXPENSE&scope=${activeScope}`} active={transactionType === "EXPENSE"}>

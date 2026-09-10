@@ -27,7 +27,6 @@ export default async function BudgetsPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">งบประมาณ</h1>
 
       <div className="flex items-center justify-between">
         <Link href={`/finance/budgets?month=${prevMonth}`} className={buttonClassName("secondary", "md", "w-auto px-3")}>

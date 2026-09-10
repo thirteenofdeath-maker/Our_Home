@@ -10,6 +10,8 @@ describe("global quick add", () => {
     expect(html).toContain("/finance/quick-add?walletId=w1");
     expect(html).toContain('aria-label="เพิ่มรายการการเงิน"');
     expect(html).toContain("size-14");
+    expect(html).toContain("left-1/2");
+    expect(html).toContain("safe-area-inset-bottom");
   });
   it("reuses existing Income Expense and Transfer routes", () => {
     const html = renderToStaticMarkup(createElement(QuickAddChoices, { walletId: "w1" }));

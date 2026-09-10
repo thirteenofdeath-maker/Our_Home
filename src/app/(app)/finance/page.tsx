@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
+import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
 import { BudgetCard } from "@/features/budgets/components/BudgetCard";
 import { listBills, listBillOccurrences, materializeBills } from "@/features/bills/api";
@@ -67,14 +68,15 @@ export default async function FinancePage() {
         <h1 className="text-xl font-semibold">การเงิน</h1>
       </header>
 
-      <Card className="flex flex-col gap-4 border-primary/20 bg-primary/10">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">ยอดรวม</p>
+      <Card className="relative min-h-40 overflow-hidden rounded-[1.5rem] bg-finance-hero p-5 text-white shadow-card">
+        <div className="relative z-[1] flex h-full flex-col justify-between gap-5">
+          <div>
+          <p className="text-sm font-medium text-white/75">ยอดเงินทั้งหมด</p>
           {/* One line per currency — never summed together (see docs/DOMAIN_RULES.md). */}
           <div className="mt-1 flex flex-col gap-2">
             {summary.currencyTotals.length ? (
               summary.currencyTotals.map((total) => (
-                <p key={total.currency} className="text-3xl font-semibold tabular-nums">
+                <p key={total.currency} className="text-3xl font-semibold tabular-nums text-white">
                   {formatCurrency(total.amount, total.currency)}
                 </p>
               ))
@@ -82,44 +84,44 @@ export default async function FinancePage() {
               <p className="text-2xl font-semibold tabular-nums">฿0.00</p>
             )}
           </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
+          </div>
+        <div className="flex flex-col gap-2 text-white">
           {summary.monthTotals.length ? (
             summary.monthTotals.map((total) => (
               <div key={total.currency} className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-sm text-foreground-muted">รายรับเดือนนี้ ({total.currency})</p>
-                  <p className="font-semibold tabular-nums text-income">{formatCurrency(total.income, total.currency)}</p>
+                  <p className="text-xs text-white/70">รายรับเดือนนี้ ({total.currency})</p>
+                  <p className="font-semibold tabular-nums">{formatCurrency(total.income, total.currency)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-foreground-muted">รายจ่ายเดือนนี้ ({total.currency})</p>
-                  <p className="font-semibold tabular-nums text-expense">{formatCurrency(total.expense, total.currency)}</p>
+                  <p className="text-xs text-white/70">รายจ่ายเดือนนี้ ({total.currency})</p>
+                  <p className="font-semibold tabular-nums">{formatCurrency(total.expense, total.currency)}</p>
                 </div>
               </div>
             ))
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-sm text-foreground-muted">รายรับเดือนนี้</p>
-                <p className="font-semibold tabular-nums text-income">฿0.00</p>
+                <p className="text-xs text-white/70">รายรับเดือนนี้</p>
+                <p className="font-semibold tabular-nums">฿0.00</p>
               </div>
               <div>
-                <p className="text-sm text-foreground-muted">รายจ่ายเดือนนี้</p>
-                <p className="font-semibold tabular-nums text-expense">฿0.00</p>
+                <p className="text-xs text-white/70">รายจ่ายเดือนนี้</p>
+                <p className="font-semibold tabular-nums">฿0.00</p>
               </div>
             </div>
           )}
-        </div>
+        </div></div>
+        <div aria-hidden="true" className="absolute -right-5 -top-5 flex size-32 items-center justify-center rounded-full bg-white/10 text-white/35"><AppIcon name="finance" className="size-16" /></div>
       </Card>
 
       {initialWallet ? (
         <Card className="flex flex-col gap-3">
           <div><h2 className="font-semibold">เพิ่มรายการ</h2><p className="text-sm text-foreground-muted">บันทึกรายรับ รายจ่าย หรือโอนเงิน</p></div>
           <section className="grid grid-cols-3 gap-2" aria-label="เพิ่มรายการด่วน">
-            <Link href={financeIncomeHref(initialWallet.id)} className="flex min-h-12 items-center justify-center rounded-control border border-income/20 bg-income/10 px-2 text-sm font-medium text-income">+ รายรับ</Link>
-            <Link href={financeExpenseHref(initialWallet.id)} className="flex min-h-12 items-center justify-center rounded-control border border-expense/20 bg-expense/10 px-2 text-sm font-medium text-expense">− รายจ่าย</Link>
-            <Link href={financeTransferHref(initialWallet.id)} className="flex min-h-12 items-center justify-center rounded-control border border-transfer/20 bg-transfer/10 px-2 text-sm font-medium text-transfer">↔ โอนเงิน</Link>
+            <Link href={financeIncomeHref(initialWallet.id)} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-card bg-income/10 px-2 text-sm font-medium"><span className="flex size-11 items-center justify-center rounded-full bg-income/20 text-income"><AppIcon name="income" /></span><span>รายรับ</span></Link>
+            <Link href={financeExpenseHref(initialWallet.id)} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-card bg-expense/10 px-2 text-sm font-medium"><span className="flex size-11 items-center justify-center rounded-full bg-expense/20 text-expense"><AppIcon name="expense" /></span><span>รายจ่าย</span></Link>
+            <Link href={financeTransferHref(initialWallet.id)} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-card bg-secondary/70 px-2 text-sm font-medium"><span className="flex size-11 items-center justify-center rounded-full bg-transfer/15 text-transfer"><AppIcon name="transfer" /></span><span>โอนเงิน</span></Link>
           </section>
         </Card>
       ) : (
@@ -225,49 +227,21 @@ export default async function FinancePage() {
 
       {debts.some((debt) => !debt.archivedAt) ? <section className="flex flex-col gap-2"><div className="flex justify-between"><h2 className="font-semibold">หนี้และเงินยืม</h2><Link href="/finance/debts" className="text-sm text-primary">ดูทั้งหมด</Link></div>{debts.filter((debt) => !debt.archivedAt).slice(0,3).map((debt)=><Card key={debt.id} className="flex justify-between"><span>{debt.name}</span><span>{formatCurrency(debt.outstanding,debt.currency)}</span></Card>)}</section>:null}
 
-      <section>
-        <h2 className="mb-2 font-semibold">เครื่องมือการเงิน</h2>
-        <Card className="grid grid-cols-2 gap-2">
-          <Link href="/wallets" className="flex min-h-11 items-center text-primary">
-            กระเป๋าเงินและ Pocket
-          </Link>
-          <Link href="/categories" className="flex min-h-11 items-center text-primary">
-            หมวดหมู่
-          </Link>
-          <Link href="/finance/transactions" className="flex min-h-11 items-center text-primary">
-            ประวัติรายการ
-          </Link>
-          <Link href="/finance/tags" className="flex min-h-11 items-center text-primary">
-            แท็ก
-          </Link>
-          <Link href="/finance/budgets" className="flex min-h-11 items-center text-primary">
-            งบประมาณ
-          </Link>
-          <Link href="/finance/templates" className="flex min-h-11 items-center text-primary">
-            Template รายการ
-          </Link>
-          <Link href="/finance/recurring" className="flex min-h-11 items-center text-primary">
-            รายการประจำ
-          </Link>
-          <Link href="/finance/bills" className="flex min-h-11 items-center text-primary">
-            บิลและกำหนดจ่าย
-          </Link>
-          <Link href="/finance/installments" className="flex min-h-11 items-center text-primary">
-            แผนผ่อนชำระ
-          </Link>
-          <Link href="/finance/goals" className="flex min-h-11 items-center text-primary">เป้าหมายการออม</Link>
-          <Link href="/finance/debts" className="flex min-h-11 items-center text-primary">หนี้และเงินยืม</Link>
-          <Link href="/finance/reports" className="flex min-h-11 items-center text-primary">รายงานการเงิน</Link>
-          <Link href="/finance/import" className="flex min-h-11 items-center text-primary">นำเข้า CSV</Link>
-          <Link href="/finance/export" className="flex min-h-11 items-center text-primary">ส่งออก CSV</Link>
-          <Link href="/finance/net-worth" className="flex min-h-11 items-center text-primary">มูลค่าสุทธิ</Link>
-          <Link href="/finance/insights" className="flex min-h-11 items-center text-primary">ข้อมูลเชิงลึก</Link>
-          {initialWallet ? (
-            <Link href={financeTransferHref(initialWallet.id)} className="flex min-h-11 items-center text-primary">
-              โอนเงิน
-            </Link>
-          ) : null}
-        </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="font-semibold">เครื่องมือการเงิน</h2>
+        {[
+          { title: "จัดการเงิน", icon: "wallet" as const, items: [["/wallets", "กระเป๋าเงินและ Pocket"], ["/categories", "หมวดหมู่"], ["/finance/tags", "แท็ก"]] },
+          { title: "วางแผน", icon: "calendar" as const, items: [["/finance/budgets", "งบประมาณ"], ["/finance/recurring", "รายการประจำ"], ["/finance/bills", "บิลและกำหนดจ่าย"], ["/finance/installments", "แผนผ่อนชำระ"], ["/finance/goals", "เป้าหมายการออม"], ["/finance/debts", "หนี้และเงินยืม"]] },
+          { title: "วิเคราะห์", icon: "finance" as const, items: [["/finance/reports", "รายงานการเงิน"], ["/finance/net-worth", "มูลค่าสุทธิ"], ["/finance/insights", "ข้อมูลเชิงลึก"]] },
+          { title: "ข้อมูล", icon: "transfer" as const, items: [["/finance/import", "นำเข้า CSV"], ["/finance/export", "ส่งออก CSV"]] },
+        ].map((group) => (
+          <div key={group.title}>
+            <h3 className="mb-2 text-sm font-medium text-foreground-muted">{group.title}</h3>
+            <Card className="divide-y divide-border p-0">
+              {group.items.map(([href, label]) => <Link key={href} href={href} className="flex min-h-13 items-center gap-3 px-4"><span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-primary"><AppIcon name={group.icon} className="size-4" /></span><span className="flex-1 text-sm font-medium">{label}</span><AppIcon name="chevron" className="size-4 text-foreground-muted" /></Link>)}
+            </Card>
+          </div>
+        ))}
       </section>
     </div>
   );

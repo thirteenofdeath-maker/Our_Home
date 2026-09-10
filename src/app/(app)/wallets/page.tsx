@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getWalletBalance, listArchivedWallets, listMyWallets } from "@/features/wallets/api";
@@ -23,7 +24,7 @@ export default async function WalletsPage() {
       <PageHeader
         title="กระเป๋าเงิน"
         fallbackHref="/finance"
-        rightAction={<Link href="/wallets/new" aria-label="เพิ่มกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full bg-primary text-xl text-primary-foreground">+</Link>}
+        rightAction={<Link href="/wallets/new" aria-label="เพิ่มกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full text-primary hover:bg-primary-soft"><AppIcon name="plus" /></Link>}
       />
 
       <section className="flex flex-col gap-2">
@@ -68,9 +69,9 @@ export default async function WalletsPage() {
 function WalletCard({ id, name, balance, currency, scope }: { id: string; name: string; balance: string; currency: string; scope: string }) {
   return (
     <Link href={`/wallets/${id}`} className="block min-h-11 rounded-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-      <Card className="flex min-h-16 items-center justify-between gap-3">
-        <span><span className="block font-medium">{name}</span><span className="text-xs text-foreground-muted">{currency} · {scope}</span></span>
-        <span className="flex items-center gap-3"><span className="tabular-nums font-medium">{formatCurrency(balance, currency)}</span><span aria-hidden="true" className="text-xl text-foreground-muted">›</span></span>
+      <Card className="flex min-h-18 items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"><AppIcon name="wallet" /></span><span><span className="block truncate font-medium">{name}</span><span className="text-xs text-foreground-muted">{currency} · {scope}</span></span></span>
+        <span className="flex shrink-0 items-center gap-2"><span className="tabular-nums font-semibold">{formatCurrency(balance, currency)}</span><AppIcon name="chevron" className="size-5 text-foreground-muted" /></span>
       </Card>
     </Link>
   );

@@ -12,7 +12,7 @@ export function AddPocketForm({ walletId }: { walletId: string }) {
   const [state, formAction] = useActionState(createPocketAction, initialActionState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
       <input type="hidden" name="walletId" value={walletId} />
       <Input id="name" name="name" placeholder="เช่น Food, Travel" required autoFocus />
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}

@@ -34,7 +34,6 @@ export default async function RecurringPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">รายการประจำ</h1>
 
       {household ? (
         <div className="flex gap-2">

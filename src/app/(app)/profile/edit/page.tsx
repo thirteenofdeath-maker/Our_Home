@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { Card } from "@/components/ui/Card";
+import { SignOutForm } from "@/features/auth/components/SignOutForm";
 import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
 import { getAvatarDisplayUrl, getCurrentProfile } from "@/features/profile/api";
 import { ProfileEditForm } from "@/features/profile/components/ProfileEditForm";
@@ -31,6 +32,11 @@ export default async function EditProfilePage() {
           avatarUrl={avatarUrl}
         />
       </Card>
+
+      <section className="flex flex-col gap-3 border-t border-border pt-5">
+        <h2 className="font-semibold">บัญชี</h2>
+        <SignOutForm />
+      </section>
     </div>
   );
 }

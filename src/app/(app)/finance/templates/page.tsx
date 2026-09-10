@@ -24,7 +24,6 @@ export default async function TemplatesPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Template รายการ</h1>
 
       {household ? (
         <div className="flex gap-2">

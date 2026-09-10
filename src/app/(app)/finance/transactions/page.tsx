@@ -82,16 +82,13 @@ export default async function TransactionSearchPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-semibold">ประวัติรายการ</h1>
-      </header>
 
       <form className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4" method="GET">
         <Field label="ค้นหา (ชื่อรายการ/โน้ต)" htmlFor="q">
           <Input id="q" name="q" type="text" defaultValue={params.q ?? ""} placeholder="เช่น กาแฟ" />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
           <Field label="จากวันที่" htmlFor="dateFrom">
             <Input id="dateFrom" name="dateFrom" type="date" defaultValue={params.dateFrom ?? ""} />
           </Field>

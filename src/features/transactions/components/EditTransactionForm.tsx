@@ -13,7 +13,6 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { updateIncomeExpenseAction } from "../actions";
 import type { TransactionDetail } from "../api";
-import { ExpenseCategorySelect } from "./ExpenseCategorySelect";
 
 /**
  * Mirrors TransactionForm (create), pre-filled from an existing
@@ -61,9 +60,6 @@ export function EditTransactionForm({
       </Field>
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
-        {transaction.transactionType === "EXPENSE" ? (
-          <ExpenseCategorySelect categories={categories} defaultValue={transaction.categoryId ?? ""} />
-        ) : (
           <CategoryPicker
             name="categoryId"
             categories={categories}
@@ -71,7 +67,6 @@ export function EditTransactionForm({
             walletId={walletId}
             defaultSelected={transaction.categoryId ? { id: transaction.categoryId, label: transaction.categoryName ?? "" } : null}
           />
-        )}
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">

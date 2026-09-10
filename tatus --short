@@ -1,0 +1,85 @@
+warning: in the working copy of 'src/app/(app)/categories/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/bills/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/budgets/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/debts/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/export/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/goals/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/import/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/insights/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/installments/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/net-worth/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/quick-add/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/recurring/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/reports/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/tags/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/templates/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/finance/transactions/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/profile/edit/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/wallets/[walletId]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(app)/wallets/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/shared/BottomNav.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/shared/GlobalQuickAdd.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/shared/GlobalQuickAdd.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/shared/PageHeader.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/shared/PageHeader.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ui/BottomSheet.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ui/Button.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ui/Card.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/ui/Field.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/categories/components/CategoryPicker.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/finance/finance-mobile-ui.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/pockets/components/AddPocketForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/pockets/components/PocketCreateLink.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/pockets/components/PocketCreateLink.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/pockets/components/PocketManagerList.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/transactions/components/EditTransactionForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/transactions/components/PocketTransferForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/transactions/components/TransactionForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/transactions/components/WalletTransferForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/features/wallets/components/WalletForm.tsx', LF will be replaced by CRLF the next time Git touches it
+ src/app/(app)/categories/page.tsx                  |  3 [32m+[m[31m-[m
+ src/app/(app)/finance/bills/page.tsx               |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/budgets/page.tsx             |  1 [31m-[m
+ src/app/(app)/finance/debts/page.tsx               |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/export/page.tsx              |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/goals/page.tsx               |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/import/page.tsx              |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/insights/page.tsx            |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/installments/page.tsx        |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/net-worth/page.tsx           |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/page.tsx                     | 98 [32m++++++++[m[31m--------------[m
+ src/app/(app)/finance/quick-add/page.tsx           |  2 [31m-[m
+ src/app/(app)/finance/recurring/page.tsx           |  1 [31m-[m
+ src/app/(app)/finance/reports/page.tsx             |  2 [32m+[m[31m-[m
+ src/app/(app)/finance/tags/page.tsx                |  1 [31m-[m
+ src/app/(app)/finance/templates/page.tsx           |  1 [31m-[m
+ src/app/(app)/finance/transactions/page.tsx        |  5 [32m+[m[31m-[m
+ src/app/(app)/layout.tsx                           | 30 [32m+++[m[31m----[m
+ src/app/(app)/profile/edit/page.tsx                |  6 [32m++[m
+ src/app/(app)/wallets/[walletId]/page.tsx          | 30 [32m+++[m[31m----[m
+ src/app/(app)/wallets/page.tsx                     |  9 [32m+[m[31m-[m
+ src/app/globals.css                                | 31 [32m++++[m[31m---[m
+ src/components/shared/BottomNav.tsx                | 18 [32m++[m[31m--[m
+ src/components/shared/GlobalQuickAdd.test.ts       |  2 [32m+[m
+ src/components/shared/GlobalQuickAdd.tsx           | 11 [32m+[m[31m--[m
+ src/components/shared/PageHeader.test.ts           |  2 [32m+[m[31m-[m
+ src/components/shared/PageHeader.tsx               |  7 [32m+[m[31m-[m
+ src/components/ui/BottomSheet.tsx                  |  4 [32m+[m[31m-[m
+ src/components/ui/Button.tsx                       |  4 [32m+[m[31m-[m
+ src/components/ui/Card.tsx                         |  2 [32m+[m[31m-[m
+ src/components/ui/Field.tsx                        |  2 [32m+[m[31m-[m
+ .../categories/components/CategoryPicker.tsx       | 62 [32m++++++++++[m[31m----[m
+ src/features/finance/finance-mobile-ui.test.ts     | 13 [32m++[m[31m-[m
+ src/features/pockets/components/AddPocketForm.tsx  |  2 [32m+[m[31m-[m
+ .../pockets/components/PocketCreateLink.test.ts    |  2 [32m+[m[31m-[m
+ .../pockets/components/PocketCreateLink.tsx        |  6 [32m+[m[31m-[m
+ .../pockets/components/PocketManagerList.tsx       | 39 [32m++++++[m[31m---[m
+ .../components/EditTransactionForm.tsx             |  5 [31m--[m
+ .../transactions/components/PocketTransferForm.tsx |  2 [32m+[m[31m-[m
+ .../transactions/components/TransactionForm.tsx    |  7 [32m+[m[31m-[m
+ .../transactions/components/WalletTransferForm.tsx |  2 [32m+[m[31m-[m
+ src/features/wallets/components/WalletForm.tsx     |  2 [32m+[m[31m-[m
+ 42 files changed, 228 insertions(+), 202 deletions(-)

@@ -12,7 +12,6 @@ import type { TagOption } from "@/features/tags/types";
 import { initialActionState } from "@/lib/types/action-state";
 
 import { createIncomeExpenseAction } from "../actions";
-import { ExpenseCategorySelect } from "./ExpenseCategorySelect";
 import { TransactionWalletSelect, type TransactionWalletOption } from "./TransactionWalletSelect";
 import { postRecurringOccurrenceAction } from "@/features/recurring/actions";
 
@@ -100,7 +99,7 @@ export function TransactionForm({
   }, [categories, transactionType]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
       <input type="hidden" name="walletId" value={walletId} />
       <input type="hidden" name="transactionType" value={transactionType} />
       {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
@@ -140,9 +139,6 @@ export function TransactionForm({
       </Field>
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
-        {transactionType === "EXPENSE" ? (
-          <ExpenseCategorySelect categories={categories} defaultValue={defaultCategoryId ?? ""} />
-        ) : (
           <CategoryPicker
             name="categoryId"
             categories={categories}
@@ -150,7 +146,6 @@ export function TransactionForm({
             walletId={walletId}
             defaultSelected={defaultCategoryId ? { id: defaultCategoryId, label: defaultCategoryLabel ?? "" } : null}
           />
-        )}
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">

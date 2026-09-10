@@ -22,7 +22,6 @@ export default async function TagsPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">แท็ก</h1>
 
       {household ? (
         <div className="flex gap-2">

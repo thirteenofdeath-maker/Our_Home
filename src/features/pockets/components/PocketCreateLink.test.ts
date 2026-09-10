@@ -11,7 +11,7 @@ describe("PocketCreateLink", () => {
 
     expect(html).toContain("<a ");
     expect(html).toContain(`href="/wallets/${walletId}/pockets/new"`);
-    expect(html).toContain("+ เพิ่ม Pocket</a>");
+    expect(html).toContain("+ เพิ่ม</a>");
     expect(html).not.toContain("<button");
   });
 });

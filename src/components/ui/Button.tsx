@@ -7,7 +7,7 @@ type Size = "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
   primary: "bg-primary text-primary-foreground hover:opacity-90",
-  secondary: "bg-surface-muted text-foreground hover:opacity-80 border border-border",
+  secondary: "bg-primary-soft text-foreground hover:brightness-95",
   ghost: "bg-transparent text-foreground hover:bg-surface-muted",
   danger: "bg-danger text-danger-foreground hover:opacity-90",
 };
@@ -19,7 +19,7 @@ const sizeClasses: Record<Size, string> = {
 
 export function buttonClassName(variant: Variant = "primary", size: Size = "md", className?: string) {
   return cn(
-    "inline-flex w-full items-center justify-center gap-2 rounded-control font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex w-full items-center justify-center gap-2 rounded-control font-medium shadow-sm transition-[transform,filter,opacity,background-color] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50",
     variantClasses[variant],
     sizeClasses[size],
     className,

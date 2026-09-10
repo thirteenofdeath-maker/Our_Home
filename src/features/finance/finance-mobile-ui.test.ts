@@ -26,7 +26,7 @@ describe("approved mobile Finance UI", () => {
   it("preserves Personal and Household Wallet grouping with tappable cards", () => {
     expect(wallets).toContain('w.wallet.scope === "PERSONAL"');
     expect(wallets).toContain('w.wallet.scope === "HOUSEHOLD"');
-    expect(wallets).toContain("min-h-16");
+    expect(wallets).toContain("min-h-18");
     expect(wallets).toContain("PageHeader");
   });
 
@@ -35,6 +35,17 @@ describe("approved mobile Finance UI", () => {
     expect(walletDetail).toContain("<PocketManagerList");
     expect(walletDetail).toContain("<PocketCreateLink");
     expect(read("src/features/pockets/components/PocketManagerList.tsx")).toContain("<RenamePocketForm");
+    expect(walletDetail).toContain("/manage`");
+    expect(walletDetail).toContain("<PocketManagerList compact");
+  });
+
+  it("keeps wallet management controls off the wallet overview", () => {
+    expect(walletDetail).not.toContain("<RenameWalletForm");
+    expect(walletDetail).not.toContain("<WalletLifecycleControls");
+    const management = read("src/app/(app)/wallets/[walletId]/manage/page.tsx");
+    expect(management).toContain("<RenameWalletForm");
+    expect(management).toContain("<WalletLifecycleControls");
+    expect(management).toContain("<PocketManagerList");
   });
 
   it("does not add or change finance writers in the UI pass", () => {

@@ -12,7 +12,7 @@ describe("PageHeader", () => {
     expect(html).toContain('aria-label="ย้อนกลับ"');
     expect(html).toContain("size-11");
     expect(html).toContain("กระเป๋าเงิน");
-    expect(html).toContain("‹");
+    expect(html).toContain("<svg");
   });
 
   it("supports a right-side action", () => {

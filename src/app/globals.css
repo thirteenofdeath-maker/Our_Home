@@ -6,26 +6,30 @@
  * manual dark-mode toggle later) means editing this block only.
  */
 :root {
-  --color-background: #f7f7f5;
+  --color-background: #f5f3ee;
   --color-surface: #ffffff;
-  --color-surface-muted: #f0f0ee;
-  --color-border: #e4e4e1;
-  --color-foreground: #1c1c1a;
-  --color-foreground-muted: #6b6b66;
+  --color-surface-muted: #f8f7f3;
+  --color-border: #e9e6df;
+  --color-foreground: #39413d;
+  --color-foreground-muted: #88918c;
 
-  --color-primary: #2f6f4f;
+  --color-primary: #718d7a;
   --color-primary-foreground: #ffffff;
+  --color-primary-soft: #dde8df;
+  --color-secondary: #dce6ee;
 
-  --color-income: #2f6f4f;
-  --color-expense: #b3492f;
-  --color-transfer: #4a5a8f;
+  --color-income: #789b63;
+  --color-expense: #e96c55;
+  --color-transfer: #66859d;
+  --finance-hero: #49675a;
 
   --color-danger: #b3492f;
   --color-danger-foreground: #ffffff;
 
   --radius-control: 0.75rem;
-  --radius-card: 1rem;
+  --radius-card: 1.25rem;
   --radius-sheet: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +47,7 @@
     --color-income: #6fbf94;
     --color-expense: #e58a70;
     --color-transfer: #93a4e0;
+    --finance-hero: #355246;
 
     --color-danger: #e58a70;
     --color-danger-foreground: #2a120b;
@@ -58,14 +63,18 @@
   --color-foreground-muted: var(--color-foreground-muted);
   --color-primary: var(--color-primary);
   --color-primary-foreground: var(--color-primary-foreground);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-secondary: var(--color-secondary);
   --color-income: var(--color-income);
   --color-expense: var(--color-expense);
   --color-transfer: var(--color-transfer);
+  --color-finance-hero: var(--finance-hero);
   --color-danger: var(--color-danger);
   --color-danger-foreground: var(--color-danger-foreground);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
   --radius-sheet: var(--radius-sheet);
+  --shadow-card: var(--shadow-card);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -73,4 +82,6 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }

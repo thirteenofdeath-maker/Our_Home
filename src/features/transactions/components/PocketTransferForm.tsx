@@ -17,7 +17,7 @@ export function PocketTransferForm({ walletId, pockets, tags }: { walletId: stri
   const defaults = getPocketTransferDefaults(pockets);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
       <input type="hidden" name="walletId" value={walletId} />
 
       <Field label="จากช่อง" htmlFor="fromPocketId">

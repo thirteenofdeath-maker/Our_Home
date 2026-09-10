@@ -27,7 +27,7 @@ export function WalletForm({
   const [scope, setScope] = useState(defaultScope);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
       <Field label="ชื่อกระเป๋าเงิน" htmlFor="name">
         <Input id="name" name="name" type="text" placeholder="เช่น KBank, เงินสด" required />
       </Field>

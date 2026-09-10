@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cn } from "@/lib/utils/cn";
 
 const controlClassName =
-  "h-12 w-full rounded-control border border-border bg-surface px-3 text-base text-foreground outline-none focus:border-primary";
+  "h-13 w-full rounded-control border border-border/70 bg-surface px-4 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-3 focus:ring-primary-soft";
 
 export function Field({
   label,
