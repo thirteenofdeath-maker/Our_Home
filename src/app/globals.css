@@ -55,20 +55,35 @@
 }
 
 /*
- * Finance Design V2 (Phase 1) — a distinct, self-contained token set for
- * the "soft finance dashboard" direction, scoped to `.finance-scope`
- * rather than touching the tokens above. Pets/Calendar/Household (and
- * every finance subpage not yet redesigned — budgets/bills/etc.) never
- * apply this class, so they render exactly as before. Only the four
- * Phase 1 screens (/finance, /finance/transactions, /wallets,
- * /wallets/[walletId]) wrap their content in `.finance-scope`.
+ * Finance Design V2 — a distinct, self-contained token set for the "soft
+ * finance dashboard" direction. Pets/Calendar/Household never apply
+ * either class below, so they render exactly as before.
  *
- * No dark-mode variant yet — these four screens render with this light
- * palette regardless of system theme for now (the reference direction is
- * an explicitly light dashboard); revisit if/when the rest of Finance
- * moves to this system.
+ * Split into two classes so the token set itself never depends on an
+ * ancestor also opting in:
+ *
+ * `.finance-vars` defines ONLY the --finance-* custom properties — no
+ * background-color/color of its own. Apply this directly to any element
+ * that already carries its own bg-finance and text-finance Tailwind
+ * utilities (e.g. BottomSheet's dialog in finance tone), so the
+ * dialog's finance tone is self-contained and correct even when the
+ * trigger that opened it isn't nested inside a .finance-scope
+ * ancestor. Never combine .finance-vars/.finance-scope with a
+ * competing bg or text utility that ALSO comes from this same class on
+ * the SAME element — .finance-vars avoids that by not setting either.
+ *
+ * `.finance-scope` is `.finance-vars` PLUS background-color/color set
+ * directly — for page-level wrappers that want the whole subtree
+ * tinted, unchanged from before this split.
+ *
+ * No dark-mode variant yet — finance-toned surfaces render with this
+ * light palette regardless of system theme for now (the reference
+ * direction is an explicitly light dashboard); revisit if/when the rest
+ * of Finance moves to this system.
  */
-.finance-scope {
+.finance-vars,
+.finance-scope,
+.finance-ui-tone {
   --finance-background: #eef1f4;
   --finance-surface: #fafbfc;
   --finance-surface-strong: #ffffff;
@@ -85,9 +100,59 @@
   --finance-transfer: #7996aa;
 
   --finance-warning: #c99a3d;
+}
 
+.finance-scope {
   background-color: var(--finance-background);
   color: var(--finance-text);
+}
+
+/*
+ * Finance UI tone — the fix for "Finance form sheets visually contain
+ * the old generic form UI inside the new Finance V2 sheet". The shared
+ * Field/Input/Select/Textarea/Button primitives (src/components/ui)
+ * are NOT restyled — they keep reading the exact same generic --color-*
+ * tokens they always have (bg-surface, border-border, text-foreground,
+ * text-foreground-muted, bg-primary, bg-primary-soft, ...). This class
+ * simply LOCALLY REDEFINES those same --color-* custom properties to
+ * their Finance V2 equivalents for everything inside it, the same
+ * mechanism `.finance-vars` already uses for the sheet chrome itself.
+ * Outside `.finance-ui-tone` (Pets/Calendar/Household/onboarding/every
+ * other generic page), the tokens are untouched — those primitives
+ * render exactly as before.
+ *
+ * `--color-danger`/`--color-danger-foreground` are deliberately NOT
+ * listed here — validation errors and destructive actions must stay
+ * visually distinct from the Finance accent palette, never remapped to
+ * it (a real ConfirmDialog is also never wrapped in this class at all —
+ * destructive confirmations stay outside Finance form tone entirely).
+ *
+ * Applied directly on each Finance domain form's own outer element
+ * (TransactionForm, WalletForm, AddPocketForm, PocketTransferForm,
+ * WalletTransferForm, CreateBudgetForm, GoalForm,
+ * CreateInstallmentForm, DebtCreateForm, BillForm,
+ * CreateRecurringForm, CreateTemplateForm, CategoryPicker, TagPicker) —
+ * never conditionally on `variant`, so the exact same full-page routes
+ * that render these forms directly (e.g. /wallets/new,
+ * /finance/budgets/new) get the same Finance V2 form tone as the sheet
+ * versions, with zero page-level changes.
+ *
+ * Self-contained like `.finance-vars`: `.finance-ui-tone` is included in
+ * the shared selector above, so `--finance-*` (including
+ * --finance-income/--finance-expense/--finance-transfer, which Button's
+ * financeIncome/financeExpense/financeTransfer variants read) are
+ * always defined here too — a full-page route with no `.finance-scope`
+ * ancestor still renders correctly.
+ */
+.finance-ui-tone {
+  --color-background: var(--finance-background);
+  --color-surface: var(--finance-surface-strong);
+  --color-surface-muted: var(--finance-background);
+  --color-border: var(--finance-primary-soft);
+  --color-foreground: var(--finance-text);
+  --color-foreground-muted: var(--finance-muted);
+  --color-primary: var(--finance-primary);
+  --color-primary-soft: var(--finance-primary-soft);
 }
 
 @theme inline {

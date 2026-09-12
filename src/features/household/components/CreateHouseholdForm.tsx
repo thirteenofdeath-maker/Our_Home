@@ -8,7 +8,8 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { createHouseholdAction } from "../actions";
 
-export function CreateHouseholdForm() {
+export function CreateHouseholdForm({ variant = "page" }: { variant?: "page" | "sheet" }) {
+  void variant;
   const [state, formAction] = useActionState(createHouseholdAction, initialActionState);
 
   return (

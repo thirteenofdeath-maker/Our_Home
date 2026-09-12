@@ -1,7 +1,7 @@
-import Link from "next/link";
-
 import { Card } from "@/components/ui/Card";
 import { buttonClassName } from "@/components/ui/Button";
+import { AddHouseholdTrigger } from "@/features/household/components/AddHouseholdTrigger";
+import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
 
 export default function OnboardingPage() {
   return (
@@ -14,9 +14,7 @@ export default function OnboardingPage() {
       <Card className="flex flex-col gap-2">
         <h2 className="font-medium">การเงินส่วนตัว</h2>
         <p className="text-sm text-foreground-muted">สร้างกระเป๋าเงินของคุณเอง เช่น บัญชีธนาคารหรือเงินสด — ข้อมูลนี้เห็นเฉพาะคุณ</p>
-        <Link href="/wallets/new?scope=PERSONAL" className={buttonClassName("primary", "md")}>
-          สร้างกระเป๋าเงินส่วนตัว
-        </Link>
+        <AddWalletTrigger triggerClassName={buttonClassName("primary", "md")}>สร้างกระเป๋าเงินส่วนตัว</AddWalletTrigger>
       </Card>
 
       <Card className="flex flex-col gap-2">
@@ -24,9 +22,7 @@ export default function OnboardingPage() {
         <p className="text-sm text-foreground-muted">
           สร้างครอบครัว (คู่รัก คู่สมรส หรือสมาชิกในบ้าน) เพื่อแชร์กระเป๋าเงินร่วมกัน
         </p>
-        <Link href="/household/new" className={buttonClassName("secondary", "md")}>
-          สร้างครอบครัว
-        </Link>
+        <AddHouseholdTrigger triggerClassName={buttonClassName("secondary", "md")}>สร้างครอบครัว</AddHouseholdTrigger>
       </Card>
     </div>
   );

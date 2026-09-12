@@ -8,98 +8,81 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { BottomNav, NAV_ITEMS } from "./BottomNav";
-import { GlobalQuickAdd } from "./GlobalQuickAdd";
 
-describe("Bottom navigation (Finance Hub information architecture)", () => {
+describe("Bottom navigation — pure navigation, exactly four destinations", () => {
   it("points the finance destination at /finance", () => {
     const finance = NAV_ITEMS.find((item) => item.label === "การเงิน");
     expect(finance?.href).toBe("/finance");
   });
 
-  it("does not expose Wallet or Category as competing top-level destinations", () => {
+  it("has exactly four items, and never Wallet/Category/Tasks/Shopping as competing destinations", () => {
+    expect(NAV_ITEMS).toHaveLength(4);
     const hrefs = NAV_ITEMS.map((item) => item.href);
+    expect(hrefs).toEqual(["/finance", "/pets", "/calendar", "/household"]);
     expect(hrefs).not.toContain("/wallets");
     expect(hrefs).not.toContain("/categories");
-  });
-
-  it("preserves Household, Pets, and Calendar, and does not start Tasks or Shopping", () => {
-    const hrefs = NAV_ITEMS.map((item) => item.href);
-    expect(hrefs).toEqual(expect.arrayContaining(["/household", "/pets", "/calendar"]));
     expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/shopping");
   });
 
-  it("always renders exactly four real <a> destinations, on /finance and elsewhere alike", () => {
-    mockPathname = "/finance";
-    const onFinance = renderToStaticMarkup(createElement(BottomNav, { centerAction: createElement("span", null, "add") }));
-    expect((onFinance.match(/<a /g) ?? []).length).toBe(4);
-
-    mockPathname = "/pets";
-    const onPets = renderToStaticMarkup(createElement(BottomNav, { centerAction: createElement("span", null, "add") }));
-    expect((onPets.match(/<a /g) ?? []).length).toBe(4);
+  it("takes no centerAction/quick-add prop at all — it is pure navigation", () => {
+    expect(BottomNav.length).toBe(0);
   });
 
-  it("gives /finance a real center grid cell for the quick-add action, in between the four links (not a 5th destination)", () => {
-    mockPathname = "/finance";
-    const html = renderToStaticMarkup(createElement(BottomNav, { centerAction: createElement("span", { "data-testid": "quick-add" }, "add") }));
-    expect(html).toContain("grid-cols-[1fr_1fr_4rem_1fr_1fr]");
-    expect(html).toContain('data-testid="quick-add"');
-    // The center action sits between "การเงิน"+"สัตว์เลี้ยง" and "ปฏิทิน"+"ครอบครัว".
-    const financeIdx = html.indexOf("การเงิน");
-    const petsIdx = html.indexOf("สัตว์เลี้ยง");
-    const centerIdx = html.indexOf('data-testid="quick-add"');
-    const calendarIdx = html.indexOf("ปฏิทิน");
-    const householdIdx = html.indexOf("ครอบครัว");
-    expect(financeIdx).toBeLessThan(petsIdx);
-    expect(petsIdx).toBeLessThan(centerIdx);
-    expect(centerIdx).toBeLessThan(calendarIdx);
-    expect(calendarIdx).toBeLessThan(householdIdx);
+  it("always renders exactly four real <a> destinations, on every module alike", () => {
+    for (const pathname of ["/finance", "/pets", "/calendar", "/household"]) {
+      mockPathname = pathname;
+      const html = renderToStaticMarkup(createElement(BottomNav));
+      expect((html.match(/<a /g) ?? []).length).toBe(4);
+    }
   });
 
-  it("never shows the center action on other top-level pages, and falls back to the plain four-column layout", () => {
-    mockPathname = "/pets";
-    const html = renderToStaticMarkup(createElement(BottomNav, { centerAction: createElement("span", { "data-testid": "quick-add" }, "add") }));
+  it("always uses a plain 4-column grid — no 5-column center-cell layout survives", () => {
+    mockPathname = "/finance";
+    const html = renderToStaticMarkup(createElement(BottomNav));
+    expect(html).toContain("grid-cols-4");
     expect(html).not.toContain("grid-cols-[1fr_1fr_4rem_1fr_1fr]");
-    expect(html).not.toContain('data-testid="quick-add"');
+    expect(html).not.toContain("4rem_1fr_1fr");
   });
 
-  it("keeps the safe-area bottom padding on the nav bar itself", () => {
+  it("keeps the safe-area bottom padding/offset on the nav bar itself", () => {
     mockPathname = "/finance";
-    const html = renderToStaticMarkup(createElement(BottomNav, {}));
+    const html = renderToStaticMarkup(createElement(BottomNav));
     expect(html).toContain("safe-area-inset-bottom");
   });
 
-  it("renders the real GlobalQuickAdd as a fifth CELL, not a fifth destination link with nav semantics", () => {
-    mockPathname = "/finance";
-    const html = renderToStaticMarkup(createElement(BottomNav, { centerAction: createElement(GlobalQuickAdd, { walletId: "w1" }) }));
-    // 4 nav <a> + 1 quick-add <a> = 5 anchors total, but only 4 of them
-    // carry an href matching a real NAV_ITEMS destination.
-    expect((html.match(/<a /g) ?? []).length).toBe(5);
-    for (const item of NAV_ITEMS) expect(html).toContain(`href="${item.href}"`);
-    expect(html).toContain('aria-label="เพิ่มรายการการเงิน"');
-    // The quick-add action never participates in "current page" nav
-    // semantics — it has no active/inactive state of its own.
-    expect(html).not.toContain("aria-current");
+  it("keeps a nested route's parent destination active (startsWith, not just exact match)", () => {
+    const cases: Array<[string, string]> = [
+      ["/finance/reports", "/finance"],
+      ["/pets/new", "/pets"],
+      ["/calendar/2026-01-01", "/calendar"],
+      ["/household/members", "/household"],
+    ];
+    for (const [pathname, activeHref] of cases) {
+      mockPathname = pathname;
+      const html = renderToStaticMarkup(createElement(BottomNav));
+      // The active <a> for this destination carries aria-current="page".
+      const activeAnchor = html.match(new RegExp(`<a[^>]*href="${activeHref.replace("/", "\\/")}"[^>]*>`))?.[0] ?? "";
+      expect(activeAnchor, `${pathname} should keep ${activeHref} active`).toContain('aria-current="page"');
+    }
   });
 
-  it("uses the Finance V2 blue-gray palette for the quick-add action, not the older sage-green primary", () => {
-    const html = renderToStaticMarkup(createElement(GlobalQuickAdd, { walletId: "w1" }));
-    expect(html).toContain("bg-finance-primary");
-    expect(html).not.toMatch(/\bbg-primary\b/);
-  });
-
-  it("floats as a rounded capsule on /finance, inset from the screen edges, while staying an edge-to-edge bar elsewhere", () => {
+  it("uses the SAME floating-capsule architecture on every module — only the color tokens differ", () => {
     mockPathname = "/finance";
-    const finance = renderToStaticMarkup(createElement(BottomNav, {}));
+    const finance = renderToStaticMarkup(createElement(BottomNav));
     expect(finance).toContain("finance-scope");
     expect(finance).toContain("inset-x-4");
     expect(finance).toContain("rounded-[2rem]");
     expect(finance).toContain("bg-finance-surface-strong");
 
-    mockPathname = "/pets";
-    const pets = renderToStaticMarkup(createElement(BottomNav, {}));
-    expect(pets).not.toContain("finance-scope");
-    expect(pets).not.toContain("rounded-[2rem]");
-    expect(pets).toContain("inset-x-0");
+    for (const pathname of ["/pets", "/calendar", "/household"]) {
+      mockPathname = pathname;
+      const html = renderToStaticMarkup(createElement(BottomNav));
+      expect(html, `${pathname} should not carry finance-scope`).not.toContain("finance-scope");
+      // Same structural shell as Finance: fixed, inset-x-4, rounded-[2rem].
+      expect(html).toContain("inset-x-4");
+      expect(html).toContain("rounded-[2rem]");
+      expect(html).toContain("bg-surface");
+    }
   });
 });

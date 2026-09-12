@@ -1,2 +1,13 @@
-"use client";import { useActionState } from "react";import { SubmitButton } from "@/components/ui/SubmitButton";import { initialActionState } from "@/lib/types/action-state";import { skipBillAction } from "../actions";
-export function SkipBillForm({occurrenceId}:{occurrenceId:string}){const [state,action]=useActionState(skipBillAction,initialActionState);return <form action={action}><input type="hidden" name="occurrenceId" value={occurrenceId}/><SubmitButton variant="secondary">ข้ามงวดนี้</SubmitButton>{state.error?<p className="text-sm text-danger">{state.error}</p>:null}</form>}
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { skipBillAction } from "../actions";
+export function SkipBillForm({occurrenceId}:{occurrenceId:string}){
+  return <ConfirmDialog
+    action={skipBillAction}
+    hiddenFields={{occurrenceId}}
+    triggerLabel="ข้ามงวดนี้"
+    triggerVariant="secondary"
+    sheetTitle="ข้ามงวดนี้"
+    description="งวดนี้จะถูกข้าม ไม่มีการบันทึกการชำระเงิน"
+    confirmLabel="ข้ามงวดนี้"
+  />;
+}

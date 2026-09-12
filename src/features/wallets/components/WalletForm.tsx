@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
+import { cn } from "@/lib/utils/cn";
 
 import { createWalletAction } from "../actions";
 
@@ -19,15 +20,21 @@ const WALLET_TYPES = [
 export function WalletForm({
   defaultScope,
   hasHousehold,
+  variant = "page",
 }: {
   defaultScope: "PERSONAL" | "HOUSEHOLD";
   hasHousehold: boolean;
+  /** Presentation only — see TransactionForm.tsx's own `variant` doc. */
+  variant?: "page" | "sheet";
 }) {
   const [state, formAction] = useActionState(createWalletAction, initialActionState);
   const [scope, setScope] = useState(defaultScope);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
+    <form
+      action={formAction}
+      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+    >
       <Field label="ชื่อกระเป๋าเงิน" htmlFor="name">
         <Input id="name" name="name" type="text" placeholder="เช่น KBank, เงินสด" required />
       </Field>

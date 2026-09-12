@@ -1,8 +1,10 @@
 import Link from "next/link";
 
-import { buttonClassName } from "@/components/ui/Button";
+import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
+import { AddBudgetFab } from "@/features/budgets/components/AddBudgetFab";
 import { BudgetCard } from "@/features/budgets/components/BudgetCard";
+import { FinanceEmptyState } from "@/features/finance/components/FinanceEmptyState";
 import { currentFinanceMonth, financeMonthRange, financeMonthToPeriodMonth, shiftFinanceMonth } from "@/features/finance/domain/finance";
 import { requireUser } from "@/lib/auth/require-user";
 
@@ -27,19 +29,30 @@ export default async function BudgetsPage({
 
   return (
     <div className="flex flex-col gap-4">
-
       <div className="flex items-center justify-between">
-        <Link href={`/finance/budgets?month=${prevMonth}`} className={buttonClassName("secondary", "md", "w-auto px-3")}>
-          &lsaquo;
+        <Link href={`/finance/budgets?month=${prevMonth}`} aria-label="เดือนก่อนหน้า" className="flex size-9 items-center justify-center rounded-full bg-finance-surface-strong text-finance-text shadow-sm">
+          <AppIcon name="chevron" className="size-4 rotate-180" />
         </Link>
-        <p className="font-medium">{monthLabel}</p>
-        <Link href={`/finance/budgets?month=${nextMonth}`} className={buttonClassName("secondary", "md", "w-auto px-3")}>
-          &rsaquo;
+        <p className="font-medium text-finance-text">{monthLabel}</p>
+        <Link href={`/finance/budgets?month=${nextMonth}`} aria-label="เดือนถัดไป" className="flex size-9 items-center justify-center rounded-full bg-finance-surface-strong text-finance-text shadow-sm">
+          <AppIcon name="chevron" className="size-4" />
         </Link>
       </div>
 
+      <h1 className="font-semibold text-finance-text">งบประมาณ</h1>
+
+      {/* One creation affordance at a time: when the list is empty,
+          FinanceEmptyState below renders its own CTA, so this FAB is
+          hidden rather than offering the same action twice. */}
+      {active.length > 0 ? <AddBudgetFab periodMonth={periodMonth} /> : null}
+
       {active.length === 0 ? (
-        <p className="py-6 text-center text-sm text-foreground-muted">ยังไม่มีงบประมาณเดือนนี้</p>
+        <FinanceEmptyState
+          icon="finance"
+          title="ยังไม่มีงบประมาณ"
+          description="ตั้งงบประมาณรายเดือนตามหมวดหมู่เพื่อติดตามการใช้จ่าย"
+          action={<AddBudgetFab periodMonth={periodMonth} asEmptyStateCta />}
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {active.map((item) => (
@@ -48,13 +61,9 @@ export default async function BudgetsPage({
         </div>
       )}
 
-      <Link href={`/finance/budgets/new?month=${month}`} className={buttonClassName("primary", "lg")}>
-        + สร้างงบประมาณ
-      </Link>
-
       {archived.length > 0 ? (
-        <details className="rounded-card border border-border bg-surface p-3">
-          <summary className="cursor-pointer text-sm font-medium text-foreground-muted">งบประมาณที่เก็บถาวร ({archived.length})</summary>
+        <details className="rounded-[1.25rem] bg-finance-surface-strong px-4 py-2 shadow-sm">
+          <summary className="cursor-pointer text-sm font-medium text-finance-muted">งบประมาณที่เก็บถาวร ({archived.length})</summary>
           <div className="mt-2 flex flex-col gap-2">
             {archived.map((item) => (
               <BudgetCard key={item.budgetId} item={item} />

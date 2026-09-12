@@ -8,16 +8,31 @@ import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import { initialActionState } from "@/lib/types/action-state";
+import { cn } from "@/lib/utils/cn";
 
 import { createPocketTransferAction } from "../actions";
 
-export function PocketTransferForm({ walletId, pockets, tags }: { walletId: string; pockets: Pocket[]; tags: TagOption[] }) {
+export function PocketTransferForm({
+  walletId,
+  pockets,
+  tags,
+  variant = "page",
+}: {
+  walletId: string;
+  pockets: Pocket[];
+  tags: TagOption[];
+  /** Presentation only — see TransactionForm.tsx's own `variant` doc. */
+  variant?: "page" | "sheet";
+}) {
   const [state, formAction] = useActionState(createPocketTransferAction, initialActionState);
   const today = new Date().toLocaleDateString("en-CA");
   const defaults = getPocketTransferDefaults(pockets);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
+    <form
+      action={formAction}
+      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+    >
       <input type="hidden" name="walletId" value={walletId} />
 
       <Field label="จากช่อง" htmlFor="fromPocketId">
@@ -53,7 +68,7 @@ export function PocketTransferForm({ walletId, pockets, tags }: { walletId: stri
       </Field>
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg">โอนเงิน</SubmitButton>
+      <SubmitButton size="lg" variant="financeTransfer">โอนเงิน</SubmitButton>
     </form>
   );
 }

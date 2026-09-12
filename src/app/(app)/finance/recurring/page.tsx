@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { buttonClassName } from "@/components/ui/Button";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { listRecurringTransactions, listUpcomingOccurrencesForScope, materializeRecurringOccurrences } from "@/features/recurring/api";
+import { AddRecurringTrigger } from "@/features/recurring/components/AddRecurringTrigger";
 import { OccurrenceCard } from "@/features/recurring/components/OccurrenceCard";
 import { RecurringCard } from "@/features/recurring/components/RecurringCard";
 import { requireUser } from "@/lib/auth/require-user";
@@ -33,7 +33,7 @@ export default async function RecurringPage({
   const archived = rules.filter((r) => r.archivedAt);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="finance-scope flex flex-col gap-4">
 
       {household ? (
         <div className="flex gap-2">
@@ -46,9 +46,7 @@ export default async function RecurringPage({
         </div>
       ) : null}
 
-      <Link href="/finance/recurring/new" className={buttonClassName("primary", "lg")}>
-        + เพิ่มรายการประจำ
-      </Link>
+      <AddRecurringTrigger />
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">กำลังจะถึง</h2>

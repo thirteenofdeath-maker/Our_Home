@@ -26,6 +26,7 @@ export function CreateRecurringForm({
   householdExpenseCategories,
   personalTags,
   householdTags,
+  variant = "page",
 }: {
   hasHousehold: boolean;
   personalWallets: Wallet[];
@@ -37,7 +38,10 @@ export function CreateRecurringForm({
   householdExpenseCategories: CategoryNode[];
   personalTags: TagOption[];
   householdTags: TagOption[];
+  /** Presentation only — no card chrome to strip either way; kept for API-consistency. */
+  variant?: "page" | "sheet";
 }) {
+  void variant;
   const [state, formAction] = useActionState(createRecurringAction, initialActionState);
   const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">("PERSONAL");
   const [transactionType, setTransactionType] = useState<"INCOME" | "EXPENSE">("EXPENSE");
@@ -58,7 +62,7 @@ export function CreateRecurringForm({
   const tags = scope === "PERSONAL" ? personalTags : householdTags;
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="finance-ui-tone flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภทรายการประจำ</legend>
         <label className="flex items-center gap-2 text-sm">

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { buttonClassName } from "@/components/ui/Button";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { listTemplates } from "@/features/templates/api";
+import { CreateTemplateTrigger } from "@/features/templates/components/CreateTemplateTrigger";
 import { TemplateCard } from "@/features/templates/components/TemplateCard";
 import { requireUser } from "@/lib/auth/require-user";
 import { cn } from "@/lib/utils/cn";
@@ -23,7 +23,7 @@ export default async function TemplatesPage({
   const archived = templates.filter((t) => t.archivedAt);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="finance-scope flex flex-col gap-4">
 
       {household ? (
         <div className="flex gap-2">
@@ -46,9 +46,7 @@ export default async function TemplatesPage({
         </div>
       )}
 
-      <Link href="/finance/templates/new" className={buttonClassName("primary", "lg")}>
-        + สร้าง Template
-      </Link>
+      <CreateTemplateTrigger />
 
       {archived.length > 0 ? (
         <details className="rounded-card border border-border bg-surface p-3">

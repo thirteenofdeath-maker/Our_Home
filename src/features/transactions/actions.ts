@@ -209,6 +209,61 @@ export async function createWalletTransferAction(_prevState: ActionState, formDa
   redirect(`/wallets/${parsed.data.fromWalletId}`);
 }
 
+const unifiedTransferSchema = z.object({
+  fromWalletId: z.string().uuid(),
+  fromPocketId: z.string().uuid(),
+  toWalletId: z.string().uuid(),
+  toPocketId: z.string().uuid(),
+  amount: positiveAmountSchema,
+  note: optionalText,
+  occurredAt: occurredAtSchema,
+  tagIds: tagIdsSchema,
+});
+
+export async function createUnifiedTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = unifiedTransferSchema.safeParse({
+    fromWalletId: formData.get("fromWalletId"),
+    fromPocketId: formData.get("fromPocketId"),
+    toWalletId: formData.get("toWalletId"),
+    toPocketId: formData.get("toPocketId"),
+    amount: formData.get("amount"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+    tagIds: formData.getAll("tagIds"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  if (parsed.data.fromPocketId === parsed.data.toPocketId) return { error: "กรุณาเลือกต้นทางและปลายทางคนละช่อง" };
+
+  try {
+    const common = {
+      fromPocketId: parsed.data.fromPocketId,
+      toPocketId: parsed.data.toPocketId,
+      amount: normalizeAmount(parsed.data.amount),
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+      tagIds: parsed.data.tagIds,
+    };
+    if (parsed.data.fromWalletId === parsed.data.toWalletId) {
+      await createPocketTransfer(supabase, { ...common, walletId: parsed.data.fromWalletId });
+    } else {
+      await createWalletTransfer(supabase, {
+        ...common,
+        fromWalletId: parsed.data.fromWalletId,
+        toWalletId: parsed.data.toWalletId,
+      });
+    }
+  } catch (err) {
+    logDatabaseErrorInDev("createUnifiedTransferAction failed", err);
+    return { error: "ไม่สามารถโอนเงินได้" };
+  }
+
+  revalidatePath(`/wallets/${parsed.data.fromWalletId}`);
+  revalidatePath(`/wallets/${parsed.data.toWalletId}`);
+  revalidatePath(FINANCE_RETURN_TO);
+  redirect(FINANCE_RETURN_TO);
+}
+
 // ---------------------------------------------------------------------
 // Phase B: edit / void / restore. INCOME/EXPENSE only — transfers remain
 // immutable in this phase (see docs/FINANCE.md Phase B). `walletId` is

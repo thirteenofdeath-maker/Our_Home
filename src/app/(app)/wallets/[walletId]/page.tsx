@@ -35,7 +35,6 @@ export default async function WalletDetailPage({
     <div className="finance-scope -mx-4 flex w-full flex-col gap-6 px-4 pb-8 pt-2">
       <PageHeader
         title={wallet.name}
-        fallbackHref="/finance"
         rightAction={<Link href={`/wallets/${walletId}/manage`} aria-label="จัดการกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full hover:bg-finance-primary-soft"><AppIcon name="more" /></Link>}
       />
 
@@ -49,6 +48,18 @@ export default async function WalletDetailPage({
         </p>
       </div>
 
+      {/*
+        PROCESS_ENTRY_INLINE (intentional exception): รายรับ/รายจ่าย/โอนเงิน
+        are genuine process entries, but this always-visible 3-tile "รายการ
+        ด่วน" cluster IS the process launcher itself, in the same way the
+        Finance dashboard's own quick-add tiles work — the tiles are the
+        compact trigger, not a full-page distraction, and every tile is
+        exactly one tap from its real destination already. Hiding them
+        behind an extra "+" -> slide-up-sheet tap would ADD friction to an
+        already-minimal launcher, which is the specific anti-pattern this
+        audit calls out (don't wrap an already-visible quick-action grid
+        in a sheet). Left as direct <Link>s, not menu items in a sheet.
+      */}
       <div className="grid grid-cols-3 gap-2" aria-label="รายการด่วน">
         <Link
           href={`/wallets/${walletId}/transactions/new?type=INCOME`}

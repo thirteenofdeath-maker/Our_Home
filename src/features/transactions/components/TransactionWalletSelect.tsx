@@ -34,6 +34,8 @@ export function TransactionWalletSelect({
   returnTo,
   templateId,
   occurrenceId,
+  onWalletChange,
+  disabled,
 }: {
   wallets: TransactionWalletOption[];
   currentWalletId: string;
@@ -41,6 +43,16 @@ export function TransactionWalletSelect({
   returnTo?: string;
   templateId?: string;
   occurrenceId?: string;
+  /**
+   * When provided, a wallet change calls this instead of navigating —
+   * the caller (TransactionForm, in `variant="sheet"`) owns re-fetching
+   * the new wallet's Pocket/Category/Tag data itself and stays mounted
+   * in place. Omit for the full-page route, where `router.replace` to a
+   * fresh URL for the chosen wallet remains the correct, unchanged
+   * behavior (deep-linkable, works with browser back/forward).
+   */
+  onWalletChange?: (walletId: string) => void;
+  disabled?: boolean;
 }) {
   const router = useRouter();
 
@@ -49,16 +61,22 @@ export function TransactionWalletSelect({
       <Select
         id="transaction-wallet-select"
         value={currentWalletId}
-        onChange={(event) =>
+        disabled={disabled}
+        onChange={(event) => {
+          const nextWalletId = event.currentTarget.value;
+          if (onWalletChange) {
+            onWalletChange(nextWalletId);
+            return;
+          }
           router.replace(
-            transactionWalletHref(event.currentTarget.value, {
+            transactionWalletHref(nextWalletId, {
               transactionType,
               returnTo,
               templateId,
               occurrenceId,
             }),
-          )
-        }
+          );
+        }}
       >
         {wallets.map((wallet) => (
           <option key={wallet.id} value={wallet.id}>

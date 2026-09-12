@@ -83,21 +83,9 @@ export default async function NewTransactionPage({
     }
   }
 
-  // Temporary: this exact combination (wallet scope + transaction type +
-  // how many categories came back) is what to check first if a user ever
-  // reports "I have categories but the picker is empty" again.
-  if (process.env.NODE_ENV === "development") {
-    console.log("[transactions/new] category lookup", {
-      walletId,
-      walletScope: wallet.scope,
-      transactionType,
-      categoryCount: categories.length,
-    });
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <PageHeader title={transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"} fallbackHref={`/wallets/${walletId}`} />
+      <PageHeader title={transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"} />
       <TransactionForm
         walletId={walletId}
         wallets={wallets.map(({ id, name, currency, scope }) => ({ id, name, currency, scope }))}

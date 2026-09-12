@@ -3,13 +3,20 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
+import { getMyPrimaryHousehold } from "@/features/household/api";
+import { WalletForm } from "@/features/wallets/components/WalletForm";
 import { getWalletBalance, listArchivedWallets, listMyWallets } from "@/features/wallets/api";
 import { WalletVisualCard } from "@/features/wallets/components/WalletVisualCard";
 import { requireUser } from "@/lib/auth/require-user";
 
 export default async function WalletsPage() {
-  const { supabase } = await requireUser();
-  const [wallets, archivedWallets] = await Promise.all([listMyWallets(supabase), listArchivedWallets(supabase)]);
+  const { supabase, user } = await requireUser();
+  const [wallets, archivedWallets, primaryHousehold] = await Promise.all([
+    listMyWallets(supabase),
+    listArchivedWallets(supabase),
+    getMyPrimaryHousehold(supabase, user.id),
+  ]);
 
   const withBalance = await Promise.all(
     wallets.map(async (wallet) => ({ wallet, balance: await getWalletBalance(supabase, wallet.id) })),
@@ -22,8 +29,22 @@ export default async function WalletsPage() {
     <div className="finance-scope -mx-4 flex w-full flex-col gap-6 px-4 pb-8 pt-2">
       <PageHeader
         title="กระเป๋าเงิน"
-        fallbackHref="/finance"
-        rightAction={<Link href="/wallets/new" aria-label="เพิ่มกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft"><AppIcon name="plus" /></Link>}
+        rightAction={
+          // Exactly one creation type — no redundant one-item choice
+          // sheet; the real Wallet form itself slides up directly (see
+          // FormSheetButton.tsx). Same WalletForm the full-page
+          // /wallets/new route renders, unchanged business logic — only
+          // `variant="sheet"` differs, a presentation-only prop.
+          <FormSheetButton
+            ariaLabel="เพิ่มกระเป๋าเงิน"
+            triggerClassName="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft"
+            sheetTitle="สร้างกระเป๋าเงิน"
+            form={<WalletForm defaultScope="PERSONAL" hasHousehold={Boolean(primaryHousehold)} variant="sheet" />}
+            tone="finance"
+          >
+            <AppIcon name="plus" />
+          </FormSheetButton>
+        }
       />
 
       <section className="flex flex-col gap-3">

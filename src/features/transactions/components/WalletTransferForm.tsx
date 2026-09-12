@@ -9,6 +9,7 @@ import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import type { Wallet } from "@/features/wallets/types";
 import { initialActionState } from "@/lib/types/action-state";
+import { cn } from "@/lib/utils/cn";
 
 import { createWalletTransferAction } from "../actions";
 
@@ -18,12 +19,15 @@ export function WalletTransferForm({
   otherWallets,
   pocketsByWallet,
   tags,
+  variant = "page",
 }: {
   fromWallet: Wallet;
   fromPockets: Pocket[];
   otherWallets: Wallet[];
   pocketsByWallet: Record<string, Pocket[]>;
   tags: TagOption[];
+  /** Presentation only — see TransactionForm.tsx's own `variant` doc. */
+  variant?: "page" | "sheet";
 }) {
   const [state, formAction] = useActionState(createWalletTransferAction, initialActionState);
   const [toWalletId, setToWalletId] = useState(otherWallets[0]?.id ?? "");
@@ -31,7 +35,10 @@ export function WalletTransferForm({
   const today = new Date().toLocaleDateString("en-CA");
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card">
+    <form
+      action={formAction}
+      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+    >
       <input type="hidden" name="fromWalletId" value={fromWallet.id} />
 
       <Field label="จากกระเป๋าเงิน" htmlFor="fromPocketId">
@@ -84,7 +91,7 @@ export function WalletTransferForm({
       </Field>
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg">โอนเงิน</SubmitButton>
+      <SubmitButton size="lg" variant="financeTransfer">โอนเงิน</SubmitButton>
     </form>
   );
 }

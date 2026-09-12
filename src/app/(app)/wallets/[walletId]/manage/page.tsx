@@ -20,7 +20,7 @@ export default async function WalletManagementPage({ params }: { params: Promise
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <PageHeader title="จัดการกระเป๋าเงิน" fallbackHref={`/wallets/${walletId}`} />
+      <PageHeader title="จัดการกระเป๋าเงิน" />
       <section className="flex flex-col gap-3">
         <h2 className="font-semibold">แก้ไขกระเป๋าเงิน</h2>
         <RenameWalletForm wallet={wallet} />

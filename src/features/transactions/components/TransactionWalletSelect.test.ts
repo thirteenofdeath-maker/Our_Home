@@ -39,4 +39,27 @@ describe("TransactionWalletSelect", () => {
     expect(page).toContain("listCategoriesForWallet(supabase, { transactionType, wallet })");
     expect(page).toContain("listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id })");
   });
+
+  it("renders normally with an onWalletChange callback and a disabled state, for in-sheet use", () => {
+    const html = renderToStaticMarkup(createElement(TransactionWalletSelect, {
+      wallets, currentWalletId: "household-wallet", transactionType: "EXPENSE", onWalletChange: () => {}, disabled: true,
+    }));
+    expect(html).toContain("กระเป๋าเงิน (Wallet)");
+    expect(html).toContain("disabled=\"\"");
+  });
+
+  it("calls onWalletChange instead of navigating when provided — the in-sheet contract that fixes the old 'ejects to the full-page route' bug", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/features/transactions/components/TransactionWalletSelect.tsx"), "utf8");
+    expect(source).toMatch(/if \(onWalletChange\) \{\s*onWalletChange\(nextWalletId\);\s*return;\s*\}/);
+    // router.replace must come AFTER that early return, so it never fires when onWalletChange is set.
+    const onWalletChangeIndex = source.indexOf("if (onWalletChange)");
+    const routerReplaceIndex = source.indexOf("router.replace(");
+    expect(onWalletChangeIndex).toBeGreaterThan(-1);
+    expect(routerReplaceIndex).toBeGreaterThan(onWalletChangeIndex);
+  });
+
+  it("still falls back to router.replace navigation when no onWalletChange is passed — the full-page route's existing behavior is unchanged", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/features/transactions/components/TransactionWalletSelect.tsx"), "utf8");
+    expect(source).toContain("transactionWalletHref(nextWalletId");
+  });
 });

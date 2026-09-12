@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ActionButton } from "@/components/ui/ActionButton";
 import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ActionButton } from "@/components/ui/ActionButton";
 import { getAdjustmentOrigin, getRefundableSummary, listAdjustmentsForOriginal } from "@/features/refunds/api";
 import { restoreTransactionAction } from "@/features/transactions/actions";
 import { getTransactionDetail } from "@/features/transactions/api";
 import { VoidTransactionForm } from "@/features/transactions/components/VoidTransactionForm";
+import { CreateTemplateTrigger } from "@/features/templates/components/CreateTemplateTrigger";
 import { listTagsForTransaction } from "@/features/tags/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
@@ -54,6 +55,16 @@ export default async function TransactionDetailPage({
     ? await Promise.all([getRefundableSummary(supabase, transactionId), listAdjustmentsForOriginal(supabase, transactionId)])
     : [null, []];
   const hasActiveAdjustments = adjustments.some((a) => !a.voidedAt);
+
+  // Every action below is a real, pre-existing route/flow, gated by the
+  // exact same conditions the previous consolidated sheet used — never a
+  // route invented here, never an action shown when its underlying rule
+  // would reject it. None of these are Create/Add (edit/refund/
+  // reimbursement), so they're direct, always-visible links — no bottom
+  // slide-up menu. "สร้าง Template จากรายการนี้" IS a Create action, so
+  // it alone opens the real create-form sheet (CreateTemplateTrigger).
+  const canEdit = !adjustmentOrigin;
+  const canAdjust = isOriginalExpense && refundable && Number(refundable.remainingAdjustableAmount) > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,16 +169,8 @@ export default async function TransactionDetailPage({
             />
             <Row label="เหลือคืนได้" value={formatCurrency(refundable.remainingAdjustableAmount, transaction.currency ?? "THB")} />
           </div>
-          {!isVoided && Number(refundable.remainingAdjustableAmount) > 0 ? (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <Link href={`/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "md")}>
-                คืนเงิน
-              </Link>
-              <Link href={`/finance/transactions/${transaction.transactionId}/reimbursement`} className={buttonClassName("secondary", "md")}>
-                เบิกคืน
-              </Link>
-            </div>
-          ) : null}
+          {/* คืนเงิน/เบิกคืน are direct action links below, not a separate
+              grid here — this card stays purely informational. */}
         </Card>
       ) : null}
 
@@ -175,20 +178,38 @@ export default async function TransactionDetailPage({
         <section className="flex flex-col gap-3">
           {!isVoided ? (
             <>
-              {!adjustmentOrigin ? (
-                <Link
-                  href={`/finance/transactions/${transaction.transactionId}/edit`}
-                  className={buttonClassName("secondary", "lg")}
-                >
-                  แก้ไข
-                </Link>
-              ) : null}
-              <Link
-                href={`/finance/templates/new?fromTransactionId=${transaction.transactionId}`}
-                className={buttonClassName("secondary", "lg")}
-              >
-                สร้าง Template จากรายการนี้
-              </Link>
+              {/* Direct, always-visible action links — no collapsing
+                  "จัดการรายการ" bottom sheet. Edit/refund/reimbursement
+                  are ordinary navigation (never Create/Add), gated by the
+                  EXACT same conditions the previous consolidated sheet
+                  used (never expose an invalid action: no edit for an
+                  adjustment transaction, no refund/reimbursement once
+                  nothing remains adjustable). "สร้าง Template จากรายการนี้"
+                  IS a Create action, so it alone opens the real
+                  create-form sheet. Void is NOT here — it stays its own
+                  visually-danger, centered ConfirmDialog below, never
+                  mixed into this list and never using the bottom-sheet
+                  slide motion. */}
+              <div className="flex flex-col gap-2">
+                {canEdit ? (
+                  <Link href={`/finance/transactions/${transaction.transactionId}/edit`} className={buttonClassName("secondary", "lg")}>
+                    แก้ไข
+                  </Link>
+                ) : null}
+                {canAdjust ? (
+                  <>
+                    <Link href={`/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "lg")}>
+                      คืนเงิน
+                    </Link>
+                    <Link href={`/finance/transactions/${transaction.transactionId}/reimbursement`} className={buttonClassName("secondary", "lg")}>
+                      เบิกคืน
+                    </Link>
+                  </>
+                ) : null}
+                <CreateTemplateTrigger fromTransactionId={transaction.transactionId} triggerClassName={buttonClassName("secondary", "lg")}>
+                  สร้าง Template จากรายการนี้
+                </CreateTemplateTrigger>
+              </div>
               {isOriginalExpense && hasActiveAdjustments ? (
                 <p className="text-center text-xs text-foreground-muted">
                   ยกเลิกรายการนี้ไม่ได้ เนื่องจากมีรายการคืนเงิน/เบิกคืนที่ยังใช้งานอยู่

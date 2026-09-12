@@ -40,8 +40,8 @@ describe("approved mobile Finance UI", () => {
     expect(pocketManagerList).toContain("size-10"); // 40px icon, within the 40-44px target band
   });
 
-  it("gives Wallet detail a back header and keeps Pocket rename", () => {
-    expect(walletDetail).toContain('fallbackHref="/finance"');
+  it("gives Wallet detail the shared PageHeader and keeps Pocket rename", () => {
+    expect(walletDetail).toContain("<PageHeader");
     expect(walletDetail).toContain("<PocketManagerList");
     expect(walletDetail).toContain("<PocketCreateLink");
     expect(read("src/features/pockets/components/PocketManagerList.tsx")).toContain("<RenamePocketForm");

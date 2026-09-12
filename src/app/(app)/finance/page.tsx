@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
+import { AddBudgetFab } from "@/features/budgets/components/AddBudgetFab";
 import { BudgetCard } from "@/features/budgets/components/BudgetCard";
+import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
 import { listBills, listBillOccurrences, materializeBills } from "@/features/bills/api";
 import { BillOccurrenceCard } from "@/features/bills/components/BillOccurrenceCard";
 import { bangkokDateKey } from "@/features/calendar/domain/calendar";
@@ -124,9 +126,9 @@ export default async function FinancePage({
       ) : (
         <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">
           <p className="text-sm text-finance-muted">เพิ่มกระเป๋าเงินก่อนบันทึกรายการ</p>
-          <Link href="/wallets/new" className="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong">
+          <AddWalletTrigger triggerClassName="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong">
             เพิ่มกระเป๋าเงิน
-          </Link>
+          </AddWalletTrigger>
         </div>
       )}
 
@@ -162,10 +164,7 @@ export default async function FinancePage({
             ))}
           </div>
         ) : (
-          <Link href="/finance/budgets/new" className="flex items-center justify-between rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">
-            <span className="text-sm font-medium text-finance-text">ยังไม่มีงบประมาณเดือนนี้ · เริ่มตั้งงบ</span>
-            <AppIcon name="chevron" className="size-4 text-finance-muted" />
-          </Link>
+          <AddBudgetFab periodMonth={financeMonthToPeriodMonth(month)} asHubCard />
         )}
       </section>
 

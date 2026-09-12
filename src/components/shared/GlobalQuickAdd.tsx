@@ -1,27 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { financeExpenseHref, financeIncomeHref, financeTransferHref } from "@/features/finance/domain/finance";
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { AppIcon } from "@/components/ui/AppIcon";
+import { financeExpenseHref, financeIncomeHref, financeTransferHref } from "@/features/finance/domain/finance";
+import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
+import { getCreateWalletSheetData } from "@/features/finance/quick-add-data";
+import { WalletForm } from "@/features/wallets/components/WalletForm";
 
 /**
- * Rendered by BottomNav as a genuine center grid cell (see BottomNav.tsx)
- * — not `fixed`/floating and not overlapping the four real nav
- * destinations, so no z-index trick is needed to keep it clear of their
- * labels. Raised above the bar visually via a negative margin applied by
- * the parent grid cell, not by this component itself. Only ever actually
- * shown on /finance (see BottomNav's `showCenterAction`), inside its
- * `finance-scope` <nav> — so the Finance V2 blue-gray palette below
- * always has its --finance-* variables in scope.
+ * The Finance quick-add FAB. With a wallet already available, the
+ * authoritative two-stage sheet flow (choose รายรับ/รายจ่าย/โอนเงิน, then
+ * that FORM slides up in the same sheet) lives entirely in
+ * FinanceCreateFlow — see that file for the state machine and why Save
+ * needs no special handling (the existing Server Actions already
+ * redirect on success / return {error} otherwise). With zero wallets,
+ * there is exactly ONE possible creation type (a wallet), so the real
+ * WalletForm slides up directly — no redundant one-item choice sheet.
  */
 export function GlobalQuickAdd({ walletId }: { walletId: string | null }) {
+  if (walletId) return <FinanceCreateFlow walletId={walletId} />;
+  return <CreateFirstWalletFab />;
+}
+
+function CreateFirstWalletFab() {
+  // Only fetched for users with zero wallets (a rare, new-user-only
+  // path) — never on every Finance page load; see quick-add-data.ts.
+  const [hasHousehold, setHasHousehold] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getCreateWalletSheetData().then((data) => {
+      if (!cancelled) setHasHousehold(data.hasHousehold);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <Link
-      aria-label="เพิ่มรายการการเงิน"
-      href={walletId ? `/finance/quick-add?walletId=${walletId}` : "/wallets/new"}
-      className="flex size-14 items-center justify-center rounded-full border-4 border-finance-surface-strong bg-finance-primary text-white shadow-[0_8px_24px_rgb(68_80_92_/_0.32)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
-    >
-      <AppIcon name="plus" />
-    </Link>
+    <div className="finance-scope contents">
+      <FormSheetButton
+        ariaLabel="เพิ่มรายการการเงิน"
+        triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        sheetTitle="สร้างกระเป๋าเงิน"
+        form={
+          hasHousehold === null ? (
+            <p className="text-sm text-finance-muted">กำลังโหลด...</p>
+          ) : (
+            <WalletForm defaultScope="PERSONAL" hasHousehold={hasHousehold} variant="sheet" />
+          )
+        }
+        tone="finance"
+      >
+        <AppIcon name="plus" />
+      </FormSheetButton>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getOccurrence } from "@/features/recurring/api";
 import { listMyWallets } from "@/features/wallets/api";
+import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
 import { requireUser } from "@/lib/auth/require-user";
 
 /**
@@ -39,11 +40,7 @@ export default async function UseOccurrencePage({
       <EmptyState
         title="ยังไม่มีกระเป๋าเงินที่ใช้ได้"
         description="เพิ่มกระเป๋าเงินก่อนบันทึกรายการนี้"
-        action={
-          <Link href="/wallets/new" className={buttonClassName("primary", "md")}>
-            เพิ่มกระเป๋าเงิน
-          </Link>
-        }
+        action={<AddWalletTrigger triggerClassName={buttonClassName("primary", "md")}>เพิ่มกระเป๋าเงิน</AddWalletTrigger>}
       />
     );
   }

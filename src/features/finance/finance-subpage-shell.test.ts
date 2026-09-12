@@ -10,11 +10,11 @@ describe("Finance subpage shell", () => {
     for (const section of ["transactions", "tags", "budgets", "templates", "recurring", "bills", "installments", "goals", "debts", "reports", "net-worth", "insights", "import", "export"]) {
       expect(layout).toContain(section);
     }
-    expect(layout).toContain('<PageHeader title={SECTION_TITLES[section] ?? "การเงิน"} fallbackHref="/finance" />');
+    expect(layout).toContain('<PageHeader title={SECTION_TITLES[section] ?? "การเงิน"} />');
   });
 
-  it("gives categories the same Finance fallback header", () => {
-    expect(read("src/app/(app)/categories/page.tsx")).toContain('<PageHeader title="หมวดหมู่" fallbackHref="/finance" />');
+  it("gives categories the same shared PageHeader", () => {
+    expect(read("src/app/(app)/categories/page.tsx")).toContain('<PageHeader title="หมวดหมู่" />');
   });
 
   it("uses a responsive one-column date range on narrow screens", () => {
@@ -65,6 +65,27 @@ describe("Finance subpage shell", () => {
       expect(page).toContain('searchTransactions(supabase, { ...sharedFilters, type: "POCKET_TRANSFER" }');
       expect(page).toContain('searchTransactions(supabase, { ...sharedFilters, type: "WALLET_TRANSFER" }');
       expect(page).toContain("searchTransactions(supabase, { ...sharedFilters, type })");
+    });
+  });
+
+  describe("Finance V2 Phase 2 module rail", () => {
+    const layout = read("src/app/(app)/finance/layout.tsx");
+
+    it("gives exactly the six Phase 2 module pages the FinanceModuleTabs rail", () => {
+      expect(layout).toContain('new Set(["reports", "budgets", "installments", "debts", "goals", "net-worth"])');
+      expect(layout).toContain("<FinanceModuleTabs />");
+      expect(layout).toContain("isModuleRoot");
+    });
+
+    it("never adds the rail to a deeper task page under a module section (only its own root route)", () => {
+      expect(layout).toContain("pathname === `/finance/${section}`");
+    });
+
+    it("does not add the module rail to any Phase 1 or non-module subpage (transactions, tags, templates, recurring, bills, quick-add, import, export, insights)", () => {
+      const moduleSections = layout.match(/new Set\(\[([^\]]*)\]\)/)?.[1] ?? "";
+      for (const section of ["transactions", "tags", "templates", "recurring", "bills", "quick-add", "import", "export", "insights"]) {
+        expect(moduleSections).not.toContain(`"${section}"`);
+      }
     });
   });
 });

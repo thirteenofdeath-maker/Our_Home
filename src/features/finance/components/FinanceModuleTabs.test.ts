@@ -51,15 +51,16 @@ describe("FinanceModuleTabs", () => {
     expect(html).not.toMatch(/flex-wrap/);
   });
 
-  it("is one rounded rail container, not separate floating pills", () => {
+  it("reads as compact HEADER nav — no detached card chrome (no surface background/shadow/large radius on the <nav> itself)", () => {
     mockPathname = "/finance/budgets";
     const html = renderToStaticMarkup(createElement(FinanceModuleTabs));
     const navOpenTag = html.match(/<nav[^>]*>/)?.[0] ?? "";
-    expect(navOpenTag).toContain("bg-finance-surface-strong");
-    expect(navOpenTag).toContain("rounded-[1.75rem]");
+    expect(navOpenTag).not.toContain("bg-finance-surface-strong");
+    expect(navOpenTag).not.toContain("rounded-[1.75rem]");
+    expect(navOpenTag).not.toMatch(/shadow-/);
 
     // Only the active tab gets its own pill background; every inactive
-    // tab sits transparent against the rail (no per-tab "card" look).
+    // tab sits fully transparent (no per-tab "card" look, no rail either).
     const inactiveAnchor = html.match(/<a(?:(?!aria-current)[^>])*href="\/finance"[^>]*>/)?.[0] ?? "";
     expect(inactiveAnchor).toContain("bg-transparent");
     expect(inactiveAnchor).not.toContain("bg-finance-primary-soft");

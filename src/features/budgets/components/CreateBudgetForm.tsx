@@ -34,18 +34,26 @@ export function CreateBudgetForm({
   hasHousehold,
   personalCategories,
   householdCategories,
+  variant = "page",
 }: {
   /** Canonical "YYYY-MM-01", the month this budget is being created for. */
   periodMonth: string;
   hasHousehold: boolean;
   personalCategories: CategoryNode[];
   householdCategories: CategoryNode[];
+  /** Presentation only, accepted for API-consistency with every other
+   * reusable create form — this one never had its own card chrome (the
+   * full-page /new route already renders it bare on the page background),
+   * so unlike WalletForm/AddPocketForm there's nothing to strip for
+   * "sheet": both variants render the same className. */
+  variant?: "page" | "sheet";
 }) {
   const [state, formAction] = useActionState(createBudgetAction, initialActionState);
   const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">("PERSONAL");
+  void variant;
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="finance-ui-tone flex flex-col gap-4">
       <input type="hidden" name="periodMonth" value={periodMonth} />
 
       <fieldset className="flex flex-col gap-2">

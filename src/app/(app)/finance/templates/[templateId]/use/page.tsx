@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getTemplate } from "@/features/templates/api";
 import { listMyWallets } from "@/features/wallets/api";
+import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
 import { requireUser } from "@/lib/auth/require-user";
 
 /**
@@ -38,11 +39,7 @@ export default async function UseTemplatePage({
       <EmptyState
         title="ยังไม่มีกระเป๋าเงินที่ใช้ได้"
         description="เพิ่มกระเป๋าเงินก่อนใช้ Template นี้"
-        action={
-          <Link href="/wallets/new" className={buttonClassName("primary", "md")}>
-            เพิ่มกระเป๋าเงิน
-          </Link>
-        }
+        action={<AddWalletTrigger triggerClassName={buttonClassName("primary", "md")}>เพิ่มกระเป๋าเงิน</AddWalletTrigger>}
       />
     );
   }

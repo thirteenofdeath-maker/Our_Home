@@ -13,7 +13,7 @@ export default async function NewWalletPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <PageHeader title="เพิ่มกระเป๋าเงิน" fallbackHref="/wallets" />
+      <PageHeader title="เพิ่มกระเป๋าเงิน" />
       <WalletForm
         defaultScope={scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL"}
         hasHousehold={Boolean(household)}

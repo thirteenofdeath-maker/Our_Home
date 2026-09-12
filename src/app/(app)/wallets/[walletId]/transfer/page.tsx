@@ -13,7 +13,7 @@ export default async function TransferChooserPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <PageHeader title="โอนเงิน" fallbackHref={`/wallets/${walletId}`} />
+      <PageHeader title="โอนเงิน" />
       <Card className="flex flex-col gap-2">
         <h2 className="font-medium">ระหว่างช่องในกระเป๋านี้</h2>
         <p className="text-sm text-foreground-muted">ย้ายเงินระหว่างช่อง (Pocket) โดยยอดรวมกระเป๋าเงินไม่เปลี่ยนแปลง</p>

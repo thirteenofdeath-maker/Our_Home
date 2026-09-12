@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { buttonClassName } from "@/components/ui/Button";
 import { listCalendarEvents } from "@/features/calendar/api";
+import { AddCalendarEventFab } from "@/features/calendar/components/AddCalendarEventFab";
 import { MonthCalendar } from "@/features/calendar/components/MonthCalendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { bangkokDateKey, monthKey, selectedDateForMonth, shiftMonth } from "@/features/calendar/domain/calendar";
@@ -25,7 +25,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   ]);
 
   return <div className="flex flex-col gap-5">
-    <header className="flex items-center justify-between"><h1 className="text-xl font-semibold">ปฏิทิน</h1><Link href="/calendar/new" className={buttonClassName("primary", "md", "w-auto px-4")}>+ เพิ่มกิจกรรม</Link></header>
+    <header><h1 className="text-xl font-semibold">ปฏิทิน</h1></header>
+    <AddCalendarEventFab />
     <MonthCalendar month={month} selected={selected} today={today} events={events} financeItems={financeItems} />
     {archived.length ? <section><h2 className="mb-2 font-semibold">เก็บเข้าคลัง</h2><div className="flex flex-col gap-2">{archived.map((event) => <Link className="text-primary" key={event.id} href={`/calendar/${event.id}`}>{event.title}</Link>)}</div></section> : null}
   </div>;

@@ -8,7 +8,17 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { addHouseholdMemberAction } from "../actions";
 
-export function AddMemberForm({ householdId, canInviteAdmin = false }: { householdId: string; canInviteAdmin?: boolean }) {
+export function AddMemberForm({
+  householdId,
+  canInviteAdmin = false,
+  variant = "page",
+}: {
+  householdId: string;
+  canInviteAdmin?: boolean;
+  /** Presentation only — no card chrome to strip either way; kept for API-consistency. */
+  variant?: "page" | "sheet";
+}) {
+  void variant;
   const [state, formAction] = useActionState(addHouseholdMemberAction, initialActionState);
 
   return (

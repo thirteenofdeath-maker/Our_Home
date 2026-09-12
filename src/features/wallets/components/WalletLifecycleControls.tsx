@@ -1,4 +1,4 @@
-import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 import { archiveWalletAction, deleteWalletAction, restoreWalletAction } from "../actions";
 import type { Wallet } from "../types";
@@ -6,8 +6,12 @@ import type { Wallet } from "../types";
 /**
  * Archive is rejected by the database unless the wallet's derived balance
  * is exactly zero; delete is rejected unless it has zero ledger history —
- * both surface their rejection through `ActionButton`'s error display
- * rather than being pre-checked here.
+ * both surface their rejection through ConfirmDialog's error display
+ * (the same useActionState wiring ActionButton used) rather than being
+ * pre-checked here. Both are high-consequence/irreversible-ish lifecycle
+ * actions, so both go through a slide-up confirmation instead of a bare
+ * one-tap destructive submit — restore (fully reversible, low-stakes)
+ * stays a plain inline button.
  */
 export function WalletLifecycleControls({ wallet }: { wallet: Wallet }) {
   if (wallet.is_archived) {
@@ -21,7 +25,14 @@ export function WalletLifecycleControls({ wallet }: { wallet: Wallet }) {
               กู้คืน
             </button>
           </form>
-          <ActionButton action={deleteWalletAction} hiddenFields={{ walletId: wallet.id }} label="ลบถาวร" variant="danger" />
+          <ConfirmDialog
+            action={deleteWalletAction}
+            hiddenFields={{ walletId: wallet.id }}
+            triggerLabel="ลบถาวร"
+            sheetTitle="ลบกระเป๋าเงินถาวร"
+            description={`ลบ "${wallet.name}" อย่างถาวร การลบจะสำเร็จเฉพาะเมื่อไม่มีประวัติรายการในกระเป๋าเงินนี้ ไม่สามารถย้อนกลับได้`}
+            confirmLabel="ลบถาวร"
+          />
         </div>
       </div>
     );
@@ -29,7 +40,14 @@ export function WalletLifecycleControls({ wallet }: { wallet: Wallet }) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <ActionButton action={archiveWalletAction} hiddenFields={{ walletId: wallet.id }} label="เก็บถาวรกระเป๋าเงิน" variant="danger" />
+      <ConfirmDialog
+        action={archiveWalletAction}
+        hiddenFields={{ walletId: wallet.id }}
+        triggerLabel="เก็บถาวรกระเป๋าเงิน"
+        sheetTitle="เก็บถาวรกระเป๋าเงิน"
+        description={`เก็บ "${wallet.name}" เข้าคลัง จะสำเร็จเฉพาะเมื่อยอดคงเหลือเป็นศูนย์ กู้คืนได้ภายหลัง`}
+        confirmLabel="เก็บถาวร"
+      />
     </div>
   );
 }

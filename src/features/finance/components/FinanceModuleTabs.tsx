@@ -25,18 +25,18 @@ export const FINANCE_MODULES = [
 ] as const;
 
 /**
- * A single rounded rail (one `finance-surface-strong` container), not a
- * row of separate floating pills — only the ACTIVE tab gets its own
- * soft pill inside the rail; inactive tabs sit transparent against the
- * rail's own background (see FinanceModuleTabs.test.ts for the exact
- * structural assertions this depends on).
+ * Compact HEADER navigation, directly under the page's own header — not
+ * a detached floating card. No enclosing surface/shadow/radius chrome of
+ * its own; only the ACTIVE tab gets a soft pill, inactive tabs sit fully
+ * transparent against whatever's behind them (see FinanceModuleTabs.test.ts
+ * for the exact structural assertions this depends on).
  */
 export function FinanceModuleTabs() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="โมดูลการเงิน" className="rounded-[1.75rem] bg-finance-surface-strong shadow-[0_1px_2px_rgb(68_80_92_/_0.04),0_6px_16px_rgb(68_80_92_/_0.06)]">
-      <ul className="flex h-14 items-center gap-1 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav aria-label="โมดูลการเงิน" className="-mx-4">
+      <ul className="flex h-11 items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {FINANCE_MODULES.map((financeModule) => {
           const active = pathname === financeModule.href;
           return (

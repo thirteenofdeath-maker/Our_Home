@@ -1,5 +1,6 @@
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AppIcon } from "@/components/ui/AppIcon";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/lib/utils/money";
 import Link from "next/link";
 
@@ -70,11 +71,13 @@ export function PocketManagerList({
                       กู้คืน
                     </button>
                   </form>
-                  <ActionButton
+                  <ConfirmDialog
                     action={deletePocketAction}
                     hiddenFields={{ pocketId: pocket.id, walletId }}
-                    label="ลบถาวร"
-                    variant="danger"
+                    triggerLabel="ลบถาวร"
+                    sheetTitle="ลบ Pocket ถาวร"
+                    description={`ลบ "${pocket.name}" อย่างถาวร การลบจะสำเร็จเฉพาะเมื่อไม่มีประวัติรายการใน Pocket นี้ ไม่สามารถย้อนกลับได้`}
+                    confirmLabel="ลบถาวร"
                   />
                 </div>
               </li>

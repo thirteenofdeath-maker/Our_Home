@@ -8,7 +8,17 @@ import { initialActionState } from "@/lib/types/action-state";
 import type { PetWithCaregivers } from "../types";
 import { createPetAction, updatePetAction } from "../actions";
 
-export function PetForm({ members, pet }: { members: HouseholdMemberWithProfile[]; pet?: PetWithCaregivers }) {
+export function PetForm({
+  members,
+  pet,
+  variant = "page",
+}: {
+  members: HouseholdMemberWithProfile[];
+  pet?: PetWithCaregivers;
+  /** Presentation only — no card chrome to strip either way (the page/sheet host provides it); kept for API-consistency. */
+  variant?: "page" | "sheet";
+}) {
+  void variant;
   const [state, action] = useActionState(pet ? updatePetAction : createPetAction, initialActionState);
   const selected = new Set(pet?.caregivers.map((item) => item.id));
   return <form action={action} className="flex flex-col gap-4">

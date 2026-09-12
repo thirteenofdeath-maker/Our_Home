@@ -2,7 +2,7 @@ import { type ButtonHTMLAttributes, forwardRef } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "financeIncome" | "financeExpense" | "financeTransfer";
 type Size = "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
@@ -10,6 +10,15 @@ const variantClasses: Record<Variant, string> = {
   secondary: "bg-primary-soft text-foreground hover:brightness-95",
   ghost: "bg-transparent text-foreground hover:bg-surface-muted",
   danger: "bg-danger text-danger-foreground hover:opacity-90",
+  // Finance-specific semantic accents — Income/Expense/Transfer submit
+  // buttons inside a Finance form, reusing the exact existing
+  // --finance-income/--finance-expense/--finance-transfer tokens (same
+  // ones FinanceCreateFlow's choice-row icons already use), never a new
+  // hex value. Inert everywhere else — nothing outside a Finance form
+  // ever passes these variants.
+  financeIncome: "bg-finance-income text-white hover:opacity-90",
+  financeExpense: "bg-finance-expense text-white hover:opacity-90",
+  financeTransfer: "bg-finance-transfer text-white hover:opacity-90",
 };
 
 const sizeClasses: Record<Size, string> = {

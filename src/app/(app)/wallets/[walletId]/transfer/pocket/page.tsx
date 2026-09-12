@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EmptyState } from "@/components/ui/EmptyState";
 import { buttonClassName } from "@/components/ui/Button";
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
+import { AddPocketForm } from "@/features/pockets/components/AddPocketForm";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { PocketTransferForm } from "@/features/transactions/components/PocketTransferForm";
@@ -33,9 +34,14 @@ export default async function PocketTransferPage({
           title="ต้องมีอย่างน้อย 2 Pocket เพื่อโอนเงินระหว่าง Pocket"
           description="เพิ่ม Pocket ใหม่ก่อน แล้วโอนเงินจาก Main หรือ Pocket อื่น"
           action={
-            <Link href={`/wallets/${walletId}/pockets/new`} className={buttonClassName("primary", "md")}>
+            <FormSheetButton
+              triggerClassName={buttonClassName("primary", "md")}
+              sheetTitle="เพิ่ม Pocket"
+              form={<AddPocketForm walletId={walletId} variant="sheet" />}
+              tone="finance"
+            >
               เพิ่ม Pocket
-            </Link>
+            </FormSheetButton>
           }
         />
       ) : (
