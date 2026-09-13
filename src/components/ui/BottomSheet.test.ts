@@ -241,6 +241,6 @@ describe("BottomSheet tone", () => {
     expect(source).toContain('tone === "finance" ? "bg-finance-surface" : "bg-surface"');
     expect(source).toContain('tone === "finance" ? "bg-finance-primary-soft" : "bg-border"');
     expect(source).toContain('tone === "finance" && "text-finance-text"');
-    expect(source).toContain('tone === "finance" ? "text-finance-muted hover:bg-finance-background"');
+    expect(source).toContain('tone === "finance" ? "text-finance-muted hover:bg-finance-primary-soft"');
   });
 });

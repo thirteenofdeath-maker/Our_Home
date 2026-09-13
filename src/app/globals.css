@@ -5,11 +5,26 @@
  * instead of hard-coding colors/spacing/radius, so retheming (or adding a
  * manual dark-mode toggle later) means editing this block only.
  */
+/*
+ * Our Home is intentionally a light-only UI — no
+ * `@media (prefers-color-scheme: dark)` override. The app canvas is a
+ * flat white regardless of the device/OS theme; cards are distinguished
+ * from it by border + spacing + `--shadow-card`, never by a tinted
+ * background. A manual theme toggle is a possible future addition, not
+ * built here — see docs for the standing decision if that changes.
+ */
 :root {
-  --color-background: #f5f3ee;
+  /* Forces native form controls (date/time pickers, scrollbars, etc.) to
+     their light rendering regardless of system theme, matching the app's
+     own always-light canvas — without this, a system-dark user could see
+     a white page with dark-chrome native pickers, which is exactly the
+     inconsistency this task removes. */
+  color-scheme: light;
+
+  --color-background: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-muted: #f8f7f3;
-  --color-border: #e9e6df;
+  --color-surface-muted: #f6f7f8;
+  --color-border: #e7e9ec;
   --color-foreground: #39413d;
   --color-foreground-muted: #88918c;
 
@@ -30,28 +45,6 @@
   --radius-card: 1.25rem;
   --radius-sheet: 1.25rem;
   --shadow-card: 0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #121210;
-    --color-surface: #1b1b18;
-    --color-surface-muted: #232320;
-    --color-border: #313129;
-    --color-foreground: #f3f3ee;
-    --color-foreground-muted: #a3a39a;
-
-    --color-primary: #6fbf94;
-    --color-primary-foreground: #0f1f16;
-
-    --color-income: #6fbf94;
-    --color-expense: #e58a70;
-    --color-transfer: #93a4e0;
-    --finance-hero: #355246;
-
-    --color-danger: #e58a70;
-    --color-danger-foreground: #2a120b;
-  }
 }
 
 /*
@@ -76,15 +69,23 @@
  * directly — for page-level wrappers that want the whole subtree
  * tinted, unchanged from before this split.
  *
- * No dark-mode variant yet — finance-toned surfaces render with this
- * light palette regardless of system theme for now (the reference
- * direction is an explicitly light dashboard); revisit if/when the rest
- * of Finance moves to this system.
+ * No dark-mode variant — finance-toned surfaces render with this light
+ * palette regardless of system theme, same as the rest of the app now.
+ *
+ * `--finance-background` is a flat white page canvas (no blue-gray tint)
+ * — Finance identity comes from `--finance-primary`/controls/charts/
+ * semantic colors, not a tinted full-page background. `--finance-surface`
+ * is kept a hair off pure white (not flattened to match
+ * `--finance-surface-strong`) so a raised card still reads as a distinct
+ * layer against the white canvas via a subtle tone shift in addition to
+ * its border + `--shadow-card` — removing that last sliver of
+ * differentiation was judged to flatten the card hierarchy the product
+ * direction explicitly asked to preserve.
  */
 .finance-vars,
 .finance-scope,
 .finance-ui-tone {
-  --finance-background: #eef1f4;
+  --finance-background: #ffffff;
   --finance-surface: #fafbfc;
   --finance-surface-strong: #ffffff;
 
@@ -147,7 +148,12 @@
 .finance-ui-tone {
   --color-background: var(--finance-background);
   --color-surface: var(--finance-surface-strong);
-  --color-surface-muted: var(--finance-background);
+  /* NOT --finance-background (now flat white, same as --color-surface
+     above) — CategoryPicker/TagPicker use bg-surface-muted for
+     always-visible fills (a selected tag chip, a selected row), not just
+     hover; mapping it to the white page background would make those
+     invisible. --finance-primary-soft keeps them a real, visible tint. */
+  --color-surface-muted: var(--finance-primary-soft);
   --color-border: var(--finance-primary-soft);
   --color-foreground: var(--finance-text);
   --color-foreground-muted: var(--finance-muted);

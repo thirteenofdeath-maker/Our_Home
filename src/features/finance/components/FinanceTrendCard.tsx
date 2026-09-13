@@ -77,7 +77,7 @@ export function FinanceTrendCard({
           })}
         </div>
       ) : (
-        <div className="mt-3 flex h-16 items-center justify-center rounded-[1rem] bg-finance-background">
+        <div className="mt-3 flex h-16 items-center justify-center rounded-[1rem] bg-finance-primary-soft">
           <p className="text-xs text-finance-muted">ยังไม่มีข้อมูลแนวโน้ม</p>
         </div>
       )}

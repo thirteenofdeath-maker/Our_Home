@@ -141,7 +141,7 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
               type="button"
               aria-label="ย้อนกลับไปเลือกประเภท"
               onClick={goBack}
-              className="mb-2 flex size-9 items-center justify-center rounded-full text-finance-muted hover:bg-finance-background"
+              className="mb-2 flex size-9 items-center justify-center rounded-full text-finance-muted hover:bg-finance-primary-soft"
             >
               <AppIcon name="chevron" className="size-4 rotate-180" />
             </button>
@@ -195,7 +195,7 @@ function ChoiceRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-14 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition-colors hover:bg-finance-background active:bg-finance-background"
+      className="flex min-h-14 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left transition-colors hover:bg-finance-primary-soft active:bg-finance-primary-soft"
     >
       <span
         className={cn(

@@ -82,7 +82,7 @@ function GoalCard({ goal }: { goal: SavingGoalSummary }) {
       {/* progressPercent is an authoritative decimal STRING from the RPC
           — interpolated directly into the CSS expression, never routed
           through Number() first. */}
-      <div className="h-2 w-full overflow-hidden rounded-full bg-finance-background">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-finance-primary-soft">
         <div className={`h-full ${goal.isComplete ? "bg-finance-income" : "bg-finance-primary"}`} style={{ width: `min(max(${goal.progressPercent}%, 0%), 100%)` }} />
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-finance-muted">

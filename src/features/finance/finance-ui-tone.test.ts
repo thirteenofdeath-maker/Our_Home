@@ -25,7 +25,7 @@ describe("Finance UI tone architecture — globals.css", () => {
     for (const [prop, target] of [
       ["--color-background", "--finance-background"],
       ["--color-surface", "--finance-surface-strong"],
-      ["--color-surface-muted", "--finance-background"],
+      ["--color-surface-muted", "--finance-primary-soft"],
       ["--color-border", "--finance-primary-soft"],
       ["--color-foreground", "--finance-text"],
       ["--color-foreground-muted", "--finance-muted"],

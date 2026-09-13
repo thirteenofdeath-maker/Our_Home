@@ -80,7 +80,7 @@ export default async function WalletsPage() {
           <ul className="mt-2 flex flex-col gap-2">
             {archivedWallets.map((wallet) => (
               <li key={wallet.id}>
-                <Link href={`/wallets/${wallet.id}`} className="flex min-h-11 items-center justify-between rounded-[1rem] bg-finance-background px-3 py-2">
+                <Link href={`/wallets/${wallet.id}`} className="flex min-h-11 items-center justify-between rounded-[1rem] bg-finance-primary-soft px-3 py-2">
                   <span className="text-finance-muted line-through">{wallet.name}</span>
                   <span className="text-xs text-finance-muted">{wallet.currency}</span>
                 </Link>

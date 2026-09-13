@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "จัดการเงินและงานบ้านของครอบครัวในที่เดียว",
     start_url: "/",
     display: "standalone",
-    background_color: "#f7f7f5",
+    background_color: "#ffffff",
     theme_color: "#2f6f4f",
     icons: [
       { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },

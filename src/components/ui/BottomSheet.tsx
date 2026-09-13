@@ -213,7 +213,7 @@ export function BottomSheet({
           onClick={onClose}
           className={cn(
             "flex size-11 items-center justify-center rounded-full",
-            tone === "finance" ? "text-finance-muted hover:bg-finance-background" : "text-foreground-muted hover:bg-surface-muted",
+            tone === "finance" ? "text-finance-muted hover:bg-finance-primary-soft" : "text-foreground-muted hover:bg-surface-muted",
           )}
           aria-label="Close"
         >

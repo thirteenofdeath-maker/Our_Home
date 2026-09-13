@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("mobile visual foundation", () => {
   it("uses the approved warm sage palette as shared tokens", () => {
     const css = read("src/app/globals.css").toLowerCase();
-    for (const value of ["#f5f3ee", "#ffffff", "#718d7a", "#dde8df", "#dce6ee", "#39413d", "#88918c", "#789b63", "#e96c55"]) expect(css).toContain(value);
+    for (const value of ["#ffffff", "#718d7a", "#dde8df", "#dce6ee", "#39413d", "#88918c", "#789b63", "#e96c55"]) expect(css).toContain(value);
     expect(css).toContain("--finance-hero: #49675a");
     expect(css).toContain("--color-finance-hero: var(--finance-hero)");
   });

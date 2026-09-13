@@ -86,7 +86,7 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
               <div className="flex flex-col gap-1">
                 {group.map((endpoint) => {
                   const disabled = picker === "to" && !isValidTransferDestination(from, endpoint);
-                  return <button key={endpoint.pocketId} type="button" disabled={disabled} onClick={() => picker === "from" ? chooseFrom(endpoint) : chooseTo(endpoint)} className="flex min-h-14 w-full items-center justify-between rounded-2xl bg-finance-background px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40"><span><span className="block font-medium text-finance-text">{endpoint.pocketName}</span><span className="text-xs text-finance-muted">{endpoint.walletName}</span></span><span className="tabular-nums text-finance-text">{formatCurrency(endpoint.balance, endpoint.currency)}</span></button>;
+                  return <button key={endpoint.pocketId} type="button" disabled={disabled} onClick={() => picker === "from" ? chooseFrom(endpoint) : chooseTo(endpoint)} className="flex min-h-14 w-full items-center justify-between rounded-2xl bg-finance-primary-soft px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40"><span><span className="block font-medium text-finance-text">{endpoint.pocketName}</span><span className="text-xs text-finance-muted">{endpoint.walletName}</span></span><span className="tabular-nums text-finance-text">{formatCurrency(endpoint.balance, endpoint.currency)}</span></button>;
                 })}
               </div>
             </section>
