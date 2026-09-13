@@ -1,8 +1,50 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/finance" }));
+import { financeBackHref } from "@/app/(app)/finance/layout";
+
+describe("financeBackHref — semantic Back target for every /finance/** subpage shape", () => {
+  it("sends every module root one level up, to the Finance Hub", () => {
+    for (const pathname of ["/finance/reports", "/finance/transactions", "/finance/tags", "/finance/export", "/finance/import", "/finance/insights", "/finance/quick-add"]) {
+      expect(financeBackHref(pathname)).toBe("/finance");
+    }
+  });
+
+  it("sends a section's /new and /[id] pages back to the section root", () => {
+    expect(financeBackHref("/finance/budgets/new")).toBe("/finance/budgets");
+    expect(financeBackHref("/finance/budgets/abc")).toBe("/finance/budgets");
+    expect(financeBackHref("/finance/transactions/abc")).toBe("/finance/transactions");
+  });
+
+  it("sends a detail page's own edit/action subpage back to the detail page itself", () => {
+    expect(financeBackHref("/finance/goals/abc/edit")).toBe("/finance/goals/abc");
+    expect(financeBackHref("/finance/debts/abc/payment")).toBe("/finance/debts/abc");
+    expect(financeBackHref("/finance/debts/abc/principal")).toBe("/finance/debts/abc");
+    expect(financeBackHref("/finance/transactions/abc/refund")).toBe("/finance/transactions/abc");
+    expect(financeBackHref("/finance/transactions/abc/reimbursement")).toBe("/finance/transactions/abc");
+  });
+
+  it("collapses an occurrence detail page back to the section root", () => {
+    expect(financeBackHref("/finance/bills/occurrences/xyz")).toBe("/finance/bills");
+    expect(financeBackHref("/finance/recurring/occurrences/xyz")).toBe("/finance/recurring");
+  });
+
+  it("sends an occurrence's own action subpage back to the occurrence detail — except Installments, which has no such detail page", () => {
+    expect(financeBackHref("/finance/bills/occurrences/xyz/pay")).toBe("/finance/bills/occurrences/xyz");
+    expect(financeBackHref("/finance/recurring/occurrences/xyz/use")).toBe("/finance/recurring/occurrences/xyz");
+    // Installments never got a standalone occurrence-detail page — only
+    // the pay form itself exists — so it collapses straight to the root.
+    expect(financeBackHref("/finance/installments/occurrences/xyz/pay")).toBe("/finance/installments");
+  });
+
+  it("returns undefined for /finance itself — it is a BottomNav root and never gets a Back button", () => {
+    expect(financeBackHref("/finance")).toBeUndefined();
+  });
+});
 
 describe("Finance subpage shell", () => {
   it("maps every Finance Tools destination to the shared PageHeader", () => {
@@ -10,11 +52,11 @@ describe("Finance subpage shell", () => {
     for (const section of ["transactions", "tags", "budgets", "templates", "recurring", "bills", "installments", "goals", "debts", "reports", "net-worth", "insights", "import", "export"]) {
       expect(layout).toContain(section);
     }
-    expect(layout).toContain('<PageHeader title={SECTION_TITLES[section] ?? "การเงิน"} />');
+    expect(layout).toContain('<PageHeader title={SECTION_TITLES[section] ?? "การเงิน"} backHref={financeBackHref(pathname)} />');
   });
 
-  it("gives categories the same shared PageHeader", () => {
-    expect(read("src/app/(app)/categories/page.tsx")).toContain('<PageHeader title="หมวดหมู่" />');
+  it("gives categories the same shared PageHeader, with Back to the Finance Hub", () => {
+    expect(read("src/app/(app)/categories/page.tsx")).toContain('<PageHeader title="หมวดหมู่" backHref="/finance" />');
   });
 
   it("uses a responsive one-column date range on narrow screens", () => {

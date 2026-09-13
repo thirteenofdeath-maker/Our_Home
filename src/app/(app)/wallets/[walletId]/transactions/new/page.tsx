@@ -85,7 +85,7 @@ export default async function NewTransactionPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <PageHeader title={transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"} />
+      <PageHeader title={transactionType === "INCOME" ? "เพิ่มรายรับ" : "เพิ่มรายจ่าย"} backHref={`/wallets/${walletId}`} />
       <TransactionForm
         walletId={walletId}
         wallets={wallets.map(({ id, name, currency, scope }) => ({ id, name, currency, scope }))}

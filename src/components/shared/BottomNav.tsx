@@ -5,20 +5,23 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
+import { appSectionForPath, type AppSection } from "@/lib/navigation/app-section";
 
 /**
  * Pure navigation, nothing else — the "+" quick-add action lives in a
  * separate FloatingActionButton layer now (see FloatingActionButton.tsx
  * and each module's own FAB usage), never a cell inside this grid. Exactly
  * these four real destinations, always rendered as links, on every module
- * (including deep/nested routes within one — see AppShell.tsx).
+ * (including deep/nested routes within one, AND every Finance-owned
+ * secondary route family like /wallets or /categories — see AppShell.tsx
+ * and app-section.ts, the shared source of truth both read).
  */
 export const NAV_ITEMS = [
-  { href: "/finance", label: "การเงิน", icon: "finance" },
-  { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets" },
-  { href: "/calendar", label: "ปฏิทิน", icon: "calendar" },
-  { href: "/household", label: "ครอบครัว", icon: "household" },
-] as const;
+  { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
+  { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
+  { href: "/calendar", label: "ปฏิทิน", icon: "calendar", section: "calendar" },
+  { href: "/household", label: "ครอบครัว", icon: "household", section: "household" },
+] as const satisfies ReadonlyArray<{ href: string; label: string; icon: AppIconName; section: AppSection }>;
 
 /**
  * One floating-capsule architecture for every module — fixed above the
@@ -30,10 +33,11 @@ export const NAV_ITEMS = [
  */
 export function BottomNav() {
   const pathname = usePathname();
-  const isFinance = pathname === "/finance" || pathname.startsWith("/finance/");
+  const section = appSectionForPath(pathname);
+  const isFinance = section === "finance";
 
   function renderItem(item: (typeof NAV_ITEMS)[number]) {
-    const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+    const active = section === item.section;
     return (
       <li key={item.href}>
         <Link

@@ -13,7 +13,7 @@ export default async function NewPocketPage({ params }: { params: Promise<{ wall
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <PageHeader title="เพิ่ม Pocket" />
+      <PageHeader title="เพิ่ม Pocket" backHref={`/wallets/${walletId}`} />
       <p className="text-center text-sm text-foreground-muted">ในกระเป๋าเงิน {wallet.name}</p>
       <AddPocketForm walletId={walletId} />
     </div>

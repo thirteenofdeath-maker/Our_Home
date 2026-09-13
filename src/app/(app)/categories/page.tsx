@@ -31,7 +31,7 @@ export default async function CategoriesPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="หมวดหมู่" />
+      <PageHeader title="หมวดหมู่" backHref="/finance" />
 
       <div className="flex gap-2">
         <TabLink href={`/categories?type=EXPENSE&scope=${activeScope}`} active={transactionType === "EXPENSE"}>

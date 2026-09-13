@@ -67,6 +67,22 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
     }
   });
 
+  it("keeps การเงิน active on Finance-owned secondary route families, not just /finance itself", () => {
+    for (const pathname of ["/wallets", "/wallets/abc/manage", "/categories", "/categories/xyz"]) {
+      mockPathname = pathname;
+      const html = renderToStaticMarkup(createElement(BottomNav));
+      const activeAnchor = html.match(/<a[^>]*href="\/finance"[^>]*>/)?.[0] ?? "";
+      expect(activeAnchor, `${pathname} should keep /finance active`).toContain('aria-current="page"');
+      expect(html, `${pathname} should render in Finance V2 tone`).toContain("finance-scope");
+    }
+  });
+
+  it("activates no tab at all on a neutral route", () => {
+    mockPathname = "/profile/edit";
+    const html = renderToStaticMarkup(createElement(BottomNav));
+    expect(html).not.toContain('aria-current="page"');
+  });
+
   it("uses the SAME floating-capsule architecture on every module — only the color tokens differ", () => {
     mockPathname = "/finance";
     const finance = renderToStaticMarkup(createElement(BottomNav));

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import type { Pocket } from "@/features/pockets/types";
@@ -39,7 +40,7 @@ export default async function WalletTransferPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">โอนไปกระเป๋าเงินอื่น</h1>
+      <PageHeader title="โอนไปกระเป๋าเงินอื่น" backHref={`/wallets/${walletId}/transfer`} />
       {otherWallets.length === 0 ? (
         <EmptyState title="ไม่มีกระเป๋าเงินปลายทาง" description="เพิ่มกระเป๋าเงินอีกใบก่อนโอนเงินระหว่างกระเป๋า" />
       ) : (

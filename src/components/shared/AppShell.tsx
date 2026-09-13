@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { BottomNav } from "./BottomNav";
+import { appSectionForPath } from "@/lib/navigation/app-section";
 
 const TOP_LEVEL_ROUTES = new Set(["/finance", "/pets", "/calendar", "/household"]);
-const MODULE_PREFIXES = ["/finance", "/pets", "/calendar", "/household"] as const;
 
 /**
  * The Finance routes with no module-specific creation action of their
@@ -21,31 +21,31 @@ const MODULE_PREFIXES = ["/finance", "/pets", "/calendar", "/household"] as cons
  */
 const FINANCE_GENERIC_FAB_ROUTES = new Set(["/finance", "/finance/reports", "/finance/net-worth"]);
 
-function moduleOf(pathname: string): (typeof MODULE_PREFIXES)[number] | null {
-  return MODULE_PREFIXES.find((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) ?? null;
-}
-
 export function AppShell({ children, globalHeader, financeQuickAdd }: { children: ReactNode; globalHeader: ReactNode; financeQuickAdd: ReactNode }) {
   const pathname = usePathname();
   const isTopLevel = TOP_LEVEL_ROUTES.has(pathname);
-  // BottomNav (and the bottom padding that clears it) now persists across
-  // an ENTIRE module's tree — every nested route under /finance, /pets,
-  // /calendar, /household — not just each module's own root page. The
-  // top app header ("Our Home" + avatar) stays exact-top-level-only,
-  // unchanged from before.
-  const inModule = moduleOf(pathname) !== null;
+  // BottomNav now persists across the ENTIRE authenticated app — every
+  // route under (app), at any depth, in any section — with exactly one
+  // exception: Onboarding, which has nothing yet to navigate between.
+  // `appSectionForPath` is the single shared classifier BottomNav itself
+  // also reads (for active-tab/tone), so the two can never disagree about
+  // which routes count as "in the app". The top app header ("Our Home" +
+  // avatar) stays exact-top-level-only, a deliberately separate concern
+  // from BottomNav persistence — see docs/ARCHITECTURE.md.
+  const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
       {isTopLevel ? globalHeader : null}
-      {/* The in-module bottom padding must clear BOTH the floating
-          BottomNav AND, on top of it, a bottom-right FAB — plus the real
-          safe-area inset, not a guessed fixed value, so an iPhone's home
-          indicator never eats into it. See FloatingActionButton.tsx /
-          BottomNav.tsx for the offsets this number was derived from. */}
-      <main className={`mx-auto w-full max-w-xl flex-1 px-4 ${inModule ? "pb-[calc(env(safe-area-inset-bottom)+10rem)] pt-2" : "pb-8 pt-1"}`}>{children}</main>
-      {inModule ? <BottomNav /> : null}
-      {inModule && FINANCE_GENERIC_FAB_ROUTES.has(pathname) ? financeQuickAdd : null}
+      {/* The bottom padding must clear BOTH the floating BottomNav AND,
+          on top of it, a bottom-right FAB where one exists — plus the
+          real safe-area inset, not a guessed fixed value, so an iPhone's
+          home indicator never eats into it. Applied uniformly wherever
+          BottomNav renders (even on a FAB-less deep page) rather than
+          computed per-route, so no page can under-clear it by omission. */}
+      <main className={`mx-auto w-full max-w-xl flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+10rem)] pt-2" : "pb-8 pt-1"}`}>{children}</main>
+      {showBottomNav ? <BottomNav /> : null}
+      {FINANCE_GENERIC_FAB_ROUTES.has(pathname) ? financeQuickAdd : null}
     </div>
   );
 }

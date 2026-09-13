@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { SignOutForm } from "@/features/auth/components/SignOutForm";
 import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
@@ -21,7 +22,13 @@ export default async function EditProfilePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">แก้ไขโปรไฟล์</h1>
+      {/* Reachable from the avatar link on every one of the four
+          BottomNav roots — there's no single true parent route, so this
+          is the rare case where the fallback is a stable, sensible app
+          default rather than a derivable parent. router.back() still
+          covers the actual common case (arriving from whichever root the
+          user was on) correctly regardless of this choice. */}
+      <PageHeader title="แก้ไขโปรไฟล์" backHref="/finance" />
       <Card>
         <ProfileEditForm
           householdId={household.id}

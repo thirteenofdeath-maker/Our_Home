@@ -26,9 +26,10 @@ export default async function WalletsPage() {
   const household = withBalance.filter((w) => w.wallet.scope === "HOUSEHOLD");
 
   return (
-    <div className="finance-scope -mx-4 flex w-full flex-col gap-6 px-4 pb-8 pt-2">
+    <div className="finance-scope -mx-4 flex flex-col gap-6 px-4 pb-8 pt-2">
       <PageHeader
         title="กระเป๋าเงิน"
+        backHref="/finance"
         rightAction={
           // Exactly one creation type — no redundant one-item choice
           // sheet; the real Wallet form itself slides up directly (see

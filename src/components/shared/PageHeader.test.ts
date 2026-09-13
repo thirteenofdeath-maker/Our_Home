@@ -5,19 +5,32 @@ import { describe, expect, it } from "vitest";
 import { PageHeader } from "./PageHeader";
 
 describe("PageHeader", () => {
-  it("renders no back button at all — the app-level back arrow is removed (BottomNav + the browser/system back gesture cover navigation instead)", () => {
+  it("renders no back button when backHref is omitted — Back is an explicit per-page opt-in, never a default", () => {
     const html = renderToStaticMarkup(createElement(PageHeader, { title: "กระเป๋าเงิน" }));
     expect(html).not.toContain('aria-label="ย้อนกลับ"');
-    expect(html).not.toContain("<svg"); // no back-chevron icon rendered
     expect(html).toContain("กระเป๋าเงิน");
   });
 
-  it("leaves no fake 44px back-button placeholder slot when there's no rightAction either", () => {
+  it("leaves no fake 44px back-button placeholder slot when neither backHref nor rightAction is supplied", () => {
     const html = renderToStaticMarkup(createElement(PageHeader, { title: "หน้า" }));
-    // Only the header + the title <h1> should exist — no leftover empty
-    // size-11 slot standing in for the removed back button.
     expect((html.match(/<div/g) ?? []).length).toBe(0);
     expect(html).not.toContain("size-11");
+  });
+
+  it("renders a Back link to the exact supplied semantic href, absolutely positioned on the left, when backHref is supplied", () => {
+    const html = renderToStaticMarkup(createElement(PageHeader, { title: "หน้า", backHref: "/wallets/abc" }));
+    expect(html).toContain('aria-label="ย้อนกลับ"');
+    expect(html).toContain('href="/wallets/abc"');
+    expect(html).toContain("absolute left-0");
+  });
+
+  it("supports Back and rightAction together without either disturbing the other", () => {
+    const html = renderToStaticMarkup(
+      createElement(PageHeader, { title: "หน้า", backHref: "/wallets/abc", rightAction: createElement("a", { href: "/new" }, "+") }),
+    );
+    expect(html).toContain("absolute left-0");
+    expect(html).toContain("absolute right-0");
+    expect(html).toContain('href="/new"');
   });
 
   it("supports a right-side action, positioned absolute so it never claims flow space", () => {

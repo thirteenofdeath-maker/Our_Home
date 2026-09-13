@@ -32,9 +32,10 @@ export default async function WalletDetailPage({
   ]);
 
   return (
-    <div className="finance-scope -mx-4 flex w-full flex-col gap-6 px-4 pb-8 pt-2">
+    <div className="finance-scope -mx-4 flex flex-col gap-6 px-4 pb-8 pt-2">
       <PageHeader
         title={wallet.name}
+        backHref="/wallets"
         rightAction={<Link href={`/wallets/${walletId}/manage`} aria-label="จัดการกระเป๋าเงิน" className="flex size-11 items-center justify-center rounded-full hover:bg-finance-primary-soft"><AppIcon name="more" /></Link>}
       />
 

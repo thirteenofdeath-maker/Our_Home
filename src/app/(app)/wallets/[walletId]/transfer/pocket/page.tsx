@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { buttonClassName } from "@/components/ui/Button";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
@@ -28,7 +29,7 @@ export default async function PocketTransferPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">โอนระหว่างช่อง</h1>
+      <PageHeader title="โอนระหว่างช่อง" backHref={`/wallets/${walletId}/transfer`} />
       {pockets.length < 2 ? (
         <EmptyState
           title="ต้องมีอย่างน้อย 2 Pocket เพื่อโอนเงินระหว่าง Pocket"

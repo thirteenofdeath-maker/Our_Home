@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { getCalendarEvent, getCalendarHouseholdRole } from "@/features/calendar/api";
 import { CalendarEventForm } from "@/features/calendar/components/CalendarEventForm";
@@ -16,5 +17,5 @@ export default async function EditCalendarEventPage({ params }: PageProps<"/cale
   const allowed = event.created_by === user.id || (event.scope === "HOUSEHOLD" && role && canInviteRole(role, "member"));
   if (!allowed) redirect(`/calendar/${eventId}`);
   const members = event.household_id ? await listHouseholdMembers(supabase, event.household_id) : [];
-  return <div className="flex flex-col gap-4"><h1 className="text-xl font-semibold">แก้ไขกิจกรรม</h1><Card><CalendarEventForm members={members} event={event} /></Card></div>;
+  return <div className="flex flex-col gap-4"><PageHeader title="แก้ไขกิจกรรม" backHref={`/calendar/${eventId}`} /><Card><CalendarEventForm members={members} event={event} /></Card></div>;
 }

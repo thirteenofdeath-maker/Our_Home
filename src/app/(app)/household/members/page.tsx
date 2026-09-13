@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
 import { AddMemberForm } from "@/features/household/components/AddMemberForm";
@@ -19,10 +20,8 @@ export default async function HouseholdMembersPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <p className="text-sm text-foreground-muted">{household.name}</p>
-        <h1 className="text-xl font-semibold">สมาชิกในบ้าน</h1>
-      </div>
+      <PageHeader title="สมาชิกในบ้าน" backHref="/household" />
+      <p className="-mt-3 text-center text-sm text-foreground-muted">{household.name}</p>
 
       <div className="flex flex-col gap-2">
         {members.map((member) => (
