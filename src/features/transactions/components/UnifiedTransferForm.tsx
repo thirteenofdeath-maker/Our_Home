@@ -15,6 +15,7 @@ import {
   type TransferEndpoint,
 } from "@/features/transactions/domain/unified-transfer";
 import { initialActionState } from "@/lib/types/action-state";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
 
 type Picker = "from" | "to" | null;
@@ -193,7 +194,16 @@ export function UnifiedTransferForm({
                           ? chooseFrom(endpoint)
                           : chooseTo(endpoint)
                       }
-                      className="flex min-h-14 w-full items-center justify-between rounded-2xl bg-finance-primary-soft px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40"
+                      className={cn(
+                        "flex min-h-14 w-full items-center justify-between rounded-2xl px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40",
+                        (
+                          picker === "from"
+                            ? endpoint.pocketId === from.pocketId
+                            : endpoint.pocketId === to?.pocketId
+                        )
+                          ? "bg-finance-primary-soft"
+                          : "bg-finance-surface-strong",
+                      )}
                     >
                       <span>
                         <span className="block font-medium text-finance-text">

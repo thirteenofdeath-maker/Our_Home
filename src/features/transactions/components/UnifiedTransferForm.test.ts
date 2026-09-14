@@ -65,4 +65,11 @@ describe("UnifiedTransferForm", () => {
     expect(data).toContain("listMyWallets(supabase)");
     expect(data).toContain("listPocketsWithBalances(supabase, candidate.id)");
   });
+
+  it("uses the shared selected and unselected Pocket colors", () => {
+    expect(source).toContain('"bg-finance-primary-soft"');
+    expect(source).toContain('"bg-finance-surface-strong"');
+    expect(source).toContain("endpoint.pocketId === from.pocketId");
+    expect(source).toContain("endpoint.pocketId === to?.pocketId");
+  });
 });
