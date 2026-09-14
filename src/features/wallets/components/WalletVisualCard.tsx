@@ -29,22 +29,27 @@ export function WalletVisualCard({
   currency,
   scopeLabel,
   balance,
+  balances,
   index,
   variant = "gallery",
   className,
 }: {
   id: string;
   name: string;
-  currency: string;
+  currency?: string;
   scopeLabel: string;
   /** Already-derived decimal string (this wallet's own currency — never combined with another). */
-  balance: string;
+  balance?: string;
+  balances?: Array<{ currency: string; amount: string }>;
   index: number;
   variant?: "compact" | "gallery";
   className?: string;
 }) {
   const accent = ACCENTS[index % ACCENTS.length];
   const isCompact = variant === "compact";
+  const displayBalances = balances?.length
+    ? balances
+    : [{ currency: currency ?? "THB", amount: balance ?? "0.00" }];
 
   return (
     <Link
@@ -55,16 +60,42 @@ export function WalletVisualCard({
         className,
       )}
     >
-      <span className={cn("flex items-center justify-center rounded-full", isCompact ? "size-9" : "size-10", accent)}>
+      <span
+        className={cn(
+          "flex items-center justify-center rounded-full",
+          isCompact ? "size-9" : "size-10",
+          accent,
+        )}
+      >
         <AppIcon name="wallet" className={isCompact ? "size-4" : "size-5"} />
       </span>
       <div>
-        <p className={cn("font-semibold text-finance-text", isCompact ? "truncate text-sm" : "line-clamp-2 text-base")}>{name}</p>
+        <p
+          className={cn(
+            "font-semibold text-finance-text",
+            isCompact ? "truncate text-sm" : "line-clamp-2 text-base",
+          )}
+        >
+          {name}
+        </p>
         <p className="truncate text-xs text-finance-muted">
-          {currency} · {scopeLabel}
+          {displayBalances.map((item) => item.currency).join(" / ")} ·{" "}
+          {scopeLabel}
         </p>
       </div>
-      <p className={cn("truncate font-semibold tabular-nums text-finance-text", isCompact ? "text-base" : "text-lg")}>{formatCurrency(balance, currency)}</p>
+      <span className="flex flex-col">
+        {displayBalances.slice(0, 2).map((item) => (
+          <span
+            key={item.currency}
+            className={cn(
+              "truncate font-semibold tabular-nums text-finance-text",
+              isCompact ? "text-sm" : "text-base",
+            )}
+          >
+            {formatCurrency(item.amount, item.currency)}
+          </span>
+        ))}
+      </span>
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import {
   archiveWallet,
   createCreditCardWallet,
   createWallet,
+  createWalletContainer,
   createWalletWithInitialBalance,
   deleteWallet,
   restoreWallet,
@@ -35,6 +36,49 @@ function fakeSupabaseTable(
 }
 
 describe("createWallet", () => {
+  it("creates a Wallet container whose first Pocket owns type and currency", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
+    const supabase = {
+      rpc: async (fn: string, args: unknown) => {
+        calls.push({ fn, args });
+        return { data: "wallet-container", error: null };
+      },
+    };
+
+    await expect(
+      createWalletContainer(supabase as never, {
+        name: "Everyday accounts",
+        scope: "PERSONAL",
+        ownerUserId: "user-a",
+        householdId: null,
+        firstPocketName: "Cash THB",
+        firstPocketType: "CASH",
+        currency: "THB",
+        initialBalance: "500.00",
+      }),
+    ).resolves.toBe("wallet-container");
+
+    expect(calls).toEqual([
+      {
+        fn: "create_wallet_container_with_first_pocket",
+        args: {
+          p_scope: "PERSONAL",
+          p_owner_user_id: "user-a",
+          p_household_id: null,
+          p_name: "Everyday accounts",
+          p_first_pocket_name: "Cash THB",
+          p_first_pocket_type: "CASH",
+          p_currency: "THB",
+          p_initial_balance: "500.00",
+          p_credit_limit: null,
+          p_available_credit: null,
+          p_statement_closing_day: null,
+          p_payment_due_day: null,
+        },
+      },
+    ]);
+  });
+
   it("calls create_wallet_with_first_pocket with no created_by parameter (derived server-side from auth.uid())", async () => {
     const calls: Array<{ fn: string; args: unknown }> = [];
     const supabase = {

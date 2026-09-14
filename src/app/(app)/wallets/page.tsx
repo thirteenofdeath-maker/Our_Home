@@ -5,11 +5,8 @@ import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import {
-  getWalletBalance,
-  listArchivedWallets,
-  listMyWallets,
-} from "@/features/wallets/api";
+import { listPocketsWithBalances } from "@/features/pockets/api";
+import { listArchivedWallets, listMyWallets } from "@/features/wallets/api";
 import { WalletForm } from "@/features/wallets/components/WalletForm";
 import { WalletVisualCard } from "@/features/wallets/components/WalletVisualCard";
 import { requireUser } from "@/lib/auth/require-user";
@@ -31,22 +28,27 @@ export default async function WalletsPage({
   const withBalance = await Promise.all(
     wallets.map(async (wallet) => ({
       wallet,
-      balance: await getWalletBalance(supabase, wallet.id),
+      pockets: await listPocketsWithBalances(supabase, wallet.id),
     })),
   );
   const scope =
     rawScope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
   const visible = withBalance.filter((item) => item.wallet.scope === scope);
-  const totals = [...new Set(visible.map((item) => item.wallet.currency))].map(
-    (currency) => ({
-      currency,
-      amount: sumMoney(
-        visible
-          .filter((item) => item.wallet.currency === currency)
-          .map((item) => item.balance),
+  const currencies = [
+    ...new Set(
+      visible.flatMap((item) => item.pockets.map((pocket) => pocket.currency)),
+    ),
+  ];
+  const totals = currencies.map((currency) => ({
+    currency,
+    amount: sumMoney(
+      visible.flatMap((item) =>
+        item.pockets
+          .filter((pocket) => pocket.currency === currency)
+          .map((pocket) => pocket.balance),
       ),
-    }),
-  );
+    ),
+  }));
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pb-8 pt-2">
@@ -132,14 +134,22 @@ export default async function WalletsPage({
           />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {visible.map(({ wallet, balance }, index) => (
+            {visible.map(({ wallet, pockets }, index) => (
               <WalletVisualCard
                 key={wallet.id}
                 id={wallet.id}
                 name={wallet.name}
-                currency={wallet.currency}
                 scopeLabel={scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
-                balance={balance}
+                balances={[
+                  ...new Set(pockets.map((pocket) => pocket.currency)),
+                ].map((currency) => ({
+                  currency,
+                  amount: sumMoney(
+                    pockets
+                      .filter((pocket) => pocket.currency === currency)
+                      .map((pocket) => pocket.balance),
+                  ),
+                }))}
                 index={index}
               />
             ))}
@@ -162,9 +172,7 @@ export default async function WalletsPage({
                   <span className="text-finance-muted line-through">
                     {wallet.name}
                   </span>
-                  <span className="text-xs text-finance-muted">
-                    {wallet.currency}
-                  </span>
+                  <span className="text-xs text-finance-muted">เก็บถาวร</span>
                 </Link>
               </li>
             ))}

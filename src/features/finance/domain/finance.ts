@@ -176,8 +176,8 @@ export interface FinanceEntryRow {
   transaction_id: string;
   amount: string | number;
   wallet_id: string;
-  wallet: { name: string; currency: string } | null;
-  pocket: { name: string } | null;
+  wallet: { name: string; currency?: string } | null;
+  pocket: { name: string; currency?: string } | null;
 }
 
 export function mapRecentFinanceTransactions(
@@ -216,7 +216,7 @@ export function mapRecentFinanceTransactions(
         transaction.transaction_type === "EXPENSE"
           ? normalizeDatabaseMoney(viewed.amount)
           : positiveMoney(viewed.amount),
-      currency: viewed.wallet?.currency ?? "THB",
+      currency: viewed.pocket?.currency ?? viewed.wallet?.currency ?? "THB",
     };
 
     if (transaction.transaction_type !== "TRANSFER" || lines.length < 2)

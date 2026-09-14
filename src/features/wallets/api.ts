@@ -142,6 +142,44 @@ export async function createWalletWithInitialBalance(
   return data;
 }
 
+export async function createWalletContainer(
+  supabase: SupabaseClient<Database>,
+  params: {
+    name: string;
+    scope: "PERSONAL" | "HOUSEHOLD";
+    ownerUserId: string | null;
+    householdId: string | null;
+    firstPocketName: string;
+    firstPocketType: Database["public"]["Enums"]["wallet_type"];
+    currency: string;
+    initialBalance: string;
+    creditLimit?: string | null;
+    availableCredit?: string | null;
+    statementClosingDay?: number | null;
+    paymentDueDay?: number | null;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_wallet_container_with_first_pocket",
+    {
+      p_scope: params.scope,
+      p_owner_user_id: params.ownerUserId,
+      p_household_id: params.householdId,
+      p_name: params.name,
+      p_first_pocket_name: params.firstPocketName,
+      p_first_pocket_type: params.firstPocketType,
+      p_currency: params.currency,
+      p_initial_balance: params.initialBalance,
+      p_credit_limit: params.creditLimit ?? null,
+      p_available_credit: params.availableCredit ?? null,
+      p_statement_closing_day: params.statementClosingDay ?? null,
+      p_payment_due_day: params.paymentDueDay ?? null,
+    },
+  );
+  if (error) throw error;
+  return data;
+}
+
 export async function createCreditCardWallet(
   supabase: SupabaseClient<Database>,
   params: {

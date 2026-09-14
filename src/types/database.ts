@@ -208,6 +208,8 @@ export interface Database {
           id: string;
           wallet_id: string;
           name: string;
+          pocket_type: WalletType;
+          currency: string;
           icon: string | null;
           sort_order: number;
           is_archived: boolean;
@@ -218,12 +220,16 @@ export interface Database {
           id?: string;
           wallet_id: string;
           name: string;
+          pocket_type?: WalletType;
+          currency?: string;
           icon?: string | null;
           sort_order?: number;
           is_archived?: boolean;
         };
         Update: {
           name?: string;
+          pocket_type?: WalletType;
+          currency?: string;
           icon?: string | null;
           sort_order?: number;
           is_archived?: boolean;
@@ -1105,6 +1111,45 @@ export interface Database {
           p_currency: string;
           p_first_pocket_name: string;
           p_initial_balance?: string;
+        };
+        Returns: string;
+      };
+      create_wallet_container_with_first_pocket: {
+        Args: {
+          p_scope: MoneyScope;
+          p_owner_user_id: string | null;
+          p_household_id: string | null;
+          p_name: string;
+          p_first_pocket_name: string;
+          p_first_pocket_type: WalletType;
+          p_currency: string;
+          p_initial_balance?: string;
+          p_credit_limit?: string | null;
+          p_available_credit?: string | null;
+          p_statement_closing_day?: number | null;
+          p_payment_due_day?: number | null;
+        };
+        Returns: string;
+      };
+      create_pocket_with_initial_balance: {
+        Args: {
+          p_wallet_id: string;
+          p_name: string;
+          p_pocket_type: WalletType;
+          p_currency: string;
+          p_initial_balance?: string;
+        };
+        Returns: string;
+      };
+      create_credit_card_pocket_with_available_credit: {
+        Args: {
+          p_wallet_id: string;
+          p_name: string;
+          p_currency: string;
+          p_credit_limit: string;
+          p_available_credit: string;
+          p_statement_closing_day: number;
+          p_payment_due_day: number;
         };
         Returns: string;
       };

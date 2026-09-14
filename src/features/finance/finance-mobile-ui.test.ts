@@ -102,7 +102,7 @@ describe("approved mobile Finance UI", () => {
       read("src/features/pockets/components/PocketManagerList.tsx"),
     ).toContain("<RenamePocketForm");
     expect(walletDetail).toContain("/manage`");
-    expect(walletDetail).toContain("<PocketManagerList compact");
+    expect(walletDetail).toMatch(/<PocketManagerList\s+compact/);
   });
 
   it("keeps wallet management controls off the wallet overview", () => {

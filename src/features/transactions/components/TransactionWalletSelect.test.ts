@@ -19,8 +19,8 @@ describe("TransactionWalletSelect", () => {
       wallets, currentWalletId: "household-wallet", transactionType,
     }));
     expect(html).toContain("กระเป๋าเงิน (Wallet)");
-    expect(html).toContain("KBank · THB · ส่วนตัว");
-    expect(html).toContain("เงินสดบ้าน · THB · ครอบครัว");
+    expect(html).toContain("KBank · ส่วนตัว");
+    expect(html).toContain("เงินสดบ้าน · ครอบครัว");
     expect(html).toContain('<option value="household-wallet" selected="">');
   });
 
@@ -37,7 +37,7 @@ describe("TransactionWalletSelect", () => {
     expect(walletApi).toMatch(/listMyWallets[\s\S]*\.eq\("is_archived", false\)/);
     expect(page).toContain("listPocketsForWallet(supabase, walletId)");
     expect(page).toContain("listCategoriesForWallet(supabase, { transactionType, wallet })");
-    expect(page).toContain("listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id })");
+    expect(page).toMatch(/listTags\(supabase, \{\s*scope: wallet\.scope,\s*householdId: wallet\.household_id,?\s*\}\)/);
   });
 
   it("renders normally with an onWalletChange callback and a disabled state, for in-sheet use", () => {

@@ -7,7 +7,6 @@ import { Field, Select } from "@/components/ui/Field";
 export interface TransactionWalletOption {
   id: string;
   name: string;
-  currency: string;
   scope: "PERSONAL" | "HOUSEHOLD";
 }
 
@@ -80,7 +79,8 @@ export function TransactionWalletSelect({
       >
         {wallets.map((wallet) => (
           <option key={wallet.id} value={wallet.id}>
-            {wallet.name} · {wallet.currency} · {wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
+            {wallet.name} ·{" "}
+            {wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
           </option>
         ))}
       </Select>

@@ -31,9 +31,14 @@ export async function listPocketsWithBalances(
 
   return Promise.all(
     pockets.map(async (pocket) => {
-      const { data, error } = await supabase.rpc("get_pocket_balance", { p_pocket_id: pocket.id });
+      const { data, error } = await supabase.rpc("get_pocket_balance", {
+        p_pocket_id: pocket.id,
+      });
       if (error) logDatabaseErrorInDev("getPocketBalance failed", error);
-      return { ...pocket, balance: data === null ? "0.00" : normalizeDatabaseMoney(data) };
+      return {
+        ...pocket,
+        balance: data === null ? "0.00" : normalizeDatabaseMoney(data),
+      };
     }),
   );
 }
@@ -56,6 +61,61 @@ export async function createPocket(
   return data;
 }
 
+export async function createPocketWithInitialBalance(
+  supabase: SupabaseClient<Database>,
+  params: {
+    walletId: string;
+    name: string;
+    pocketType: Exclude<
+      Database["public"]["Enums"]["wallet_type"],
+      "CREDIT_CARD"
+    >;
+    currency: string;
+    initialBalance: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_pocket_with_initial_balance",
+    {
+      p_wallet_id: params.walletId,
+      p_name: params.name,
+      p_pocket_type: params.pocketType,
+      p_currency: params.currency,
+      p_initial_balance: params.initialBalance,
+    },
+  );
+  if (error) throw error;
+  return data;
+}
+
+export async function createCreditCardPocket(
+  supabase: SupabaseClient<Database>,
+  params: {
+    walletId: string;
+    name: string;
+    currency: string;
+    creditLimit: string;
+    availableCredit: string;
+    statementClosingDay: number;
+    paymentDueDay: number;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_credit_card_pocket_with_available_credit",
+    {
+      p_wallet_id: params.walletId,
+      p_name: params.name,
+      p_currency: params.currency,
+      p_credit_limit: params.creditLimit,
+      p_available_credit: params.availableCredit,
+      p_statement_closing_day: params.statementClosingDay,
+      p_payment_due_day: params.paymentDueDay,
+    },
+  );
+  if (error) throw error;
+  return data;
+}
+
 export async function listArchivedPocketsForWallet(
   supabase: SupabaseClient<Database>,
   walletId: string,
@@ -67,7 +127,8 @@ export async function listArchivedPocketsForWallet(
     .eq("is_archived", true)
     .order("sort_order", { ascending: true });
 
-  if (error) logDatabaseErrorInDev("listArchivedPocketsForWallet failed", error);
+  if (error)
+    logDatabaseErrorInDev("listArchivedPocketsForWallet failed", error);
   return data ?? [];
 }
 
@@ -85,22 +146,38 @@ export async function updatePocket(
     .select("id")
     .single();
   if (error) throw error;
-  if (!data || data.id !== pocketId) throw new Error("Pocket update did not return the intended row");
+  if (!data || data.id !== pocketId)
+    throw new Error("Pocket update did not return the intended row");
 }
 
 /** Rejected by `pockets_require_active_sibling_to_archive` (0030) if this is the wallet's last active pocket. */
-export async function archivePocket(supabase: SupabaseClient<Database>, pocketId: string): Promise<void> {
-  const { error } = await supabase.from("pockets").update({ is_archived: true }).eq("id", pocketId);
+export async function archivePocket(
+  supabase: SupabaseClient<Database>,
+  pocketId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("pockets")
+    .update({ is_archived: true })
+    .eq("id", pocketId);
   if (error) throw error;
 }
 
-export async function restorePocket(supabase: SupabaseClient<Database>, pocketId: string): Promise<void> {
-  const { error } = await supabase.from("pockets").update({ is_archived: false }).eq("id", pocketId);
+export async function restorePocket(
+  supabase: SupabaseClient<Database>,
+  pocketId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("pockets")
+    .update({ is_archived: false })
+    .eq("id", pocketId);
   if (error) throw error;
 }
 
 /** Rejected by `pockets_prevent_delete_if_used` (0030) if this pocket has ledger history or is the wallet's last pocket. */
-export async function deletePocket(supabase: SupabaseClient<Database>, pocketId: string): Promise<void> {
+export async function deletePocket(
+  supabase: SupabaseClient<Database>,
+  pocketId: string,
+): Promise<void> {
   const { error } = await supabase.from("pockets").delete().eq("id", pocketId);
   if (error) throw error;
 }

@@ -6,6 +6,7 @@ import {
   getUnifiedTransferSheetData,
 } from "@/features/finance/quick-add-data";
 import { getInstallmentSheetData } from "@/features/installments/quick-add-data";
+import { listPocketsForWallet } from "@/features/pockets/api";
 import { getWallet, listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
@@ -26,8 +27,16 @@ export default async function Page({
       : wallets[0];
   if (!wallet) notFound();
 
+  const pocketSets = await Promise.all(
+    wallets.map(async (item) => ({
+      wallet: item,
+      pockets: await listPocketsForWallet(supabase, item.id),
+    })),
+  );
   const creditCard =
-    wallets.find((item) => item.wallet_type === "CREDIT_CARD") ?? null;
+    pocketSets.find((item) =>
+      item.pockets.some((pocket) => pocket.pocket_type === "CREDIT_CARD"),
+    )?.wallet ?? null;
   const [
     expense,
     income,

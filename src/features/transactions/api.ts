@@ -2,7 +2,10 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { listAdjustmentInfoForTransactions, listAdjustmentTransactionIds } from "@/features/refunds/api";
+import {
+  listAdjustmentInfoForTransactions,
+  listAdjustmentTransactionIds,
+} from "@/features/refunds/api";
 import { isNegative, normalizeDatabaseMoney } from "@/lib/utils/money";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { Database } from "@/types/database";
@@ -27,7 +30,12 @@ async function withAdjustmentInfo(
   if (info.size === 0) return items;
   return items.map((item) => {
     const match = info.get(item.transactionId);
-    return match ? { ...item, adjustment: { kind: match.kind, originalTitle: match.originalTitle } } : item;
+    return match
+      ? {
+          ...item,
+          adjustment: { kind: match.kind, originalTitle: match.originalTitle },
+        }
+      : item;
   });
 }
 
@@ -45,17 +53,20 @@ export async function createIncomeExpense(
     tagIds?: string[];
   },
 ): Promise<string> {
-  const { data, error } = await supabase.rpc("create_income_expense_transaction", {
-    p_transaction_type: params.transactionType,
-    p_wallet_id: params.walletId,
-    p_pocket_id: params.pocketId,
-    p_category_id: params.categoryId,
-    p_amount: params.amount,
-    p_title: params.title ?? null,
-    p_note: params.note ?? null,
-    p_occurred_at: params.occurredAt,
-    p_tag_ids: params.tagIds?.length ? params.tagIds : null,
-  });
+  const { data, error } = await supabase.rpc(
+    "create_income_expense_transaction",
+    {
+      p_transaction_type: params.transactionType,
+      p_wallet_id: params.walletId,
+      p_pocket_id: params.pocketId,
+      p_category_id: params.categoryId,
+      p_amount: params.amount,
+      p_title: params.title ?? null,
+      p_note: params.note ?? null,
+      p_occurred_at: params.occurredAt,
+      p_tag_ids: params.tagIds?.length ? params.tagIds : null,
+    },
+  );
 
   if (error) throw error;
   return data;
@@ -124,7 +135,7 @@ export interface RawHistoryRow {
   amount: string | number;
   wallet_id: string;
   wallet: { name: string; currency?: string } | null;
-  pocket: { name: string } | null;
+  pocket: { name: string; currency?: string } | null;
   transaction: {
     id: string;
     transaction_type: Database["public"]["Tables"]["transactions"]["Row"]["transaction_type"];
@@ -157,7 +168,7 @@ export async function listTransactionsForWallet(
   limit = 50,
 ): Promise<TransactionHistoryItem[]> {
   const select =
-    "id, amount, wallet_id, wallet:wallets(name), pocket:pockets(name), transaction:transactions(id, transaction_type, title, note, occurred_at, deleted_at, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name))";
+    "id, amount, wallet_id, wallet:wallets(name), pocket:pockets(name,currency), transaction:transactions(id, transaction_type, title, note, occurred_at, deleted_at, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name))";
   const { data, error } = await supabase
     .from("transaction_entries")
     .select(select)
@@ -175,21 +186,39 @@ export async function listTransactionsForWallet(
     (row) => row.transaction && row.transaction.deleted_at === null,
   );
 
-  const transferIds = [...new Set(rows.filter((row) => row.transaction?.transaction_type === "TRANSFER").map((row) => row.transaction!.id))];
+  const transferIds = [
+    ...new Set(
+      rows
+        .filter((row) => row.transaction?.transaction_type === "TRANSFER")
+        .map((row) => row.transaction!.id),
+    ),
+  ];
   let expandedRows = rows;
   if (transferIds.length > 0) {
     const { data: transferData, error: transferError } = await supabase
       .from("transaction_entries")
       .select(select)
       .in("transaction_id", transferIds);
-    if (transferError) logDatabaseErrorInDev("listTransactionsForWallet transfer expansion failed", transferError);
+    if (transferError)
+      logDatabaseErrorInDev(
+        "listTransactionsForWallet transfer expansion failed",
+        transferError,
+      );
     if (transferData) {
-      const nonTransferRows = rows.filter((row) => row.transaction?.transaction_type !== "TRANSFER");
-      expandedRows = [...nonTransferRows, ...(transferData as unknown as RawHistoryRow[])];
+      const nonTransferRows = rows.filter(
+        (row) => row.transaction?.transaction_type !== "TRANSFER",
+      );
+      expandedRows = [
+        ...nonTransferRows,
+        ...(transferData as unknown as RawHistoryRow[]),
+      ];
     }
   }
 
-  return withAdjustmentInfo(supabase, groupHistoryRows(rows, expandedRows, walletId));
+  return withAdjustmentInfo(
+    supabase,
+    groupHistoryRows(rows, expandedRows, walletId),
+  );
 }
 
 export function groupHistoryRows(
@@ -210,54 +239,69 @@ export function groupHistoryRows(
     groups.get(transactionId)!.push(row);
   }
 
-  return order.map<TransactionHistoryItem>((transactionId) => {
-    const entries = groups.get(transactionId)!;
-    const t = entries[0].transaction!;
+  return order
+    .map<TransactionHistoryItem>((transactionId) => {
+      const entries = groups.get(transactionId)!;
+      const t = entries[0].transaction!;
 
-    const viewedEntry = entries.find((entry) => entry.wallet_id === walletId) ?? entries[0];
+      const viewedEntry =
+        entries.find((entry) => entry.wallet_id === walletId) ?? entries[0];
 
-    if (entries.length === 2 && t.transaction_type === "TRANSFER") {
-      const from = entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[0];
-      const to = entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[1];
-      const toAmount = normalizeDatabaseMoney(to.amount);
-      const viewedAmount = normalizeDatabaseMoney(viewedEntry.amount);
+      if (entries.length === 2 && t.transaction_type === "TRANSFER") {
+        const from =
+          entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ??
+          entries[0];
+        const to =
+          entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ??
+          entries[1];
+        const toAmount = normalizeDatabaseMoney(to.amount);
+        const viewedAmount = normalizeDatabaseMoney(viewedEntry.amount);
+        return {
+          transactionId,
+          transactionType: "TRANSFER",
+          title: t.title,
+          note: t.note,
+          occurredAt: t.occurred_at,
+          categoryName: null,
+          walletName: viewedEntry.wallet?.name ?? "?",
+          pocketName: viewedEntry.pocket?.name ?? "?",
+          creatorName: t.creator?.display_name ?? null,
+          voidedAt: t.deleted_at,
+          amount: from.wallet_id === to.wallet_id ? toAmount : viewedAmount,
+          ...(from.wallet_id === to.wallet_id
+            ? {
+                pocketTransfer: {
+                  fromPocketName: from.pocket?.name ?? "?",
+                  toPocketName: to.pocket?.name ?? "?",
+                  amount: toAmount,
+                },
+              }
+            : {
+                walletTransfer: {
+                  fromWalletName: from.wallet?.name ?? "?",
+                  fromPocketName: from.pocket?.name ?? "?",
+                  toWalletName: to.wallet?.name ?? "?",
+                  toPocketName: to.pocket?.name ?? "?",
+                },
+              }),
+        };
+      }
+
       return {
         transactionId,
-        transactionType: "TRANSFER",
+        transactionType: t.transaction_type,
         title: t.title,
         note: t.note,
         occurredAt: t.occurred_at,
-        categoryName: null,
+        categoryName: t.category?.name ?? null,
         walletName: viewedEntry.wallet?.name ?? "?",
         pocketName: viewedEntry.pocket?.name ?? "?",
         creatorName: t.creator?.display_name ?? null,
         voidedAt: t.deleted_at,
-        amount: from.wallet_id === to.wallet_id ? toAmount : viewedAmount,
-        ...(from.wallet_id === to.wallet_id
-          ? { pocketTransfer: { fromPocketName: from.pocket?.name ?? "?", toPocketName: to.pocket?.name ?? "?", amount: toAmount } }
-          : { walletTransfer: {
-              fromWalletName: from.wallet?.name ?? "?",
-              fromPocketName: from.pocket?.name ?? "?",
-              toWalletName: to.wallet?.name ?? "?",
-              toPocketName: to.pocket?.name ?? "?",
-            } }),
+        amount: normalizeDatabaseMoney(viewedEntry.amount),
       };
-    }
-
-    return {
-      transactionId,
-      transactionType: t.transaction_type,
-      title: t.title,
-      note: t.note,
-      occurredAt: t.occurred_at,
-      categoryName: t.category?.name ?? null,
-      walletName: viewedEntry.wallet?.name ?? "?",
-      pocketName: viewedEntry.pocket?.name ?? "?",
-      creatorName: t.creator?.display_name ?? null,
-      voidedAt: t.deleted_at,
-      amount: normalizeDatabaseMoney(viewedEntry.amount),
-    };
-  }).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+    })
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 
 // ---------------------------------------------------------------------
@@ -306,8 +350,13 @@ export async function voidTransaction(
   if (error) throw error;
 }
 
-export async function restoreTransaction(supabase: SupabaseClient<Database>, transactionId: string): Promise<void> {
-  const { error } = await supabase.rpc("restore_transaction", { p_transaction_id: transactionId });
+export async function restoreTransaction(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("restore_transaction", {
+    p_transaction_id: transactionId,
+  });
   if (error) throw error;
 }
 
@@ -337,7 +386,11 @@ export interface TransactionDetail {
   pocketName: string | null;
   currency: string | null;
   amount: string | null;
-  pocketTransfer?: { fromPocketName: string; toPocketName: string; amount: string };
+  pocketTransfer?: {
+    fromPocketName: string;
+    toPocketName: string;
+    amount: string;
+  };
   walletTransfer?: {
     fromWalletName: string;
     fromPocketName: string;
@@ -368,8 +421,8 @@ interface RawDetailEntry {
   amount: string | number;
   wallet_id: string;
   pocket_id: string;
-  wallet: { name: string; currency: string } | null;
-  pocket: { name: string } | null;
+  wallet: { name: string; currency?: string } | null;
+  pocket: { name: string; currency?: string } | null;
 }
 
 /**
@@ -400,7 +453,9 @@ export async function getTransactionDetail(
 
   const { data: entriesData, error: entriesError } = await supabase
     .from("transaction_entries")
-    .select("amount, wallet_id, pocket_id, wallet:wallets(name, currency), pocket:pockets(name)")
+    .select(
+      "amount, wallet_id, pocket_id, wallet:wallets(name), pocket:pockets(name, currency)",
+    )
     .eq("transaction_id", transactionId);
 
   if (entriesError) {
@@ -425,8 +480,12 @@ export async function getTransactionDetail(
   };
 
   if (t.transaction_type === "TRANSFER" && entries.length === 2) {
-    const from = entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[0];
-    const to = entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[1];
+    const from =
+      entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ??
+      entries[0];
+    const to =
+      entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ??
+      entries[1];
     const toAmount = normalizeDatabaseMoney(to.amount);
     const isPocketTransfer = from.wallet_id === to.wallet_id;
     return {
@@ -440,7 +499,13 @@ export async function getTransactionDetail(
       currency: null,
       amount: null,
       ...(isPocketTransfer
-        ? { pocketTransfer: { fromPocketName: from.pocket?.name ?? "?", toPocketName: to.pocket?.name ?? "?", amount: toAmount } }
+        ? {
+            pocketTransfer: {
+              fromPocketName: from.pocket?.name ?? "?",
+              toPocketName: to.pocket?.name ?? "?",
+              amount: toAmount,
+            },
+          }
         : {
             walletTransfer: {
               fromWalletName: from.wallet?.name ?? "?",
@@ -448,7 +513,12 @@ export async function getTransactionDetail(
               toWalletName: to.wallet?.name ?? "?",
               toPocketName: to.pocket?.name ?? "?",
               amount: toAmount,
-              currency: to.wallet?.currency ?? from.wallet?.currency ?? "THB",
+              currency:
+                to.pocket?.currency ??
+                to.wallet?.currency ??
+                from.pocket?.currency ??
+                from.wallet?.currency ??
+                "THB",
             },
           }),
     };
@@ -463,7 +533,7 @@ export async function getTransactionDetail(
     walletName: entry?.wallet?.name ?? null,
     pocketId: entry?.pocket_id ?? null,
     pocketName: entry?.pocket?.name ?? null,
-    currency: entry?.wallet?.currency ?? null,
+    currency: entry?.pocket?.currency ?? entry?.wallet?.currency ?? null,
     amount: entry ? normalizeDatabaseMoney(entry.amount) : null,
   };
 }
@@ -482,7 +552,14 @@ export async function getTransactionDetail(
 export interface TransactionSearchFilters {
   dateFrom?: string;
   dateTo?: string;
-  type?: "ALL" | "INCOME" | "EXPENSE" | "REFUND" | "REIMBURSEMENT" | "POCKET_TRANSFER" | "WALLET_TRANSFER";
+  type?:
+    | "ALL"
+    | "INCOME"
+    | "EXPENSE"
+    | "REFUND"
+    | "REIMBURSEMENT"
+    | "POCKET_TRANSFER"
+    | "WALLET_TRANSFER";
   walletId?: string;
   pocketId?: string;
   categoryId?: string;
@@ -494,7 +571,7 @@ export interface TransactionSearchFilters {
 }
 
 const SEARCH_SELECT =
-  "id, amount, wallet_id, wallet:wallets(name, currency), pocket:pockets(name), transaction:transactions!inner(id, transaction_type, title, note, occurred_at, deleted_at, category_id, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name))";
+  "id, amount, wallet_id, wallet:wallets(name), pocket:pockets(name, currency), transaction:transactions!inner(id, transaction_type, title, note, occurred_at, deleted_at, category_id, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name))";
 
 export async function searchTransactions(
   supabase: SupabaseClient<Database>,
@@ -517,15 +594,23 @@ export async function searchTransactions(
 
   if (filters.walletId) query = query.eq("wallet_id", filters.walletId);
   if (filters.pocketId) query = query.eq("pocket_id", filters.pocketId);
-  if (dbType && dbType !== "ALL") query = query.eq("transaction.transaction_type", dbType);
-  if (filters.categoryId) query = query.eq("transaction.category_id", filters.categoryId);
-  if (filters.dateFrom) query = query.gte("transaction.occurred_at", filters.dateFrom);
-  if (filters.dateTo) query = query.lt("transaction.occurred_at", filters.dateTo);
-  if (filters.status === "ACTIVE") query = query.is("transaction.deleted_at", null);
-  else if (filters.status === "VOIDED") query = query.not("transaction.deleted_at", "is", null);
+  if (dbType && dbType !== "ALL")
+    query = query.eq("transaction.transaction_type", dbType);
+  if (filters.categoryId)
+    query = query.eq("transaction.category_id", filters.categoryId);
+  if (filters.dateFrom)
+    query = query.gte("transaction.occurred_at", filters.dateFrom);
+  if (filters.dateTo)
+    query = query.lt("transaction.occurred_at", filters.dateTo);
+  if (filters.status === "ACTIVE")
+    query = query.is("transaction.deleted_at", null);
+  else if (filters.status === "VOIDED")
+    query = query.not("transaction.deleted_at", "is", null);
   if (filters.query?.trim()) {
     const escaped = filters.query.trim().replace(/[%_]/g, (c) => `\\${c}`);
-    query = query.or(`title.ilike.%${escaped}%,note.ilike.%${escaped}%`, { referencedTable: "transaction" });
+    query = query.or(`title.ilike.%${escaped}%,note.ilike.%${escaped}%`, {
+      referencedTable: "transaction",
+    });
   }
 
   if (filters.tagId) {
@@ -534,18 +619,26 @@ export async function searchTransactions(
     // it. Both of a transfer's entries share transaction_id, so a tagged
     // transfer's pair still passes together — grouping below still
     // collapses it to one logical row (docs/FINANCE.md Phase C).
-    const { data: taggedRows, error: tagError } = await supabase.from("transaction_tags").select("transaction_id").eq("tag_id", filters.tagId);
+    const { data: taggedRows, error: tagError } = await supabase
+      .from("transaction_tags")
+      .select("transaction_id")
+      .eq("tag_id", filters.tagId);
     if (tagError) {
       logDatabaseErrorInDev("searchTransactions tag lookup failed", tagError);
       return [];
     }
-    const taggedTransactionIds = [...new Set((taggedRows ?? []).map((row) => row.transaction_id))];
+    const taggedTransactionIds = [
+      ...new Set((taggedRows ?? []).map((row) => row.transaction_id)),
+    ];
     if (taggedTransactionIds.length === 0) return [];
     query = query.in("transaction_id", taggedTransactionIds);
   }
 
   if (filters.type === "REFUND" || filters.type === "REIMBURSEMENT") {
-    const adjustmentIds = await listAdjustmentTransactionIds(supabase, filters.type);
+    const adjustmentIds = await listAdjustmentTransactionIds(
+      supabase,
+      filters.type,
+    );
     if (adjustmentIds.length === 0) return [];
     query = query.in("transaction_id", adjustmentIds);
   } else if (filters.type === "EXPENSE") {
@@ -553,36 +646,58 @@ export async function searchTransactions(
     // own filter options above, mirroring how neither shows under a bare
     // "TRANSFER" option either.
     const adjustmentIds = await listAdjustmentTransactionIds(supabase);
-    if (adjustmentIds.length > 0) query = query.notIn("transaction_id", adjustmentIds);
+    if (adjustmentIds.length > 0)
+      query = query.notIn("transaction_id", adjustmentIds);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false }).limit(limit);
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(limit);
   if (error) {
     logDatabaseErrorInDev("searchTransactions failed", error);
     return [];
   }
   if (!data) return [];
 
-  const rows = (data as unknown as RawHistoryRow[]).filter((row) => row.transaction);
+  const rows = (data as unknown as RawHistoryRow[]).filter(
+    (row) => row.transaction,
+  );
 
-  const transferIds = [...new Set(rows.filter((row) => row.transaction?.transaction_type === "TRANSFER").map((row) => row.transaction!.id))];
+  const transferIds = [
+    ...new Set(
+      rows
+        .filter((row) => row.transaction?.transaction_type === "TRANSFER")
+        .map((row) => row.transaction!.id),
+    ),
+  ];
   let expandedRows = rows;
   if (transferIds.length > 0) {
     const { data: transferData, error: transferError } = await supabase
       .from("transaction_entries")
       .select(SEARCH_SELECT)
       .in("transaction_id", transferIds);
-    if (transferError) logDatabaseErrorInDev("searchTransactions transfer expansion failed", transferError);
+    if (transferError)
+      logDatabaseErrorInDev(
+        "searchTransactions transfer expansion failed",
+        transferError,
+      );
     if (transferData) {
-      const nonTransferRows = rows.filter((row) => row.transaction?.transaction_type !== "TRANSFER");
-      expandedRows = [...nonTransferRows, ...(transferData as unknown as RawHistoryRow[])];
+      const nonTransferRows = rows.filter(
+        (row) => row.transaction?.transaction_type !== "TRANSFER",
+      );
+      expandedRows = [
+        ...nonTransferRows,
+        ...(transferData as unknown as RawHistoryRow[]),
+      ];
     }
   }
 
   let items = groupSearchRows(rows, expandedRows);
 
-  if (filters.type === "POCKET_TRANSFER") items = items.filter((item) => item.pocketTransfer);
-  if (filters.type === "WALLET_TRANSFER") items = items.filter((item) => item.walletTransfer);
+  if (filters.type === "POCKET_TRANSFER")
+    items = items.filter((item) => item.pocketTransfer);
+  if (filters.type === "WALLET_TRANSFER")
+    items = items.filter((item) => item.walletTransfer);
 
   return withAdjustmentInfo(supabase, items);
 }
@@ -595,7 +710,10 @@ export async function searchTransactions(
  * carries its own `currency`, since — unlike a single wallet's history —
  * results here are not implicitly all the same currency.
  */
-export function groupSearchRows(visibleRows: RawHistoryRow[], expandedRows: RawHistoryRow[]): TransactionHistoryItem[] {
+export function groupSearchRows(
+  visibleRows: RawHistoryRow[],
+  expandedRows: RawHistoryRow[],
+): TransactionHistoryItem[] {
   const order: string[] = [];
   const groups = new Map<string, RawHistoryRow[]>();
   for (const row of visibleRows) {
@@ -616,8 +734,12 @@ export function groupSearchRows(visibleRows: RawHistoryRow[], expandedRows: RawH
       const primary = entries[0];
 
       if (entries.length === 2 && t.transaction_type === "TRANSFER") {
-        const from = entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[0];
-        const to = entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ?? entries[1];
+        const from =
+          entries.find((e) => isNegative(normalizeDatabaseMoney(e.amount))) ??
+          entries[0];
+        const to =
+          entries.find((e) => !isNegative(normalizeDatabaseMoney(e.amount))) ??
+          entries[1];
         const toAmount = normalizeDatabaseMoney(to.amount);
         return {
           transactionId,
@@ -630,10 +752,21 @@ export function groupSearchRows(visibleRows: RawHistoryRow[], expandedRows: RawH
           pocketName: from.pocket?.name ?? "?",
           creatorName: t.creator?.display_name ?? null,
           voidedAt: t.deleted_at,
-          currency: to.wallet?.currency ?? from.wallet?.currency ?? "THB",
+          currency:
+            to.pocket?.currency ??
+            to.wallet?.currency ??
+            from.pocket?.currency ??
+            from.wallet?.currency ??
+            "THB",
           amount: toAmount,
           ...(from.wallet_id === to.wallet_id
-            ? { pocketTransfer: { fromPocketName: from.pocket?.name ?? "?", toPocketName: to.pocket?.name ?? "?", amount: toAmount } }
+            ? {
+                pocketTransfer: {
+                  fromPocketName: from.pocket?.name ?? "?",
+                  toPocketName: to.pocket?.name ?? "?",
+                  amount: toAmount,
+                },
+              }
             : {
                 walletTransfer: {
                   fromWalletName: from.wallet?.name ?? "?",
@@ -656,7 +789,7 @@ export function groupSearchRows(visibleRows: RawHistoryRow[], expandedRows: RawH
         pocketName: primary.pocket?.name ?? "?",
         creatorName: t.creator?.display_name ?? null,
         voidedAt: t.deleted_at,
-        currency: primary.wallet?.currency ?? "THB",
+        currency: primary.pocket?.currency ?? primary.wallet?.currency ?? "THB",
         amount: normalizeDatabaseMoney(primary.amount),
       };
     })

@@ -55,7 +55,7 @@ export async function listRecentFinanceTransactions(
   const { data: entriesData, error: entriesError } = await supabase
     .from("transaction_entries")
     .select(
-      "transaction_id, amount, wallet_id, wallet:wallets(name,currency), pocket:pockets(name)",
+      "transaction_id, amount, wallet_id, wallet:wallets(name), pocket:pockets(name,currency)",
     )
     .in(
       "transaction_id",

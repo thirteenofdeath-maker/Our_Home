@@ -55,7 +55,17 @@ export function WalletForm({
         />
       </Field>
 
-      <Field label="ประเภท" htmlFor="walletType">
+      <Field label="ชื่อ Pocket แรก" htmlFor="firstPocketName">
+        <Input
+          id="firstPocketName"
+          name="firstPocketName"
+          type="text"
+          placeholder="เช่น เงินใช้จ่าย, KTC, เงินเก็บ"
+          required
+        />
+      </Field>
+
+      <Field label="ประเภท Pocket แรก" htmlFor="walletType">
         <Select
           id="walletType"
           name="walletType"
@@ -74,7 +84,7 @@ export function WalletForm({
         </Select>
       </Field>
 
-      <Field label="สกุลเงิน" htmlFor="currency">
+      <Field label="สกุลเงินของ Pocket" htmlFor="currency">
         <Input
           id="currency"
           name="currency"
@@ -138,28 +148,17 @@ export function WalletForm({
           </div>
         </div>
       ) : (
-        <>
-          <Field label="ช่องแรก (Pocket)" htmlFor="firstPocketName">
-            <Input
-              id="firstPocketName"
-              name="firstPocketName"
-              type="text"
-              placeholder="เช่น ใช้จ่าย, เงินเก็บ"
-              required
-            />
-          </Field>
-          <Field label="ยอดเงินเริ่มต้น (ถ้ามี)" htmlFor="initialBalance">
-            <Input
-              id="initialBalance"
-              name="initialBalance"
-              type="text"
-              inputMode="decimal"
-              defaultValue="0"
-              placeholder="0.00"
-              required
-            />
-          </Field>
-        </>
+        <Field label="ยอดเงินเริ่มต้น (ถ้ามี)" htmlFor="initialBalance">
+          <Input
+            id="initialBalance"
+            name="initialBalance"
+            type="text"
+            inputMode="decimal"
+            defaultValue="0"
+            placeholder="0.00"
+            required
+          />
+        </Field>
       )}
 
       <fieldset className="flex flex-col gap-2">

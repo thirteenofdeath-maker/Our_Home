@@ -107,11 +107,15 @@ export default async function FinancePage({
   const scopedBalances = summary.walletBalances.filter((item) =>
     walletIds.has(item.walletId),
   );
-  const balanceByWallet = new Map(
-    scopedBalances.map((item) => [item.walletId, item.amount]),
-  );
+  const balancesByWallet = new Map<string, typeof scopedBalances>();
+  for (const item of scopedBalances) {
+    balancesByWallet.set(item.walletId, [
+      ...(balancesByWallet.get(item.walletId) ?? []),
+      item,
+    ]);
+  }
   const currencyTotals = [
-    ...new Set(wallets.map((wallet) => wallet.currency)),
+    ...new Set(scopedBalances.map((item) => item.currency)),
   ].map((currency) => ({
     currency,
     amount: sumMoney(
@@ -126,7 +130,7 @@ export default async function FinancePage({
   const initialWallet = wallets[0];
   const balanceCards = currencyTotals.length
     ? currencyTotals
-    : [{ currency: initialWallet?.currency ?? "THB", amount: "0.00" }];
+    : [{ currency: "THB", amount: "0.00" }];
   const activeGoals = goals.filter(
     (goal) => !goal.archivedAt && !goal.isComplete,
   );
@@ -272,11 +276,15 @@ export default async function FinancePage({
                 key={wallet.id}
                 id={wallet.id}
                 name={wallet.name}
-                currency={wallet.currency}
                 scopeLabel={
                   wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"
                 }
-                balance={balanceByWallet.get(wallet.id) ?? "0.00"}
+                balances={(balancesByWallet.get(wallet.id) ?? []).map(
+                  (item) => ({
+                    currency: item.currency,
+                    amount: item.amount,
+                  }),
+                )}
                 index={index}
                 variant="compact"
                 className="shrink-0"

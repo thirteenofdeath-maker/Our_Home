@@ -18,8 +18,7 @@ import { compareMoney } from "@/lib/utils/money";
 
 import {
   archiveWallet,
-  createCreditCardWallet,
-  createWalletWithInitialBalance,
+  createWalletContainer,
   deleteWallet,
   restoreWallet,
   updateWallet,
@@ -40,6 +39,7 @@ const createWalletSchema = z.object({
     .min(1, "Wallet name is required")
     .max(80, "Keep it under 80 characters"),
   walletType: walletTypeSchema,
+  firstPocketName: z.string().trim().min(1, "กรุณาระบุชื่อ Pocket แรก").max(60),
   currency: z
     .string()
     .trim()
@@ -57,6 +57,7 @@ export async function createWalletAction(
   const parsed = createWalletSchema.safeParse({
     name: formData.get("name"),
     walletType: formData.get("walletType"),
+    firstPocketName: formData.get("firstPocketName"),
     currency: formData.get("currency") || "THB",
     scope: formData.get("scope"),
   });
@@ -77,6 +78,12 @@ export async function createWalletAction(
 
   let walletId: string;
   try {
+    let initialBalance = "0.00";
+    let creditLimit: string | null = null;
+    let availableCredit: string | null = null;
+    let statementClosingDay: number | null = null;
+    let paymentDueDay: number | null = null;
+
     if (parsed.data.walletType === "CREDIT_CARD") {
       const card = z
         .object({
@@ -94,53 +101,39 @@ export async function createWalletAction(
       if (!card.success) {
         return { error: "กรอกวงเงินและวันที่ของบัตรเครดิตให้ถูกต้อง" };
       }
-      const creditLimit = normalizeNonnegativeAmount(card.data.creditLimit);
-      const availableCredit = normalizeNonnegativeAmount(
-        card.data.availableCredit,
-      );
+      creditLimit = normalizeNonnegativeAmount(card.data.creditLimit);
+      availableCredit = normalizeNonnegativeAmount(card.data.availableCredit);
       if (compareMoney(availableCredit, creditLimit) > 0) {
         return { error: "วงเงินคงเหลือต้องไม่เกินวงเงินทั้งหมด" };
       }
-      walletId = await createCreditCardWallet(supabase, {
-        name: parsed.data.name,
-        currency: parsed.data.currency,
-        scope: parsed.data.scope,
-        householdId,
-        creditLimit,
-        availableCredit,
-        statementClosingDay: card.data.statementClosingDay,
-        paymentDueDay: card.data.paymentDueDay,
-      });
+      statementClosingDay = card.data.statementClosingDay;
+      paymentDueDay = card.data.paymentDueDay;
     } else {
-      const regular = z
-        .object({
-          firstPocketName: z
-            .string()
-            .trim()
-            .min(1, "กรุณาระบุชื่อช่องแรก")
-            .max(60),
-          initialBalance: nonnegativeAmountSchema,
-        })
-        .safeParse({
-          firstPocketName: formData.get("firstPocketName"),
-          initialBalance: formData.get("initialBalance") || "0",
-        });
+      const regular = nonnegativeAmountSchema.safeParse(
+        formData.get("initialBalance") || "0",
+      );
       if (!regular.success) {
         return {
           error: regular.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง",
         };
       }
-      walletId = await createWalletWithInitialBalance(supabase, {
-        name: parsed.data.name,
-        walletType: parsed.data.walletType,
-        currency: parsed.data.currency,
-        scope: parsed.data.scope,
-        ownerUserId: parsed.data.scope === "PERSONAL" ? user.id : null,
-        householdId,
-        firstPocketName: regular.data.firstPocketName,
-        initialBalance: normalizeNonnegativeAmount(regular.data.initialBalance),
-      });
+      initialBalance = normalizeNonnegativeAmount(regular.data);
     }
+
+    walletId = await createWalletContainer(supabase, {
+      name: parsed.data.name,
+      scope: parsed.data.scope,
+      ownerUserId: parsed.data.scope === "PERSONAL" ? user.id : null,
+      householdId,
+      firstPocketName: parsed.data.firstPocketName,
+      firstPocketType: parsed.data.walletType,
+      currency: parsed.data.currency,
+      initialBalance,
+      creditLimit,
+      availableCredit,
+      statementClosingDay,
+      paymentDueDay,
+    });
   } catch (err) {
     logDatabaseErrorInDev("createWallet failed", err);
     return {
@@ -161,12 +154,6 @@ const updateWalletSchema = z.object({
     .trim()
     .min(1, "Wallet name is required")
     .max(80, "Keep it under 80 characters"),
-  walletType: walletTypeSchema,
-  currency: z
-    .string()
-    .trim()
-    .length(3, "Use a 3-letter currency code, e.g. THB")
-    .transform((v) => v.toUpperCase()),
 });
 
 export async function updateWalletAction(
@@ -178,8 +165,6 @@ export async function updateWalletAction(
   const parsed = updateWalletSchema.safeParse({
     walletId: formData.get("walletId"),
     name: formData.get("name"),
-    walletType: formData.get("walletType"),
-    currency: formData.get("currency"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -188,18 +173,10 @@ export async function updateWalletAction(
   try {
     await updateWallet(supabase, parsed.data.walletId, {
       name: parsed.data.name,
-      walletType: parsed.data.walletType,
-      currency: parsed.data.currency,
     });
   } catch (err) {
     logDatabaseErrorInDev("updateWallet failed", err);
-    // The DB layer is the source of truth for "can currency change" (it
-    // depends on ledger history, which this action does not check itself)
-    // — surface its rejection rather than guessing at a generic message.
-    return {
-      error:
-        "Could not update wallet — it may already have transaction history that keeps its currency fixed",
-    };
+    return { error: "เปลี่ยนชื่อกระเป๋าเงินไม่สำเร็จ" };
   }
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);

@@ -89,10 +89,9 @@ describe("TransactionForm — in-sheet wallet switch stays inside the same form 
     expect(source).toContain("walletSwitchError");
   });
 
-  it("resets Pocket/Category/Tag selections when the wallet changes — remounting via key={activeWalletId} so no stale id from the old wallet survives", () => {
-    expect(source).toMatch(
-      /<Select\s*\n\s*key=\{activeWalletId\}\s*\n\s*id="pocketId"/,
-    );
+  it("resets Pocket/Category/Tag selections when the wallet changes so no stale id from the old wallet survives", () => {
+    expect(source).toContain('setActivePocketId(data.pockets[0]?.id ?? "")');
+    expect(source).toContain("value={activePocketId}");
     expect(source).toMatch(/<CategoryPicker\s*\n\s*key=\{activeWalletId\}/);
     expect(source).toMatch(/<TagPicker\s*\n\s*key=\{activeWalletId\}/);
   });
@@ -101,7 +100,7 @@ describe("TransactionForm — in-sheet wallet switch stays inside the same form 
     expect(source).toContain(
       "const onOriginalWallet = activeWalletId === walletId;",
     );
-    expect(source).toContain("onOriginalWallet ? defaultPocketId : null");
+    expect(source).toContain("defaultPocketId ?? pockets[0]?.id");
     expect(source).toContain("onOriginalWallet && defaultCategoryId");
     expect(source).toContain("onOriginalWallet ? defaultTagIds : undefined");
   });

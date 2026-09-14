@@ -204,34 +204,21 @@ export function FinanceAddWorkspace({
                   ไปที่กระเป๋าเงิน
                 </Link>
               </div>
-            ) : cardMode === "spend" ? (
-              <TransactionForm
-                walletId={creditCardId}
-                wallets={cardExpense.wallets.filter(
-                  (item) => item.id === creditCardId,
-                )}
-                transactionType="EXPENSE"
-                pockets={cardExpense.pockets}
-                categories={cardExpense.categories}
-                tags={cardExpense.tags}
-                returnTo={FINANCE_RETURN_TO}
-                variant="sheet"
-              />
-            ) : cardMode === "cashback" ? (
-              <TransactionForm
-                walletId={creditCardId}
-                wallets={cardIncome.wallets.filter(
-                  (item) => item.id === creditCardId,
-                )}
-                transactionType="INCOME"
-                pockets={cardIncome.pockets}
-                categories={cardIncome.categories}
-                tags={cardIncome.tags}
-                returnTo={FINANCE_RETURN_TO}
-                variant="sheet"
-              />
             ) : (
-              <UnifiedTransferForm {...cardTransfer} />
+              <div className="rounded-[1.15rem] bg-finance-primary-soft/70 p-4 text-center">
+                <p className="font-medium text-finance-text">
+                  บัตรเครดิตอยู่ภายใน Wallet แล้ว
+                </p>
+                <p className="mt-1 text-sm text-finance-muted">
+                  เปิด Wallet เพื่อดูบัตร วงเงิน และรายการของบัตรแต่ละใบ
+                </p>
+                <Link
+                  href={`/wallets/${creditCardId}`}
+                  className="mt-3 inline-flex h-11 items-center rounded-full bg-finance-primary px-5 text-sm font-medium text-white"
+                >
+                  เปิด Wallet
+                </Link>
+              </div>
             )}
           </div>
         ) : null}

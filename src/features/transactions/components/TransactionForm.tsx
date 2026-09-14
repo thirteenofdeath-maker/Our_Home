@@ -105,6 +105,9 @@ export function TransactionForm({
   // this state is simply unused/inert there.
   const [activeWalletId, setActiveWalletId] = useState(walletId);
   const [sheetData, setSheetData] = useState({ pockets, categories, tags });
+  const [activePocketId, setActivePocketId] = useState(
+    defaultPocketId ?? pockets[0]?.id ?? "",
+  );
   const [walletSwitchError, setWalletSwitchError] = useState<string | null>(
     null,
   );
@@ -124,6 +127,7 @@ export function TransactionForm({
           categories: data.categories,
           tags: data.tags,
         });
+        setActivePocketId(data.pockets[0]?.id ?? "");
       } catch {
         setWalletSwitchError("โหลดข้อมูลกระเป๋าเงินไม่สำเร็จ กรุณาลองใหม่");
       }
@@ -143,10 +147,9 @@ export function TransactionForm({
   // default; this selection is never persisted as one. A Template's
   // saved Pocket default (already validated by the caller to belong to
   // this Wallet and be active) takes priority when present.
-  const initialPocketId =
-    (onOriginalWallet ? defaultPocketId : null) ?? sheetData.pockets[0]?.id;
   const activeCurrency =
-    wallets.find((wallet) => wallet.id === activeWalletId)?.currency ?? "THB";
+    sheetData.pockets.find((pocket) => pocket.id === activePocketId)
+      ?.currency ?? "THB";
   const today =
     postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
 
@@ -223,15 +226,16 @@ export function TransactionForm({
 
       <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
         <Select
-          key={activeWalletId}
           id="pocketId"
           name="pocketId"
-          defaultValue={initialPocketId}
+          value={activePocketId}
+          onChange={(event) => setActivePocketId(event.target.value)}
           required
         >
           {sheetData.pockets.map((pocket) => (
             <option key={pocket.id} value={pocket.id}>
-              {pocket.name}
+              {pocket.name} · {pocket.currency}
+              {pocket.pocket_type === "CREDIT_CARD" ? " · บัตรเครดิต" : ""}
             </option>
           ))}
         </Select>

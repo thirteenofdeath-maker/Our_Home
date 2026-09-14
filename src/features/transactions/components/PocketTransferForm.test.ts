@@ -9,6 +9,8 @@ function pocket(id: string, name: string): Pocket {
     id,
     wallet_id: "11111111-1111-4111-8111-111111111111",
     name,
+    pocket_type: "CASH",
+    currency: "THB",
     icon: null,
     sort_order: 0,
     is_archived: false,
@@ -23,14 +25,25 @@ describe("PocketTransferForm endpoint defaults (UI convenience only, no domain d
   });
 
   it("pre-selects the first two pockets in list order — order is not a persisted default", () => {
-    expect(getPocketTransferDefaults([pocket("food", "Food"), pocket("travel", "Travel")])).toEqual({
+    expect(
+      getPocketTransferDefaults([
+        pocket("food", "Food"),
+        pocket("travel", "Travel"),
+      ]),
+    ).toEqual({
       fromPocketId: "food",
       toPocketId: "travel",
     });
   });
 
   it("works identically regardless of pocket naming — no pocket is treated as special", () => {
-    expect(getPocketTransferDefaults([pocket("a", "Anything"), pocket("b", "Something Else"), pocket("c", "A Third One")])).toEqual({
+    expect(
+      getPocketTransferDefaults([
+        pocket("a", "Anything"),
+        pocket("b", "Something Else"),
+        pocket("c", "A Third One"),
+      ]),
+    ).toEqual({
       fromPocketId: "a",
       toPocketId: "b",
     });
