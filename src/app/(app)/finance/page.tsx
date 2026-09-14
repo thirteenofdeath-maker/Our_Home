@@ -14,11 +14,8 @@ import { FinanceDashboardHero } from "@/features/finance/components/FinanceDashb
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import {
   currentFinanceMonth,
-  financeExpenseHref,
-  financeIncomeHref,
   financeMonthRange,
   financeMonthToPeriodMonth,
-  financeTransferHref,
   shiftFinanceMonth,
 } from "@/features/finance/domain/finance";
 import { getFinalHub } from "@/features/finance/final-api";
@@ -116,9 +113,7 @@ export default async function FinancePage({
         <FinanceDashboardHero
           balances={summary.currencyTotals}
           monthTotals={summary.monthTotals}
-          incomeHref={financeIncomeHref(initialWallet.id)}
-          expenseHref={financeExpenseHref(initialWallet.id)}
-          transferHref={financeTransferHref(initialWallet.id)}
+          addItemHref={`/finance/quick-add?walletId=${initialWallet.id}`}
         />
       ) : (
         <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">

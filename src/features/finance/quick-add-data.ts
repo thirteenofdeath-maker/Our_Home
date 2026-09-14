@@ -3,6 +3,7 @@
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { listCategoriesForWallet } from "@/features/categories/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { getCurrentProfile } from "@/features/profile/api";
 import { listPocketsForWallet, listPocketsWithBalances } from "@/features/pockets/api";
 import type { Pocket } from "@/features/pockets/types";
 import { listTags } from "@/features/tags/api";
@@ -21,7 +22,7 @@ import type { TransferEndpoint } from "@/features/transactions/domain/unified-tr
  */
 
 export async function getIncomeExpenseSheetData(walletId: string, transactionType: "INCOME" | "EXPENSE") {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const [wallet, wallets] = await Promise.all([getWallet(supabase, walletId), listMyWallets(supabase)]);
   if (!wallet) throw new Error("ไม่พบกระเป๋าเงิน");
 
@@ -31,11 +32,37 @@ export async function getIncomeExpenseSheetData(walletId: string, transactionTyp
     listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
   ]);
 
+  let householdExpenseContext;
+  if (transactionType === "EXPENSE") {
+    const [household, profile] = await Promise.all([getMyPrimaryHousehold(supabase, user.id), getCurrentProfile(supabase, user.id)]);
+    if (household) {
+      const householdWallets = wallets.filter((candidate) => candidate.scope === "HOUSEHOLD" && candidate.household_id === household.id);
+      const personalWallets = wallets.filter((candidate) => candidate.scope === "PERSONAL" && candidate.owner_user_id === user.id);
+      const eligibleWallets = [...householdWallets, ...personalWallets];
+      const [householdCategories, pocketsByWalletEntries] = await Promise.all([
+        listCategoriesForWallet(supabase, {
+          transactionType: "EXPENSE",
+          wallet: { scope: "HOUSEHOLD", owner_user_id: null, household_id: household.id },
+        }),
+        Promise.all(eligibleWallets.map(async (candidate) => [candidate.id, await listPocketsForWallet(supabase, candidate.id)] as const)),
+      ]);
+      householdExpenseContext = {
+        household: { id: household.id, name: household.name },
+        payerDisplayName: profile?.display_name ?? "คุณ",
+        householdCategories: buildCategoryTree(householdCategories),
+        householdWallets: householdWallets.map(({ id, name, currency }) => ({ id, name, currency })),
+        personalWallets: personalWallets.map(({ id, name, currency }) => ({ id, name, currency })),
+        pocketsByWallet: Object.fromEntries(pocketsByWalletEntries),
+      };
+    }
+  }
+
   return {
     wallets: wallets.map(({ id, name, currency, scope }) => ({ id, name, currency, scope })),
     pockets,
     categories: buildCategoryTree(categories),
     tags,
+    householdExpenseContext,
   };
 }
 

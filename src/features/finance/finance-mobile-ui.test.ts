@@ -8,16 +8,27 @@ const wallets = read("src/app/(app)/wallets/page.tsx");
 const walletDetail = read("src/app/(app)/wallets/[walletId]/page.tsx");
 
 describe("approved mobile Finance UI", () => {
-  it("keeps the illustrated quick-action hero on existing route helpers", () => {
+  it("uses one Add Item entry and keeps the illustrated finance hero", () => {
     expect(hub).toContain("FinanceDashboardHero");
     const hero = read("src/features/finance/components/FinanceDashboardHero.tsx");
-    expect(hero).toContain("เพิ่มรายจ่าย");
-    expect(hero).toContain("เพิ่มรายรับ");
+    expect(hero).toContain("เพิ่มรายการ");
+    expect(hero).toContain("รายจ่าย รายรับ หรือโอนเงิน");
     expect(hero).toContain("โอนเงิน");
     expect(hero).toContain("/illustrations/finance/home-hero.webp");
-    for (const helper of ["financeIncomeHref(initialWallet.id)", "financeExpenseHref(initialWallet.id)", "financeTransferHref(initialWallet.id)"]) expect(hub).toContain(helper);
+    expect(hub).toContain("addItemHref={`/finance/quick-add?walletId=${initialWallet.id}`}");
+    for (const helper of ["financeIncomeHref", "financeExpenseHref", "financeTransferHref"]) expect(hub).not.toContain(helper);
     expect(hub).not.toContain("primaryWallet");
     expect(hub).not.toMatch(/defaultWallet|mainWallet|default_wallet|main_wallet/);
+  });
+
+  it("renders the Add Item route as a full-page three-mode form", () => {
+    const addPage = read("src/app/(app)/finance/quick-add/page.tsx");
+    const flow = read("src/features/finance/components/FinanceCreatePageFlow.tsx");
+    expect(addPage).toContain('title="เพิ่มรายการ"');
+    expect(addPage).toContain("<FinanceCreatePageFlow");
+    for (const label of ["รายจ่าย", "รายรับ", "โอนเงิน"]) expect(flow).toContain(`label="${label}"`);
+    expect(flow).toContain("<TransactionForm");
+    expect(flow).toContain("<UnifiedTransferForm");
   });
 
   it("renders currency totals independently without combining them", () => {

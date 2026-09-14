@@ -10,23 +10,18 @@ type MonthTotal = { currency: string; income: string; expense: string };
 export function FinanceDashboardHero({
   balances,
   monthTotals,
-  incomeHref,
-  expenseHref,
-  transferHref,
+  addItemHref,
 }: {
   balances: MoneyTotal[];
   monthTotals: MonthTotal[];
-  incomeHref: string;
-  expenseHref: string;
-  transferHref: string;
+  addItemHref: string;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-3 gap-2" aria-label="เพิ่มรายการด่วน">
-        <QuickAction href={expenseHref} label="เพิ่มรายจ่าย" icon="expense" tone="expense" />
-        <QuickAction href={incomeHref} label="เพิ่มรายรับ" icon="income" tone="income" />
-        <QuickAction href={transferHref} label="โอนเงิน" icon="transfer" tone="transfer" />
-      </div>
+      <Link href={addItemHref} className="flex min-h-20 items-center justify-between rounded-[1.5rem] bg-[linear-gradient(135deg,#f6a28c,#ef8d76)] px-5 text-white shadow-[0_12px_28px_rgb(217_120_95_/_0.25)] transition-transform active:scale-[.99]" aria-label="เพิ่มรายการการเงิน">
+        <span className="flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-full bg-white/22"><AppIcon name="plus" className="size-7" /></span><span><span className="block text-lg font-bold">เพิ่มรายการ</span><span className="block text-xs text-white/80">รายจ่าย รายรับ หรือโอนเงิน</span></span></span>
+        <AppIcon name="chevron" className="size-6" />
+      </Link>
 
       <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-white/80 bg-[linear-gradient(135deg,#fffdf8_0%,#f4f7e9_60%,#e8f2df_100%)] p-5 shadow-[0_14px_40px_rgb(111_90_67_/_0.10)]">
         <div className="relative z-10 min-h-44 max-w-[58%]">
@@ -66,20 +61,6 @@ export function FinanceDashboardHero({
         </div>
       </section>
     </div>
-  );
-}
-
-function QuickAction({ href, label, icon, tone }: { href: string; label: string; icon: "income" | "expense" | "transfer"; tone: "income" | "expense" | "transfer" }) {
-  const styles = tone === "expense"
-    ? "bg-[linear-gradient(135deg,#ffd9cb,#f6a28c)] text-[#713a30]"
-    : tone === "income"
-      ? "bg-[linear-gradient(135deg,#eff6e8,#d9ead2)] text-[#315d3d]"
-      : "bg-[linear-gradient(135deg,#e9f5fd,#cfe7fa)] text-[#315b7a]";
-  return (
-    <Link href={href} className={`flex min-h-20 items-center justify-center gap-2 rounded-[1.35rem] px-2 text-center text-sm font-semibold shadow-sm transition-transform active:scale-[.98] sm:text-base ${styles}`}>
-      <AppIcon name={icon} className="size-6 shrink-0" />
-      <span>{label}</span>
-    </Link>
   );
 }
 

@@ -47,14 +47,14 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
 
   return (
     <>
-      <form action={formAction} className="finance-ui-tone flex flex-col gap-5">
+      <form action={formAction} className="finance-form-v3 finance-ui-tone flex flex-col gap-3">
         <input type="hidden" name="fromWalletId" value={from.walletId} />
         <input type="hidden" name="fromPocketId" value={from.pocketId} />
         <input type="hidden" name="toWalletId" value={to?.walletId ?? ""} />
         <input type="hidden" name="toPocketId" value={to?.pocketId ?? ""} />
         <input type="hidden" name="occurredAt" value={today} />
 
-        <div className="text-center">
+        <div className="finance-amount-panel rounded-[1.5rem] border border-white/80 bg-finance-surface-strong p-5 text-center shadow-card">
           <label htmlFor="unified-transfer-amount" className="text-xs font-medium text-finance-muted">จำนวนเงิน</label>
           <div className="mx-auto mt-1 flex max-w-xs items-center justify-center gap-2 border-b border-finance-border pb-2">
             <span className="text-3xl font-semibold text-finance-muted">{from.currency === "THB" ? "฿" : from.currency}</span>
@@ -75,7 +75,9 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
         </label>
         <TagPicker name="tagIds" tags={tags} walletId={from.walletId} />
         {state.error ? <p className="text-sm text-finance-expense">{state.error}</p> : null}
-        <SubmitButton size="lg" variant="financeTransfer" disabled={!to || !isValidTransferDestination(from, to) || !isValidTransferAmount(amount)}>โอนเงิน</SubmitButton>
+        <div className="sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-20 -mx-1 rounded-[1.5rem] bg-finance-surface/92 p-1 shadow-[0_-12px_28px_rgb(56_73_61_/_0.08)] backdrop-blur sm:bottom-4">
+          <SubmitButton size="lg" variant="financeTransfer" disabled={!to || !isValidTransferDestination(from, to) || !isValidTransferAmount(amount)}>บันทึกรายการ</SubmitButton>
+        </div>
       </form>
 
       <BottomSheet open={picker !== null} onClose={() => setPicker(null)} title={picker === "from" ? "เลือกต้นทาง" : "เลือกปลายทาง"} tone="finance">
