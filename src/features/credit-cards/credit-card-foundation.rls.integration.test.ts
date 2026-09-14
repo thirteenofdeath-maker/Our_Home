@@ -227,3 +227,71 @@ describe.skipIf(!paymentConfigured)("0058 credit-card charges, allocation RLS an
     })(); }
   });
 });
+
+describe.skipIf(!configured)("0060 credit-card cashback RLS and accounting", () => {
+  it("creates card credit without income and keeps cashback private", async () => {
+    const owner = await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { data: accountId, error } = await owner.rpc("create_credit_card_account", {
+      p_scope:"PERSONAL", p_household_id:null, p_name:`Cashback card ${Date.now()}`, p_currency:"THB", p_issuer:null,
+      p_network:null, p_last_four:null, p_credit_limit:"20000", p_statement_closing_day:31, p_payment_due_day:15, p_apr:null,
+    });
+    expect(error).toBeNull();
+    try {
+      const purchase = await owner.rpc("create_card_purchase", {
+        p_card_account_id:accountId!, p_category_id:env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID!, p_amount:"100.00",
+        p_title:"Cashback purchase", p_note:null, p_occurred_at:new Date().toISOString(), p_tag_ids:null,
+      });
+      expect(purchase.error).toBeNull();
+
+      const cashback = await owner.rpc("create_credit_card_cashback", {
+        p_card_account_id:accountId!, p_amount:"125.00", p_title:"Cashback", p_note:null,
+        p_occurred_at:new Date().toISOString(),
+      });
+      expect(cashback.error).toBeNull();
+
+      let cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
+      expect(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)).toMatchObject({
+        wallet_balance:25, liability:0, card_credit:25,
+      });
+      const components = await owner.rpc("get_credit_card_outstanding_components", { p_card_account_id:accountId! });
+      expect(components.data?.[0]).toMatchObject({
+        principal:0, interest:0, fee:0, late_fee:0, unallocated_credit:25, total:0,
+      });
+      const transaction = await owner.from("transactions").select("transaction_type, category_id").eq("id", cashback.data!).single();
+      expect(transaction.data).toEqual({ transaction_type:"CARD_ADJUSTMENT", category_id:null });
+      const event = await owner.from("credit_card_liability_events").select("event_kind, amount").eq("transaction_id", cashback.data!).single();
+      expect(event.data).toMatchObject({ event_kind:"CASHBACK", amount:-125 });
+
+      const outsider = await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+      expect((await outsider.from("credit_card_liability_events").select("id").eq("transaction_id", cashback.data!)).data).toEqual([]);
+      expect((await outsider.rpc("create_credit_card_cashback", {
+        p_card_account_id:accountId!, p_amount:"1.00", p_title:null, p_note:null, p_occurred_at:new Date().toISOString(),
+      })).error).not.toBeNull();
+      expect((await owner.from("credit_card_liability_events").insert({
+        card_account_id:accountId!, event_kind:"CASHBACK", amount:-1, transaction_id:cashback.data!, created_by:(await owner.auth.getUser()).data.user!.id,
+      })).error).not.toBeNull();
+
+      expect((await owner.rpc("void_transaction", { p_transaction_id:cashback.data!, p_void_reason:"test" })).error).toBeNull();
+      cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
+      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(100);
+      expect((await owner.rpc("restore_transaction", { p_transaction_id:cashback.data! })).error).toBeNull();
+      cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
+      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.card_credit)).toBe(25);
+    } finally { await (async () => {
+      const service = admin();
+      const { data } = await service.from("credit_card_accounts").select("wallet_id, system_pocket_id").eq("id", accountId!).single();
+      const { data: events } = await service.from("credit_card_liability_events").select("transaction_id").eq("card_account_id", accountId!);
+      const ids = (events ?? []).map((item) => item.transaction_id);
+      if (ids.length) {
+        await service.from("credit_card_liability_events").delete().eq("card_account_id", accountId!);
+        await service.from("transaction_entries").delete().in("transaction_id", ids);
+        await service.from("transactions").delete().in("id", ids);
+      }
+      await service.from("credit_card_accounts").delete().eq("id", accountId!);
+      if (data) {
+        await service.from("pockets").delete().eq("id", data.system_pocket_id);
+        await service.from("wallets").delete().eq("id", data.wallet_id);
+      }
+    })(); }
+  });
+});

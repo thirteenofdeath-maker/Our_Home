@@ -78,6 +78,9 @@ export default async function CreditCardDetailPage({
           <Row label="ดอกเบี้ย" value={formatCurrency(outstanding.interest, card.currency)} />
           <Row label="ค่าธรรมเนียม" value={formatCurrency(outstanding.fee, card.currency)} />
           <Row label="ค่าปรับ" value={formatCurrency(outstanding.lateFee, card.currency)} />
+          {Number(outstanding.unallocatedCredit) > 0 ? (
+            <Row label="เครดิตส่วนเกิน" value={formatCurrency(outstanding.unallocatedCredit, card.currency)} />
+          ) : null}
         </Card>
       ) : null}
       <Card className="flex flex-col gap-3">
@@ -122,9 +125,13 @@ export default async function CreditCardDetailPage({
             ดอกเบี้ย/ค่าธรรมเนียม
           </Link>
         )}
-        <Button disabled variant="secondary">
-          Cashback
-        </Button>
+        {card.isArchived ? (
+          <Button disabled variant="secondary">Cashback</Button>
+        ) : (
+          <Link href={`/finance/cards/${cardId}/cashback`} className={buttonClassName("secondary", "md")}>
+            Cashback
+          </Link>
+        )}
         <Button disabled variant="secondary">
           กดเงินสด
         </Button>

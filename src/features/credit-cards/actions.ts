@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -326,6 +326,48 @@ export async function createCreditCardIssuerChargeAction(
   } catch (error) {
     logDatabaseErrorInDev("createCreditCardIssuerChargeAction failed", error);
     return { error: "บันทึกยอดเรียกเก็บไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง" };
+  }
+
+  revalidatePath(`/finance/cards/${card.accountId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const cashbackFields = z.object({
+  cardAccountId: z.string().uuid(),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+});
+
+export async function createCreditCardCashbackAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = cashbackFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูล Cashback ไม่ถูกต้อง" };
+  }
+  const card = await getCreditCard(supabase, parsed.data.cardAccountId);
+  if (!card || card.isArchived) {
+    return { error: "ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  }
+
+  let transactionId: string;
+  try {
+    transactionId = await createCreditCardCashback(supabase, {
+      cardAccountId: card.accountId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCreditCardCashbackAction failed", error);
+    return { error: "บันทึก Cashback ไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง" };
   }
 
   revalidatePath(`/finance/cards/${card.accountId}`);

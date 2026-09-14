@@ -252,6 +252,7 @@ type RawOutstandingComponents = {
   interest: string | number;
   fee: string | number;
   late_fee: string | number;
+  unallocated_credit: string | number;
   total: string | number;
 };
 
@@ -272,8 +273,30 @@ export async function getCreditCardOutstandingComponents(
     interest: normalizeDatabaseMoney(row.interest),
     fee: normalizeDatabaseMoney(row.fee),
     lateFee: normalizeDatabaseMoney(row.late_fee),
+    unallocatedCredit: normalizeDatabaseMoney(row.unallocated_credit),
     total: normalizeDatabaseMoney(row.total),
   } : null;
+}
+
+export async function createCreditCardCashback(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_credit_card_cashback", {
+    p_card_account_id: params.cardAccountId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function createCreditCardIssuerCharge(

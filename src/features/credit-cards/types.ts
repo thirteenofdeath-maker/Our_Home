@@ -29,6 +29,7 @@ export type CreditCardOutstandingComponents = {
   interest: string;
   fee: string;
   lateFee: string;
+  unallocatedCredit: string;
   total: string;
 };
 
