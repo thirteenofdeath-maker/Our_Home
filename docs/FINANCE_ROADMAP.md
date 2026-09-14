@@ -14,21 +14,21 @@
 | E | Budgets | STATIC_VERIFIED | 0034 |
 | F | Transaction Templates | STATIC_VERIFIED | 0035 |
 | G | Recurring Transactions | STATIC_VERIFIED | 0036 |
-| H | Bills / Due Dates | READY | next additive migration |
-| I | Installments | NOT_STARTED | TBD |
-| J | Saving Goals | NOT_STARTED | TBD |
-| K | Debt / Borrow / Lend | NOT_STARTED | TBD |
-| L | Analytics / Reports | NOT_STARTED | TBD |
-| M | Finance ↔ Calendar Integration | NOT_STARTED | TBD |
-| N | Attachments / Receipts | NOT_STARTED | TBD |
-| O | Import | NOT_STARTED | TBD |
-| P | Export | NOT_STARTED | TBD |
-| Q | Net Worth | NOT_STARTED | TBD |
-| R | Insights | NOT_STARTED | TBD |
-| S | Fast Bookkeeping / Global Quick Add | NOT_STARTED | TBD |
-| T | Finance Hub Final Integration | NOT_STARTED | TBD |
+| H | Bills / Due Dates | STATIC_VERIFIED | 0037 |
+| I | Installments | STATIC_VERIFIED | 0038 |
+| J | Saving Goals | STATIC_VERIFIED | 0039 |
+| K | Debt / Borrow / Lend | STATIC_VERIFIED | 0040–0041 |
+| L | Analytics / Reports | STATIC_VERIFIED | 0042 |
+| M | Finance ↔ Calendar Integration | STATIC_VERIFIED | 0043 |
+| N | Attachments / Receipts | STATIC_VERIFIED | 0044 |
+| O | Import | STATIC_VERIFIED | 0045 |
+| P | Export | STATIC_VERIFIED | 0046 |
+| Q | Net Worth | STATIC_VERIFIED | 0047 |
+| R | Insights | STATIC_VERIFIED | 0048 |
+| S | Fast Bookkeeping / Global Quick Add | STATIC_VERIFIED | N/A |
+| T | Finance Hub Final Integration | STATIC_VERIFIED | 0049 |
 
-Current completed migration head: `0036_recurring_transactions.sql`.
+Current completed migration head: `0049_finance_hub_final.sql`.
 
 `STATIC_VERIFIED` means typecheck/lint/tests/build/diff passed. It does **not** mean live database verification has passed.
 
@@ -299,7 +299,7 @@ Migration: `0036_recurring_transactions.sql`
 # Remaining roadmap
 
 ## Phase H — Bills / Due Dates
-Status: `READY`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -437,7 +437,7 @@ Likely migration: `0037_bills.sql`.
 ---
 
 ## Phase I — Installments
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -520,7 +520,7 @@ Test:
 ---
 
 ## Phase J — Saving Goals
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -563,7 +563,7 @@ If both models are materially viable in the existing architecture, STOP and ask 
 ---
 
 ## Phase K — Debt / Borrow / Lend
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -619,7 +619,7 @@ If there are two materially different viable models for how loan principal shoul
 ---
 
 ## Phase L — Analytics / Reports
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -657,7 +657,7 @@ Charts must be presentation over authoritative numeric results, not financial co
 ---
 
 ## Phase M — Finance ↔ Calendar Integration
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -685,7 +685,7 @@ Personal/Household visibility must remain correct.
 ---
 
 ## Phase N — Attachments / Receipts
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -725,7 +725,7 @@ Existing upload cap for Member/Pet remains 15 MiB input unless intentionally cha
 ---
 
 ## Phase O — Import
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -767,7 +767,7 @@ Import logical transactions, not raw ledger entries from arbitrary files.
 ---
 
 ## Phase P — Export
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -796,7 +796,7 @@ Respect Personal/Household access.
 ---
 
 ## Phase Q — Net Worth
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Prerequisite
 
@@ -827,7 +827,7 @@ USD displayed separately.
 ---
 
 ## Phase R — Insights
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -852,7 +852,7 @@ Every insight should be traceable to underlying values/read models.
 ---
 
 ## Phase S — Fast Bookkeeping / Global Quick Add
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -882,7 +882,7 @@ Mobile-first and PWA-friendly.
 ---
 
 ## Phase T — Finance Hub Final Integration
-Status: `NOT_STARTED`
+Status: `STATIC_VERIFIED`
 
 ### Goal
 
@@ -957,6 +957,13 @@ These invariants must remain permanently tested as the roadmap advances:
 ---
 
 # Live verification policy
+
+## Phase U — Default System Category Pack
+Status: `STATIC_VERIFIED`
+
+Global ownerless Thai Income/Expense categories use stable `system_key` values. They are selectable for both Personal and Household finance flows, remain read-only, and never represent transfers, debt principal, refunds, or reimbursements.
+
+---
 
 Static verification may advance development, but each migration/feature remains live-pending until tested against the real Supabase project.
 

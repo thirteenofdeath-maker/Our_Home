@@ -1,0 +1,2 @@
+export interface InstallmentPlanSummary{id:string;scope:"PERSONAL"|"HOUSEHOLD";ownerUserId:string|null;householdId:string|null;name:string;totalAmount:string;currency:string;installmentCount:number;startDate:string;intervalMonths:number;walletId:string|null;pocketId:string|null;categoryId:string;title:string|null;note:string|null;archivedAt:string|null}
+export interface InstallmentOccurrenceSummary{id:string;planId:string;sequenceNumber:number;dueDate:string;expectedAmount:string;status:"OPEN"|"PAID";paidTransactionId:string|null;paidAt:string|null}

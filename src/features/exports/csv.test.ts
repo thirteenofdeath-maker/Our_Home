@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{csvCell,rowsToCsv}from"./csv";describe("CSV export",()=>{it("escapes commas, quotes, and newlines",()=>{expect(csvCell('a,"b"')).toBe('"a,""b"""')});it("writes BOM, headers, and logical rows",()=>{expect(rowsToCsv([{id:"1",amount:"12.50"}],["id","amount"])).toBe("\uFEFFid,amount\r\n1,12.50")})});

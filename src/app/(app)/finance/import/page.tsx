@@ -1,0 +1,1 @@
+import{CsvImportForm}from"@/features/imports/CsvImportForm";export default function Page(){return <div className="flex flex-col gap-4"><p className="text-sm text-foreground-muted">จับคู่ทุกคอลัมน์ ตรวจตัวอย่าง แล้วจึงยืนยัน ระบบข้ามรายการซ้ำจาก fingerprint เดิม</p><CsvImportForm/></div>}
