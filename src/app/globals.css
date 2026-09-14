@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Every UI primitive in src/components/ui reads from these
+ * instead of hard-coding colors/spacing/radius, so retheming (or adding a
+ * manual dark-mode toggle later) means editing this block only.
+ */
+/*
+ * Our Home is intentionally a light-only UI — no
+ * `@media (prefers-color-scheme: dark)` override. The app canvas is a
+ * flat white regardless of the device/OS theme; cards are distinguished
+ * from it by border + spacing + `--shadow-card`, never by a tinted
+ * background. A manual theme toggle is a possible future addition, not
+ * built here — see docs for the standing decision if that changes.
+ */
+:root {
+  /* Forces native form controls (date/time pickers, scrollbars, etc.) to
+     their light rendering regardless of system theme, matching the app's
+     own always-light canvas — without this, a system-dark user could see
+     a white page with dark-chrome native pickers, which is exactly the
+     inconsistency this task removes. */
+  color-scheme: light;
+
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f7f8;
+  --color-border: #e7e9ec;
+  --color-foreground: #39413d;
+  --color-foreground-muted: #88918c;
+
+  --color-primary: #718d7a;
+  --color-primary-foreground: #ffffff;
+  --color-primary-soft: #dde8df;
+  --color-secondary: #dce6ee;
+
+  --color-income: #789b63;
+  --color-expense: #e96c55;
+  --color-transfer: #66859d;
+  --finance-hero: #49675a;
+
+  --color-danger: #b3492f;
+  --color-danger-foreground: #ffffff;
+
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-sheet: 1.25rem;
+  --shadow-card:
+    0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
+}
+
+/*
+ * Finance Design V2 — a distinct, self-contained token set for the "soft
+ * finance dashboard" direction. Pets/Calendar/Household never apply
+ * either class below, so they render exactly as before.
+ *
+ * Split into two classes so the token set itself never depends on an
+ * ancestor also opting in:
+ *
+ * `.finance-vars` defines ONLY the --finance-* custom properties — no
+ * background-color/color of its own. Apply this directly to any element
+ * that already carries its own bg-finance and text-finance Tailwind
+ * utilities (e.g. BottomSheet's dialog in finance tone), so the
+ * dialog's finance tone is self-contained and correct even when the
+ * trigger that opened it isn't nested inside a .finance-scope
+ * ancestor. Never combine .finance-vars/.finance-scope with a
+ * competing bg or text utility that ALSO comes from this same class on
+ * the SAME element — .finance-vars avoids that by not setting either.
+ *
+ * `.finance-scope` is `.finance-vars` PLUS background-color/color set
+ * directly — for page-level wrappers that want the whole subtree
+ * tinted, unchanged from before this split.
+ *
+ * No dark-mode variant — finance-toned surfaces render with this light
+ * palette regardless of system theme, same as the rest of the app now.
+ *
+ * `--finance-background` is a flat white page canvas (no blue-gray tint)
+ * — Finance identity comes from `--finance-primary`/controls/charts/
+ * semantic colors, not a tinted full-page background. `--finance-surface`
+ * is kept a hair off pure white (not flattened to match
+ * `--finance-surface-strong`) so a raised card still reads as a distinct
+ * layer against the white canvas via a subtle tone shift in addition to
+ * its border + `--shadow-card` — removing that last sliver of
+ * differentiation was judged to flatten the card hierarchy the product
+ * direction explicitly asked to preserve.
+ */
+.finance-vars,
+.finance-scope,
+.finance-ui-tone {
+  --finance-background: #fbf8f2;
+  --finance-surface: #fffaf3;
+  --finance-surface-strong: #ffffff;
+
+  --finance-primary: #789579;
+  --finance-primary-strong: #4f7058;
+  --finance-primary-soft: #e4eee0;
+
+  --finance-text: #352e2c;
+  --finance-muted: #807973;
+
+  --finance-income: #5e9467;
+  --finance-expense: #e87862;
+  --finance-transfer: #6597b7;
+
+  --finance-warning: #d39b45;
+}
+
+.finance-scope {
+  background-color: var(--finance-background);
+  color: var(--finance-text);
+}
+
+/*
+ * Finance UI tone — the fix for "Finance form sheets visually contain
+ * the old generic form UI inside the new Finance V2 sheet". The shared
+ * Field/Input/Select/Textarea/Button primitives (src/components/ui)
+ * are NOT restyled — they keep reading the exact same generic --color-*
+ * tokens they always have (bg-surface, border-border, text-foreground,
+ * text-foreground-muted, bg-primary, bg-primary-soft, ...). This class
+ * simply LOCALLY REDEFINES those same --color-* custom properties to
+ * their Finance V2 equivalents for everything inside it, the same
+ * mechanism `.finance-vars` already uses for the sheet chrome itself.
+ * Outside `.finance-ui-tone` (Pets/Calendar/Household/onboarding/every
+ * other generic page), the tokens are untouched — those primitives
+ * render exactly as before.
+ *
+ * `--color-danger`/`--color-danger-foreground` are deliberately NOT
+ * listed here — validation errors and destructive actions must stay
+ * visually distinct from the Finance accent palette, never remapped to
+ * it (a real ConfirmDialog is also never wrapped in this class at all —
+ * destructive confirmations stay outside Finance form tone entirely).
+ *
+ * Applied directly on each Finance domain form's own outer element
+ * (TransactionForm, WalletForm, AddPocketForm, PocketTransferForm,
+ * WalletTransferForm, CreateBudgetForm, GoalForm,
+ * CreateInstallmentForm, DebtCreateForm, BillForm,
+ * CreateRecurringForm, CreateTemplateForm, CategoryPicker, TagPicker) —
+ * never conditionally on `variant`, so the exact same full-page routes
+ * that render these forms directly (e.g. /wallets/new,
+ * /finance/budgets/new) get the same Finance V2 form tone as the sheet
+ * versions, with zero page-level changes.
+ *
+ * Self-contained like `.finance-vars`: `.finance-ui-tone` is included in
+ * the shared selector above, so `--finance-*` (including
+ * --finance-income/--finance-expense/--finance-transfer, which Button's
+ * financeIncome/financeExpense/financeTransfer variants read) are
+ * always defined here too — a full-page route with no `.finance-scope`
+ * ancestor still renders correctly.
+ */
+.finance-ui-tone {
+  --color-background: var(--finance-background);
+  --color-surface: var(--finance-surface-strong);
+  /* NOT --finance-background (now flat white, same as --color-surface
+     above) — CategoryPicker/TagPicker use bg-surface-muted for
+     always-visible fills (a selected tag chip, a selected row), not just
+     hover; mapping it to the white page background would make those
+     invisible. --finance-primary-soft keeps them a real, visible tint. */
+  --color-surface-muted: var(--finance-primary-soft);
+  --color-border: var(--finance-primary-soft);
+  --color-foreground: var(--finance-text);
+  --color-foreground-muted: var(--finance-muted);
+  --color-primary: var(--finance-primary);
+  --color-primary-soft: var(--finance-primary-soft);
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-foreground: var(--color-foreground);
+  --color-foreground-muted: var(--color-foreground-muted);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-secondary: var(--color-secondary);
+  --color-income: var(--color-income);
+  --color-expense: var(--color-expense);
+  --color-transfer: var(--color-transfer);
+  --color-finance-hero: var(--finance-hero);
+  --color-danger: var(--color-danger);
+  --color-danger-foreground: var(--color-danger-foreground);
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+  --radius-sheet: var(--radius-sheet);
+  --shadow-card: var(--shadow-card);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-finance-background: var(--finance-background);
+  --color-finance-surface: var(--finance-surface);
+  --color-finance-surface-strong: var(--finance-surface-strong);
+  --color-finance-primary: var(--finance-primary);
+  --color-finance-primary-strong: var(--finance-primary-strong);
+  --color-finance-primary-soft: var(--finance-primary-soft);
+  --color-finance-text: var(--finance-text);
+  --color-finance-muted: var(--finance-muted);
+  --color-finance-income: var(--finance-income);
+  --color-finance-expense: var(--finance-expense);
+  --color-finance-transfer: var(--finance-transfer);
+  --color-finance-warning: var(--finance-warning);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
