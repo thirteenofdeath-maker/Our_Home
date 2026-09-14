@@ -18,9 +18,10 @@ function category(overrides: Partial<CategoryNode>): CategoryNode {
 }
 
 describe("0050 default system category pack", () => {
-  it("is the sole migration after the live 0049 head", () => {
+  it("is present immediately after the live 0049 head", () => {
     const later = readdirSync(resolve(process.cwd(), "supabase/migrations")).filter((name) => /^005\d_/.test(name));
-    expect(later).toEqual(["0050_default_system_categories.sql"]);
+    expect(later).toContain("0050_default_system_categories.sql");
+    expect(later[0]).toBe("0050_default_system_categories.sql");
   });
 
   it("models system identity without fake ownership and protects user identity", () => {

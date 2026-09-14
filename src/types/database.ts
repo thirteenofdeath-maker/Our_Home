@@ -671,8 +671,51 @@ export interface Database {
       debt_accounts:{Row:{id:string;scope:MoneyScope;owner_user_id:string|null;household_id:string|null;debt_type:"LIABILITY"|"RECEIVABLE";name:string;counterparty:string|null;currency:string;apr:string|number|null;due_date:string|null;note:string|null;archived_at:string|null;created_by:string;created_at:string;updated_at:string};Insert:never;Update:{name?:string;counterparty?:string|null;apr?:string|number|null;due_date?:string|null;note?:string|null;archived_at?:string|null};Relationships:[]};
       debt_events:{Row:{id:string;debt_account_id:string;event_kind:"DRAW"|"PRINCIPAL_REPAYMENT"|"DISBURSEMENT"|"PRINCIPAL_RECEIPT";principal_amount:string|number;principal_transaction_id:string;interest_transaction_id:string|null;created_by:string;created_at:string};Insert:never;Update:never;Relationships:[]};
       transaction_attachments:{Row:{id:string;transaction_id:string;storage_path:string;mime_type:string;file_name:string;file_size:number;created_by:string;created_at:string};Insert:{id:string;transaction_id:string;storage_path:string;mime_type:string;file_name:string;file_size:number;created_by:string};Update:never;Relationships:[]};
+      household_expense_attributions: {
+        Row: {
+          transaction_id: string;
+          household_id: string;
+          household_category_id: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never; // created only via create_attributed_household_expense
+        Update: never; // household_category_id changes only via update_attributed_household_expense
+        Relationships: [
+          {
+            foreignKeyName: "household_expense_attributions_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "household_expense_attributions_household_category_id_fkey";
+            columns: ["household_category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      household_attributed_expense_effects: {
+        Row: {
+          transaction_id: string;
+          household_id: string;
+          household_category_id: string;
+          currency: string;
+          amount: string | number;
+          occurred_at: string;
+          deleted_at: string | null;
+          payer_user_id: string;
+          original_transaction_id: string;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       is_household_member: {
         Args: { p_household_id: string };
@@ -905,6 +948,45 @@ export interface Database {
       get_net_worth:{Args:Record<string,never>;Returns:unknown};
       get_finance_insights:{Args:{p_current_start:string;p_current_end:string;p_previous_start:string;p_today:string};Returns:unknown};
       get_finance_hub_final:{Args:{p_report_start:string;p_report_end:string;p_today:string};Returns:unknown};
+      create_attributed_household_expense: {
+        Args: {
+          p_household_id: string;
+          p_household_category_id: string;
+          p_wallet_id: string;
+          p_pocket_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
+      update_attributed_household_expense: {
+        Args: {
+          p_transaction_id: string;
+          p_pocket_id: string;
+          p_household_category_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
+      get_household_expense_activity: {
+        Args: { p_household_id: string; p_from: string; p_to: string };
+        Returns: unknown;
+      };
+      get_household_attributed_expense_rows: {
+        Args: { p_household_id: string | null; p_from: string; p_to: string };
+        Returns: {
+          transaction_id: string;
+          household_category_id: string;
+          currency: string;
+          amount: string | number;
+          occurred_at: string;
+        }[];
+      };
     };
     Enums: {
       household_role: HouseholdRole;
