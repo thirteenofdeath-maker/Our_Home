@@ -214,23 +214,13 @@ export function FinanceCreateFlow({
 
       <BottomSheet
         open={sheetOpen}
-        onClose={closeFlow}
+        onClose={showBack ? goBack : closeFlow}
         title={title}
         size={stage === "choosing" ? "content" : "large"}
         tone="finance"
+        closeLabel="ย้อนกลับ"
       >
         <>
-          {showBack ? (
-            <button
-              type="button"
-              aria-label="ย้อนกลับไปเลือกประเภท"
-              onClick={goBack}
-              className="mb-2 flex size-9 items-center justify-center rounded-full text-finance-muted hover:bg-finance-primary-soft"
-            >
-              <AppIcon name="chevron" className="size-4 rotate-180" />
-            </button>
-          ) : null}
-
           {loadError ? (
             <p className="mb-2 text-sm text-finance-expense">{loadError}</p>
           ) : null}

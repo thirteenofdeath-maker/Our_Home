@@ -5,7 +5,10 @@ import { vi } from "vitest";
 
 import { handleOwnDialogLifecycle } from "./BottomSheet";
 
-const source = readFileSync(resolve(process.cwd(), "src/components/ui/BottomSheet.tsx"), "utf8");
+const source = readFileSync(
+  resolve(process.cwd(), "src/components/ui/BottomSheet.tsx"),
+  "utf8",
+);
 
 // The dialog's class list is now built via cn(...) (several string-literal
 // arguments, some inside a ternary) rather than one literal className
@@ -14,7 +17,8 @@ const source = readFileSync(resolve(process.cwd(), "src/components/ui/BottomShee
 // below can still check "does this exact utility class exist anywhere
 // the dialog could render" without caring which branch produced it.
 function dialogClassCandidates(): string {
-  const call = source.match(/<dialog[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/)?.[1] ?? "";
+  const call =
+    source.match(/<dialog[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/)?.[1] ?? "";
   const literals = [...call.matchAll(/"([^"]*)"/g)].map((m) => m[1]);
   return literals.join(" ");
 }
@@ -32,7 +36,9 @@ describe("BottomSheet mobile sizing", () => {
   });
 
   it("caps the whole sheet (header + content) so it never grows past the safe viewport band, for both the large and content-sized variants", () => {
-    const matches = [...dialogClassCandidates().matchAll(/max-h-\[(\d+)dvh\]/g)].map((m) => Number(m[1]));
+    const matches = [
+      ...dialogClassCandidates().matchAll(/max-h-\[(\d+)dvh\]/g),
+    ].map((m) => Number(m[1]));
     expect(matches.length).toBeGreaterThanOrEqual(2); // "large" and "content" ceilings
     for (const value of matches) {
       expect(value).toBeGreaterThanOrEqual(60);
@@ -52,7 +58,8 @@ describe("BottomSheet mobile sizing", () => {
     const classes = dialogClassCandidates();
     expect(classes).not.toContain("overflow-y-auto");
     expect(classes).toContain("flex-col");
-    const contentDiv = source.match(/<div className=\{cn\("([^"]*)"/)?.[1] ?? "";
+    const contentDiv =
+      source.match(/<div className=\{cn\("([^"]*)"/)?.[1] ?? "";
     expect(contentDiv).toContain("overflow-y-auto");
   });
 
@@ -61,7 +68,9 @@ describe("BottomSheet mobile sizing", () => {
   });
 
   it("closes on a genuine backdrop tap — a native <dialog> does not do this on its own", () => {
-    expect(source).toMatch(/onClick=\{\(event\) => \{\s*if \(event\.target === event\.currentTarget\) onClose\(\);/);
+    expect(source).toMatch(
+      /onClick=\{\(event\) => \{\s*if \(event\.target === event\.currentTarget\) onClose\(\);/,
+    );
   });
 
   it("shows a small drag-handle visual at the top of the sheet", () => {
@@ -81,7 +90,14 @@ describe("BottomSheet mobile sizing", () => {
   // real device.
   it("never sets display unconditionally on the <dialog> — only via the open: variant", () => {
     const classes = dialogClassCandidates().split(/\s+/).filter(Boolean);
-    for (const displayUtility of ["flex", "block", "grid", "inline-flex", "inline-block", "inline-grid"]) {
+    for (const displayUtility of [
+      "flex",
+      "block",
+      "grid",
+      "inline-flex",
+      "inline-block",
+      "inline-grid",
+    ]) {
       expect(classes).not.toContain(displayUtility);
     }
     expect(classes).toContain("open:flex");
@@ -101,13 +117,19 @@ describe("BottomSheet nested lifecycle isolation", () => {
       {
         target: childDialog,
         currentTarget: childDialog,
-        stopPropagation: () => { propagationStopped = true; },
+        stopPropagation: () => {
+          propagationStopped = true;
+        },
       },
       childClose,
     );
     if (!propagationStopped) {
       handleOwnDialogLifecycle(
-        { target: childDialog, currentTarget: parentDialog, stopPropagation: vi.fn() },
+        {
+          target: childDialog,
+          currentTarget: parentDialog,
+          stopPropagation: vi.fn(),
+        },
         parentClose,
       );
     }
@@ -120,7 +142,11 @@ describe("BottomSheet nested lifecycle isolation", () => {
     const childDialog = new EventTarget();
     const parentClose = vi.fn();
     handleOwnDialogLifecycle(
-      { target: childDialog, currentTarget: new EventTarget(), stopPropagation: vi.fn() },
+      {
+        target: childDialog,
+        currentTarget: new EventTarget(),
+        stopPropagation: vi.fn(),
+      },
       parentClose,
     );
     expect(parentClose).not.toHaveBeenCalled();
@@ -131,7 +157,12 @@ describe("BottomSheet nested lifecycle isolation", () => {
     const preventDefault = vi.fn();
     const onClose = vi.fn();
     handleOwnDialogLifecycle(
-      { target: dialog, currentTarget: dialog, stopPropagation: vi.fn(), preventDefault },
+      {
+        target: dialog,
+        currentTarget: dialog,
+        stopPropagation: vi.fn(),
+        preventDefault,
+      },
       onClose,
       true,
     );
@@ -172,7 +203,9 @@ describe("BottomSheet slide-up animation", () => {
   it("orchestrates the open/close transition via React state (entered), not a new animation dependency", () => {
     expect(source).toContain("useState(false)");
     expect(source).toContain("requestAnimationFrame");
-    expect(source).not.toMatch(/from ["'](framer-motion|react-spring|gsap)["']/);
+    expect(source).not.toMatch(
+      /from ["'](framer-motion|react-spring|gsap)["']/,
+    );
   });
 
   it("slides up from fully off-screen and fades in when entered, within the ~220-280ms band", () => {
@@ -212,7 +245,9 @@ describe("BottomSheet slide-up animation", () => {
   it("respects prefers-reduced-motion — no transform animation, only (at most) a quick opacity change", () => {
     const classes = dialogClassCandidates();
     expect(classes).toContain("motion-reduce:[transform:translate3d(0,0,0)]");
-    expect(classes).toMatch(/motion-reduce:transition-opacity|motion-reduce:transition-none/);
+    expect(classes).toMatch(
+      /motion-reduce:transition-opacity|motion-reduce:transition-none/,
+    );
   });
 });
 
@@ -237,10 +272,16 @@ describe("BottomSheet tone", () => {
   // rendering the generic (and, in dark mode, near-black) surface color
   // even while the finance-scoped page around it stays light, which is
   // the exact "sheet doesn't visually belong" mismatch this exists to fix.
-  it("swaps to finance tokens for the dialog surface, handle, title, and close button when tone=\"finance\"", () => {
-    expect(source).toContain('tone === "finance" ? "bg-finance-surface" : "bg-surface"');
-    expect(source).toContain('tone === "finance" ? "bg-finance-primary-soft" : "bg-border"');
+  it('swaps to finance tokens for the dialog surface, handle, title, and close button when tone="finance"', () => {
+    expect(source).toContain(
+      'tone === "finance" ? "bg-finance-surface" : "bg-surface"',
+    );
+    expect(source).toContain(
+      'tone === "finance" ? "bg-finance-primary-soft" : "bg-border"',
+    );
     expect(source).toContain('tone === "finance" && "text-finance-text"');
-    expect(source).toContain('tone === "finance" ? "text-finance-muted hover:bg-finance-primary-soft"');
+    expect(source).toMatch(
+      /tone === "finance"\s*\? "text-finance-muted hover:bg-finance-primary-soft"/,
+    );
   });
 });

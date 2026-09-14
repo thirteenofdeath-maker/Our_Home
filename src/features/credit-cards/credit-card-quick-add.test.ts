@@ -21,21 +21,28 @@ describe("credit-card quick add", () => {
     expect(flow).toContain("<BottomSheet");
   });
 
-  it("uses card and Pocket selectors with a large decimal amount input", () => {
-    expect(form).toContain('label="จาก Pocket"');
-    expect(form).toContain('label="เข้าบัตรเครดิต"');
-    expect(form).toContain('label="เข้า Pocket"');
+  it("uses the transfer template for card payment and cash advance", () => {
+    expect(form).toContain('type Picker = "card" | "endpoint" | null');
+    expect(form).toContain('label="จาก"');
+    expect(form).toContain('label="ไปยัง"');
+    expect(form).toContain('placeholder="เลือกต้นทาง"');
+    expect(form).toContain('placeholder="เลือกปลายทาง"');
+    expect(form).toContain(
+      'title={mode === "PAYMENT" ? "เลือกต้นทาง" : "เลือกปลายทาง"}',
+    );
     expect(form).toContain('inputMode="decimal"');
     expect(form).toContain('name="amount"');
   });
 
-  it("removes the trailing dashboard arrow without removing the back control", () => {
+  it("removes the dashboard arrow and uses one textual sheet back control", () => {
     const dashboardTrigger = flow.slice(
       flow.indexOf('triggerVariant === "dashboard"'),
       flow.indexOf(") : (", flow.indexOf('triggerVariant === "dashboard"')),
     );
     expect(dashboardTrigger).not.toContain('name="chevron"');
-    expect(flow).toContain('aria-label="ย้อนกลับไปเลือกประเภท"');
+    expect(flow).toContain('closeLabel="ย้อนกลับ"');
+    expect(flow).not.toContain('aria-label="ย้อนกลับไปเลือกประเภท"');
+    expect(flow).toContain("onClose={showBack ? goBack : closeFlow}");
   });
 
   it("keeps mixed-currency card calculations scoped to card Pockets", () => {

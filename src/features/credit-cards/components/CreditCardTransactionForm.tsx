@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 
 import { AppIcon } from "@/components/ui/AppIcon";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
@@ -23,6 +24,8 @@ const MODES: Array<{ value: CreditCardMode; label: string }> = [
   { value: "CASH_ADVANCE", label: "กดเงินสด" },
 ];
 
+type Picker = "card" | "endpoint" | null;
+
 export function CreditCardTransactionForm({
   cards,
   endpoints,
@@ -30,6 +33,8 @@ export function CreditCardTransactionForm({
   const [mode, setMode] = useState<CreditCardMode>("PAYMENT");
   const [cardId, setCardId] = useState(cards[0]?.accountId ?? "");
   const [endpointId, setEndpointId] = useState("");
+  const [picker, setPicker] = useState<Picker>(null);
+  const [amount, setAmount] = useState("");
   const [state, action] = useActionState(
     createCreditCardTransactionAction,
     initialActionState,
@@ -46,11 +51,16 @@ export function CreditCardTransactionForm({
     compatibleEndpoints.find((item) => item.pocketId === endpointId) ?? null;
   const today = new Date().toLocaleDateString("en-CA");
 
-  function changeCard(nextCardId: string) {
-    const nextCard = cards.find((item) => item.accountId === nextCardId);
-    setCardId(nextCardId);
-    if (!nextCard || endpoint?.currency !== nextCard.currency)
-      setEndpointId("");
+  function changeCard(nextCard: CreditCardAccountOption) {
+    setCardId(nextCard.accountId);
+    if (endpoint?.currency !== nextCard.currency) setEndpointId("");
+    setPicker(null);
+  }
+
+  function changeMode(nextMode: CreditCardMode) {
+    setMode(nextMode);
+    setEndpointId("");
+    setPicker(null);
   }
 
   if (!card) {
@@ -80,218 +90,297 @@ export function CreditCardTransactionForm({
         : "บันทึกกดเงินสด";
 
   return (
-    <form action={action} className="finance-ui-tone flex flex-col gap-4">
-      <input type="hidden" name="mode" value={mode} />
-      <input type="hidden" name="cardAccountId" value={card.accountId} />
-      <input
-        type="hidden"
-        name="endpointWalletId"
-        value={endpoint?.walletId ?? ""}
-      />
-      <input
-        type="hidden"
-        name="endpointPocketId"
-        value={endpoint?.pocketId ?? ""}
-      />
+    <>
+      <form action={action} className="finance-ui-tone flex flex-col gap-4">
+        <input type="hidden" name="mode" value={mode} />
+        <input type="hidden" name="cardAccountId" value={card.accountId} />
+        <input
+          type="hidden"
+          name="endpointWalletId"
+          value={endpoint?.walletId ?? ""}
+        />
+        <input
+          type="hidden"
+          name="endpointPocketId"
+          value={endpoint?.pocketId ?? ""}
+        />
 
-      <div className="grid grid-cols-3 rounded-[1.1rem] bg-finance-surface-strong p-1 shadow-sm">
-        {MODES.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => {
-              setMode(item.value);
-              setEndpointId("");
-            }}
-            className={cn(
-              "min-h-12 rounded-[0.9rem] px-2 text-[13px] font-medium transition-colors",
-              mode === item.value
-                ? "bg-finance-primary-soft text-finance-primary-strong"
-                : "text-finance-muted",
+        <div className="grid grid-cols-3 rounded-[1.1rem] bg-finance-surface-strong p-1 shadow-sm">
+          {MODES.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => changeMode(item.value)}
+              className={cn(
+                "min-h-12 rounded-[0.9rem] px-2 text-[13px] font-medium transition-colors",
+                mode === item.value
+                  ? "bg-finance-primary-soft text-finance-primary-strong"
+                  : "text-finance-muted",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <AmountField
+          currency={card.currency}
+          amount={amount}
+          onChange={setAmount}
+        />
+
+        {mode === "CASHBACK" ? (
+          <RouteButton
+            label="เข้าบัตรเครดิต"
+            card={card}
+            onClick={() => setPicker("card")}
+          />
+        ) : (
+          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+            {mode === "PAYMENT" ? (
+              <RouteButton
+                label="จาก"
+                endpoint={endpoint}
+                placeholder="เลือกต้นทาง"
+                onClick={() => setPicker("endpoint")}
+              />
+            ) : (
+              <RouteButton
+                label="จาก"
+                card={card}
+                onClick={() => setPicker("card")}
+              />
             )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+            <span
+              aria-hidden="true"
+              className="self-center pt-5 text-xl text-finance-transfer"
+            >
+              →
+            </span>
+            {mode === "PAYMENT" ? (
+              <RouteButton
+                label="ไปยัง"
+                card={card}
+                onClick={() => setPicker("card")}
+              />
+            ) : (
+              <RouteButton
+                label="ไปยัง"
+                endpoint={endpoint}
+                placeholder="เลือกปลายทาง"
+                onClick={() => setPicker("endpoint")}
+              />
+            )}
+          </div>
+        )}
 
-      {mode === "CASHBACK" ? (
-        <AccountSelect
-          label="เข้าบัตรเครดิต"
-          value={card.accountId}
-          onChange={changeCard}
-          cards={cards}
-        />
-      ) : (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-          {mode === "PAYMENT" ? (
-            <EndpointSelect
-              label="จาก Pocket"
-              value={endpointId}
-              onChange={setEndpointId}
-              endpoints={compatibleEndpoints}
-            />
-          ) : (
-            <AccountSelect
-              label="จากบัตรเครดิต"
-              value={card.accountId}
-              onChange={changeCard}
-              cards={cards}
-            />
-          )}
-          <span
-            aria-hidden="true"
-            className="self-center pt-6 text-xl text-finance-transfer"
-          >
-            →
-          </span>
-          {mode === "PAYMENT" ? (
-            <AccountSelect
-              label="เข้าบัตรเครดิต"
-              value={card.accountId}
-              onChange={changeCard}
-              cards={cards}
-            />
-          ) : (
-            <EndpointSelect
-              label="เข้า Pocket"
-              value={endpointId}
-              onChange={setEndpointId}
-              endpoints={compatibleEndpoints}
-            />
-          )}
+        {mode !== "CASHBACK" && !endpoint ? (
+          <p className="text-sm text-finance-muted">
+            เลือก {mode === "PAYMENT" ? "ต้นทาง" : "ปลายทาง"} สกุล{" "}
+            {card.currency}
+          </p>
+        ) : null}
+
+        <div className="flex gap-2 rounded-[1rem] bg-finance-surface-strong p-3 text-sm text-finance-muted shadow-sm">
+          <AppIcon
+            name="info"
+            className="mt-0.5 size-5 shrink-0 text-finance-transfer"
+          />
+          <p>{info}</p>
         </div>
-      )}
 
-      <div className="flex gap-2 rounded-[1rem] bg-finance-surface-strong p-3 text-sm text-finance-muted shadow-sm">
-        <AppIcon
-          name="info"
-          className="mt-0.5 size-5 shrink-0 text-finance-transfer"
-        />
-        <p>{info}</p>
-      </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
+            วันที่
+            <Input
+              name="occurredAt"
+              type="date"
+              defaultValue={today}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
+            หมายเหตุ
+            <Input
+              name="note"
+              type="text"
+              placeholder={mode === "CASHBACK" ? "Cashback" : "เพิ่มหมายเหตุ"}
+            />
+          </label>
+        </div>
 
-      <div>
-        <label
-          htmlFor="credit-card-amount"
-          className="text-sm font-medium text-finance-muted"
+        {state.error ? (
+          <p className="text-sm text-finance-expense">{state.error}</p>
+        ) : null}
+        <SubmitButton
+          size="lg"
+          variant="financeTransfer"
+          disabled={
+            !amount || Number(amount) <= 0 || (mode !== "CASHBACK" && !endpoint)
+          }
         >
-          จำนวนเงิน
-        </label>
-        <div className="mt-1.5 flex h-16 items-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-3 shadow-sm focus-within:border-finance-primary focus-within:ring-3 focus-within:ring-finance-primary-soft">
-          <span className="text-2xl font-semibold text-finance-text">
-            {card.currency === "THB" ? "฿" : card.currency}
-          </span>
-          <input
-            id="credit-card-amount"
-            name="amount"
-            type="text"
-            inputMode="decimal"
-            pattern="[0-9]+([.][0-9]{1,2})?"
-            placeholder="0.00"
-            autoFocus
-            required
-            className="h-14 min-w-0 flex-1 border-0 bg-transparent px-3 text-right text-3xl font-semibold tabular-nums text-finance-text outline-none placeholder:text-finance-muted"
-          />
+          {submitLabel}
+        </SubmitButton>
+      </form>
+
+      <BottomSheet
+        open={picker === "card"}
+        onClose={() => setPicker(null)}
+        title="เลือกบัตรเครดิต"
+        tone="finance"
+        closeLabel="ย้อนกลับ"
+      >
+        <div className="flex flex-col gap-1">
+          {cards.map((item) => (
+            <button
+              key={item.accountId}
+              type="button"
+              onClick={() => changeCard(item)}
+              className={cn(
+                "flex min-h-16 w-full items-center justify-between rounded-2xl px-3 py-2 text-left",
+                item.accountId === card.accountId
+                  ? "bg-finance-primary-soft"
+                  : "bg-finance-surface-strong",
+              )}
+            >
+              <span>
+                <span className="block font-medium text-finance-text">
+                  {item.name}
+                </span>
+                <span className="text-xs text-finance-muted">
+                  วงเงินคงเหลือ
+                </span>
+              </span>
+              <span className="tabular-nums text-finance-text">
+                {formatCurrency(item.availableCredit, item.currency)}
+              </span>
+            </button>
+          ))}
         </div>
-        <p className="mt-1 text-right text-xs text-finance-muted">
-          {mode === "PAYMENT"
-            ? `ยอดหนี้ ${formatCurrency(card.liability, card.currency)}`
-            : `วงเงินคงเหลือ ${formatCurrency(card.availableCredit, card.currency)}`}
-        </p>
-      </div>
+      </BottomSheet>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-          วันที่
-          <Input name="occurredAt" type="date" defaultValue={today} required />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-          หมายเหตุ
-          <Input
-            name="note"
-            type="text"
-            placeholder={mode === "CASHBACK" ? "Cashback" : "เพิ่มหมายเหตุ"}
-          />
-        </label>
-      </div>
-
-      {mode !== "CASHBACK" && !endpoint ? (
-        <p className="text-sm text-finance-muted">
-          เลือก Pocket สกุล {card.currency}
-        </p>
-      ) : null}
-      {state.error ? (
-        <p className="text-sm text-finance-expense">{state.error}</p>
-      ) : null}
-      <SubmitButton
-        size="lg"
-        variant="financeTransfer"
-        disabled={mode !== "CASHBACK" && !endpoint}
+      <BottomSheet
+        open={picker === "endpoint"}
+        onClose={() => setPicker(null)}
+        title={mode === "PAYMENT" ? "เลือกต้นทาง" : "เลือกปลายทาง"}
+        tone="finance"
+        closeLabel="ย้อนกลับ"
       >
-        {submitLabel}
-      </SubmitButton>
-    </form>
+        <div className="flex flex-col gap-1">
+          {compatibleEndpoints.map((item) => (
+            <button
+              key={item.pocketId}
+              type="button"
+              onClick={() => {
+                setEndpointId(item.pocketId);
+                setPicker(null);
+              }}
+              className={cn(
+                "flex min-h-16 w-full items-center justify-between rounded-2xl px-3 py-2 text-left",
+                item.pocketId === endpoint?.pocketId
+                  ? "bg-finance-primary-soft"
+                  : "bg-finance-surface-strong",
+              )}
+            >
+              <span>
+                <span className="block font-medium text-finance-text">
+                  {item.pocketName}
+                </span>
+                <span className="text-xs text-finance-muted">
+                  {item.walletName}
+                </span>
+              </span>
+              <span className="tabular-nums text-finance-text">
+                {formatCurrency(item.balance, item.currency)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+    </>
   );
 }
 
-function AccountSelect({
-  label,
-  value,
+function AmountField({
+  currency,
+  amount,
   onChange,
-  cards,
 }: {
-  label: string;
-  value: string;
+  currency: string;
+  amount: string;
   onChange: (value: string) => void;
-  cards: CreditCardAccountOption[];
 }) {
   return (
-    <label className="min-w-0 text-xs font-medium text-finance-muted">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-1 h-[76px] w-full rounded-[1.2rem] border border-finance-primary-soft bg-finance-surface-strong px-3 text-sm font-semibold text-finance-text shadow-sm outline-none"
+    <div>
+      <label
+        htmlFor="credit-card-amount"
+        className="text-sm font-medium text-finance-muted"
       >
-        {cards.map((card) => (
-          <option key={card.accountId} value={card.accountId}>
-            {card.name} · {formatCurrency(card.availableCredit, card.currency)}
-          </option>
-        ))}
-      </select>
-    </label>
+        จำนวนเงิน
+      </label>
+      <div className="mt-1.5 flex h-14 items-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-3 shadow-sm focus-within:border-finance-primary focus-within:ring-3 focus-within:ring-finance-primary-soft">
+        <span className="text-2xl font-semibold text-finance-text">
+          {currency === "THB" ? "฿" : currency}
+        </span>
+        <input
+          id="credit-card-amount"
+          name="amount"
+          value={amount}
+          onChange={(event) => onChange(event.target.value)}
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]+([.][0-9]{1,2})?"
+          placeholder="0.00"
+          autoFocus
+          required
+          className="h-12 min-w-0 flex-1 border-0 bg-transparent px-3 text-3xl font-semibold text-finance-text outline-none placeholder:text-finance-muted"
+        />
+      </div>
+    </div>
   );
 }
 
-function EndpointSelect({
+function RouteButton({
   label,
-  value,
-  onChange,
-  endpoints,
+  card,
+  endpoint,
+  placeholder,
+  onClick,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  endpoints: CreditCardEndpoint[];
+  card?: CreditCardAccountOption;
+  endpoint?: CreditCardEndpoint | null;
+  placeholder?: string;
+  onClick: () => void;
 }) {
+  const title = card?.name ?? endpoint?.pocketName ?? placeholder ?? "เลือก";
+  const subtitle = card
+    ? "บัตรเครดิต"
+    : (endpoint?.walletName ?? placeholder ?? "เลือก");
+  const balance = card
+    ? formatCurrency(card.availableCredit, card.currency)
+    : endpoint
+      ? formatCurrency(endpoint.balance, endpoint.currency)
+      : null;
+
   return (
-    <label className="min-w-0 text-xs font-medium text-finance-muted">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        required
-        className="mt-1 h-[76px] w-full rounded-[1.2rem] border border-finance-primary-soft bg-finance-surface-strong px-3 text-sm font-semibold text-finance-text shadow-sm outline-none"
+    <div className="min-w-0">
+      <p className="mb-1 text-sm font-medium text-finance-muted">{label}</p>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-h-[88px] w-full flex-col justify-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong p-3 text-left shadow-sm"
       >
-        <option value="">เลือก Pocket</option>
-        {endpoints.map((endpoint) => (
-          <option key={endpoint.pocketId} value={endpoint.pocketId}>
-            {endpoint.pocketName} ·{" "}
-            {formatCurrency(endpoint.balance, endpoint.currency)}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="truncate text-xs text-finance-muted">{subtitle}</span>
+        <span className="truncate text-sm font-semibold text-finance-text">
+          {title}
+        </span>
+        {balance ? (
+          <span className="mt-1 text-xs tabular-nums text-finance-muted">
+            {balance}
+          </span>
+        ) : null}
+      </button>
+    </div>
   );
 }

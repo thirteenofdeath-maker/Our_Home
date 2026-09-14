@@ -86,12 +86,15 @@ export function BottomSheet({
   children,
   size = "large",
   tone = "default",
+  closeLabel,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   size?: "content" | "large";
+  /** Replaces the default × affordance when a flow wants a textual back action. */
+  closeLabel?: string;
   /**
    * `"default"` (unchanged) reads the app's generic `--color-*` tokens —
    * every pre-existing consumer (CategoryPicker, TagPicker,
@@ -204,23 +207,44 @@ export function BottomSheet({
       )}
     >
       <div className="flex shrink-0 items-center justify-center pt-2.5 pb-1">
-        <span aria-hidden="true" className={cn("h-1.5 w-10 rounded-full", tone === "finance" ? "bg-finance-primary-soft" : "bg-border")} />
+        <span
+          aria-hidden="true"
+          className={cn(
+            "h-1.5 w-10 rounded-full",
+            tone === "finance" ? "bg-finance-primary-soft" : "bg-border",
+          )}
+        />
       </div>
       <div className="flex shrink-0 items-center justify-between px-4 pb-3">
-        <h2 className={cn("text-base font-semibold", tone === "finance" && "text-finance-text")}>{title}</h2>
+        <h2
+          className={cn(
+            "text-base font-semibold",
+            tone === "finance" && "text-finance-text",
+          )}
+        >
+          {title}
+        </h2>
         <button
           type="button"
           onClick={onClose}
           className={cn(
             "flex size-11 items-center justify-center rounded-full",
-            tone === "finance" ? "text-finance-muted hover:bg-finance-primary-soft" : "text-foreground-muted hover:bg-surface-muted",
+            tone === "finance"
+              ? "text-finance-muted hover:bg-finance-primary-soft"
+              : "text-foreground-muted hover:bg-surface-muted",
           )}
-          aria-label="Close"
+          aria-label={closeLabel ?? "Close"}
         >
-          &times;
+          {closeLabel ? (
+            <span className="px-1 text-sm font-medium">{closeLabel}</span>
+          ) : (
+            <>&times;</>
+          )}
         </button>
       </div>
-      <div className={cn("overflow-y-auto p-4", size === "large" && "flex-1")}>{children}</div>
+      <div className={cn("overflow-y-auto p-4", size === "large" && "flex-1")}>
+        {children}
+      </div>
     </dialog>
   );
 }
