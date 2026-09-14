@@ -417,3 +417,66 @@ describe.skipIf(!configured)("0062 credit-card balance-adjustment RLS and accoun
     }
   });
 });
+
+describe.skipIf(!paymentConfigured)("0063 immutable card statements, allocations and RLS",()=>{
+  it("derives payment and credit allocations while preserving the statement snapshot",async()=>{
+    const owner=await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!,env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const now=new Date();const closeDay=28;let periodEnd=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),closeDay));
+    if(periodEnd>=now)periodEnd=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,closeDay));
+    const priorClose=new Date(Date.UTC(periodEnd.getUTCFullYear(),periodEnd.getUTCMonth()-1,closeDay));
+    const periodStart=new Date(priorClose);periodStart.setUTCDate(periodStart.getUTCDate()+1);
+    const dueDate=new Date(Date.UTC(periodEnd.getUTCFullYear(),periodEnd.getUTCMonth()+1,15));
+    const isoDate=(date:Date)=>date.toISOString().slice(0,10);
+    const created=await owner.rpc("create_credit_card_account",{
+      p_scope:"PERSONAL",p_household_id:null,p_name:`Statement card ${Date.now()}`,p_currency:"THB",p_issuer:null,
+      p_network:null,p_last_four:null,p_credit_limit:"20000",p_statement_closing_day:closeDay,p_payment_due_day:15,p_apr:null,
+    });
+    expect(created.error).toBeNull();const accountId=created.data!;
+    try{
+      const purchase=await owner.rpc("create_card_purchase",{
+        p_card_account_id:accountId,p_category_id:env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID!,p_amount:"100.00",
+        p_title:"Statement purchase",p_note:null,p_occurred_at:`${isoDate(periodStart)}T05:00:00.000Z`,p_tag_ids:null,
+      });
+      expect(purchase.error).toBeNull();
+      const issued=await owner.rpc("issue_credit_card_statement",{
+        p_card_account_id:accountId,p_period_start:isoDate(periodStart),p_period_end:isoDate(periodEnd),
+        p_due_date:isoDate(dueDate),p_minimum_amount_due:"20.00",
+      });
+      expect(issued.error).toBeNull();const statementId=issued.data!;
+      const payment=await owner.rpc("create_credit_card_payment",{
+        p_card_account_id:accountId,p_from_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID!,
+        p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!,p_amount:"30.00",p_title:"Statement payment",
+        p_note:null,p_occurred_at:new Date().toISOString(),
+      });
+      expect(payment.error).toBeNull();
+      const cashback=await owner.rpc("create_credit_card_cashback",{
+        p_card_account_id:accountId,p_amount:"10.00",p_title:"Statement credit",p_note:null,p_occurred_at:new Date().toISOString(),
+      });
+      expect(cashback.error).toBeNull();
+      let statements=await owner.rpc("get_credit_card_statements",{p_card_account_id:accountId});
+      expect(statements.data?.find((row:{statement_id:string})=>row.statement_id===statementId)).toMatchObject({
+        statement_balance:100,paid_to_date:30,credits_to_date:10,effective_amount_due:60,status:"PARTIALLY_PAID",minimum_payment_met:true,
+      });
+      expect((await owner.rpc("void_transaction",{p_transaction_id:payment.data!,p_void_reason:"statement test"})).error).toBeNull();
+      statements=await owner.rpc("get_credit_card_statements",{p_card_account_id:accountId});
+      expect(statements.data?.[0]).toMatchObject({statement_balance:100,paid_to_date:0,credits_to_date:10,effective_amount_due:90,minimum_payment_met:false});
+      expect((await owner.rpc("restore_transaction",{p_transaction_id:payment.data!})).error).toBeNull();
+      const outsider=await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!,env.SUPABASE_TEST_USER_B_PASSWORD!);
+      expect((await outsider.from("credit_card_statements").select("id").eq("id",statementId)).data).toEqual([]);
+      expect((await outsider.from("credit_card_statement_allocations").select("id").eq("statement_id",statementId)).data).toEqual([]);
+      expect((await owner.from("credit_card_statements").update({minimum_amount_due:1}).eq("id",statementId)).error).not.toBeNull();
+      expect((await owner.from("credit_card_statement_allocations").insert({
+        statement_id:statementId,liability_event_id:"00000000-0000-0000-0000-000000000000",allocation_kind:"PAYMENT",amount:1,
+      })).error).not.toBeNull();
+    }finally{
+      const service=admin();const {data}=await service.from("credit_card_accounts").select("wallet_id,system_pocket_id").eq("id",accountId).single();
+      const {data:events}=await service.from("credit_card_liability_events").select("transaction_id").eq("card_account_id",accountId);
+      const ids=(events??[]).map((event)=>event.transaction_id);
+      await service.from("credit_card_statement_allocations").delete().in("statement_id",(await service.from("credit_card_statements").select("id").eq("card_account_id",accountId)).data?.map((row)=>row.id)??[]);
+      await service.from("credit_card_statements").delete().eq("card_account_id",accountId);
+      if(ids.length){await service.from("credit_card_liability_events").delete().eq("card_account_id",accountId);await service.from("transaction_entries").delete().in("transaction_id",ids);await service.from("transactions").delete().in("id",ids);}
+      await service.from("credit_card_accounts").delete().eq("id",accountId);
+      if(data){await service.from("pockets").delete().eq("id",data.system_pocket_id);await service.from("wallets").delete().eq("id",data.wallet_id);}
+    }
+  });
+});

@@ -43,3 +43,10 @@ export type CreditCardActivityItem = {
   categoryName: string | null;
   isVoided: boolean;
 };
+
+export type CreditCardStatementStatus = "OPEN" | "PARTIALLY_PAID" | "PAID" | "OVERDUE";
+export type CreditCardStatement = {
+  statementId:string; periodStart:string; periodEnd:string; dueDate:string;
+  statementBalance:string; minimumAmountDue:string; paidToDate:string; creditsToDate:string;
+  effectiveAmountDue:string; status:CreditCardStatementStatus; minimumPaymentMet:boolean;
+};

@@ -6,7 +6,7 @@ import type { Database, MoneyScope } from "@/types/database";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import { normalizeDatabaseMoney } from "@/lib/utils/money";
 
-import type { CreditCardAccount, CreditCardActivityItem, CreditCardEventKind, CreditCardOutstandingComponents } from "./types";
+import type { CreditCardAccount, CreditCardActivityItem, CreditCardEventKind, CreditCardOutstandingComponents, CreditCardStatement } from "./types";
 
 type CardRow = {
   account_id: string;
@@ -412,4 +412,20 @@ export async function getCardEventForTransaction(
     cardAccountId: first.card_account_id,
     eventKinds: data.map((row) => row.event_kind as CreditCardEventKind),
   } : null;
+}
+
+export async function issueCreditCardStatement(supabase:SupabaseClient<Database>,params:{cardAccountId:string;periodStart:string;periodEnd:string;dueDate:string;minimumAmountDue:string}):Promise<string>{
+  const {data,error}=await supabase.rpc("issue_credit_card_statement",{
+    p_card_account_id:params.cardAccountId,p_period_start:params.periodStart,p_period_end:params.periodEnd,
+    p_due_date:params.dueDate,p_minimum_amount_due:params.minimumAmountDue,
+  });
+  if(error) throw error; return data;
+}
+
+type RawStatement={statement_id:string;period_start:string;period_end:string;due_date:string;statement_balance:string|number;minimum_amount_due:string|number;paid_to_date:string|number;credits_to_date:string|number;effective_amount_due:string|number;status:CreditCardStatement["status"];minimum_payment_met:boolean};
+export async function listCreditCardStatements(supabase:SupabaseClient<Database>,cardAccountId:string):Promise<CreditCardStatement[]>{
+  const {data,error}=await supabase.rpc("get_credit_card_statements",{p_card_account_id:cardAccountId});
+  if(error){logDatabaseErrorInDev("listCreditCardStatements failed",error);return [];}
+  return ((data??[]) as RawStatement[]).map(row=>({statementId:row.statement_id,periodStart:row.period_start,periodEnd:row.period_end,dueDate:row.due_date,
+    statementBalance:normalizeDatabaseMoney(row.statement_balance),minimumAmountDue:normalizeDatabaseMoney(row.minimum_amount_due),paidToDate:normalizeDatabaseMoney(row.paid_to_date),creditsToDate:normalizeDatabaseMoney(row.credits_to_date),effectiveAmountDue:normalizeDatabaseMoney(row.effective_amount_due),status:row.status,minimumPaymentMet:row.minimum_payment_met}));
 }

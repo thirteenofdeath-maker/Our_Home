@@ -10,7 +10,7 @@ import {
   archiveCreditCardAction,
   restoreCreditCardAction,
 } from "@/features/credit-cards/actions";
-import { getCreditCard, getCreditCardOutstandingComponents, listCreditCardActivity } from "@/features/credit-cards/api";
+import { getCreditCard, getCreditCardOutstandingComponents, listCreditCardActivity, listCreditCardStatements } from "@/features/credit-cards/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -32,9 +32,10 @@ export default async function CreditCardDetailPage({
   const { supabase } = await requireUser();
   const card = await getCreditCard(supabase, cardId);
   if (!card) notFound();
-  const [activity, outstanding] = await Promise.all([
+  const [activity, outstanding, statements] = await Promise.all([
     listCreditCardActivity(supabase, cardId),
     getCreditCardOutstandingComponents(supabase, cardId),
+    listCreditCardStatements(supabase,cardId),
   ]);
   return (
     <div className="finance-scope -mx-4 flex flex-col gap-4 px-4 pb-8 pt-2">
@@ -72,6 +73,7 @@ export default async function CreditCardDetailPage({
           </p>
         ) : null}
       </Card>
+      <Card className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-finance-text">ใบแจ้งยอด</h2><p className="text-xs text-finance-muted">{statements.length?`${statements.length} รอบบิล`:"ยังไม่มีรอบบิล"}</p></div><Link href={`/finance/cards/${cardId}/statements`} className={buttonClassName("secondary","md","w-auto")}>ดูใบแจ้งยอด</Link></Card>
       {outstanding ? (
         <Card className="grid grid-cols-2 gap-x-4 gap-y-3">
           <Row label="เงินต้น" value={formatCurrency(outstanding.principal, card.currency)} />

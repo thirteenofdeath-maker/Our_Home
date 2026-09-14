@@ -196,6 +196,8 @@ export interface Database {
           { foreignKeyName:"credit_card_liability_events_reverses_event_id_fkey"; columns:["reverses_event_id"]; isOneToOne:false; referencedRelation:"credit_card_liability_events"; referencedColumns:["id"] },
         ];
       };
+      credit_card_statements:{Row:{id:string;card_account_id:string;period_start:string;period_end:string;due_date:string;statement_balance:string|number;minimum_amount_due:string|number;created_by:string;created_at:string};Insert:never;Update:never;Relationships:[{foreignKeyName:"credit_card_statements_card_account_id_fkey";columns:["card_account_id"];isOneToOne:false;referencedRelation:"credit_card_accounts";referencedColumns:["id"]}]};
+      credit_card_statement_allocations:{Row:{id:string;statement_id:string;liability_event_id:string;allocation_kind:"PAYMENT"|"CREDIT";amount:string|number;created_at:string};Insert:never;Update:never;Relationships:[{foreignKeyName:"credit_card_statement_allocations_statement_id_fkey";columns:["statement_id"];isOneToOne:false;referencedRelation:"credit_card_statements";referencedColumns:["id"]},{foreignKeyName:"credit_card_statement_allocations_liability_event_id_fkey";columns:["liability_event_id"];isOneToOne:false;referencedRelation:"credit_card_liability_events";referencedColumns:["id"]}]};
       pockets: {
         Row: {
           id: string;
@@ -1041,6 +1043,8 @@ export interface Database {
       create_credit_card_cashback:{Args:{p_card_account_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
       create_credit_card_cash_advance:{Args:{p_card_account_id:string;p_to_wallet_id:string;p_to_pocket_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
       create_credit_card_balance_adjustment:{Args:{p_card_account_id:string;p_target_wallet_balance:string;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
+      issue_credit_card_statement:{Args:{p_card_account_id:string;p_period_start:string;p_period_end:string;p_due_date:string;p_minimum_amount_due?:string};Returns:string};
+      get_credit_card_statements:{Args:{p_card_account_id:string};Returns:{statement_id:string;period_start:string;period_end:string;due_date:string;statement_balance:string|number;minimum_amount_due:string|number;paid_to_date:string|number;credits_to_date:string|number;effective_amount_due:string|number;status:string;minimum_payment_met:boolean}[]};
       get_credit_card_outstanding_components:{Args:{p_card_account_id:string};Returns:{principal:string|number;interest:string|number;fee:string|number;late_fee:string|number;unallocated_credit:string|number;total:string|number}[]};
       get_credit_card_activity:{Args:{p_card_account_id:string;p_limit?:number};Returns:{event_id:string;event_kinds:string[];amount:string|number;transaction_id:string;occurred_at:string;title:string|null;category_name:string|null;is_voided:boolean}[]};
       create_attributed_household_expense: {

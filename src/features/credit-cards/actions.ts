@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardBalanceAdjustment, createCreditCardCashAdvance, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardBalanceAdjustment, createCreditCardCashAdvance, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, issueCreditCardStatement, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -450,4 +450,17 @@ export async function createCreditCardBalanceAdjustmentAction(_state:ActionState
   }
   revalidatePath(`/finance/cards/${card.accountId}`); revalidatePath("/finance/cards"); revalidatePath("/finance");
   redirect(`/finance/transactions/${transactionId}`);
+}
+
+const statementFields=z.object({cardAccountId:z.string().uuid(),periodStart:z.string().date(),periodEnd:z.string().date(),dueDate:z.string().date(),minimumAmountDue:z.string().trim().regex(/^\d{1,12}(\.\d{1,2})?$/,"กรุณาระบุยอดขั้นต่ำไม่เกิน 2 ตำแหน่ง")});
+export async function issueCreditCardStatementAction(_state:ActionState,formData:FormData):Promise<ActionState>{
+  const {supabase}=await requireUser(); const parsed=statementFields.safeParse(Object.fromEntries(formData));
+  if(!parsed.success)return{error:parsed.error.issues[0]?.message??"ข้อมูลใบแจ้งยอดไม่ถูกต้อง"};
+  const card=await getCreditCard(supabase,parsed.data.cardAccountId);
+  if(!card||card.isArchived)return{error:"ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว"};
+  let statementId:string;
+  try{statementId=await issueCreditCardStatement(supabase,{...parsed.data,minimumAmountDue:normalizeAmount(parsed.data.minimumAmountDue)});}
+  catch(error){logDatabaseErrorInDev("issueCreditCardStatementAction failed",error);return{error:"ออกใบแจ้งยอดไม่สำเร็จ — ตรวจวันตัดรอบ วันครบกำหนด และช่วงที่ซ้ำ"};}
+  revalidatePath(`/finance/cards/${card.accountId}`); revalidatePath(`/finance/cards/${card.accountId}/statements`);
+  redirect(`/finance/cards/${card.accountId}/statements/${statementId}`);
 }
