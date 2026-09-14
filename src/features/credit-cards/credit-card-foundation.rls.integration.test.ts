@@ -31,6 +31,15 @@ describe.skipIf(!configured)("0054 credit-card account RLS", () => {
     const service = admin();
     const { data } = await service.from("credit_card_accounts").select("wallet_id, system_pocket_id").eq("id", accountId).single();
     if (!data) return;
+    const { data: events } = await service.from("credit_card_liability_events").select("transaction_id").eq("card_account_id", accountId);
+    const transactionIds = (events ?? []).map((event) => event.transaction_id);
+    if (transactionIds.length) {
+      await service.from("expense_adjustments").delete().in("transaction_id", transactionIds);
+      await service.from("transaction_tags").delete().in("transaction_id", transactionIds);
+      await service.from("credit_card_liability_events").delete().eq("card_account_id", accountId);
+      await service.from("transaction_entries").delete().in("transaction_id", transactionIds);
+      await service.from("transactions").delete().in("id", transactionIds);
+    }
     await service.from("credit_card_accounts").delete().eq("id", accountId);
     await service.from("pockets").delete().eq("id", data.system_pocket_id);
     await service.from("wallets").delete().eq("id", data.wallet_id);
@@ -72,6 +81,34 @@ describe.skipIf(!configured)("0054 credit-card account RLS", () => {
       expect((await householdOwner.from("credit_card_accounts").select("id").eq("id", accountId).single()).data?.id).toBe(accountId);
       const outsider = await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
       expect((await outsider.from("credit_card_accounts").select("id").eq("id", accountId)).data).toEqual([]);
+    } finally { await cleanup(accountId!); }
+  });
+
+  it("posts one purchase expense, returns a refund to the same card, and keeps events private", async () => {
+    const owner = await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { data: accountId, error } = await owner.rpc("create_credit_card_account", {
+      p_scope:"PERSONAL", p_household_id:null, p_name:`Purchase card ${Date.now()}`, p_currency:"THB", p_issuer:null,
+      p_network:null, p_last_four:null, p_credit_limit:"20000", p_statement_closing_day:31, p_payment_due_day:15, p_apr:null,
+    });
+    expect(error).toBeNull();
+    try {
+      const { data: purchaseId, error: purchaseError } = await owner.rpc("create_card_purchase", {
+        p_card_account_id:accountId!, p_category_id:env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID!, p_amount:"100.00",
+        p_title:"Test purchase", p_note:null, p_occurred_at:new Date().toISOString(), p_tag_ids:null,
+      });
+      expect(purchaseError).toBeNull();
+      const { data: refundId, error: refundError } = await owner.rpc("create_card_purchase_refund", {
+        p_original_purchase_transaction_id:purchaseId!, p_amount:"25.00", p_title:"Test refund", p_note:null,
+        p_occurred_at:new Date().toISOString(), p_tag_ids:null,
+      });
+      expect(refundError).toBeNull();
+      const { data: cards } = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
+      expect(Number(cards?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(75);
+      const { data: events } = await owner.from("credit_card_liability_events").select("event_kind, amount").eq("card_account_id", accountId);
+      expect(events?.map((event) => [event.event_kind, Number(event.amount)])).toEqual(expect.arrayContaining([["PURCHASE", 100], ["PURCHASE_REFUND", -25]]));
+      const outsider = await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+      expect((await outsider.from("credit_card_liability_events").select("id").eq("card_account_id", accountId)).data).toEqual([]);
+      expect(refundId).toBeTruthy();
     } finally { await cleanup(accountId!); }
   });
 });

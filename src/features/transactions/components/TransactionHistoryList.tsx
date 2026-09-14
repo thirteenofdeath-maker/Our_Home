@@ -12,6 +12,7 @@ const TYPE_LABEL: Record<TransactionHistoryItem["transactionType"], string> = {
   EXPENSE: "รายจ่าย",
   TRANSFER: "โอนเงิน",
   DEBT_PRINCIPAL: "เงินต้นหนี้/เงินยืม",
+  CARD_ADJUSTMENT: "ปรับยอดบัตร",
 };
 
 const ADJUSTMENT_LABEL: Record<"REFUND" | "REIMBURSEMENT", string> = {

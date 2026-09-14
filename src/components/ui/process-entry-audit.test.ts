@@ -123,7 +123,7 @@ describe("BOTTOM SLIDE-UP invariant — only Create/Add ever opens a sliding she
 
   it("never exposes an invalid transaction action: edit is omitted for adjustment transactions, refund/reimbursement are omitted once nothing remains adjustable", () => {
     const source = read("src/app/(app)/finance/transactions/[transactionId]/page.tsx");
-    expect(source).toContain("const canEdit = !adjustmentOrigin;");
+    expect(source).toContain("const canEdit = !adjustmentOrigin && !cardEvent;");
     expect(source).toContain("const canAdjust = isOriginalExpense && refundable && Number(refundable.remainingAdjustableAmount) > 0;");
   });
 

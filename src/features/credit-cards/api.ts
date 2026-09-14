@@ -6,7 +6,7 @@ import type { Database, MoneyScope } from "@/types/database";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import { normalizeDatabaseMoney } from "@/lib/utils/money";
 
-import type { CreditCardAccount } from "./types";
+import type { CreditCardAccount, CreditCardActivityItem } from "./types";
 
 type CardRow = {
   account_id: string;
@@ -147,4 +147,129 @@ export async function updateCreditCard(
     p_apr: params.apr,
   });
   if (error) throw error;
+}
+
+export async function createCardPurchase(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    categoryId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+    tagIds: string[];
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_card_purchase", {
+    p_card_account_id: params.cardAccountId,
+    p_category_id: params.categoryId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+    p_tag_ids: params.tagIds.length ? params.tagIds : null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function createAttributedCardPurchase(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    householdId: string;
+    householdCategoryId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_attributed_card_purchase", {
+    p_card_account_id: params.cardAccountId,
+    p_household_id: params.householdId,
+    p_household_category_id: params.householdCategoryId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function createCardPurchaseRefund(
+  supabase: SupabaseClient<Database>,
+  params: {
+    originalPurchaseTransactionId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+    tagIds: string[];
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_card_purchase_refund", {
+    p_original_purchase_transaction_id: params.originalPurchaseTransactionId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+    p_tag_ids: params.tagIds.length ? params.tagIds : null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+type RawActivity = {
+  event_id: string;
+  event_kind: CreditCardActivityItem["eventKind"];
+  amount: string | number;
+  transaction_id: string;
+  occurred_at: string;
+  title: string | null;
+  category_name: string | null;
+  is_voided: boolean;
+};
+
+export async function listCreditCardActivity(
+  supabase: SupabaseClient<Database>,
+  cardAccountId: string,
+): Promise<CreditCardActivityItem[]> {
+  const { data, error } = await supabase.rpc("get_credit_card_activity", {
+    p_card_account_id: cardAccountId,
+    p_limit: 50,
+  });
+  if (error) {
+    logDatabaseErrorInDev("listCreditCardActivity failed", error);
+    return [];
+  }
+  return ((data ?? []) as unknown as RawActivity[]).map((row) => ({
+    eventId: row.event_id,
+    eventKind: row.event_kind,
+    amount: normalizeDatabaseMoney(row.amount),
+    transactionId: row.transaction_id,
+    occurredAt: row.occurred_at,
+    title: row.title,
+    categoryName: row.category_name,
+    isVoided: row.is_voided,
+  }));
+}
+
+export async function getCardEventForTransaction(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+): Promise<{ cardAccountId: string; eventKind: CreditCardActivityItem["eventKind"] } | null> {
+  const { data, error } = await supabase
+    .from("credit_card_liability_events")
+    .select("card_account_id, event_kind")
+    .eq("transaction_id", transactionId)
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    logDatabaseErrorInDev("getCardEventForTransaction failed", error);
+    return null;
+  }
+  return data ? { cardAccountId: data.card_account_id, eventKind: data.event_kind as CreditCardActivityItem["eventKind"] } : null;
 }

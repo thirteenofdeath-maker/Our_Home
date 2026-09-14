@@ -14,7 +14,7 @@
 export type MoneyScope = "PERSONAL" | "HOUSEHOLD";
 export type HouseholdRole = "owner" | "admin" | "member";
 export type WalletType = "BANK" | "CASH" | "CREDIT_CARD" | "E_WALLET" | "OTHER";
-export type TransactionType = "INCOME" | "EXPENSE" | "TRANSFER" | "DEBT_PRINCIPAL";
+export type TransactionType = "INCOME" | "EXPENSE" | "TRANSFER" | "DEBT_PRINCIPAL" | "CARD_ADJUSTMENT";
 export type CategoryTransactionType = "INCOME" | "EXPENSE";
 export type ExpenseAdjustmentKind = "REFUND" | "REIMBURSEMENT";
 export type ProfileGender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
@@ -175,6 +175,25 @@ export interface Database {
             referencedRelation: "pockets";
             referencedColumns: ["id"];
           },
+        ];
+      };
+      credit_card_liability_events: {
+        Row: {
+          id: string;
+          card_account_id: string;
+          event_kind: "PURCHASE" | "INTEREST_CHARGE" | "FEE_CHARGE" | "LATE_FEE_CHARGE" | "PAYMENT_PRINCIPAL" | "PAYMENT_INTEREST" | "PAYMENT_FEE" | "PAYMENT_LATE_FEE" | "PURCHASE_REFUND" | "CASHBACK" | "CASH_ADVANCE" | "BALANCE_ADJUSTMENT";
+          amount: string | number;
+          transaction_id: string;
+          reverses_event_id: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          { foreignKeyName:"credit_card_liability_events_card_account_id_fkey"; columns:["card_account_id"]; isOneToOne:false; referencedRelation:"credit_card_accounts"; referencedColumns:["id"] },
+          { foreignKeyName:"credit_card_liability_events_transaction_id_fkey"; columns:["transaction_id"]; isOneToOne:false; referencedRelation:"transactions"; referencedColumns:["id"] },
+          { foreignKeyName:"credit_card_liability_events_reverses_event_id_fkey"; columns:["reverses_event_id"]; isOneToOne:false; referencedRelation:"credit_card_liability_events"; referencedColumns:["id"] },
         ];
       };
       pockets: {
@@ -748,6 +767,13 @@ export interface Database {
       };
     };
     Views: {
+      credit_card_liability_effects: {
+        Row: Database["public"]["Tables"]["credit_card_liability_events"]["Row"] & {
+          deleted_at: string | null;
+          occurred_at: string;
+        };
+        Relationships: [];
+      };
       household_attributed_expense_effects: {
         Row: {
           transaction_id: string;
@@ -1007,6 +1033,10 @@ export interface Database {
       create_credit_card_account:{Args:{p_scope:MoneyScope;p_household_id:string|null;p_name:string;p_currency:string;p_issuer:string|null;p_network:string|null;p_last_four:string|null;p_credit_limit:string;p_statement_closing_day:number;p_payment_due_day:number;p_apr:string|null};Returns:string};
       update_credit_card_account:{Args:{p_account_id:string;p_name:string;p_issuer:string|null;p_network:string|null;p_last_four:string|null;p_credit_limit:string;p_statement_closing_day:number;p_payment_due_day:number;p_apr:string|null};Returns:string};
       get_credit_card_accounts:{Args:{p_include_archived?:boolean};Returns:unknown};
+      create_card_purchase:{Args:{p_card_account_id:string;p_category_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null;p_tag_ids?:string[]|null};Returns:string};
+      create_attributed_card_purchase:{Args:{p_card_account_id:string;p_household_id:string;p_household_category_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
+      create_card_purchase_refund:{Args:{p_original_purchase_transaction_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null;p_tag_ids?:string[]|null};Returns:string};
+      get_credit_card_activity:{Args:{p_card_account_id:string;p_limit?:number};Returns:unknown};
       create_attributed_household_expense: {
         Args: {
           p_household_id: string;

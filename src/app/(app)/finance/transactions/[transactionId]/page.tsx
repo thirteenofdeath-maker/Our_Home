@@ -14,11 +14,13 @@ import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 import { listTransactionAttachments } from "@/features/attachments/api";
 import { AttachmentForm } from "@/features/attachments/AttachmentForm";
+import { getCardEventForTransaction } from "@/features/credit-cards/api";
 
 const TYPE_LABEL: Record<string, string> = {
   INCOME: "รายรับ",
   EXPENSE: "รายจ่าย",
   TRANSFER: "โอนเงิน",
+  CARD_ADJUSTMENT: "ปรับยอดบัตร",
 };
 
 const ADJUSTMENT_LABEL: Record<"REFUND" | "REIMBURSEMENT", string> = {
@@ -42,12 +44,13 @@ export default async function TransactionDetailPage({
   const transaction = await getTransactionDetail(supabase, transactionId);
   if (!transaction) notFound();
 
-  const [tags, adjustmentOrigin, attachments, attribution, transferChargeOrigin] = await Promise.all([
+  const [tags, adjustmentOrigin, attachments, attribution, transferChargeOrigin, cardEvent] = await Promise.all([
     listTagsForTransaction(supabase, transactionId),
     getAdjustmentOrigin(supabase, transactionId),
     listTransactionAttachments(supabase, transactionId),
     getAttributionForTransaction(supabase, transactionId),
     getTransferChargeOrigin(supabase, transactionId),
+    getCardEventForTransaction(supabase, transactionId),
   ]);
 
   const isTransfer = transaction.transactionType === "TRANSFER";
@@ -79,7 +82,7 @@ export default async function TransactionDetailPage({
   // invariants), so `adjustmentOrigin` and `attribution` are mutually
   // exclusive in practice — checked as two independent conditions anyway,
   // never assumed.
-  const canEdit = !adjustmentOrigin;
+  const canEdit = !adjustmentOrigin && !cardEvent;
   const canAdjust = isOriginalExpense && refundable && Number(refundable.remainingAdjustableAmount) > 0;
   const editHref = attribution
     ? `/finance/transactions/${transaction.transactionId}/edit-attributed`
@@ -101,7 +104,9 @@ export default async function TransactionDetailPage({
             ? ADJUSTMENT_LABEL[adjustmentOrigin.kind]
             : attribution
               ? "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว"
-              : transferChargeOrigin
+              : cardEvent
+                ? cardEvent.eventKind === "PURCHASE_REFUND" ? "คืนเงินเข้าบัตร" : "ซื้อผ่านบัตรเครดิต"
+                : transferChargeOrigin
                 ? `รายจ่าย · ${CHARGE_KIND_LABEL[transferChargeOrigin.kind]}ของการโอนเงิน`
                 : TYPE_LABEL[transaction.transactionType]}
         </p>
@@ -260,7 +265,7 @@ export default async function TransactionDetailPage({
                 ) : null}
                 {canAdjust ? (
                   <>
-                    <Link href={`/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "lg")}>
+                    <Link href={cardEvent?.eventKind === "PURCHASE" ? `/finance/cards/${cardEvent.cardAccountId}/purchases/${transaction.transactionId}/refund` : `/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "lg")}>
                       คืนเงิน
                     </Link>
                     <Link href={`/finance/transactions/${transaction.transactionId}/reimbursement`} className={buttonClassName("secondary", "lg")}>

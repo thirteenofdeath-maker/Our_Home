@@ -24,7 +24,7 @@ export default async function EditTransactionPage({
   const transaction = await getTransactionDetail(supabase, transactionId);
   if (!transaction) notFound();
   // Transfers are immutable in this phase (see docs/FINANCE.md Phase B).
-  if (transaction.transactionType === "TRANSFER" || transaction.transactionType === "DEBT_PRINCIPAL" || !transaction.walletId) notFound();
+  if (transaction.transactionType === "TRANSFER" || transaction.transactionType === "DEBT_PRINCIPAL" || transaction.transactionType === "CARD_ADJUSTMENT" || !transaction.walletId) notFound();
   // A refund/reimbursement is immutable in Phase D V1 — void it and
   // create a corrected one instead (see docs/FINANCE.md Phase D).
   if (await getAdjustmentOrigin(supabase, transactionId)) notFound();

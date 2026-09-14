@@ -9,8 +9,9 @@ import { archiveWallet, restoreWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
+import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createCreditCard, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -35,6 +36,19 @@ const cardFields = z.object({
   apr: z
     .union([z.literal(""), z.coerce.number().nonnegative()])
     .transform((v) => (v === "" ? null : String(v))),
+});
+
+const optionalLongText = z.string().trim().max(200).nullish().transform((value) => value || null);
+const occurredAt = z.string().trim().refine((value) => !Number.isNaN(Date.parse(value)), "กรุณาเลือกวันที่").transform((value) => new Date(`${value}T12:00:00`).toISOString());
+const purchaseFields = z.object({
+  cardAccountId: z.string().uuid(),
+  expenseScope: z.enum(["PERSONAL", "HOUSEHOLD"]),
+  categoryId: z.string().uuid("กรุณาเลือกหมวดหมู่"),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+  tagIds: z.array(z.string().uuid()).max(20),
 });
 
 export async function createCreditCardAction(
@@ -126,4 +140,105 @@ export async function restoreCreditCardAction(
   await restoreWallet(supabase, card.walletId);
   revalidatePath("/finance/cards");
   revalidatePath(`/finance/cards/${accountId}`);
+}
+
+export async function createCardPurchaseAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = purchaseFields.safeParse({
+    cardAccountId: formData.get("cardAccountId"),
+    expenseScope: formData.get("expenseScope"),
+    categoryId: formData.get("categoryId"),
+    amount: formData.get("amount"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+    tagIds: formData.getAll("tagIds"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลรายการไม่ถูกต้อง" };
+
+  const card = await getCreditCard(supabase, parsed.data.cardAccountId);
+  if (!card || card.isArchived) return { error: "ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  if (card.scope === "HOUSEHOLD" && parsed.data.expenseScope !== "HOUSEHOLD") {
+    return { error: "บัตรครอบครัวบันทึกได้เฉพาะรายจ่ายครอบครัว" };
+  }
+
+  let transactionId: string;
+  try {
+    if (card.scope === "PERSONAL" && parsed.data.expenseScope === "HOUSEHOLD") {
+      const household = await getMyPrimaryHousehold(supabase, user.id);
+      if (!household) return { error: "กรุณาสร้างครอบครัวก่อนบันทึกรายจ่ายครอบครัว" };
+      transactionId = await createAttributedCardPurchase(supabase, {
+        cardAccountId: card.accountId,
+        householdId: household.id,
+        householdCategoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+      });
+    } else {
+      transactionId = await createCardPurchase(supabase, {
+        cardAccountId: card.accountId,
+        categoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+        tagIds: parsed.data.tagIds,
+      });
+    }
+  } catch (error) {
+    logDatabaseErrorInDev("createCardPurchaseAction failed", error);
+    return { error: "บันทึกรายการซื้อผ่านบัตรไม่สำเร็จ กรุณาตรวจหมวดหมู่และข้อมูลอีกครั้ง" };
+  }
+  revalidatePath(`/finance/cards/${card.accountId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const refundFields = z.object({
+  originalPurchaseTransactionId: z.string().uuid(),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+  tagIds: z.array(z.string().uuid()).max(20),
+});
+
+export async function createCardPurchaseRefundAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = refundFields.safeParse({
+    originalPurchaseTransactionId: formData.get("originalPurchaseTransactionId"),
+    amount: formData.get("amount"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+    tagIds: formData.getAll("tagIds"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลคืนเงินไม่ถูกต้อง" };
+  let transactionId: string;
+  try {
+    transactionId = await createCardPurchaseRefund(supabase, {
+      originalPurchaseTransactionId: parsed.data.originalPurchaseTransactionId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+      tagIds: parsed.data.tagIds,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCardPurchaseRefundAction failed", error);
+    return { error: "คืนเงินไม่สำเร็จ — ตรวจสอบยอดที่ยังคืนได้และสถานะรายการ" };
+  }
+  revalidatePath(`/finance/transactions/${parsed.data.originalPurchaseTransactionId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
 }
