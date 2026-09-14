@@ -69,19 +69,35 @@ export async function getHouseholdExpenseActivity(
 }
 
 /**
- * Read-only convenience for the household activity page: same RPC, but
- * swallows/logs an error instead of throwing (a read page shows an empty
- * state, not a hard failure) — matching this codebase's established
- * "writes throw, reads swallow-and-log" split (see transactions/api.ts).
+ * A genuinely empty household (zero attributed expenses in range) and an
+ * RPC/network/authorization failure must never collapse into the same
+ * "empty list" shape — a caller cannot tell them apart, and the page
+ * would misrepresent a failure as "no household activity". This
+ * discriminated result is what `/household/activity` branches its
+ * loading/empty/success/error states on.
  */
-export async function listHouseholdExpenseActivitySafe(
+export type HouseholdExpenseActivityResult =
+  | { status: "ok"; items: HouseholdExpenseActivityItem[] }
+  | { status: "error" };
+
+/**
+ * Read-only convenience for the household activity page: same RPC, but
+ * turns a thrown error into `{ status: "error" }` instead of re-throwing
+ * (a read page renders its own error state rather than crashing) —
+ * still distinct from `{ status: "ok", items: [] }`, unlike the
+ * previous swallow-to-`[]` behavior this replaces. The detailed error is
+ * still logged server-side via the project's existing dev-only logging
+ * convention; nothing raw ever reaches the client either way.
+ */
+export async function loadHouseholdExpenseActivity(
   supabase: SupabaseClient<Database>,
   params: { householdId: string; from: string; to: string },
-): Promise<HouseholdExpenseActivityItem[]> {
+): Promise<HouseholdExpenseActivityResult> {
   try {
-    return await getHouseholdExpenseActivity(supabase, params);
+    const items = await getHouseholdExpenseActivity(supabase, params);
+    return { status: "ok", items };
   } catch (err) {
-    logDatabaseErrorInDev("listHouseholdExpenseActivitySafe failed", err);
-    return [];
+    logDatabaseErrorInDev("loadHouseholdExpenseActivity failed", err);
+    return { status: "error" };
   }
 }

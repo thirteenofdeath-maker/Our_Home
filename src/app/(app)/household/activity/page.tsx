@@ -1,10 +1,12 @@
 import Link from "next/link";
 
+import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listHouseholdExpenseActivitySafe } from "@/features/household/activity-api";
+import { loadHouseholdExpenseActivity } from "@/features/household/activity-api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -40,7 +42,7 @@ export default async function HouseholdActivityPage() {
   const from = new Date(to);
   from.setDate(from.getDate() - 90);
 
-  const activity = await listHouseholdExpenseActivitySafe(supabase, {
+  const result = await loadHouseholdExpenseActivity(supabase, {
     householdId: household.id,
     from: from.toISOString(),
     to: to.toISOString(),
@@ -53,11 +55,28 @@ export default async function HouseholdActivityPage() {
         รายจ่ายที่สมาชิกจ่ายด้วยเงินส่วนตัวแทนครอบครัว {household.name} ในช่วง 90 วันที่ผ่านมา
       </p>
 
-      {activity.length === 0 ? (
+      {result.status === "error" ? (
+        // A load failure (RPC error, network error, or an authorization
+        // rejection from get_household_expense_activity's own membership
+        // check) is a DIFFERENT fact from "genuinely no activity" and must
+        // never render the same way — see loadHouseholdExpenseActivity.
+        // Only a safe, generic Thai message is shown; the actual error
+        // (including any authorization/SQL detail) was already logged
+        // server-side via logDatabaseErrorInDev, never sent to the client.
+        <ErrorState
+          title="โหลดรายจ่ายครอบครัวไม่สำเร็จ"
+          description="เกิดข้อผิดพลาดขณะโหลดข้อมูล กรุณาลองใหม่อีกครั้ง"
+          action={
+            <Link href="/household/activity" className={buttonClassName("secondary", "md")}>
+              ลองอีกครั้ง
+            </Link>
+          }
+        />
+      ) : result.items.length === 0 ? (
         <EmptyState title="ยังไม่มีรายจ่ายครอบครัวที่จ่ายด้วยเงินส่วนตัว" description="เมื่อมีสมาชิกจ่ายรายจ่ายครอบครัวด้วยกระเป๋าส่วนตัว รายการจะแสดงที่นี่" />
       ) : (
         <Card className="flex flex-col divide-y divide-border p-0">
-          {activity.map((item) => (
+          {result.items.map((item) => (
             <Link
               key={item.transactionId}
               href={`/finance/transactions/${item.originalTransactionId}`}
