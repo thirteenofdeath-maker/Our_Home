@@ -114,24 +114,6 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-5 px-4 pb-8 pt-3">
-      <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
-        <Link
-          href={`/finance?month=${prevMonth}`}
-          aria-label="เดือนก่อนหน้า"
-          className="flex size-9 items-center justify-center rounded-full text-finance-text"
-        >
-          <AppIcon name="chevron" className="size-4 rotate-180" />
-        </Link>
-        <p className="text-sm font-semibold text-finance-text">{monthLabel}</p>
-        <Link
-          href={`/finance?month=${nextMonth}`}
-          aria-label="เดือนถัดไป"
-          className="flex size-9 items-center justify-center rounded-full text-finance-text"
-        >
-          <AppIcon name="chevron" className="size-4" />
-        </Link>
-      </div>
-
       {initialWallet ? (
         <Link
           href={`/finance/quick-add?walletId=${initialWallet.id}`}
@@ -298,6 +280,25 @@ export default async function FinancePage({
 
       <section className="flex flex-col gap-3">
         <SectionTitle title="สรุปรายรับรายจ่าย" href="/finance/reports" />
+        <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
+          <Link
+            href={`/finance?month=${prevMonth}`}
+            aria-label="เดือนก่อนหน้า"
+            className="flex size-9 items-center justify-center rounded-full text-finance-text"
+          >
+            <AppIcon name="chevron" className="size-4 rotate-180" />
+          </Link>
+          <p className="text-sm font-semibold text-finance-text">
+            {monthLabel}
+          </p>
+          <Link
+            href={`/finance?month=${nextMonth}`}
+            aria-label="เดือนถัดไป"
+            className="flex size-9 items-center justify-center rounded-full text-finance-text"
+          >
+            <AppIcon name="chevron" className="size-4" />
+          </Link>
+        </div>
         {summary.monthTotals.length ? (
           summary.monthTotals.map((total) => (
             <FinanceTrendCard

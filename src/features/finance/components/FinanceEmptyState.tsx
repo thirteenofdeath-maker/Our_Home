@@ -26,7 +26,9 @@ export function FinanceEmptyState({
       </span>
       <p className="font-semibold text-finance-text">{title}</p>
       {description ? <p className="text-sm text-finance-muted">{description}</p> : null}
-      {action ? <div className="mt-1 w-full">{action}</div> : null}
+      {action ? (
+        <div className="mt-1 flex w-full justify-center">{action}</div>
+      ) : null}
     </div>
   );
 }

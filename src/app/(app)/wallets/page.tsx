@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
-import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import {
   getWalletBalance,
@@ -72,8 +71,6 @@ export default async function WalletsPage({
           </FormSheetButton>
         }
       />
-      <FinanceModuleTabs />
-
       <section className="relative overflow-hidden rounded-[1.65rem] bg-[linear-gradient(135deg,#e7efe3,#f8f2e8)] p-5 shadow-card">
         <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
         <p className="relative text-sm font-medium text-finance-muted">

@@ -188,7 +188,7 @@ export function TransactionForm({
           <span className="text-2xl font-semibold text-foreground">
             {activeCurrency === "THB" ? "฿" : activeCurrency}
           </span>
-          <Input
+          <input
             id="amount"
             name="amount"
             type="text"
@@ -197,7 +197,7 @@ export function TransactionForm({
             placeholder="0.00"
             required
             autoFocus
-            className="h-12 border-0 bg-transparent px-3 text-3xl font-semibold shadow-none focus:ring-0"
+            className="h-12 min-w-0 flex-1 border-0 bg-transparent px-3 text-3xl font-semibold text-foreground outline-none placeholder:text-foreground-muted"
           />
         </div>
       </Field>

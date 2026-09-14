@@ -58,7 +58,7 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
           <label htmlFor="unified-transfer-amount" className="text-sm font-medium text-finance-muted">จำนวนเงิน</label>
           <div className="mt-1.5 flex h-14 items-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-3 shadow-sm focus-within:border-finance-primary focus-within:ring-3 focus-within:ring-finance-primary-soft">
             <span className="text-2xl font-semibold text-finance-text">{from.currency === "THB" ? "฿" : from.currency}</span>
-            <Input id="unified-transfer-amount" name="amount" value={amount} onChange={(event) => setAmount(event.target.value)} type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="0.00" required className="h-12 border-0 bg-transparent px-3 text-3xl font-semibold shadow-none focus:ring-0" />
+            <input id="unified-transfer-amount" name="amount" value={amount} onChange={(event) => setAmount(event.target.value)} type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="0.00" required className="h-12 min-w-0 flex-1 border-0 bg-transparent px-3 text-3xl font-semibold text-finance-text outline-none placeholder:text-finance-muted" />
           </div>
         </div>
 

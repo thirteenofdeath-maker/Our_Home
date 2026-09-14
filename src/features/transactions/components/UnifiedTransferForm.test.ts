@@ -18,6 +18,8 @@ describe("UnifiedTransferForm", () => {
     expect(source).toContain('const [amount, setAmount] = useState("")');
     expect(source).toContain('inputMode="decimal"');
     expect(actions).toMatch(/unifiedTransferSchema[\s\S]*?amount: positiveAmountSchema/);
+    expect(source).toContain('<input id="unified-transfer-amount"');
+    expect(source).not.toContain('<Input id="unified-transfer-amount"');
   });
 
   it("starts without an arbitrary destination and disables submit until destination and amount are valid", () => {

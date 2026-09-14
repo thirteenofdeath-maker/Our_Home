@@ -59,6 +59,17 @@ describe("approved mobile Finance UI", () => {
     expect(wallets).toContain("<WalletVisualCard");
     expect(wallets).toContain("grid-cols-2");
     expect(wallets).toContain("PageHeader");
+    expect(wallets).not.toContain("FinanceModuleTabs");
+  });
+
+  it("places the selected month directly with the trend summary instead of at the page top", () => {
+    const monthSwitcher = hub.indexOf('aria-label="เดือนก่อนหน้า"');
+    const trendHeading = hub.indexOf('title="สรุปรายรับรายจ่าย"');
+    const addEntry = hub.indexOf("{initialWallet ? (");
+
+    expect(monthSwitcher).toBeGreaterThan(trendHeading);
+    expect(monthSwitcher).toBeGreaterThan(addEntry);
+    expect(monthSwitcher).toBeLessThan(hub.indexOf("<FinanceTrendCard"));
   });
 
   it("keeps the compact Pocket row within its requested height/icon budget", () => {

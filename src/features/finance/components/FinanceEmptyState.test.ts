@@ -17,6 +17,7 @@ describe("FinanceEmptyState", () => {
     expect(html).toContain("ยังไม่มีงบประมาณ");
     expect(html).toContain("เริ่มวางแผนการเงินของคุณ");
     expect(html).toContain("สร้างงบประมาณ");
+    expect(html).toContain("justify-center");
   });
 
   it("stays compact — no full-viewport centering utility classes", () => {
