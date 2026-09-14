@@ -92,6 +92,7 @@ export default async function TransactionDetailPage({
   const isCardPurchase = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "PURCHASE";
   const isCardPayment = cardEvent?.eventKinds.every((kind) => kind.startsWith("PAYMENT_")) ?? false;
   const isCashAdvance = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "CASH_ADVANCE";
+  const isCardBalanceAdjustment = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "BALANCE_ADJUSTMENT";
 
   // Every action below is a real, pre-existing route/flow, gated by the
   // exact same conditions the previous consolidated sheet used — never a
@@ -336,6 +337,8 @@ export default async function TransactionDetailPage({
                   ? "ยกเลิกแล้ว เงินจะกลับเข้า Wallet ต้นทางและยอดค้างบัตรจะเพิ่มกลับอัตโนมัติ"
                   : isCashAdvance
                     ? "ยกเลิกแล้ว เงินจะออกจาก Wallet ปลายทางและยอดค้างบัตรจะลดลงอัตโนมัติ"
+                    : isCardBalanceAdjustment
+                      ? "ยกเลิกแล้ว ยอดบัตรจะกลับเป็นค่าก่อนการปรับยอด"
                     : "ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย"}
               </p>
             </>
@@ -343,7 +346,7 @@ export default async function TransactionDetailPage({
             <ActionButton
               action={restoreTransactionAction}
               hiddenFields={{ transactionId: transaction.transactionId, walletId: "" }}
-              label={isCardPayment ? "กู้คืนการจ่ายบัตร" : isCashAdvance ? "กู้คืนการกดเงินสด" : "กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"}
+              label={isCardPayment ? "กู้คืนการจ่ายบัตร" : isCashAdvance ? "กู้คืนการกดเงินสด" : isCardBalanceAdjustment ? "กู้คืนการปรับยอด" : "กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"}
               variant="primary"
               className="w-full"
             />

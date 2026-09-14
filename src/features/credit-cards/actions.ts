@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardCashAdvance, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardBalanceAdjustment, createCreditCardCashAdvance, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -419,5 +419,35 @@ export async function createCreditCardCashAdvanceAction(
   revalidatePath(`/finance/cards/${card.accountId}`);
   revalidatePath("/finance/cards");
   revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const balanceAdjustmentFields = z.object({
+  cardAccountId:z.string().uuid(), balanceKind:z.enum(["LIABILITY","CREDIT","ZERO"]),
+  amount:z.string().trim().regex(/^\d{1,12}(\.\d{1,2})?$/, "กรุณาระบุยอดไม่เกิน 2 ตำแหน่ง"), note:optionalLongText, occurredAt,
+});
+
+export async function createCreditCardBalanceAdjustmentAction(_state:ActionState, formData:FormData):Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = balanceAdjustmentFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error:parsed.error.issues[0]?.message ?? "ข้อมูลปรับยอดไม่ถูกต้อง" };
+  const amount = normalizeAmount(parsed.data.amount);
+  if (parsed.data.balanceKind !== "ZERO" && amount === "0.00") {
+    return { error:"กรุณาระบุยอดที่ถูกต้อง" };
+  }
+  const card = await getCreditCard(supabase,parsed.data.cardAccountId);
+  if (!card || card.isArchived) return { error:"ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  const targetWalletBalance = parsed.data.balanceKind === "LIABILITY" ? `-${amount}`
+    : parsed.data.balanceKind === "CREDIT" ? amount : "0.00";
+  let transactionId:string;
+  try {
+    transactionId = await createCreditCardBalanceAdjustment(supabase,{
+      cardAccountId:card.accountId,targetWalletBalance,note:parsed.data.note,occurredAt:parsed.data.occurredAt,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCreditCardBalanceAdjustmentAction failed",error);
+    return { error:"ปรับยอดไม่สำเร็จ — ยอดใหม่อาจตรงกับยอดปัจจุบันอยู่แล้ว" };
+  }
+  revalidatePath(`/finance/cards/${card.accountId}`); revalidatePath("/finance/cards"); revalidatePath("/finance");
   redirect(`/finance/transactions/${transactionId}`);
 }

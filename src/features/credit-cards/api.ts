@@ -324,6 +324,18 @@ export async function createCreditCardCashAdvance(
   return data;
 }
 
+export async function createCreditCardBalanceAdjustment(
+  supabase: SupabaseClient<Database>,
+  params: { cardAccountId:string; targetWalletBalance:string; note:string|null; occurredAt:string },
+): Promise<string> {
+  const { data,error } = await supabase.rpc("create_credit_card_balance_adjustment", {
+    p_card_account_id:params.cardAccountId, p_target_wallet_balance:params.targetWalletBalance,
+    p_note:params.note, p_occurred_at:params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function createCreditCardIssuerCharge(
   supabase: SupabaseClient<Database>,
   params: {

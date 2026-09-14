@@ -371,3 +371,49 @@ describe.skipIf(!paymentConfigured)("0061 credit-card cash-advance RLS and accou
     })(); }
   });
 });
+
+describe.skipIf(!configured)("0062 credit-card balance-adjustment RLS and accounting", () => {
+  it("reconciles liability/card credit, stays private, and voids/restores", async () => {
+    const owner=await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!,env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const created=await owner.rpc("create_credit_card_account",{
+      p_scope:"PERSONAL",p_household_id:null,p_name:`Adjustment card ${Date.now()}`,p_currency:"THB",p_issuer:null,
+      p_network:null,p_last_four:null,p_credit_limit:"100",p_statement_closing_day:31,p_payment_due_day:15,p_apr:null,
+    });
+    expect(created.error).toBeNull(); const accountId=created.data!;
+    try {
+      const liability=await owner.rpc("create_credit_card_balance_adjustment",{
+        p_card_account_id:accountId,p_target_wallet_balance:"-120",p_note:"issuer",p_occurred_at:new Date().toISOString(),
+      });
+      expect(liability.error).toBeNull();
+      const credit=await owner.rpc("create_credit_card_balance_adjustment",{
+        p_card_account_id:accountId,p_target_wallet_balance:"20",p_note:"issuer correction",p_occurred_at:new Date().toISOString(),
+      });
+      expect(credit.error).toBeNull();
+      let cards=await owner.rpc("get_credit_card_accounts",{p_include_archived:true});
+      expect(cards.data?.find((card:{account_id:string})=>card.account_id===accountId)).toMatchObject({wallet_balance:20,liability:0,card_credit:20});
+      const components=await owner.rpc("get_credit_card_outstanding_components",{p_card_account_id:accountId});
+      expect(components.data?.[0]).toMatchObject({total:0,unallocated_credit:20});
+      expect((await owner.from("transactions").select("transaction_type,category_id").eq("id",credit.data!).single()).data)
+        .toEqual({transaction_type:"CARD_ADJUSTMENT",category_id:null});
+      expect((await owner.from("credit_card_liability_events").select("event_kind,amount").eq("transaction_id",credit.data!).single()).data)
+        .toMatchObject({event_kind:"BALANCE_ADJUSTMENT",amount:-140});
+      const outsider=await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!,env.SUPABASE_TEST_USER_B_PASSWORD!);
+      expect((await outsider.rpc("create_credit_card_balance_adjustment",{
+        p_card_account_id:accountId,p_target_wallet_balance:"0",p_note:null,p_occurred_at:new Date().toISOString(),
+      })).error).not.toBeNull();
+      expect((await outsider.from("credit_card_liability_events").select("id").eq("transaction_id",credit.data!)).data).toEqual([]);
+      expect((await owner.rpc("void_transaction",{p_transaction_id:credit.data!,p_void_reason:"test"})).error).toBeNull();
+      cards=await owner.rpc("get_credit_card_accounts",{p_include_archived:true});
+      expect(Number(cards.data?.find((card:{account_id:string})=>card.account_id===accountId)?.liability)).toBe(120);
+      expect((await owner.rpc("restore_transaction",{p_transaction_id:credit.data!})).error).toBeNull();
+    } finally {
+      const service=admin();
+      const {data}=await service.from("credit_card_accounts").select("wallet_id,system_pocket_id").eq("id",accountId).single();
+      const {data:events}=await service.from("credit_card_liability_events").select("transaction_id").eq("card_account_id",accountId);
+      const ids=(events??[]).map((event)=>event.transaction_id);
+      if(ids.length){await service.from("credit_card_liability_events").delete().eq("card_account_id",accountId);await service.from("transaction_entries").delete().in("transaction_id",ids);await service.from("transactions").delete().in("id",ids);}
+      await service.from("credit_card_accounts").delete().eq("id",accountId);
+      if(data){await service.from("pockets").delete().eq("id",data.system_pocket_id);await service.from("wallets").delete().eq("id",data.wallet_id);}
+    }
+  });
+});

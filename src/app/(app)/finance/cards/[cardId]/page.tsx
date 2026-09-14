@@ -139,9 +139,9 @@ export default async function CreditCardDetailPage({
             กดเงินสด
           </Link>
         )}
-        <Button disabled variant="secondary">
-          ปรับยอด
-        </Button>
+        {card.isArchived ? <Button disabled variant="secondary">ปรับยอด</Button> : (
+          <Link href={`/finance/cards/${cardId}/adjust`} className={buttonClassName("secondary", "md")}>ปรับยอด</Link>
+        )}
       </Card>
       <Card className="flex flex-col gap-3">
         <h2 className="font-semibold text-finance-text">รายการบัตรล่าสุด</h2>
