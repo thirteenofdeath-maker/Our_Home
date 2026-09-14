@@ -3,8 +3,8 @@ import Link from "next/link";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { FinanceEmptyState } from "@/features/finance/components/FinanceEmptyState";
 import { AddInstallmentFab } from "@/features/installments/components/AddInstallmentFab";
-import { listInstallmentPlans } from "@/features/installments/api";
-import type { InstallmentPlanSummary } from "@/features/installments/types";
+import { listCardInstallmentPlans, listInstallmentPlans } from "@/features/installments/api";
+import type { CardInstallmentPlanSummary, InstallmentPlanSummary } from "@/features/installments/types";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -21,6 +21,7 @@ import { formatCurrency } from "@/lib/utils/money";
 export default async function InstallmentsPage() {
   const { supabase } = await requireUser();
   const plans = await listInstallmentPlans(supabase, "PERSONAL");
+  const cardPlans = await listCardInstallmentPlans(supabase);
   const active = plans.filter((p) => !p.archivedAt);
   const archived = plans.filter((p) => p.archivedAt);
 
@@ -30,6 +31,8 @@ export default async function InstallmentsPage() {
         <h1 className="font-semibold text-finance-text">แผนผ่อนชำระ</h1>
         {active.length > 0 ? <AddInstallmentFab asEmptyStateCta /> : null}
       </div>
+
+      {cardPlans.length ? <section className="flex flex-col gap-2"><h2 className="text-sm font-semibold text-finance-muted">ผ่อนผ่านบัตรเครดิต</h2>{cardPlans.map((plan)=><CardInstallmentPlanRow key={plan.planId} plan={plan}/>)}</section>:null}
 
       {active.length === 0 ? (
         <FinanceEmptyState
@@ -59,6 +62,8 @@ export default async function InstallmentsPage() {
     </div>
   );
 }
+
+function CardInstallmentPlanRow({plan}:{plan:CardInstallmentPlanSummary}){return<Link href={`/finance/installments/card/${plan.planId}`} className={`flex items-center justify-between gap-3 rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm ${plan.archivedAt?"opacity-60":""}`}><div className="min-w-0"><p className="truncate font-medium text-finance-text">{plan.name}</p><p className="text-xs text-finance-muted">{plan.cardName} · จ่ายแล้ว {plan.paidCount}/{plan.installmentCount}{plan.nextDueDate?` · งวดถัดไป ${plan.nextDueDate}`:""}</p></div><div className="text-right"><p className="text-sm font-medium tabular-nums">{formatCurrency(plan.totalAmount,plan.currency)}</p><AppIcon name="chevron" className="ml-auto mt-1 size-4 text-finance-muted"/></div></Link>}
 
 function InstallmentPlanRow({ plan }: { plan: InstallmentPlanSummary }) {
   return (

@@ -144,6 +144,9 @@ export default async function CreditCardDetailPage({
         {card.isArchived ? <Button disabled variant="secondary">ปรับยอด</Button> : (
           <Link href={`/finance/cards/${cardId}/adjust`} className={buttonClassName("secondary", "md")}>ปรับยอด</Link>
         )}
+        {card.isArchived ? <Button disabled variant="secondary">สร้างแผนผ่อน</Button> : (
+          <Link href={`/finance/cards/${cardId}/installments/new`} className={buttonClassName("secondary", "md")}>สร้างแผนผ่อน</Link>
+        )}
       </Card>
       <Card className="flex flex-col gap-3">
         <h2 className="font-semibold text-finance-text">รายการบัตรล่าสุด</h2>

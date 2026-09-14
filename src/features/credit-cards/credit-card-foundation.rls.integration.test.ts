@@ -480,3 +480,41 @@ describe.skipIf(!paymentConfigured)("0063 immutable card statements, allocations
     }
   });
 });
+
+describe.skipIf(!paymentConfigured)("0064 card installment V2 RLS and accounting",()=>{
+  it("expenses the purchase once and pays an immutable occurrence as a transfer",async()=>{
+    const owner=await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!,env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const created=await owner.rpc("create_credit_card_account",{p_scope:"PERSONAL",p_household_id:null,p_name:`Installment card ${Date.now()}`,p_currency:"THB",p_issuer:null,p_network:null,p_last_four:null,p_credit_limit:"20000",p_statement_closing_day:28,p_payment_due_day:15,p_apr:null});
+    expect(created.error).toBeNull();const accountId=created.data!;let planId:string|undefined;
+    try{
+      const purchase=await owner.rpc("create_card_purchase",{p_card_account_id:accountId,p_category_id:env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID!,p_amount:"100.00",p_title:"Installment purchase",p_note:null,p_occurred_at:new Date().toISOString(),p_tag_ids:null});
+      expect(purchase.error).toBeNull();
+      const plan=await owner.rpc("create_credit_card_installment_plan",{p_card_account_id:accountId,p_purchase_transaction_id:purchase.data!,p_name:"3 months",p_installment_count:3,p_first_due_date:new Date().toISOString().slice(0,10),p_interval_months:1});
+      expect(plan.error).toBeNull();planId=plan.data!;
+      const occurrences=await owner.rpc("get_credit_card_installment_occurrences",{p_plan_id:planId});
+      expect(occurrences.data?.map((row:{expected_amount:string|number})=>Number(row.expected_amount))).toEqual([33.33,33.33,33.34]);
+      const payment=await owner.rpc("pay_credit_card_installment_occurrence",{p_occurrence_id:occurrences.data![0]!.occurrence_id,p_from_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID!,p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!,p_title:null,p_note:null,p_occurred_at:new Date().toISOString()});
+      expect(payment.error).toBeNull();
+      const transactions=await owner.from("transactions").select("id,transaction_type").in("id",[purchase.data!,payment.data!]);
+      expect(transactions.data?.find(row=>row.id===purchase.data)?.transaction_type).toBe("EXPENSE");
+      expect(transactions.data?.find(row=>row.id===payment.data)?.transaction_type).toBe("TRANSFER");
+      let cards=await owner.rpc("get_credit_card_accounts",{p_include_archived:true});
+      expect(Number(cards.data?.find((card:{account_id:string})=>card.account_id===accountId)?.liability)).toBe(66.67);
+      expect((await owner.rpc("void_transaction",{p_transaction_id:purchase.data!,p_void_reason:"blocked"})).error).not.toBeNull();
+      expect((await owner.rpc("create_card_purchase_refund",{p_original_purchase_transaction_id:purchase.data!,p_amount:"1.00",p_title:null,p_note:null,p_occurred_at:new Date().toISOString(),p_tag_ids:null})).error).not.toBeNull();
+      expect((await owner.rpc("void_transaction",{p_transaction_id:payment.data!,p_void_reason:"test"})).error).toBeNull();
+      cards=await owner.rpc("get_credit_card_accounts",{p_include_archived:true});expect(Number(cards.data?.find((card:{account_id:string})=>card.account_id===accountId)?.liability)).toBe(100);
+      expect((await owner.rpc("restore_transaction",{p_transaction_id:payment.data!})).error).toBeNull();
+      const outsider=await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!,env.SUPABASE_TEST_USER_B_PASSWORD!);
+      expect((await outsider.from("credit_card_installment_plans").select("id").eq("id",planId)).data).toEqual([]);
+      expect((await outsider.from("credit_card_installment_occurrences").select("id").eq("plan_id",planId)).data).toEqual([]);
+      expect((await owner.from("credit_card_installment_plans").insert({card_account_id:accountId,purchase_transaction_id:purchase.data!,name:"tamper",total_amount:1,installment_count:2,first_due_date:new Date().toISOString().slice(0,10),created_by:(await owner.auth.getUser()).data.user!.id} as never)).error).not.toBeNull();
+    }finally{
+      const service=admin();const{data}=await service.from("credit_card_accounts").select("wallet_id,system_pocket_id").eq("id",accountId).single();
+      if(planId){await service.from("credit_card_installment_occurrences").delete().eq("plan_id",planId);await service.from("credit_card_installment_plans").delete().eq("id",planId)}
+      const{data:events}=await service.from("credit_card_liability_events").select("transaction_id").eq("card_account_id",accountId);const ids=(events??[]).map(event=>event.transaction_id);
+      if(ids.length){await service.from("credit_card_liability_events").delete().eq("card_account_id",accountId);await service.from("transaction_entries").delete().in("transaction_id",ids);await service.from("transactions").delete().in("id",ids)}
+      await service.from("credit_card_accounts").delete().eq("id",accountId);if(data){await service.from("pockets").delete().eq("id",data.system_pocket_id);await service.from("wallets").delete().eq("id",data.wallet_id)}
+    }
+  });
+});

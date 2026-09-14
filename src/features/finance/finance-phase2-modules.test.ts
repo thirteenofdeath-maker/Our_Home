@@ -73,14 +73,15 @@ describe("Finance V2 Phase 2 module pages", () => {
       expect(installments).not.toMatch(/Promise\.all\(\s*(active|plans)\.map/);
     });
 
-    it("shows only fields listInstallmentPlans itself returns — no paid count, remaining amount, next due date, or completion state", () => {
+    it("keeps the legacy V1 rows limited to fields listInstallmentPlans itself returns", () => {
+      const legacyRow = installments.slice(installments.indexOf("function InstallmentPlanRow"));
       for (const invented of ["paidCount", "amountPaid", "amountRemaining", "nextDueDate", "totalCount", "isComplete"]) {
-        expect(installments).not.toContain(invented);
+        expect(legacyRow).not.toContain(invented);
       }
-      expect(installments).toContain("plan.totalAmount");
-      expect(installments).toContain("plan.installmentCount");
-      expect(installments).toContain("plan.startDate");
-      expect(installments).toContain("plan.intervalMonths");
+      expect(legacyRow).toContain("plan.totalAmount");
+      expect(legacyRow).toContain("plan.installmentCount");
+      expect(legacyRow).toContain("plan.startDate");
+      expect(legacyRow).toContain("plan.intervalMonths");
     });
 
     it("never treats archivedAt as a completion/success state, and drops the occurrence-dependent กำลังผ่อน/ผ่อนสำเร็จ toggle", () => {
