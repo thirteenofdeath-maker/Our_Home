@@ -2,6 +2,7 @@
 
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { listCategoriesForWallet } from "@/features/categories/api";
+import { listCreditCardAccounts } from "@/features/credit-cards/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import {
   listPocketsForWallet,
@@ -150,7 +151,7 @@ export async function getUnifiedTransferSheetData(walletId: string) {
   return { initialWalletId: wallet.id, endpoints, tags };
 }
 
-export async function getCreditCardContainerSheetData(walletId: string) {
+export async function getCreditCardSheetData(walletId: string) {
   const { supabase } = await requireUser();
   const wallet = await getWallet(supabase, walletId);
   if (!wallet || wallet.is_archived) throw new Error("ไม่พบกระเป๋าเงิน");
@@ -161,17 +162,30 @@ export async function getCreditCardContainerSheetData(walletId: string) {
       candidate.owner_user_id === wallet.owner_user_id &&
       candidate.household_id === wallet.household_id,
   );
-  const pocketSets = await Promise.all(
-    wallets.map(async (candidate) => ({
-      wallet: candidate,
-      pockets: await listPocketsForWallet(supabase, candidate.id),
-    })),
-  );
+  const [pocketSets, allCards] = await Promise.all([
+    Promise.all(
+      wallets.map(async (candidate) => ({
+        wallet: candidate,
+        pockets: await listPocketsWithBalances(supabase, candidate.id),
+      })),
+    ),
+    listCreditCardAccounts(supabase),
+  ]);
+  const walletIds = new Set(wallets.map((candidate) => candidate.id));
   return {
-    walletId:
-      pocketSets.find((item) =>
-        item.pockets.some((pocket) => pocket.pocket_type === "CREDIT_CARD"),
-      )?.wallet.id ?? null,
+    cards: allCards.filter((card) => walletIds.has(card.walletId)),
+    endpoints: pocketSets.flatMap(({ wallet: candidate, pockets }) =>
+      pockets
+        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
+        .map((pocket) => ({
+          walletId: candidate.id,
+          walletName: candidate.name,
+          pocketId: pocket.id,
+          pocketName: pocket.name,
+          currency: pocket.currency,
+          balance: pocket.balance,
+        })),
+    ),
   };
 }
 

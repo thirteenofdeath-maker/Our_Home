@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { BottomSheet, CLOSE_TRANSITION_MS } from "@/components/ui/BottomSheet";
 import type { CategoryNode } from "@/features/categories/types";
+import { CreditCardTransactionForm } from "@/features/credit-cards/components/CreditCardTransactionForm";
+import type { CreditCardSheetData } from "@/features/credit-cards/types";
 import type { Pocket } from "@/features/pockets/types";
 import type { TagOption } from "@/features/tags/types";
 import { CreateInstallmentForm } from "@/features/installments/components/CreateInstallmentForm";
@@ -18,7 +19,7 @@ import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
 import { cn } from "@/lib/utils/cn";
 
 import {
-  getCreditCardContainerSheetData,
+  getCreditCardSheetData,
   getIncomeExpenseSheetData,
   getUnifiedTransferSheetData,
 } from "../quick-add-data";
@@ -80,9 +81,7 @@ export function FinanceCreateFlow({
   );
   const [installmentData, setInstallmentData] =
     useState<InstallmentData | null>(null);
-  const [creditCardWalletId, setCreditCardWalletId] = useState<string | null>(
-    null,
-  );
+  const [cardData, setCardData] = useState<CreditCardSheetData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   function transitionTo(next: () => void) {
@@ -141,8 +140,7 @@ export function FinanceCreateFlow({
   function selectCard() {
     transitionTo(async () => {
       try {
-        const data = await getCreditCardContainerSheetData(walletId);
-        setCreditCardWalletId(data.walletId);
+        setCardData(await getCreditCardSheetData(walletId));
         setStage("card");
         setSheetOpen(true);
       } catch {
@@ -202,7 +200,6 @@ export function FinanceCreateFlow({
               </span>
             </span>
           </span>
-          <AppIcon name="chevron" className="size-5" />
         </button>
       ) : (
         <button
@@ -298,29 +295,8 @@ export function FinanceCreateFlow({
             <UnifiedTransferForm {...transferData} />
           ) : null}
 
-          {stage === "card" ? (
-            <div className="rounded-[1.15rem] bg-finance-primary-soft/70 p-4 text-center">
-              <p className="font-medium text-finance-text">
-                {creditCardWalletId
-                  ? "บัตรเครดิตอยู่ภายใน Wallet"
-                  : "ยังไม่มีกระเป๋าประเภทบัตรเครดิต"}
-              </p>
-              <p className="mt-1 text-sm text-finance-muted">
-                {creditCardWalletId
-                  ? "เปิด Wallet เพื่อเลือกบัตร วงเงิน และรายการของแต่ละใบ"
-                  : "เพิ่มบัตรเป็น Pocket ภายใน Wallet ก่อนบันทึกรายการ"}
-              </p>
-              <Link
-                href={
-                  creditCardWalletId
-                    ? `/wallets/${creditCardWalletId}`
-                    : "/wallets"
-                }
-                className="mt-3 inline-flex h-11 items-center rounded-full bg-finance-primary px-5 text-sm font-medium text-white"
-              >
-                {creditCardWalletId ? "เปิด Wallet" : "ไปที่กระเป๋าเงิน"}
-              </Link>
-            </div>
+          {stage === "card" && cardData ? (
+            <CreditCardTransactionForm {...cardData} />
           ) : null}
 
           {stage === "installment" && installmentData ? (

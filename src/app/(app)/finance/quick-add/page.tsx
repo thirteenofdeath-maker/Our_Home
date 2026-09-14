@@ -2,11 +2,11 @@ import { notFound } from "next/navigation";
 
 import { FinanceAddWorkspace } from "@/features/finance/components/FinanceAddWorkspace";
 import {
+  getCreditCardSheetData,
   getIncomeExpenseSheetData,
   getUnifiedTransferSheetData,
 } from "@/features/finance/quick-add-data";
 import { getInstallmentSheetData } from "@/features/installments/quick-add-data";
-import { listPocketsForWallet } from "@/features/pockets/api";
 import { getWallet, listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
@@ -27,38 +27,12 @@ export default async function Page({
       : wallets[0];
   if (!wallet) notFound();
 
-  const pocketSets = await Promise.all(
-    wallets.map(async (item) => ({
-      wallet: item,
-      pockets: await listPocketsForWallet(supabase, item.id),
-    })),
-  );
-  const creditCard =
-    pocketSets.find((item) =>
-      item.pockets.some((pocket) => pocket.pocket_type === "CREDIT_CARD"),
-    )?.wallet ?? null;
-  const [
-    expense,
-    income,
-    transfer,
-    installment,
-    cardExpense,
-    cardIncome,
-    cardTransfer,
-  ] = await Promise.all([
+  const [expense, income, transfer, installment, cardData] = await Promise.all([
     getIncomeExpenseSheetData(wallet.id, "EXPENSE"),
     getIncomeExpenseSheetData(wallet.id, "INCOME"),
     getUnifiedTransferSheetData(wallet.id),
     getInstallmentSheetData(),
-    creditCard
-      ? getIncomeExpenseSheetData(creditCard.id, "EXPENSE")
-      : Promise.resolve(null),
-    creditCard
-      ? getIncomeExpenseSheetData(creditCard.id, "INCOME")
-      : Promise.resolve(null),
-    creditCard
-      ? getUnifiedTransferSheetData(creditCard.id)
-      : Promise.resolve(null),
+    getCreditCardSheetData(wallet.id),
   ]);
 
   return (
@@ -67,10 +41,7 @@ export default async function Page({
       expense={expense}
       income={income}
       transfer={transfer}
-      creditCardId={creditCard?.id ?? null}
-      cardExpense={cardExpense}
-      cardIncome={cardIncome}
-      cardTransfer={cardTransfer}
+      cardData={cardData}
       installment={installment}
     />
   );

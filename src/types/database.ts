@@ -1166,6 +1166,64 @@ export interface Database {
         };
         Returns: string;
       };
+      get_credit_card_accounts: {
+        Args: { p_include_archived?: boolean };
+        Returns: Array<{
+          account_id: string;
+          wallet_id: string;
+          system_pocket_id: string;
+          name: string;
+          issuer: string | null;
+          network: string | null;
+          last_four: string | null;
+          scope: MoneyScope;
+          household_id: string | null;
+          currency: string;
+          credit_limit: string | number;
+          wallet_balance: string | number;
+          liability: string | number;
+          card_credit: string | number;
+          available_credit: string | number;
+          statement_closing_day: number;
+          payment_due_day: number;
+          apr: string | number | null;
+          is_archived: boolean;
+        }>;
+      };
+      create_credit_card_payment: {
+        Args: {
+          p_card_account_id: string;
+          p_from_wallet_id: string;
+          p_from_pocket_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
+      create_credit_card_cashback: {
+        Args: {
+          p_card_account_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
+      create_credit_card_cash_advance: {
+        Args: {
+          p_card_account_id: string;
+          p_to_wallet_id: string;
+          p_to_pocket_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
       create_income_expense_transaction: {
         Args: {
           p_transaction_type: "INCOME" | "EXPENSE";

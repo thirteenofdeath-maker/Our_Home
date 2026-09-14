@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import type { CategoryNode } from "@/features/categories/types";
+import { CreditCardTransactionForm } from "@/features/credit-cards/components/CreditCardTransactionForm";
+import type { CreditCardSheetData } from "@/features/credit-cards/types";
 import { CreateInstallmentForm } from "@/features/installments/components/CreateInstallmentForm";
 import type { Pocket } from "@/features/pockets/types";
 import type { TagOption } from "@/features/tags/types";
@@ -16,7 +17,6 @@ import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
 import { cn } from "@/lib/utils/cn";
 
 type EntryType = "expense" | "income" | "card" | "transfer" | "installment";
-type CardMode = "spend" | "cashback" | "advance";
 type TransactionData = {
   wallets: TransactionWalletOption[];
   pockets: Pocket[];
@@ -47,24 +47,17 @@ export function FinanceAddWorkspace({
   expense,
   income,
   transfer,
-  creditCardId,
-  cardExpense,
-  cardIncome,
-  cardTransfer,
+  cardData,
   installment,
 }: {
   walletId: string;
   expense: TransactionData;
   income: TransactionData;
   transfer: TransferData;
-  creditCardId: string | null;
-  cardExpense: TransactionData | null;
-  cardIncome: TransactionData | null;
-  cardTransfer: TransferData | null;
+  cardData: CreditCardSheetData;
   installment: InstallmentData;
 }) {
   const [entryType, setEntryType] = useState<EntryType>("expense");
-  const [cardMode, setCardMode] = useState<CardMode>("spend");
 
   return (
     <div className="finance-add-workspace flex flex-col gap-3">
@@ -160,67 +153,7 @@ export function FinanceAddWorkspace({
         ) : null}
 
         {entryType === "card" ? (
-          <div className="flex flex-col gap-4">
-            <EntryIntro
-              title="จัดการบัตรเครดิต"
-              detail="บันทึกการใช้บัตร เงินคืน หรือกดเงินสด"
-              tone="transfer"
-            />
-            <div className="grid grid-cols-3 rounded-[1rem] border border-finance-primary-soft p-1">
-              {(
-                [
-                  ["spend", "ใช้บัตร"],
-                  ["cashback", "Cashback"],
-                  ["advance", "กดเงินสด"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setCardMode(value)}
-                  className={cn(
-                    "h-11 rounded-[0.75rem] text-sm font-medium",
-                    cardMode === value
-                      ? "bg-finance-primary-soft text-finance-primary-strong"
-                      : "text-finance-muted",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {!creditCardId || !cardExpense || !cardIncome || !cardTransfer ? (
-              <div className="rounded-[1.15rem] bg-finance-primary-soft/70 p-4 text-center">
-                <p className="font-medium text-finance-text">
-                  ยังไม่มีกระเป๋าประเภทบัตรเครดิต
-                </p>
-                <p className="mt-1 text-sm text-finance-muted">
-                  สร้างบัตรก่อนเพื่อบันทึกรายการส่วนนี้
-                </p>
-                <Link
-                  href="/wallets"
-                  className="mt-3 inline-flex h-11 items-center rounded-full bg-finance-primary px-5 text-sm font-medium text-white"
-                >
-                  ไปที่กระเป๋าเงิน
-                </Link>
-              </div>
-            ) : (
-              <div className="rounded-[1.15rem] bg-finance-primary-soft/70 p-4 text-center">
-                <p className="font-medium text-finance-text">
-                  บัตรเครดิตอยู่ภายใน Wallet แล้ว
-                </p>
-                <p className="mt-1 text-sm text-finance-muted">
-                  เปิด Wallet เพื่อดูบัตร วงเงิน และรายการของบัตรแต่ละใบ
-                </p>
-                <Link
-                  href={`/wallets/${creditCardId}`}
-                  className="mt-3 inline-flex h-11 items-center rounded-full bg-finance-primary px-5 text-sm font-medium text-white"
-                >
-                  เปิด Wallet
-                </Link>
-              </div>
-            )}
-          </div>
+          <CreditCardTransactionForm {...cardData} />
         ) : null}
       </div>
     </div>
