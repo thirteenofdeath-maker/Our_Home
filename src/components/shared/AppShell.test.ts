@@ -78,8 +78,9 @@ describe("AppShell visibility", () => {
 
   it("renders the generic Finance quick-add FAB only on Finance routes with no module-specific creation action of their own", () => {
     expect(source).toMatch(
-      /FINANCE_GENERIC_FAB_ROUTES\s*=\s*new Set\(\[\s*"\/finance\/reports",\s*"\/finance\/net-worth",?\s*\]\)/,
+      /FINANCE_GENERIC_FAB_ROUTES\s*=\s*new Set\(\[\s*"\/finance\/net-worth",?\s*\]\)/,
     );
+    expect(source).not.toContain('"/finance/reports"');
     expect(source).not.toMatch(
       /FINANCE_GENERIC_FAB_ROUTES[\s\S]{0,120}"\/finance",/,
     );

@@ -7,21 +7,22 @@ import {
   listBillOccurrences,
   materializeBills,
 } from "@/features/bills/api";
-import { bangkokDateKey } from "@/features/calendar/domain/calendar";
 import { listDebts } from "@/features/debts/api";
 import {
   getFinanceSummary,
   listRecentFinanceTransactions,
 } from "@/features/finance/api";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
+import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
 import {
   currentFinanceMonth,
   financeMonthRange,
   financeMonthToPeriodMonth,
   shiftFinanceMonth,
 } from "@/features/finance/domain/finance";
-import { getFinalHub } from "@/features/finance/final-api";
 import { listGoals } from "@/features/goals/api";
+import { getMyPrimaryHousehold } from "@/features/household/api";
+import { getFinanceReport } from "@/features/reports/api";
 import { TransactionHistoryList } from "@/features/transactions/components/TransactionHistoryList";
 import { listMyWallets } from "@/features/wallets/api";
 import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
@@ -42,10 +43,14 @@ const SHORTCUTS = [
 export default async function FinancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; scope?: string }>;
 }) {
-  const { supabase } = await requireUser();
-  const { month: rawMonth } = await searchParams;
+  const { supabase, user } = await requireUser();
+  const { month: rawMonth, scope: rawScope } = await searchParams;
+  const household = await getMyPrimaryHousehold(supabase, user.id);
+  const scope =
+    rawScope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
+  const householdId = scope === "HOUSEHOLD" ? (household?.id ?? null) : null;
   const month =
     rawMonth && /^\d{4}-\d{2}$/.test(rawMonth)
       ? rawMonth
@@ -59,49 +64,69 @@ export default async function FinancePage({
     timeZone: "Asia/Bangkok",
   }).format(new Date(`${month}-01T00:00:00+07:00`));
 
-  await materializeBills(supabase, { scope: "PERSONAL" });
+  await materializeBills(supabase, { scope, householdId });
   const trendStart = financeMonthRange(shiftFinanceMonth(month, -5)).start;
-  const [wallets, summary, recent, budgets, bills, finalHub, goals, debts] =
+  const [allWallets, summary, recent, budgets, bills, report, goals, debts] =
     await Promise.all([
       listMyWallets(supabase),
       getFinanceSummary(supabase, monthRange),
-      listRecentFinanceTransactions(supabase, 10),
+      listRecentFinanceTransactions(supabase, {
+        limit: 10,
+        scope,
+        householdId,
+      }),
       getBudgetSummary(supabase, {
         periodMonth: financeMonthToPeriodMonth(month),
         monthStart: monthRange.start,
         monthEnd: monthRange.end,
+        scope,
+        householdId,
       }),
-      listBills(supabase, { scope: "PERSONAL" }),
-      getFinalHub(supabase, {
-        start: trendStart,
-        end: monthRange.end,
-        today: bangkokDateKey(),
-      }),
-      listGoals(supabase, "PERSONAL"),
-      listDebts(supabase, "PERSONAL"),
+      listBills(supabase, { scope, householdId }),
+      getFinanceReport(
+        supabase,
+        scope,
+        householdId,
+        trendStart,
+        monthRange.end,
+      ),
+      listGoals(supabase, scope, householdId),
+      listDebts(supabase, scope, householdId),
     ]);
   const billOccurrences = await listBillOccurrences(
     supabase,
     bills.filter((bill) => !bill.pausedAt).map((bill) => bill.billId),
     { status: "OPEN", limit: 3 },
   );
+  const wallets = allWallets.filter(
+    (wallet) =>
+      wallet.scope === scope &&
+      (scope === "PERSONAL" || wallet.household_id === householdId),
+  );
+  const walletIds = new Set(wallets.map((wallet) => wallet.id));
+  const scopedBalances = summary.walletBalances.filter((item) =>
+    walletIds.has(item.walletId),
+  );
   const balanceByWallet = new Map(
-    summary.walletBalances.map((item) => [item.walletId, item.amount]),
+    scopedBalances.map((item) => [item.walletId, item.amount]),
+  );
+  const currencyTotals = [
+    ...new Set(wallets.map((wallet) => wallet.currency)),
+  ].map((currency) => ({
+    currency,
+    amount: sumMoney(
+      scopedBalances
+        .filter((item) => item.currency === currency)
+        .map((item) => item.amount),
+    ),
+  }));
+  const currentMonthTotals = report.months.filter(
+    (item) => item.month === month,
   );
   const initialWallet = wallets[0];
-  const primaryBalance = summary.currencyTotals[0] ?? {
-    currency: initialWallet?.currency ?? "THB",
-    amount: "0.00",
-  };
-  const primaryMonth = summary.monthTotals.find(
-    (item) => item.currency === primaryBalance.currency,
-  ) ?? { currency: primaryBalance.currency, income: "0.00", expense: "0.00" };
-  const remainingRows = budgets.active
-    .filter((item) => item.currency === primaryBalance.currency)
-    .map((item) => item.remaining);
-  const remainingBudget = remainingRows.length
-    ? sumMoney(remainingRows)
-    : "0.00";
+  const balanceCards = currencyTotals.length
+    ? currencyTotals
+    : [{ currency: initialWallet?.currency ?? "THB", amount: "0.00" }];
   const activeGoals = goals.filter(
     (goal) => !goal.archivedAt && !goal.isComplete,
   );
@@ -114,6 +139,84 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-5 px-4 pb-8 pt-3">
+      {household ? (
+        <FinanceSegmentedControl
+          ariaLabel="ขอบเขตข้อมูลการเงิน"
+          activeValue={scope}
+          options={[
+            {
+              value: "PERSONAL",
+              label: "ส่วนตัว",
+              href: `/finance?month=${month}`,
+            },
+            {
+              value: "HOUSEHOLD",
+              label: "ครอบครัว",
+              href: `/finance?month=${month}&scope=HOUSEHOLD`,
+            },
+          ]}
+        />
+      ) : null}
+
+      <section className="flex flex-col gap-3">
+        <h1 className="text-lg font-semibold text-finance-text">
+          ยอดเงิน{scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
+        </h1>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {balanceCards.map((balance) => {
+            const monthTotal = currentMonthTotals.find(
+              (item) => item.currency === balance.currency,
+            ) ?? { income: "0.00", expense: "0.00" };
+            const remainingRows = budgets.active
+              .filter((item) => item.currency === balance.currency)
+              .map((item) => item.remaining);
+            const remainingBudget = remainingRows.length
+              ? sumMoney(remainingRows)
+              : "0.00";
+
+            return (
+              <div
+                key={balance.currency}
+                className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#f5eadc,#f7f4e9_52%,#e8f1e5)] p-5 shadow-card"
+              >
+                <div className="absolute -right-8 -top-10 size-32 rounded-full bg-white/45" />
+                <div className="relative">
+                  <p className="text-sm font-medium text-finance-muted">
+                    {balance.currency}
+                  </p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-finance-text">
+                    {formatCurrency(balance.amount, balance.currency)}
+                  </p>
+                  <div className="mt-5 grid grid-cols-3 divide-x divide-finance-primary/20 rounded-[1.15rem] bg-white/70 px-2 py-3 backdrop-blur-sm">
+                    <FinanceMetric
+                      label="รายรับเดือนนี้"
+                      value={formatCurrency(
+                        monthTotal.income,
+                        balance.currency,
+                      )}
+                      tone="income"
+                    />
+                    <FinanceMetric
+                      label="ใช้จ่ายเดือนนี้"
+                      value={formatCurrency(
+                        monthTotal.expense,
+                        balance.currency,
+                      )}
+                      tone="expense"
+                    />
+                    <FinanceMetric
+                      label="งบคงเหลือ"
+                      value={formatCurrency(remainingBudget, balance.currency)}
+                      tone="default"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {initialWallet ? (
         <Link
           href={`/finance/quick-add?walletId=${initialWallet.id}`}
@@ -133,63 +236,19 @@ export default async function FinancePage({
           <AppIcon name="chevron" className="size-5" />
         </Link>
       ) : (
-        <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">
+        <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
           <p className="text-sm text-finance-muted">
-            เพิ่มกระเป๋าเงินก่อนบันทึกรายการ
+            เพิ่มกระเป๋าเงิน{scope === "HOUSEHOLD" ? "ครอบครัว" : "ส่วนตัว"}
+            ก่อนบันทึกรายการ
           </p>
-          <AddWalletTrigger triggerClassName="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong">
+          <AddWalletTrigger
+            defaultScope={scope}
+            triggerClassName="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong"
+          >
             เพิ่มกระเป๋าเงิน
           </AddWalletTrigger>
         </div>
       )}
-
-      <section className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#f5eadc,#f7f4e9_52%,#e8f1e5)] p-5 shadow-card">
-        <div className="absolute -right-8 -top-10 size-32 rounded-full bg-white/45" />
-        <div className="relative">
-          <p className="text-sm font-medium text-finance-muted">
-            ยอดเงินส่วนตัว
-          </p>
-          <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-finance-text">
-            {formatCurrency(primaryBalance.amount, primaryBalance.currency)}
-          </p>
-          {summary.currencyTotals.length > 1 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {summary.currencyTotals.slice(1).map((total) => (
-                <span
-                  key={total.currency}
-                  className="rounded-full bg-white/65 px-2.5 py-1 text-xs font-medium tabular-nums text-finance-muted"
-                >
-                  {formatCurrency(total.amount, total.currency)} ·{" "}
-                  {total.currency}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          <div className="mt-5 grid grid-cols-3 divide-x divide-finance-primary/20 rounded-[1.15rem] bg-white/70 px-2 py-3 backdrop-blur-sm">
-            <FinanceMetric
-              label="รายรับเดือนนี้"
-              value={formatCurrency(
-                primaryMonth.income,
-                primaryBalance.currency,
-              )}
-              tone="income"
-            />
-            <FinanceMetric
-              label="ใช้จ่ายเดือนนี้"
-              value={formatCurrency(
-                primaryMonth.expense,
-                primaryBalance.currency,
-              )}
-              tone="expense"
-            />
-            <FinanceMetric
-              label="งบคงเหลือ"
-              value={formatCurrency(remainingBudget, primaryBalance.currency)}
-              tone="default"
-            />
-          </div>
-        </div>
-      </section>
 
       <section className="flex flex-col gap-2">
         <SectionTitle title="รายการล่าสุด" href="/finance/transactions" />
@@ -202,7 +261,10 @@ export default async function FinancePage({
       </section>
 
       <section className="flex flex-col gap-2">
-        <SectionTitle title="กระเป๋าเงิน" href="/wallets" />
+        <SectionTitle
+          title="กระเป๋าเงิน"
+          href={scope === "HOUSEHOLD" ? "/wallets?scope=HOUSEHOLD" : "/wallets"}
+        />
         {wallets.length ? (
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {wallets.map((wallet, index) => (
@@ -279,10 +341,17 @@ export default async function FinancePage({
       </section>
 
       <section className="flex flex-col gap-3">
-        <SectionTitle title="สรุปรายรับรายจ่าย" href="/finance/reports" />
+        <SectionTitle
+          title="สรุปรายรับรายจ่าย"
+          href={
+            scope === "HOUSEHOLD"
+              ? `/finance/reports?month=${month}&scope=HOUSEHOLD`
+              : `/finance/reports?month=${month}`
+          }
+        />
         <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
           <Link
-            href={`/finance?month=${prevMonth}`}
+            href={`/finance?month=${prevMonth}${scope === "HOUSEHOLD" ? "&scope=HOUSEHOLD" : ""}`}
             aria-label="เดือนก่อนหน้า"
             className="flex size-9 items-center justify-center rounded-full text-finance-text"
           >
@@ -292,37 +361,31 @@ export default async function FinancePage({
             {monthLabel}
           </p>
           <Link
-            href={`/finance?month=${nextMonth}`}
+            href={`/finance?month=${nextMonth}${scope === "HOUSEHOLD" ? "&scope=HOUSEHOLD" : ""}`}
             aria-label="เดือนถัดไป"
             className="flex size-9 items-center justify-center rounded-full text-finance-text"
           >
             <AppIcon name="chevron" className="size-4" />
           </Link>
         </div>
-        {summary.monthTotals.length ? (
-          summary.monthTotals.map((total) => (
+        {balanceCards.map((balance) => {
+          const total = currentMonthTotals.find(
+            (item) => item.currency === balance.currency,
+          ) ?? { income: "0.00", expense: "0.00" };
+          return (
             <FinanceTrendCard
-              key={total.currency}
-              currency={total.currency}
-              showCurrencyLabel={summary.monthTotals.length > 1}
-              trend={finalHub.trend.filter(
-                (point) => point.currency === total.currency,
+              key={balance.currency}
+              currency={balance.currency}
+              showCurrencyLabel={balanceCards.length > 1}
+              trend={report.months.filter(
+                (point) => point.currency === balance.currency,
               )}
               income={total.income}
               expense={total.expense}
               net={subtractMoney(total.income, total.expense)}
             />
-          ))
-        ) : (
-          <FinanceTrendCard
-            currency="THB"
-            showCurrencyLabel={false}
-            trend={[]}
-            income="0.00"
-            expense="0.00"
-            net="0.00"
-          />
-        )}
+          );
+        })}
       </section>
 
       <section className="flex flex-col gap-2">

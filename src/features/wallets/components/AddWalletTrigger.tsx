@@ -12,7 +12,15 @@ import { WalletForm } from "./WalletForm";
  * canonical /wallets list page (which has its own FormSheetButton
  * trigger with data already on hand — see wallets/page.tsx).
  */
-export function AddWalletTrigger({ triggerClassName, children }: { triggerClassName: string; children: React.ReactNode }) {
+export function AddWalletTrigger({
+  triggerClassName,
+  children,
+  defaultScope = "PERSONAL",
+}: {
+  triggerClassName: string;
+  children: React.ReactNode;
+  defaultScope?: "PERSONAL" | "HOUSEHOLD";
+}) {
   return (
     <div className="finance-scope contents">
       <AsyncFormSheetButton
@@ -20,7 +28,13 @@ export function AddWalletTrigger({ triggerClassName, children }: { triggerClassN
         sheetTitle="สร้างกระเป๋าเงิน"
         tone="finance"
         loadData={getCreateWalletSheetData}
-        renderForm={(data) => <WalletForm defaultScope="PERSONAL" hasHousehold={data.hasHousehold} variant="sheet" />}
+        renderForm={(data) => (
+          <WalletForm
+            defaultScope={defaultScope}
+            hasHousehold={data.hasHousehold}
+            variant="sheet"
+          />
+        )}
       >
         {children}
       </AsyncFormSheetButton>

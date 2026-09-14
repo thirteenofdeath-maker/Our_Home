@@ -25,6 +25,9 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toMatch(
       /defaultWallet|mainWallet|default_wallet|main_wallet/,
     );
+    expect(hub.indexOf("balanceCards.map")).toBeLessThan(
+      hub.indexOf("{initialWallet ? ("),
+    );
   });
 
   it("shows all five add-entry types in one compact, non-scrolling mobile grid", () => {
@@ -44,10 +47,21 @@ describe("approved mobile Finance UI", () => {
   });
 
   it("renders currency totals independently without combining them", () => {
-    expect(hub).toContain("summary.currencyTotals.slice(1).map");
-    expect(hub).toContain("key={total.currency}");
-    expect(hub).toContain("formatCurrency(total.amount, total.currency)");
+    expect(hub).toContain("balanceCards.map");
+    expect(hub).toContain("key={balance.currency}");
+    expect(hub).toContain("formatCurrency(balance.amount, balance.currency)");
+    expect(hub).not.toContain("summary.currencyTotals.slice(1)");
     expect(hub).not.toMatch(/reduce\s*\([\s\S]{0,100}currencyTotals/);
+  });
+
+  it("switches the whole dashboard between personal and household data", () => {
+    expect(hub).toContain('ariaLabel="ขอบเขตข้อมูลการเงิน"');
+    expect(hub).toContain('rawScope === "HOUSEHOLD"');
+    expect(hub).toContain("wallet.scope === scope");
+    expect(hub).toContain("listRecentFinanceTransactions(supabase, {");
+    expect(hub).toContain("listGoals(supabase, scope, householdId)");
+    expect(hub).toContain("listDebts(supabase, scope, householdId)");
+    expect(hub).toContain("listBills(supabase, { scope, householdId })");
   });
 
   it("preserves Personal and Household Wallet grouping with tappable cards", () => {

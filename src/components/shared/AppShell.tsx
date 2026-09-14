@@ -6,15 +6,11 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
-const TOP_LEVEL_ROUTES = new Set([
-  "/pets",
-  "/calendar",
-  "/household",
-]);
+const TOP_LEVEL_ROUTES = new Set(["/pets", "/calendar", "/household"]);
 
 /**
  * The Finance routes with no module-specific creation action of their
- * own (dashboard, reports, net-worth) — these get the generic
+ * own (currently net-worth only) — these get the generic
  * quick-add-a-transaction FAB (GlobalQuickAdd). Budgets/installments/
  * debts/goals each render their OWN contextual FAB directly inside their
  * page (they're the only ones that know whether their own list is
@@ -23,10 +19,7 @@ const TOP_LEVEL_ROUTES = new Set([
  * usage), so they're deliberately excluded here. Deep task pages
  * (new/edit/detail/quick-add itself) get no FAB at all.
  */
-const FINANCE_GENERIC_FAB_ROUTES = new Set([
-  "/finance/reports",
-  "/finance/net-worth",
-]);
+const FINANCE_GENERIC_FAB_ROUTES = new Set(["/finance/net-worth"]);
 
 export function AppShell({
   children,

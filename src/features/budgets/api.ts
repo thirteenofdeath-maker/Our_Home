@@ -42,7 +42,13 @@ function mapWireItem(wire: BudgetSummaryWireItem): BudgetSummaryItem {
  */
 export async function getBudgetSummary(
   supabase: SupabaseClient<Database>,
-  params: { periodMonth: string; monthStart: string; monthEnd: string },
+  params: {
+    periodMonth: string;
+    monthStart: string;
+    monthEnd: string;
+    scope?: "PERSONAL" | "HOUSEHOLD";
+    householdId?: string | null;
+  },
 ): Promise<{ active: BudgetSummaryItem[]; archived: BudgetSummaryItem[] }> {
   const { data, error } = await supabase.rpc("get_budget_summary", {
     p_period_month: params.periodMonth,
@@ -55,15 +61,41 @@ export async function getBudgetSummary(
     return { active: [], archived: [] };
   }
 
-  const items = ((data ?? []) as unknown as BudgetSummaryWireItem[]).map(mapWireItem);
+  let items = ((data ?? []) as unknown as BudgetSummaryWireItem[]).map(
+    mapWireItem,
+  );
+  if (params.scope) {
+    let scopeQuery = supabase
+      .from("budgets")
+      .select("id")
+      .eq("scope", params.scope)
+      .eq("period_month", params.periodMonth);
+    if (params.scope === "HOUSEHOLD" && params.householdId) {
+      scopeQuery = scopeQuery.eq("household_id", params.householdId);
+    }
+    const { data: scopedRows, error: scopeError } = await scopeQuery;
+    if (scopeError) {
+      logDatabaseErrorInDev("getBudgetSummary scope filter failed", scopeError);
+      return { active: [], archived: [] };
+    }
+    const scopedIds = new Set((scopedRows ?? []).map((item) => item.id));
+    items = items.filter((item) => scopedIds.has(item.budgetId));
+  }
   return {
     active: items.filter((item) => !item.archivedAt),
     archived: items.filter((item) => item.archivedAt),
   };
 }
 
-export async function getBudget(supabase: SupabaseClient<Database>, budgetId: string): Promise<Budget | null> {
-  const { data, error } = await supabase.from("budgets").select("*").eq("id", budgetId).maybeSingle();
+export async function getBudget(
+  supabase: SupabaseClient<Database>,
+  budgetId: string,
+): Promise<Budget | null> {
+  const { data, error } = await supabase
+    .from("budgets")
+    .select("*")
+    .eq("id", budgetId)
+    .maybeSingle();
   if (error) {
     logDatabaseErrorInDev("getBudget failed", error);
     return null;
@@ -103,19 +135,38 @@ export async function createBudget(
   return data;
 }
 
-export async function updateBudgetAmount(supabase: SupabaseClient<Database>, budgetId: string, amount: string): Promise<void> {
-  const { error } = await supabase.from("budgets").update({ amount }).eq("id", budgetId);
+export async function updateBudgetAmount(
+  supabase: SupabaseClient<Database>,
+  budgetId: string,
+  amount: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("budgets")
+    .update({ amount })
+    .eq("id", budgetId);
   if (error) throw error;
 }
 
 /** Rejected by the `budgets_amount_positive_chk` constraint if amount <= 0 — not re-checked here, the DB is authoritative. */
-export async function archiveBudget(supabase: SupabaseClient<Database>, budgetId: string): Promise<void> {
-  const { error } = await supabase.from("budgets").update({ archived_at: new Date().toISOString() }).eq("id", budgetId);
+export async function archiveBudget(
+  supabase: SupabaseClient<Database>,
+  budgetId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("budgets")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", budgetId);
   if (error) throw error;
 }
 
 /** Rejected by the unique index if an active Budget already occupies this identity (scope+category+currency+month). */
-export async function restoreBudget(supabase: SupabaseClient<Database>, budgetId: string): Promise<void> {
-  const { error } = await supabase.from("budgets").update({ archived_at: null }).eq("id", budgetId);
+export async function restoreBudget(
+  supabase: SupabaseClient<Database>,
+  budgetId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("budgets")
+    .update({ archived_at: null })
+    .eq("id", budgetId);
   if (error) throw error;
 }

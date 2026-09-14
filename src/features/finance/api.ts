@@ -28,14 +28,25 @@ export async function getFinanceSummary(
 
 export async function listRecentFinanceTransactions(
   supabase: SupabaseClient<Database>,
-  limit = 10,
+  options: {
+    limit?: number;
+    scope?: "PERSONAL" | "HOUSEHOLD";
+    householdId?: string | null;
+  } = {},
 ): Promise<FinanceRecentTransaction[]> {
-  const { data, error } = await supabase
+  const limit = options.limit ?? 10;
+  let query = supabase
     .from("transactions")
-    .select("id, transaction_type, title, note, occurred_at, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name)")
+    .select(
+      "id, transaction_type, title, note, occurred_at, category:categories(name), creator:profiles!transactions_created_by_fkey(display_name)",
+    )
     .is("deleted_at", null)
-    .order("occurred_at", { ascending: false })
-    .limit(limit);
+    .order("occurred_at", { ascending: false });
+  if (options.scope) query = query.eq("scope", options.scope);
+  if (options.scope === "HOUSEHOLD" && options.householdId) {
+    query = query.eq("household_id", options.householdId);
+  }
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
 
   const transactions = (data ?? []) as unknown as FinanceTransactionRow[];
@@ -43,14 +54,19 @@ export async function listRecentFinanceTransactions(
 
   const { data: entriesData, error: entriesError } = await supabase
     .from("transaction_entries")
-    .select("transaction_id, amount, wallet_id, wallet:wallets(name,currency), pocket:pockets(name)")
+    .select(
+      "transaction_id, amount, wallet_id, wallet:wallets(name,currency), pocket:pockets(name)",
+    )
     .in(
       "transaction_id",
       transactions.map((item) => item.id),
     );
   if (entriesError) throw entriesError;
 
-  const items = mapRecentFinanceTransactions(transactions, (entriesData ?? []) as unknown as FinanceEntryRow[]);
+  const items = mapRecentFinanceTransactions(
+    transactions,
+    (entriesData ?? []) as unknown as FinanceEntryRow[],
+  );
 
   // Batched — one lookup regardless of how many rows, same discipline as
   // every other adjustment annotation (docs/FINANCE.md Phase D).
@@ -61,6 +77,11 @@ export async function listRecentFinanceTransactions(
   if (adjustmentInfo.size === 0) return items;
   return items.map((item) => {
     const match = adjustmentInfo.get(item.transactionId);
-    return match ? { ...item, adjustment: { kind: match.kind, originalTitle: match.originalTitle } } : item;
+    return match
+      ? {
+          ...item,
+          adjustment: { kind: match.kind, originalTitle: match.originalTitle },
+        }
+      : item;
   });
 }
