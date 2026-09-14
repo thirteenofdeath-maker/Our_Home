@@ -10,11 +10,19 @@ const walletDetail = read("src/app/(app)/wallets/[walletId]/page.tsx");
 const addWorkspace = read(
   "src/features/finance/components/FinanceAddWorkspace.tsx",
 );
+const createFlow = read(
+  "src/features/finance/components/FinanceCreateFlow.tsx",
+);
 
 describe("approved mobile Finance UI", () => {
   it("replaces the three dashboard shortcuts with one visible เพิ่มรายการ entry point", () => {
-    expect(hub).toContain("เพิ่มรายการ");
-    expect(hub).toContain("/finance/quick-add?walletId=${initialWallet.id}");
+    expect(createFlow).toContain("เพิ่มรายการ");
+    expect(hub).toContain("<FinanceCreateFlow");
+    expect(hub).toContain('triggerVariant="dashboard"');
+    expect(createFlow).toContain("<BottomSheet");
+    expect(hub).not.toContain(
+      "/finance/quick-add?walletId=${initialWallet.id}",
+    );
     for (const helper of [
       "financeIncomeHref(initialWallet.id)",
       "financeExpenseHref(initialWallet.id)",

@@ -150,6 +150,31 @@ export async function getUnifiedTransferSheetData(walletId: string) {
   return { initialWalletId: wallet.id, endpoints, tags };
 }
 
+export async function getCreditCardContainerSheetData(walletId: string) {
+  const { supabase } = await requireUser();
+  const wallet = await getWallet(supabase, walletId);
+  if (!wallet || wallet.is_archived) throw new Error("ไม่พบกระเป๋าเงิน");
+
+  const wallets = (await listMyWallets(supabase)).filter(
+    (candidate) =>
+      candidate.scope === wallet.scope &&
+      candidate.owner_user_id === wallet.owner_user_id &&
+      candidate.household_id === wallet.household_id,
+  );
+  const pocketSets = await Promise.all(
+    wallets.map(async (candidate) => ({
+      wallet: candidate,
+      pockets: await listPocketsForWallet(supabase, candidate.id),
+    })),
+  );
+  return {
+    walletId:
+      pocketSets.find((item) =>
+        item.pockets.some((pocket) => pocket.pocket_type === "CREDIT_CARD"),
+      )?.wallet.id ?? null,
+  };
+}
+
 /**
  * Only needed by GlobalQuickAdd's zero-wallet fallback (create the very
  * first wallet before anything else is possible) — deliberately NOT

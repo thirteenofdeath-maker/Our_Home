@@ -14,6 +14,7 @@ import {
 } from "@/features/finance/api";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
+import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
 import {
   currentFinanceMonth,
   financeMonthRange,
@@ -222,23 +223,10 @@ export default async function FinancePage({
       </section>
 
       {initialWallet ? (
-        <Link
-          href={`/finance/quick-add?walletId=${initialWallet.id}`}
-          className="flex min-h-16 items-center justify-between rounded-[1.35rem] bg-[linear-gradient(110deg,var(--finance-expense),#f29a7d)] px-5 text-white shadow-[0_12px_28px_rgb(232_120_98_/_0.22)] transition-transform active:scale-[0.99]"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full bg-white/20">
-              <AppIcon name="plus" />
-            </span>
-            <span>
-              <span className="block text-lg font-semibold">เพิ่มรายการ</span>
-              <span className="block text-xs text-white/80">
-                รายจ่าย · รายรับ · โอนเงิน · บัตร · ผ่อนชำระ
-              </span>
-            </span>
-          </span>
-          <AppIcon name="chevron" className="size-5" />
-        </Link>
+        <FinanceCreateFlow
+          walletId={initialWallet.id}
+          triggerVariant="dashboard"
+        />
       ) : (
         <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
           <p className="text-sm text-finance-muted">
