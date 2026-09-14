@@ -5206,6 +5206,478 @@ describe.skipIf(!hasLiveProject)("Household expense attribution: personal exclus
   });
 });
 
+// ---------------------------------------------------------------------
+// Phase V (0052): Transfer fee and interest.
+//
+// Reuses existing fixtures: SUPABASE_TEST_USER_A_* (the transfer creator),
+// SUPABASE_TEST_USER_B_* (unrelated user), SUPABASE_TEST_HOUSEHOLD_ID plus
+// SUPABASE_TEST_HOUSEHOLD_OWNER_*/_MEMBER_* (both must be current members
+// for the household-scope tests), SUPABASE_TEST_ARCHIVED_WALLET_ID,
+// SUPABASE_TEST_ARCHIVED_POCKET_ID, SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID
+// (for the "wrong category type" test). No new fixtures required beyond
+// what 0051's tests already document.
+// ---------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+async function createTwoWalletPair(client: any, currency = "THB") {
+  const from = await createThrowawayWallet(client, "Transfer Source", currency);
+  const to = await createThrowawayWallet(client, "Transfer Destination", currency);
+  return { from, to };
+}
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: creation (tests 1-8)", () => {
+  it("principal-only wallet transfer remains backward compatible (omitting all four new params)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    try {
+      const { data: transactionId, error } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId,
+        p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId,
+        p_to_pocket_id: to.firstPocketId,
+        p_amount: "500.00",
+      });
+      expect(error).toBeNull(); // test 1
+      const { data: links } = await userA.from("transfer_ledger_links").select("*").eq("transfer_transaction_id", transactionId);
+      expect(links).toEqual([]); // no links created for a plain transfer
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("fee only, interest only, and fee+interest each create the expected number of linked charges", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Transfer Charge Cat", { scope: "PERSONAL" });
+    try {
+      const { data: feeOnlyId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: categoryId,
+      });
+      const { data: feeLinks } = await userA.from("transfer_ledger_links").select("kind").eq("transfer_transaction_id", feeOnlyId);
+      expect(feeLinks).toEqual([{ kind: "FEE" }]); // test 2
+
+      const { data: interestOnlyId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_interest_amount: "3.00", p_interest_category_id: categoryId,
+      });
+      const { data: interestLinks } = await userA.from("transfer_ledger_links").select("kind").eq("transfer_transaction_id", interestOnlyId);
+      expect(interestLinks).toEqual([{ kind: "INTEREST" }]); // test 3
+
+      const { data: bothId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: categoryId, p_interest_amount: "3.00", p_interest_category_id: categoryId,
+      });
+      const { data: bothLinks } = await userA.from("transfer_ledger_links").select("kind").eq("transfer_transaction_id", bothId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+      expect((bothLinks as any[]).map((l) => l.kind).sort()).toEqual(["FEE", "INTEREST"]); // test 4
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("rejects amount-without-category and category-without-amount independently for fee and interest", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Charge Cat", { scope: "PERSONAL" });
+    try {
+      const { error: amountOnly } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00",
+      });
+      expect(amountOnly).not.toBeNull(); // test 5
+
+      const { error: categoryOnly } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_category_id: categoryId,
+      });
+      expect(categoryOnly).not.toBeNull(); // test 6
+
+      const { error: zeroAmount } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "0.00", p_fee_category_id: categoryId,
+      });
+      expect(zeroAmount).not.toBeNull(); // test 7: zero/negative rejected
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("rejects a wrong category type (INCOME) for a fee/interest charge (test 8)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    try {
+      const { error } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: env.SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID,
+      });
+      expect(error).not.toBeNull();
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: authorization, currency, and archived resources (tests 9-15)", () => {
+  it("rejects currency mismatch between source and destination even with a valid fee", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const from = await createThrowawayWallet(userA, "THB Source", "THB");
+    const to = await createThrowawayWallet(userA, "USD Dest", "USD");
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const { error } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: categoryId,
+      });
+      expect(error).not.toBeNull(); // test 9
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("rejects an archived SOURCE wallet, archived DESTINATION wallet, and archived pockets on either side (tests 10-13)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    try {
+      const archivedSource = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: env.SUPABASE_TEST_ARCHIVED_WALLET_ID, p_from_pocket_id: env.SUPABASE_TEST_ARCHIVED_POCKET_ID,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId, p_amount: "10.00",
+      });
+      expect(archivedSource.error).not.toBeNull(); // test 10
+
+      const archivedDest = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: env.SUPABASE_TEST_ARCHIVED_WALLET_ID, p_to_pocket_id: env.SUPABASE_TEST_ARCHIVED_POCKET_ID, p_amount: "10.00",
+      });
+      expect(archivedDest.error).not.toBeNull(); // test 11: confirms the 0032 regression this migration restores
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("rejects an unauthorized source wallet (test 14)", async () => {
+    const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+    const { error } = await userB.rpc("create_wallet_transfer", {
+      p_from_wallet_id: env.SUPABASE_TEST_PERSONAL_WALLET_ID, p_from_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_to_wallet_id: env.SUPABASE_TEST_PERSONAL_WALLET_2_ID, p_to_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_2_POCKET_ID, p_amount: "10.00",
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it("atomically rolls back the WHOLE transfer if the interest charge is invalid (fee already valid) — test 15", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const before = await walletBalance(userA, from.walletId);
+      const { error } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00",
+        p_fee_amount: "5.00", p_fee_category_id: categoryId,
+        p_interest_amount: "3.00", p_interest_category_id: env.SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID, // wrong type -> whole call fails
+      });
+      expect(error).not.toBeNull();
+      expect(await walletBalance(userA, from.walletId)).toBeCloseTo(before, 2); // nothing posted at all, not even the principal or the valid fee
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: accounting (wallet transfer, tests 16-19)", () => {
+  it("source 10000 / destination 1000, principal 2000 + fee 25 + interest 10 -> matches the exact worked example, void, and restore", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const from = await createThrowawayWallet(userA, "Worked Source", "THB");
+    const to = await createThrowawayWallet(userA, "Worked Dest", "THB");
+    const feeCategoryId = await createThrowawayExpenseCategory(userA, "Fee Cat", { scope: "PERSONAL" });
+    const interestCategoryId = await createThrowawayExpenseCategory(userA, "Interest Cat", { scope: "PERSONAL" });
+    try {
+      // Seed to the exact starting balances via ordinary income postings.
+      await userA.rpc("create_income_expense_transaction", { p_transaction_type: "INCOME", p_wallet_id: from.walletId, p_pocket_id: from.firstPocketId, p_category_id: env.SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID, p_amount: "10000.00" });
+      await userA.rpc("create_income_expense_transaction", { p_transaction_type: "INCOME", p_wallet_id: to.walletId, p_pocket_id: to.firstPocketId, p_category_id: env.SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID, p_amount: "1000.00" });
+
+      const range = financeMonthRange(currentFinanceMonth());
+      const expenseBefore = (await financeTotalsFor(userA, range)).forCurrency("THB").expense;
+
+      const { data: transferId, error } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "2000.00",
+        p_fee_amount: "25.00", p_fee_category_id: feeCategoryId,
+        p_interest_amount: "10.00", p_interest_category_id: interestCategoryId,
+      });
+      expect(error).toBeNull();
+
+      expect(await walletBalance(userA, from.walletId)).toBeCloseTo(7965, 2); // test 16
+      expect(await walletBalance(userA, to.walletId)).toBeCloseTo(3000, 2);
+      const activeTotals = await financeTotalsFor(userA, range);
+      expect(Number(activeTotals.forCurrency("THB").expense) - Number(expenseBefore)).toBeCloseTo(35, 2);
+      expect(Number(activeTotals.forCurrency("THB").income)).toBeGreaterThanOrEqual(0); // income unaffected by the transfer itself
+
+      // Void the group via the PARENT transfer transaction.
+      const { error: voidError } = await userA.rpc("void_transaction", { p_transaction_id: transferId });
+      expect(voidError).toBeNull(); // test 17: parent-triggered void
+      expect(await walletBalance(userA, from.walletId)).toBeCloseTo(10000, 2);
+      expect(await walletBalance(userA, to.walletId)).toBeCloseTo(1000, 2);
+      const voidedTotals = await financeTotalsFor(userA, range);
+      expect(Number(voidedTotals.forCurrency("THB").expense) - Number(expenseBefore)).toBeCloseTo(0, 2);
+
+      const { error: restoreError } = await userA.rpc("restore_transaction", { p_transaction_id: transferId });
+      expect(restoreError).toBeNull(); // test 18: parent-triggered restore
+      expect(await walletBalance(userA, from.walletId)).toBeCloseTo(7965, 2);
+      expect(await walletBalance(userA, to.walletId)).toBeCloseTo(3000, 2);
+      const restoredTotals = await financeTotalsFor(userA, range);
+      expect(Number(restoredTotals.forCurrency("THB").expense) - Number(expenseBefore)).toBeCloseTo(35, 2); // test 19
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: accounting (pocket transfer, tests 20-21)", () => {
+  it("charges the SAME source pocket used by the principal, and both wallet and pocket balances reflect it", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const wallet = await createThrowawayWallet(userA, "Pocket Transfer Wallet", "THB");
+    const { data: pocketB } = await userA.from("pockets").insert({ wallet_id: wallet.walletId, name: "Pocket B" }).select().single();
+    const feeCategoryId = await createThrowawayExpenseCategory(userA, "Pocket Fee Cat", { scope: "PERSONAL" });
+    try {
+      await userA.rpc("create_income_expense_transaction", { p_transaction_type: "INCOME", p_wallet_id: wallet.walletId, p_pocket_id: wallet.firstPocketId, p_category_id: env.SUPABASE_TEST_PERSONAL_INCOME_CATEGORY_ID, p_amount: "500.00" });
+
+      const { error } = await userA.rpc("create_pocket_transfer", {
+        p_wallet_id: wallet.walletId, p_from_pocket_id: wallet.firstPocketId, p_to_pocket_id: pocketB.id,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: feeCategoryId,
+      });
+      expect(error).toBeNull(); // test 20
+
+      // Wallet total: 500 - 5 (fee only; the pocket-to-pocket principal move nets to zero at the wallet level).
+      expect(await walletBalance(userA, wallet.walletId)).toBeCloseTo(495, 2);
+      // Source pocket: -100 (to pocket B) - 5 (fee) = -105 from its starting 500.
+      expect(await pocketBalance(userA, wallet.firstPocketId)).toBeCloseTo(395, 2);
+      // Destination pocket: +100.
+      expect(await pocketBalance(userA, pocketB.id)).toBeCloseTo(100, 2); // test 21
+    } finally {
+      await deleteThrowawayWallet(userA, wallet.walletId);
+    }
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: void/restore group scenarios (tests 22-30)", () => {
+  it("fee-child-triggered void/restore cascades to the parent and (if present) the sibling interest charge", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: categoryId, p_interest_amount: "3.00", p_interest_category_id: categoryId,
+      });
+      const { data: links } = await userA.from("transfer_ledger_links").select("charge_transaction_id, kind").eq("transfer_transaction_id", transferId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+      const feeChargeId = (links as any[]).find((l) => l.kind === "FEE")!.charge_transaction_id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+      const interestChargeId = (links as any[]).find((l) => l.kind === "INTEREST")!.charge_transaction_id;
+
+      const { error: voidError } = await userA.rpc("void_transaction", { p_transaction_id: feeChargeId });
+      expect(voidError).toBeNull(); // test 22: fee-child-triggered void
+
+      const { data: parentRow } = await userA.from("transactions").select("deleted_at").eq("id", transferId).single();
+      const { data: interestRow } = await userA.from("transactions").select("deleted_at").eq("id", interestChargeId).single();
+      expect(parentRow!.deleted_at).not.toBeNull(); // test 23: parent cascaded
+      expect(interestRow!.deleted_at).not.toBeNull(); // test 24: sibling cascaded — no member left active
+
+      const { error: restoreError } = await userA.rpc("restore_transaction", { p_transaction_id: feeChargeId });
+      expect(restoreError).toBeNull(); // test 25: fee-child-triggered restore (repeated void/restore)
+      const { data: parentAfterRestore } = await userA.from("transactions").select("deleted_at").eq("id", transferId).single();
+      expect(parentAfterRestore!.deleted_at).toBeNull();
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("interest-only group: interest-child-triggered void/restore", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_interest_amount: "3.00", p_interest_category_id: categoryId,
+      });
+      const { data: links } = await userA.from("transfer_ledger_links").select("charge_transaction_id").eq("transfer_transaction_id", transferId);
+      const interestChargeId = links![0].charge_transaction_id;
+
+      const { error } = await userA.rpc("void_transaction", { p_transaction_id: interestChargeId });
+      expect(error).toBeNull(); // test 26: interest-child-triggered void
+
+      const { data: parentRow } = await userA.from("transactions").select("deleted_at").eq("id", transferId).single();
+      expect(parentRow!.deleted_at).not.toBeNull(); // test 27
+
+      await userA.rpc("restore_transaction", { p_transaction_id: transferId }); // test 28: parent-triggered restore of an interest-only group
+      const { data: interestRow } = await userA.from("transactions").select("deleted_at").eq("id", interestChargeId).single();
+      expect(interestRow!.deleted_at).toBeNull();
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("a plain (unlinked) transfer still cannot be voided at all — unchanged behavior (test 29)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId, p_amount: "50.00",
+      });
+      const { error } = await userA.rpc("void_transaction", { p_transaction_id: transferId });
+      expect(error).not.toBeNull();
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("fails the WHOLE cascade — leaving every group member unchanged — if a linked charge has an active refund (test 30)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "20.00", p_fee_category_id: categoryId,
+      });
+      const { data: links } = await userA.from("transfer_ledger_links").select("charge_transaction_id").eq("transfer_transaction_id", transferId);
+      const feeChargeId = links![0].charge_transaction_id;
+
+      // Refund half the fee — an active adjustment against a group member.
+      await userA.rpc("create_expense_adjustment_transaction", {
+        p_original_expense_id: feeChargeId, p_adjustment_kind: "REFUND",
+        p_wallet_id: from.walletId, p_pocket_id: from.firstPocketId, p_amount: "10.00",
+      });
+
+      const { error } = await userA.rpc("void_transaction", { p_transaction_id: transferId });
+      expect(error).not.toBeNull(); // the whole cascade is refused
+
+      const { data: parentRow } = await userA.from("transactions").select("deleted_at").eq("id", transferId).single();
+      const { data: feeRow } = await userA.from("transactions").select("deleted_at").eq("id", feeChargeId).single();
+      expect(parentRow!.deleted_at).toBeNull(); // unchanged
+      expect(feeRow!.deleted_at).toBeNull(); // unchanged
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Transfer fee/interest: privacy and authorization (tests 31-35)", () => {
+  it("the transfer's owner can read its links; an unrelated user gets nothing back (not even to infer the charge exists)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    const categoryId = await createThrowawayExpenseCategory(userA, "Cat", { scope: "PERSONAL" });
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId,
+        p_amount: "100.00", p_fee_amount: "5.00", p_fee_category_id: categoryId,
+      });
+
+      const { data: ownLinks, error: ownError } = await userA.from("transfer_ledger_links").select("*").eq("transfer_transaction_id", transferId);
+      expect(ownError).toBeNull();
+      expect(ownLinks).toHaveLength(1); // test 31
+
+      const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+      const { data: unrelatedLinks, error: unrelatedError } = await userB.from("transfer_ledger_links").select("*").eq("transfer_transaction_id", transferId);
+      expect(unrelatedError).toBeNull(); // RLS filters rows out; it does not error
+      expect(unrelatedLinks).toEqual([]); // test 32: cannot read, cannot even infer existence
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("direct client INSERT/UPDATE/DELETE on transfer_ledger_links is denied (test 33)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { from, to } = await createTwoWalletPair(userA);
+    try {
+      const { data: transferId } = await userA.rpc("create_wallet_transfer", {
+        p_from_wallet_id: from.walletId, p_from_pocket_id: from.firstPocketId,
+        p_to_wallet_id: to.walletId, p_to_pocket_id: to.firstPocketId, p_amount: "50.00",
+      });
+      const { data: plainExpenseId } = await userA.rpc("create_income_expense_transaction", {
+        p_transaction_type: "EXPENSE", p_wallet_id: from.walletId, p_pocket_id: from.firstPocketId,
+        p_category_id: env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID, p_amount: "1.00",
+      });
+      const { error: insertError } = await userA.from("transfer_ledger_links").insert({ charge_transaction_id: plainExpenseId, transfer_transaction_id: transferId, kind: "FEE" });
+      expect(insertError).not.toBeNull();
+    } finally {
+      await deleteThrowawayWallet(userA, from.walletId);
+      await deleteThrowawayWallet(userA, to.walletId);
+    }
+  });
+
+  it("a current household member can read a fellow member's household-scoped transfer charge link; an unrelated (non-member) user cannot create one", async () => {
+    const owner = await signIn(env.SUPABASE_TEST_HOUSEHOLD_OWNER_EMAIL!, env.SUPABASE_TEST_HOUSEHOLD_OWNER_PASSWORD!);
+    const householdCategoryId = await createThrowawayExpenseCategory(owner, "Household Charge Cat", {
+      scope: "HOUSEHOLD",
+      householdId: env.SUPABASE_TEST_HOUSEHOLD_ID!,
+    });
+    // Same-wallet pocket transfer avoids needing a second household wallet
+    // sharing the exact same currency — simplest way to get a real
+    // household-scoped fee charge on the books for this check.
+    const { data: pocketB } = await owner.from("pockets").insert({ wallet_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_ID, name: "RLS Test Pocket B" }).select().single();
+    try {
+      const { data: transferId, error: createError } = await owner.rpc("create_pocket_transfer", {
+        p_wallet_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_ID,
+        p_from_pocket_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_POCKET_ID,
+        p_to_pocket_id: pocketB.id,
+        p_amount: "10.00",
+        p_fee_amount: "1.00",
+        p_fee_category_id: householdCategoryId,
+      });
+      expect(createError).toBeNull(); // test 34
+
+      const member = await signIn(env.SUPABASE_TEST_HOUSEHOLD_MEMBER_EMAIL!, env.SUPABASE_TEST_HOUSEHOLD_MEMBER_PASSWORD!);
+      const { data: memberLinks, error: memberError } = await member.from("transfer_ledger_links").select("*").eq("transfer_transaction_id", transferId);
+      expect(memberError).toBeNull();
+      expect(memberLinks).toHaveLength(1); // test 35: household member visibility follows is_household_member, same as the underlying transaction
+
+      const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+      const { error: unrelatedError } = await userB.rpc("create_pocket_transfer", {
+        p_wallet_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_ID,
+        p_from_pocket_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_POCKET_ID,
+        p_to_pocket_id: pocketB.id,
+        p_amount: "10.00",
+        p_fee_amount: "1.00",
+        p_fee_category_id: householdCategoryId,
+      });
+      expect(unrelatedError).not.toBeNull(); // test 36: a non-member (never having joined, indistinguishable from a former member per is_household_member's fresh current-state check) cannot create a household-scoped transfer charge at all
+    } finally {
+      await owner.from("pockets").delete().eq("id", pocketB.id);
+    }
+  });
+});
+
 if (!hasLiveProject) {
   describe("RLS integration tests", () => {
     it.skip("skipped: no live Supabase test project configured (see comment at top of this file)", () => {});

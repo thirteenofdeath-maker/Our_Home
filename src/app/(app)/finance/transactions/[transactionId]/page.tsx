@@ -6,7 +6,7 @@ import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { getAdjustmentOrigin, getRefundableSummary, listAdjustmentsForOriginal } from "@/features/refunds/api";
 import { restoreTransactionAction } from "@/features/transactions/actions";
-import { getAttributionForTransaction, getTransactionDetail } from "@/features/transactions/api";
+import { getAttributionForTransaction, getTransactionDetail, getTransferChargeOrigin, listTransferCharges } from "@/features/transactions/api";
 import { VoidTransactionForm } from "@/features/transactions/components/VoidTransactionForm";
 import { CreateTemplateTrigger } from "@/features/templates/components/CreateTemplateTrigger";
 import { listTagsForTransaction } from "@/features/tags/api";
@@ -26,6 +26,11 @@ const ADJUSTMENT_LABEL: Record<"REFUND" | "REIMBURSEMENT", string> = {
   REIMBURSEMENT: "เบิกคืน",
 };
 
+const CHARGE_KIND_LABEL: Record<"FEE" | "INTEREST", string> = {
+  FEE: "ค่าธรรมเนียม",
+  INTEREST: "ดอกเบี้ย",
+};
+
 export default async function TransactionDetailPage({
   params,
 }: {
@@ -37,14 +42,19 @@ export default async function TransactionDetailPage({
   const transaction = await getTransactionDetail(supabase, transactionId);
   if (!transaction) notFound();
 
-  const [tags, adjustmentOrigin, attachments, attribution] = await Promise.all([
+  const [tags, adjustmentOrigin, attachments, attribution, transferChargeOrigin] = await Promise.all([
     listTagsForTransaction(supabase, transactionId),
     getAdjustmentOrigin(supabase, transactionId),
     listTransactionAttachments(supabase, transactionId),
     getAttributionForTransaction(supabase, transactionId),
+    getTransferChargeOrigin(supabase, transactionId),
   ]);
 
   const isTransfer = transaction.transactionType === "TRANSFER";
+  // Phase V (0052): a TRANSFER may carry a linked FEE/INTEREST charge —
+  // fetched only for actual transfers, never for an ordinary EXPENSE.
+  const transferCharges = isTransfer ? await listTransferCharges(supabase, transactionId) : [];
+  const hasLinkedCharges = transferCharges.length > 0;
   const isVoided = transaction.voidedAt !== null;
   const occurredDate = new Date(transaction.occurredAt).toLocaleDateString("th-TH", { dateStyle: "long" });
 
@@ -74,6 +84,14 @@ export default async function TransactionDetailPage({
   const editHref = attribution
     ? `/finance/transactions/${transaction.transactionId}/edit-attributed`
     : `/finance/transactions/${transaction.transactionId}/edit`;
+  // Phase V (0052): a plain (unlinked) transfer still cannot be voided in
+  // this version — only one carrying at least one fee/interest charge can
+  // (see void_transaction's own gate, 0052).
+  const canVoidOrRestoreTransfer = isTransfer && hasLinkedCharges;
+  const transferCurrency = transaction.walletTransfer?.currency ?? "THB";
+  const transferPrincipal = Number(transaction.pocketTransfer?.amount ?? transaction.walletTransfer?.amount ?? 0);
+  const activeChargeTotal = transferCharges.filter((c) => !c.voidedAt).reduce((sum, c) => sum + Math.abs(Number(c.amount)), 0);
+  const totalDeductedFromSource = transferPrincipal + activeChargeTotal;
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,7 +101,9 @@ export default async function TransactionDetailPage({
             ? ADJUSTMENT_LABEL[adjustmentOrigin.kind]
             : attribution
               ? "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว"
-              : TYPE_LABEL[transaction.transactionType]}
+              : transferChargeOrigin
+                ? `รายจ่าย · ${CHARGE_KIND_LABEL[transferChargeOrigin.kind]}ของการโอนเงิน`
+                : TYPE_LABEL[transaction.transactionType]}
         </p>
         <h1 className="text-xl font-semibold">
           {transaction.pocketTransfer
@@ -100,6 +120,14 @@ export default async function TransactionDetailPage({
         {attribution ? (
           <p className="mt-1 text-sm text-foreground-muted">ครอบครัว: {attribution.householdName}</p>
         ) : null}
+        {transferChargeOrigin ? (
+          <p className="mt-1 text-sm text-foreground-muted">
+            {CHARGE_KIND_LABEL[transferChargeOrigin.kind]}ของรายการโอนเงิน —{" "}
+            <Link href={`/finance/transactions/${transferChargeOrigin.transferTransactionId}`} className="text-primary underline">
+              ดูรายการโอนเงิน
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       {isVoided ? (
@@ -115,13 +143,13 @@ export default async function TransactionDetailPage({
       <Card className="flex flex-col gap-3">
         {transaction.pocketTransfer ? (
           <>
-            <Row label="จำนวนเงิน" value={formatCurrency(transaction.pocketTransfer.amount, "THB")} />
+            <Row label="เงินต้นที่โอน" value={formatCurrency(transaction.pocketTransfer.amount, "THB")} />
             <Row label="จาก" value={transaction.pocketTransfer.fromPocketName} />
             <Row label="ไปยัง" value={transaction.pocketTransfer.toPocketName} />
           </>
         ) : transaction.walletTransfer ? (
           <>
-            <Row label="จำนวนเงิน" value={formatCurrency(transaction.walletTransfer.amount, transaction.walletTransfer.currency)} />
+            <Row label="เงินต้นที่โอน" value={formatCurrency(transaction.walletTransfer.amount, transaction.walletTransfer.currency)} />
             <Row label="จาก" value={`${transaction.walletTransfer.fromWalletName} / ${transaction.walletTransfer.fromPocketName}`} />
             <Row label="ไปยัง" value={`${transaction.walletTransfer.toWalletName} / ${transaction.walletTransfer.toPocketName}`} />
           </>
@@ -142,6 +170,24 @@ export default async function TransactionDetailPage({
         <Row label="วันที่" value={occurredDate} />
         <Row label="สถานะ" value={isVoided ? "ยกเลิกแล้ว" : "ปกติ"} />
       </Card>
+
+      {hasLinkedCharges ? (
+        <Card className="flex flex-col gap-3">
+          <p className="text-sm font-medium text-foreground-muted">ค่าใช้จ่ายที่เชื่อมโยงกับการโอนเงินนี้</p>
+          {transferCharges.map((charge) => (
+            <Row
+              key={charge.transactionId}
+              label={`${CHARGE_KIND_LABEL[charge.kind]}${charge.voidedAt ? " (ยกเลิกแล้ว)" : ""} (รายจ่าย)`}
+              value={formatCurrency(charge.amount, transferCurrency)}
+              valueClassName={charge.voidedAt ? "text-foreground-muted line-through" : "text-expense"}
+            />
+          ))}
+          <div className="mt-1 border-t border-border pt-2">
+            <Row label="หักจากต้นทางทั้งหมด" value={formatCurrency(totalDeductedFromSource.toFixed(2), transferCurrency)} />
+          </div>
+          <p className="text-xs text-foreground-muted">เงินต้นไม่ใช่รายรับหรือรายจ่าย ค่าธรรมเนียมและดอกเบี้ยด้านบนนับเป็นรายจ่ายแยกต่างหาก</p>
+        </Card>
+      ) : null}
 
       {tags.length > 0 ? (
         <Card className="flex flex-col gap-2">
@@ -233,12 +279,40 @@ export default async function TransactionDetailPage({
               ) : (
                 <VoidTransactionForm transactionId={transaction.transactionId} walletId={transaction.walletId ?? ""} />
               )}
+              {transferChargeOrigin ? (
+                <p className="text-center text-xs text-foreground-muted">
+                  ยกเลิกรายการนี้จะยกเลิกรายการโอนเงินและค่าใช้จ่ายที่เชื่อมโยงกันทั้งหมดด้วย
+                </p>
+              ) : null}
             </>
           ) : (
             <ActionButton
               action={restoreTransactionAction}
               hiddenFields={{ transactionId: transaction.transactionId, walletId: transaction.walletId ?? "" }}
               label="กู้คืนรายการ"
+              variant="primary"
+              className="w-full"
+            />
+          )}
+        </section>
+      ) : canVoidOrRestoreTransfer ? (
+        // Phase V (0052): a transfer with at least one linked FEE/INTEREST
+        // charge CAN be voided/restored (a plain transfer still cannot —
+        // see void_transaction's own gate). Voiding/restoring here cascades
+        // atomically to every linked charge via sync_transfer_ledger_void_state.
+        <section className="flex flex-col gap-3">
+          {!isVoided ? (
+            <>
+              <VoidTransactionForm transactionId={transaction.transactionId} walletId="" />
+              <p className="text-center text-xs text-foreground-muted">
+                ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย
+              </p>
+            </>
+          ) : (
+            <ActionButton
+              action={restoreTransactionAction}
+              hiddenFields={{ transactionId: transaction.transactionId, walletId: "" }}
+              label="กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"
               variant="primary"
               className="w-full"
             />

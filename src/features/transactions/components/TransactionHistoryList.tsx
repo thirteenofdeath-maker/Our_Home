@@ -19,6 +19,11 @@ const ADJUSTMENT_LABEL: Record<"REFUND" | "REIMBURSEMENT", string> = {
   REIMBURSEMENT: "เบิกคืน",
 };
 
+const TRANSFER_CHARGE_LABEL: Record<"FEE" | "INTEREST", string> = {
+  FEE: "ค่าธรรมเนียมโอนเงิน",
+  INTEREST: "ดอกเบี้ยโอนเงิน",
+};
+
 function isTransfer(item: TransactionHistoryItem): boolean {
   return item.transactionType === "TRANSFER" || Boolean(item.pocketTransfer) || Boolean(item.walletTransfer);
 }
@@ -98,7 +103,9 @@ export function TransactionHistoryList({
           ? `${ADJUSTMENT_LABEL[item.adjustment.kind]}${item.adjustment.originalTitle ? ` · ${item.adjustment.originalTitle}` : ""}`
           : item.attribution
             ? `รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว · ${item.attribution.householdName}`
-            : item.pocketTransfer
+            : item.transferCharge
+              ? TRANSFER_CHARGE_LABEL[item.transferCharge.kind]
+              : item.pocketTransfer
               ? "โอนเงินระหว่างช่อง"
               : transfer
                 ? item.amount.startsWith("-")

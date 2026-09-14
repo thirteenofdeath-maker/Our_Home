@@ -4,8 +4,11 @@ import {
   createIncomeExpense,
   createPocketTransfer,
   createWalletTransfer,
+  getTransferChargeOrigin,
   groupHistoryRows,
   groupSearchRows,
+  listTransferCharges,
+  listTransferChargeKindForTransactions,
   restoreTransaction,
   updateIncomeExpense,
   voidTransaction,
@@ -299,6 +302,149 @@ describe("Phase C: tag ids thread through the create_* / update RPC calls", () =
       tagIds: ["tag-b"],
     });
     expect((wallet.calls[0].args as Record<string, unknown>).p_tag_ids).toEqual(["tag-b"]);
+  });
+});
+
+describe("Phase V (0052): fee/interest params thread through create_pocket_transfer / create_wallet_transfer", () => {
+  it("createPocketTransfer omits fee/interest by default (null) and forwards them when given", async () => {
+    const noCharges = fakeRpc({ data: "t1", error: null });
+    await createPocketTransfer(noCharges.supabase as never, {
+      walletId: "w1",
+      fromPocketId: "p1",
+      toPocketId: "p2",
+      amount: "50.00",
+    });
+    const noChargeArgs = noCharges.calls[0].args as Record<string, unknown>;
+    expect(noChargeArgs.p_fee_amount).toBeNull();
+    expect(noChargeArgs.p_fee_category_id).toBeNull();
+    expect(noChargeArgs.p_interest_amount).toBeNull();
+    expect(noChargeArgs.p_interest_category_id).toBeNull();
+
+    const withCharges = fakeRpc({ data: "t1", error: null });
+    await createPocketTransfer(withCharges.supabase as never, {
+      walletId: "w1",
+      fromPocketId: "p1",
+      toPocketId: "p2",
+      amount: "50.00",
+      feeAmount: "5.00",
+      feeCategoryId: "cat-fee",
+      interestAmount: "1.00",
+      interestCategoryId: "cat-interest",
+    });
+    const chargeArgs = withCharges.calls[0].args as Record<string, unknown>;
+    expect(chargeArgs.p_fee_amount).toBe("5.00");
+    expect(chargeArgs.p_fee_category_id).toBe("cat-fee");
+    expect(chargeArgs.p_interest_amount).toBe("1.00");
+    expect(chargeArgs.p_interest_category_id).toBe("cat-interest");
+  });
+
+  it("createWalletTransfer forwards fee/interest identically", async () => {
+    const { supabase, calls } = fakeRpc({ data: "t1", error: null });
+    await createWalletTransfer(supabase as never, {
+      fromWalletId: "w1",
+      fromPocketId: "p1",
+      toWalletId: "w2",
+      toPocketId: "p2",
+      amount: "50.00",
+      feeAmount: "5.00",
+      feeCategoryId: "cat-fee",
+    });
+    const args = calls[0].args as Record<string, unknown>;
+    expect(args.p_fee_amount).toBe("5.00");
+    expect(args.p_fee_category_id).toBe("cat-fee");
+    expect(args.p_interest_amount).toBeNull();
+    expect(args.p_interest_category_id).toBeNull();
+  });
+});
+
+describe("Phase V (0052): listTransferCharges / getTransferChargeOrigin / listTransferChargeKindForTransactions", () => {
+  it("listTransferCharges maps linked FEE/INTEREST rows with their entry amount and category name", async () => {
+    const supabase = {
+      from: (table: string) => {
+        if (table === "transfer_ledger_links") {
+          return {
+            select: () => ({
+              eq: async () => ({
+                data: [
+                  { charge_transaction_id: "fee-1", kind: "FEE", charge: { deleted_at: null, category: { name: "ค่าธรรมเนียมธนาคาร" } } },
+                  { charge_transaction_id: "interest-1", kind: "INTEREST", charge: { deleted_at: null, category: { name: "ดอกเบี้ย" } } },
+                ],
+                error: null,
+              }),
+            }),
+          };
+        }
+        if (table === "transaction_entries") {
+          return {
+            select: () => ({
+              in: async () => ({
+                data: [
+                  { transaction_id: "fee-1", amount: "-5.00" },
+                  { transaction_id: "interest-1", amount: "-1.00" },
+                ],
+                error: null,
+              }),
+            }),
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    };
+
+    const charges = await listTransferCharges(supabase as never, "transfer-1");
+    expect(charges).toEqual([
+      { transactionId: "fee-1", kind: "FEE", amount: "-5.00", categoryName: "ค่าธรรมเนียมธนาคาร", voidedAt: null },
+      { transactionId: "interest-1", kind: "INTEREST", amount: "-1.00", categoryName: "ดอกเบี้ย", voidedAt: null },
+    ]);
+  });
+
+  it("listTransferCharges returns [] on a query error rather than throwing (read model)", async () => {
+    const supabase = { from: () => ({ select: () => ({ eq: async () => ({ data: null, error: { message: "boom" } }) }) }) };
+    expect(await listTransferCharges(supabase as never, "transfer-1")).toEqual([]);
+  });
+
+  it("getTransferChargeOrigin returns the transfer id and kind when this transaction IS a linked charge", async () => {
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { transfer_transaction_id: "transfer-1", kind: "FEE" }, error: null }),
+          }),
+        }),
+      }),
+    };
+    expect(await getTransferChargeOrigin(supabase as never, "fee-1")).toEqual({ transferTransactionId: "transfer-1", kind: "FEE" });
+  });
+
+  it("getTransferChargeOrigin returns null for an ordinary (unlinked) transaction", async () => {
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
+        }),
+      }),
+    };
+    expect(await getTransferChargeOrigin(supabase as never, "ordinary-expense")).toBeNull();
+  });
+
+  it("listTransferChargeKindForTransactions batches into one query and returns an empty map for []", async () => {
+    expect(await listTransferChargeKindForTransactions({ from: () => { throw new Error("must not query"); } } as never, [])).toEqual(new Map());
+
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          in: async () => ({
+            data: [{ charge_transaction_id: "fee-1", kind: "FEE" }],
+            error: null,
+          }),
+        }),
+      }),
+    };
+    const result = await listTransferChargeKindForTransactions(supabase as never, ["fee-1", "ordinary-1"]);
+    expect(result.get("fee-1")).toBe("FEE");
+    expect(result.has("ordinary-1")).toBe(false);
   });
 
   it("updateIncomeExpense: omitting tagIds means 'leave unchanged' (null), passing [] means 'clear all'", async () => {

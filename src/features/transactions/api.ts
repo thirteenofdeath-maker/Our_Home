@@ -71,6 +71,48 @@ export async function listAttributionInfoForTransactions(
   return result;
 }
 
+/**
+ * Batched (0052) — one query for however many transaction ids are passed,
+ * mirroring listAdjustmentInfoForTransactions/listAttributionInfoForTransactions
+ * exactly. Used to annotate history/search rows that are themselves a
+ * transfer's linked FEE/INTEREST charge.
+ */
+export async function listTransferChargeKindForTransactions(
+  supabase: SupabaseClient<Database>,
+  transactionIds: string[],
+): Promise<Map<string, "FEE" | "INTEREST">> {
+  const result = new Map<string, "FEE" | "INTEREST">();
+  if (transactionIds.length === 0) return result;
+
+  const { data, error } = await supabase.from("transfer_ledger_links").select("charge_transaction_id, kind").in("charge_transaction_id", transactionIds);
+
+  if (error) {
+    logDatabaseErrorInDev("listTransferChargeKindForTransactions failed", error);
+    return result;
+  }
+
+  for (const row of data ?? []) {
+    result.set(row.charge_transaction_id, row.kind);
+  }
+  return result;
+}
+
+async function withTransferChargeInfo(
+  supabase: SupabaseClient<Database>,
+  items: TransactionHistoryItem[],
+): Promise<TransactionHistoryItem[]> {
+  if (items.length === 0) return items;
+  const info = await listTransferChargeKindForTransactions(
+    supabase,
+    items.map((item) => item.transactionId),
+  );
+  if (info.size === 0) return items;
+  return items.map((item) => {
+    const kind = info.get(item.transactionId);
+    return kind ? { ...item, transferCharge: { kind } } : item;
+  });
+}
+
 async function withAttributionInfo(
   supabase: SupabaseClient<Database>,
   items: TransactionHistoryItem[],
@@ -128,6 +170,11 @@ export async function createPocketTransfer(
     note?: string | null;
     occurredAt?: string;
     tagIds?: string[];
+    /** Phase V (0052): optional, funded from the same source pocket as the principal — see create_pocket_transfer. Omit both amount and category to charge nothing. */
+    feeAmount?: string | null;
+    feeCategoryId?: string | null;
+    interestAmount?: string | null;
+    interestCategoryId?: string | null;
   },
 ): Promise<string> {
   const { data, error } = await supabase.rpc("create_pocket_transfer", {
@@ -139,6 +186,10 @@ export async function createPocketTransfer(
     p_note: params.note ?? null,
     p_occurred_at: params.occurredAt,
     p_tag_ids: params.tagIds?.length ? params.tagIds : null,
+    p_fee_amount: params.feeAmount ?? null,
+    p_fee_category_id: params.feeCategoryId ?? null,
+    p_interest_amount: params.interestAmount ?? null,
+    p_interest_category_id: params.interestCategoryId ?? null,
   });
 
   if (error) throw error;
@@ -157,6 +208,11 @@ export async function createWalletTransfer(
     note?: string | null;
     occurredAt?: string;
     tagIds?: string[];
+    /** Phase V (0052): optional, funded from the SOURCE wallet/pocket — never the destination. Omit both amount and category to charge nothing. */
+    feeAmount?: string | null;
+    feeCategoryId?: string | null;
+    interestAmount?: string | null;
+    interestCategoryId?: string | null;
   },
 ): Promise<string> {
   const { data, error } = await supabase.rpc("create_wallet_transfer", {
@@ -169,6 +225,10 @@ export async function createWalletTransfer(
     p_note: params.note ?? null,
     p_occurred_at: params.occurredAt,
     p_tag_ids: params.tagIds?.length ? params.tagIds : null,
+    p_fee_amount: params.feeAmount ?? null,
+    p_fee_category_id: params.feeCategoryId ?? null,
+    p_interest_amount: params.interestAmount ?? null,
+    p_interest_category_id: params.interestCategoryId ?? null,
   });
 
   if (error) throw error;
@@ -245,7 +305,7 @@ export async function listTransactionsForWallet(
     }
   }
 
-  return withAttributionInfo(supabase, await withAdjustmentInfo(supabase, groupHistoryRows(rows, expandedRows, walletId)));
+  return withTransferChargeInfo(supabase, await withAttributionInfo(supabase, await withAdjustmentInfo(supabase, groupHistoryRows(rows, expandedRows, walletId))));
 }
 
 export function groupHistoryRows(
@@ -470,6 +530,110 @@ export async function getAttributionForTransaction(
     householdCategoryId: row.household_category_id,
     householdCategoryName: row.category?.name ?? "ไม่ทราบหมวดหมู่",
   };
+}
+
+// ---------------------------------------------------------------------
+// Phase V (0052): Transfer fee/interest. The transfer's principal stays
+// an ordinary balanced TRANSFER; a linked fee/interest is a real, separate
+// EXPENSE transaction — transfer_ledger_links only classifies which
+// transfer a charge belongs to, it is never a second amount/balance
+// source. RLS on transfer_ledger_links already restricts every row here
+// to the caller's own scope (see 0052), so these reads never need extra
+// authorization logic of their own.
+// ---------------------------------------------------------------------
+
+export interface TransferCharge {
+  transactionId: string;
+  kind: "FEE" | "INTEREST";
+  amount: string;
+  categoryName: string | null;
+  voidedAt: string | null;
+}
+
+interface RawTransferChargeRow {
+  charge_transaction_id: string;
+  kind: "FEE" | "INTEREST";
+  charge: {
+    deleted_at: string | null;
+    category: { name: string } | null;
+  } | null;
+}
+
+interface RawTransferChargeEntryRow {
+  transaction_id: string;
+  amount: string | number;
+}
+
+/**
+ * Every FEE/INTEREST charge linked to one TRANSFER — for its detail page's
+ * "ค่าธรรมเนียม" / "ดอกเบี้ย" rows. Two bounded queries (link rows, then
+ * their entries), never one query per charge — same shape as
+ * listAdjustmentsForOriginal.
+ */
+export async function listTransferCharges(
+  supabase: SupabaseClient<Database>,
+  transferTransactionId: string,
+): Promise<TransferCharge[]> {
+  const { data, error } = await supabase
+    .from("transfer_ledger_links")
+    .select("charge_transaction_id, kind, charge:transactions!transfer_ledger_links_charge_transaction_id_fkey(deleted_at, category:categories(name))")
+    .eq("transfer_transaction_id", transferTransactionId);
+
+  if (error) {
+    logDatabaseErrorInDev("listTransferCharges failed", error);
+    return [];
+  }
+
+  const links = ((data ?? []) as unknown as RawTransferChargeRow[]).filter((row) => row.charge);
+  if (links.length === 0) return [];
+
+  const { data: entriesData, error: entriesError } = await supabase
+    .from("transaction_entries")
+    .select("transaction_id, amount")
+    .in(
+      "transaction_id",
+      links.map((row) => row.charge_transaction_id),
+    );
+
+  if (entriesError) {
+    logDatabaseErrorInDev("listTransferCharges entries failed", entriesError);
+    return [];
+  }
+
+  const amountByTransactionId = new Map((entriesData as unknown as RawTransferChargeEntryRow[]).map((e) => [e.transaction_id, e.amount]));
+
+  return links.map((row) => ({
+    transactionId: row.charge_transaction_id,
+    kind: row.kind,
+    amount: normalizeDatabaseMoney(amountByTransactionId.get(row.charge_transaction_id) ?? 0),
+    categoryName: row.charge?.category?.name ?? null,
+    voidedAt: row.charge?.deleted_at ?? null,
+  }));
+}
+
+export interface TransferChargeOrigin {
+  transferTransactionId: string;
+  kind: "FEE" | "INTEREST";
+}
+
+/** "Is this transaction ITSELF a transfer fee/interest charge, and if so which transfer" — for its own detail view. */
+export async function getTransferChargeOrigin(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+): Promise<TransferChargeOrigin | null> {
+  const { data, error } = await supabase
+    .from("transfer_ledger_links")
+    .select("transfer_transaction_id, kind")
+    .eq("charge_transaction_id", transactionId)
+    .maybeSingle();
+
+  if (error) {
+    logDatabaseErrorInDev("getTransferChargeOrigin failed", error);
+    return null;
+  }
+  if (!data) return null;
+
+  return { transferTransactionId: data.transfer_transaction_id, kind: data.kind };
 }
 
 // ---------------------------------------------------------------------
@@ -745,7 +909,7 @@ export async function searchTransactions(
   if (filters.type === "POCKET_TRANSFER") items = items.filter((item) => item.pocketTransfer);
   if (filters.type === "WALLET_TRANSFER") items = items.filter((item) => item.walletTransfer);
 
-  return withAttributionInfo(supabase, await withAdjustmentInfo(supabase, items));
+  return withTransferChargeInfo(supabase, await withAttributionInfo(supabase, await withAdjustmentInfo(supabase, items)));
 }
 
 /**

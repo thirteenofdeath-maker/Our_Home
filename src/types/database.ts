@@ -699,6 +699,32 @@ export interface Database {
           },
         ];
       };
+      transfer_ledger_links: {
+        Row: {
+          charge_transaction_id: string;
+          transfer_transaction_id: string;
+          kind: "FEE" | "INTEREST";
+          created_at: string;
+        };
+        Insert: never; // created only via create_wallet_transfer / create_pocket_transfer
+        Update: never; // immutable — links never change after creation
+        Relationships: [
+          {
+            foreignKeyName: "transfer_ledger_links_charge_transaction_id_fkey";
+            columns: ["charge_transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transfer_ledger_links_transfer_transaction_id_fkey";
+            columns: ["transfer_transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       household_attributed_expense_effects: {
@@ -824,6 +850,10 @@ export interface Database {
           p_note?: string | null;
           p_occurred_at?: string;
           p_tag_ids?: string[] | null;
+          p_fee_amount?: string | null;
+          p_fee_category_id?: string | null;
+          p_interest_amount?: string | null;
+          p_interest_category_id?: string | null;
         };
         Returns: string;
       };
@@ -838,6 +868,10 @@ export interface Database {
           p_note?: string | null;
           p_occurred_at?: string;
           p_tag_ids?: string[] | null;
+          p_fee_amount?: string | null;
+          p_fee_category_id?: string | null;
+          p_interest_amount?: string | null;
+          p_interest_category_id?: string | null;
         };
         Returns: string;
       };

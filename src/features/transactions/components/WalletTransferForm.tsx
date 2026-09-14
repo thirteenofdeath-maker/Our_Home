@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import type { CategoryNode } from "@/features/categories/types";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -12,6 +13,8 @@ import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 
 import { createWalletTransferAction } from "../actions";
+import { TransferChargeSection } from "./TransferChargeSection";
+import { TransferChargeSummary } from "./TransferChargeSummary";
 
 export function WalletTransferForm({
   fromWallet,
@@ -19,6 +22,7 @@ export function WalletTransferForm({
   otherWallets,
   pocketsByWallet,
   tags,
+  expenseCategories,
   variant = "page",
 }: {
   fromWallet: Wallet;
@@ -26,12 +30,17 @@ export function WalletTransferForm({
   otherWallets: Wallet[];
   pocketsByWallet: Record<string, Pocket[]>;
   tags: TagOption[];
+  /** Phase V (0052): EXPENSE categories for the source wallet — used only by the optional fee/interest sections below, never by the transfer principal itself (which has no category). */
+  expenseCategories: CategoryNode[];
   /** Presentation only — see TransactionForm.tsx's own `variant` doc. */
   variant?: "page" | "sheet";
 }) {
   const [state, formAction] = useActionState(createWalletTransferAction, initialActionState);
   const [toWalletId, setToWalletId] = useState(otherWallets[0]?.id ?? "");
   const toPockets = useMemo(() => pocketsByWallet[toWalletId] ?? [], [pocketsByWallet, toWalletId]);
+  const [amount, setAmount] = useState("");
+  const [feeAmount, setFeeAmount] = useState("");
+  const [interestAmount, setInterestAmount] = useState("");
   const today = new Date().toLocaleDateString("en-CA");
 
   return (
@@ -78,9 +87,30 @@ export function WalletTransferForm({
         </Select>
       </Field>
 
-      <Field label="จำนวนเงิน" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />
+      <Field label={`จำนวนเงิน (${fromWallet.currency})`} htmlFor="amount">
+        <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
       </Field>
+
+      <TransferChargeSection
+        title="ค่าธรรมเนียม"
+        amountFieldName="feeAmount"
+        categoryFieldName="feeCategoryId"
+        categories={expenseCategories}
+        walletId={fromWallet.id}
+        amount={feeAmount}
+        onAmountChange={setFeeAmount}
+      />
+      <TransferChargeSection
+        title="ดอกเบี้ย"
+        amountFieldName="interestAmount"
+        categoryFieldName="interestCategoryId"
+        categories={expenseCategories}
+        walletId={fromWallet.id}
+        amount={interestAmount}
+        onAmountChange={setInterestAmount}
+      />
+
+      <TransferChargeSummary amount={amount} feeAmount={feeAmount} interestAmount={interestAmount} currency={fromWallet.currency} />
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title"><Input id="title" name="title" type="text" /></Field>
       <Field label="โน้ต (ถ้ามี)" htmlFor="note"><Input id="note" name="note" type="text" /></Field>

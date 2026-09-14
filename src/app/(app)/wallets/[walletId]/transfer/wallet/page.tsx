@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { buildCategoryTree } from "@/features/categories/domain/tree";
+import { listCategoriesForWallet } from "@/features/categories/api";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import type { Pocket } from "@/features/pockets/types";
 import { listTags } from "@/features/tags/api";
@@ -31,10 +33,11 @@ export default async function WalletTransferPage({
       w.household_id === wallet.household_id,
   );
 
-  const [fromPockets, pocketsByWalletEntries, tags] = await Promise.all([
+  const [fromPockets, pocketsByWalletEntries, tags, expenseCategories] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
     Promise.all(otherWallets.map(async (w) => [w.id, await listPocketsForWallet(supabase, w.id)] as const)),
     listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
+    listCategoriesForWallet(supabase, { transactionType: "EXPENSE", wallet }),
   ]);
   const pocketsByWallet: Record<string, Pocket[]> = Object.fromEntries(pocketsByWalletEntries);
 
@@ -50,6 +53,7 @@ export default async function WalletTransferPage({
           otherWallets={otherWallets}
           pocketsByWallet={pocketsByWallet}
           tags={tags}
+          expenseCategories={buildCategoryTree(expenseCategories)}
         />
       )}
     </div>

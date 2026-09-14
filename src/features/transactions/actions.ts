@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { validateOptionalCharge } from "@/features/transactions/domain/transfer-charge-validation";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -226,6 +227,28 @@ export async function createExpenseAction(_prevState: ActionState, formData: For
   redirect(parsed.data.returnTo ?? `/wallets/${parsed.data.walletId}`);
 }
 
+// Phase V (0052): an optional transfer fee/interest charge. Empty string
+// (never typed) and a genuinely absent field both normalize to null —
+// "null amount + null category = no charge" is validated as a pair
+// below, in each action, mirroring the DB's own
+// validate_optional_charge_amount exactly (defense in depth: the RPC is
+// still the authoritative check).
+const optionalChargeAmountSchema = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || /^\d{1,12}(\.\d{1,2})?$/.test(v), "จำนวนเงินไม่ถูกต้อง (ทศนิยมได้ไม่เกิน 2 ตำแหน่ง)")
+  .refine((v) => v === null || !/^0(\.0{1,2})?$/.test(v), "จำนวนเงินต้องมากกว่าศูนย์");
+
+const optionalChargeCategorySchema = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || z.string().uuid().safeParse(v).success, "หมวดหมู่ไม่ถูกต้อง");
+
+
 const pocketTransferSchema = z.object({
   walletId: z.string().uuid(),
   fromPocketId: z.string().uuid(),
@@ -235,6 +258,10 @@ const pocketTransferSchema = z.object({
   note: optionalText,
   occurredAt: occurredAtSchema,
   tagIds: tagIdsSchema,
+  feeAmount: optionalChargeAmountSchema,
+  feeCategoryId: optionalChargeCategorySchema,
+  interestAmount: optionalChargeAmountSchema,
+  interestCategoryId: optionalChargeCategorySchema,
 });
 
 export async function createPocketTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -249,6 +276,10 @@ export async function createPocketTransferAction(_prevState: ActionState, formDa
     note: formData.get("note"),
     occurredAt: formData.get("occurredAt"),
     tagIds: formData.getAll("tagIds"),
+    feeAmount: formData.get("feeAmount"),
+    feeCategoryId: formData.get("feeCategoryId"),
+    interestAmount: formData.get("interestAmount"),
+    interestCategoryId: formData.get("interestCategoryId"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -256,6 +287,10 @@ export async function createPocketTransferAction(_prevState: ActionState, formDa
   if (parsed.data.fromPocketId === parsed.data.toPocketId) {
     return { error: "Choose two different pockets" };
   }
+  const feeError = validateOptionalCharge(parsed.data.feeAmount, parsed.data.feeCategoryId, "ค่าธรรมเนียม");
+  if (feeError) return { error: feeError };
+  const interestError = validateOptionalCharge(parsed.data.interestAmount, parsed.data.interestCategoryId, "ดอกเบี้ย");
+  if (interestError) return { error: interestError };
 
   try {
     await createPocketTransfer(supabase, {
@@ -267,6 +302,10 @@ export async function createPocketTransferAction(_prevState: ActionState, formDa
       note: parsed.data.note,
       occurredAt: parsed.data.occurredAt,
       tagIds: parsed.data.tagIds,
+      feeAmount: parsed.data.feeAmount ? normalizeAmount(parsed.data.feeAmount) : null,
+      feeCategoryId: parsed.data.feeCategoryId,
+      interestAmount: parsed.data.interestAmount ? normalizeAmount(parsed.data.interestAmount) : null,
+      interestCategoryId: parsed.data.interestCategoryId,
     });
   } catch (err) {
     logDatabaseErrorInDev("createPocketTransferAction failed", err);
@@ -288,6 +327,10 @@ const walletTransferSchema = z.object({
   note: optionalText,
   occurredAt: occurredAtSchema,
   tagIds: tagIdsSchema,
+  feeAmount: optionalChargeAmountSchema,
+  feeCategoryId: optionalChargeCategorySchema,
+  interestAmount: optionalChargeAmountSchema,
+  interestCategoryId: optionalChargeCategorySchema,
 });
 
 export async function createWalletTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -303,6 +346,10 @@ export async function createWalletTransferAction(_prevState: ActionState, formDa
     note: formData.get("note"),
     occurredAt: formData.get("occurredAt"),
     tagIds: formData.getAll("tagIds"),
+    feeAmount: formData.get("feeAmount"),
+    feeCategoryId: formData.get("feeCategoryId"),
+    interestAmount: formData.get("interestAmount"),
+    interestCategoryId: formData.get("interestCategoryId"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -310,6 +357,10 @@ export async function createWalletTransferAction(_prevState: ActionState, formDa
   if (parsed.data.fromWalletId === parsed.data.toWalletId) {
     return { error: "Choose two different wallets (use a pocket transfer within one wallet instead)" };
   }
+  const feeError = validateOptionalCharge(parsed.data.feeAmount, parsed.data.feeCategoryId, "ค่าธรรมเนียม");
+  if (feeError) return { error: feeError };
+  const interestError = validateOptionalCharge(parsed.data.interestAmount, parsed.data.interestCategoryId, "ดอกเบี้ย");
+  if (interestError) return { error: interestError };
 
   try {
     await createWalletTransfer(supabase, {
@@ -322,6 +373,10 @@ export async function createWalletTransferAction(_prevState: ActionState, formDa
       note: parsed.data.note,
       occurredAt: parsed.data.occurredAt,
       tagIds: parsed.data.tagIds,
+      feeAmount: parsed.data.feeAmount ? normalizeAmount(parsed.data.feeAmount) : null,
+      feeCategoryId: parsed.data.feeCategoryId,
+      interestAmount: parsed.data.interestAmount ? normalizeAmount(parsed.data.interestAmount) : null,
+      interestCategoryId: parsed.data.interestCategoryId,
     });
   } catch (err) {
     logDatabaseErrorInDev("createWalletTransferAction failed", err);

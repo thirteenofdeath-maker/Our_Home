@@ -73,4 +73,14 @@ export interface TransactionHistoryItem {
     householdName: string;
     categoryName: string;
   };
+  /**
+   * Set only when this row is itself a FEE or INTEREST charge linked to a
+   * TRANSFER (Phase V / 0052) — an ordinary EXPENSE transaction otherwise
+   * indistinguishable from a manually-entered one, so the UI keys its
+   * "ค่าธรรมเนียม/ดอกเบี้ยของการโอนเงิน" subtitle off this instead of
+   * `transactionType` directly.
+   */
+  transferCharge?: {
+    kind: "FEE" | "INTEREST";
+  };
 }

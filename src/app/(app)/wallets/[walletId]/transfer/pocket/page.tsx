@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { buttonClassName } from "@/components/ui/Button";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
+import { buildCategoryTree } from "@/features/categories/domain/tree";
+import { listCategoriesForWallet } from "@/features/categories/api";
 import { AddPocketForm } from "@/features/pockets/components/AddPocketForm";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
@@ -22,9 +24,10 @@ export default async function PocketTransferPage({
   const wallet = await getWallet(supabase, walletId);
   if (!wallet) notFound();
 
-  const [pockets, tags] = await Promise.all([
+  const [pockets, tags, expenseCategories] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
     listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
+    listCategoriesForWallet(supabase, { transactionType: "EXPENSE", wallet }),
   ]);
 
   return (
@@ -46,7 +49,7 @@ export default async function PocketTransferPage({
           }
         />
       ) : (
-        <PocketTransferForm walletId={walletId} pockets={pockets} tags={tags} />
+        <PocketTransferForm walletId={walletId} pockets={pockets} tags={tags} currency={wallet.currency} expenseCategories={buildCategoryTree(expenseCategories)} />
       )}
     </div>
   );

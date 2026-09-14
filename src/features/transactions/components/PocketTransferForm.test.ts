@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 
 import type { Pocket } from "@/features/pockets/types";
 
-import { getPocketTransferDefaults } from "./PocketTransferForm";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+
+import { getPocketTransferDefaults, PocketTransferForm } from "./PocketTransferForm";
 
 function pocket(id: string, name: string): Pocket {
   return {
@@ -34,5 +38,25 @@ describe("PocketTransferForm endpoint defaults (UI convenience only, no domain d
       fromPocketId: "a",
       toPocketId: "b",
     });
+  });
+});
+
+describe("PocketTransferForm — Phase V (0052) fee/interest sections", () => {
+  it("renders both optional charge sections, the currency in the amount label, and the pre-save summary", () => {
+    const html = renderToStaticMarkup(
+      createElement(PocketTransferForm, {
+        walletId: "wallet-a",
+        pockets: [pocket("food", "Food"), pocket("travel", "Travel")],
+        tags: [],
+        currency: "THB",
+        expenseCategories: [],
+      }),
+    );
+    expect(html).toContain("จำนวนเงิน (THB)");
+    expect(html).toContain("ค่าธรรมเนียม (ถ้ามี)");
+    expect(html).toContain("ดอกเบี้ย (ถ้ามี)");
+    expect(html).toContain("name=\"feeAmount\"");
+    expect(html).toContain("name=\"interestAmount\"");
+    expect(html).toContain("เงินต้นไม่ใช่รายรับหรือรายจ่าย");
   });
 });
