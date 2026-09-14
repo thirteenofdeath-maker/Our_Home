@@ -12,15 +12,23 @@ import { FINANCE_MODULES, FinanceModuleTabs } from "./FinanceModuleTabs";
 describe("FinanceModuleTabs", () => {
   it("has exactly the seven expected modules, each pointing at its existing route", () => {
     expect(FINANCE_MODULES).toHaveLength(7);
-    expect(FINANCE_MODULES.map((m) => m.label)).toEqual(["ภาพรวม", "รายงาน", "งบประมาณ", "ผ่อนชำระ", "ยืม-ให้ยืม", "ออมเงิน", "มูลค่าสุทธิ"]);
+    expect(FINANCE_MODULES.map((m) => m.label)).toEqual([
+      "ภาพรวม",
+      "รายการ",
+      "กระเป๋า",
+      "งบ",
+      "เป้าหมาย",
+      "บิล",
+      "หนี้",
+    ]);
     expect(FINANCE_MODULES.map((m) => m.href)).toEqual([
       "/finance",
-      "/finance/reports",
+      "/finance/transactions",
+      "/wallets",
       "/finance/budgets",
-      "/finance/installments",
-      "/finance/debts",
       "/finance/goals",
-      "/finance/net-worth",
+      "/finance/bills",
+      "/finance/debts",
     ]);
   });
 
@@ -41,7 +49,8 @@ describe("FinanceModuleTabs", () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/finance/budgets"');
     // The active pill is the one carrying both attributes on the same <a>.
-    const activeAnchor = html.match(/<a[^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
+    const activeAnchor =
+      html.match(/<a[^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
     expect(activeAnchor).toContain('href="/finance/budgets"');
   });
 
@@ -59,12 +68,13 @@ describe("FinanceModuleTabs", () => {
     expect(navOpenTag).not.toContain("rounded-[1.75rem]");
     expect(navOpenTag).not.toMatch(/shadow-/);
 
-    // Only the active tab gets its own pill background; every inactive
-    // tab sits fully transparent (no per-tab "card" look, no rail either).
-    const inactiveAnchor = html.match(/<a(?:(?!aria-current)[^>])*href="\/finance"[^>]*>/)?.[0] ?? "";
-    expect(inactiveAnchor).toContain("bg-transparent");
-    expect(inactiveAnchor).not.toContain("bg-finance-primary-soft");
-    const activeAnchor = html.match(/<a[^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
-    expect(activeAnchor).toContain("bg-finance-primary-soft");
+    // Every destination reads as a compact control; active is solid sage.
+    const inactiveAnchor =
+      html.match(/<a(?:(?!aria-current)[^>])*href="\/finance"[^>]*>/)?.[0] ??
+      "";
+    expect(inactiveAnchor).toContain("bg-finance-surface-strong");
+    const activeAnchor =
+      html.match(/<a[^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
+    expect(activeAnchor).toContain("bg-finance-primary");
   });
 });

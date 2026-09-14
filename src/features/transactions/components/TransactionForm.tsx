@@ -14,7 +14,10 @@ import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 
 import { createIncomeExpenseAction } from "../actions";
-import { TransactionWalletSelect, type TransactionWalletOption } from "./TransactionWalletSelect";
+import {
+  TransactionWalletSelect,
+  type TransactionWalletOption,
+} from "./TransactionWalletSelect";
 import { postRecurringOccurrenceAction } from "@/features/recurring/actions";
 
 export function TransactionForm({
@@ -87,7 +90,10 @@ export function TransactionForm({
    * wrong and double the padding. */
   variant?: "page" | "sheet";
 }) {
-  const [state, formAction] = useActionState(postOccurrence ? postRecurringOccurrenceAction : createIncomeExpenseAction, initialActionState);
+  const [state, formAction] = useActionState(
+    postOccurrence ? postRecurringOccurrenceAction : createIncomeExpenseAction,
+    initialActionState,
+  );
 
   // In `variant="sheet"`, switching the wallet must never navigate away
   // (see TransactionWalletSelect's `onWalletChange`) — instead this form
@@ -99,16 +105,25 @@ export function TransactionForm({
   // this state is simply unused/inert there.
   const [activeWalletId, setActiveWalletId] = useState(walletId);
   const [sheetData, setSheetData] = useState({ pockets, categories, tags });
-  const [walletSwitchError, setWalletSwitchError] = useState<string | null>(null);
+  const [walletSwitchError, setWalletSwitchError] = useState<string | null>(
+    null,
+  );
   const [walletSwitchPending, startWalletSwitch] = useTransition();
 
   function handleWalletChange(nextWalletId: string) {
     setWalletSwitchError(null);
     startWalletSwitch(async () => {
       try {
-        const data = await getIncomeExpenseSheetData(nextWalletId, transactionType);
+        const data = await getIncomeExpenseSheetData(
+          nextWalletId,
+          transactionType,
+        );
         setActiveWalletId(nextWalletId);
-        setSheetData({ pockets: data.pockets, categories: data.categories, tags: data.tags });
+        setSheetData({
+          pockets: data.pockets,
+          categories: data.categories,
+          tags: data.tags,
+        });
       } catch {
         setWalletSwitchError("โหลดข้อมูลกระเป๋าเงินไม่สำเร็จ กรุณาลองใหม่");
       }
@@ -128,18 +143,35 @@ export function TransactionForm({
   // default; this selection is never persisted as one. A Template's
   // saved Pocket default (already validated by the caller to belong to
   // this Wallet and be active) takes priority when present.
-  const initialPocketId = (onOriginalWallet ? defaultPocketId : null) ?? sheetData.pockets[0]?.id;
-  const today = postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
+  const initialPocketId =
+    (onOriginalWallet ? defaultPocketId : null) ?? sheetData.pockets[0]?.id;
+  const activeCurrency =
+    wallets.find((wallet) => wallet.id === activeWalletId)?.currency ?? "THB";
+  const today =
+    postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
 
   return (
     <form
       action={formAction}
-      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+      className={cn(
+        "finance-ui-tone",
+        variant === "sheet"
+          ? "flex flex-col gap-4"
+          : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card",
+      )}
     >
       <input type="hidden" name="walletId" value={activeWalletId} />
       <input type="hidden" name="transactionType" value={transactionType} />
-      {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
-      {postOccurrence ? <input type="hidden" name="occurrenceId" value={postOccurrence.occurrenceId} /> : null}
+      {returnTo ? (
+        <input type="hidden" name="returnTo" value={returnTo} />
+      ) : null}
+      {postOccurrence ? (
+        <input
+          type="hidden"
+          name="occurrenceId"
+          value={postOccurrence.occurrenceId}
+        />
+      ) : null}
 
       {staleNotices?.length ? (
         <div className="flex flex-col gap-1 rounded-card border border-danger/40 bg-danger/10 p-3">
@@ -152,7 +184,22 @@ export function TransactionForm({
       ) : null}
 
       <Field label="จำนวนเงิน" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={defaultAmount ?? ""} placeholder="0.00" required autoFocus />
+        <div className="flex items-center rounded-[1.1rem] border border-border/70 bg-surface px-4 shadow-sm focus-within:border-primary focus-within:ring-3 focus-within:ring-primary-soft">
+          <span className="text-3xl font-semibold text-foreground">
+            {activeCurrency === "THB" ? "฿" : activeCurrency}
+          </span>
+          <Input
+            id="amount"
+            name="amount"
+            type="text"
+            inputMode="decimal"
+            defaultValue={defaultAmount ?? ""}
+            placeholder="0.00"
+            required
+            autoFocus
+            className="h-20 border-0 bg-transparent text-4xl font-semibold shadow-none focus:ring-0"
+          />
+        </div>
       </Field>
 
       <TransactionWalletSelect
@@ -165,11 +212,23 @@ export function TransactionForm({
         onWalletChange={variant === "sheet" ? handleWalletChange : undefined}
         disabled={walletSwitchPending}
       />
-      {walletSwitchPending ? <p className="text-sm text-foreground-muted">กำลังโหลดข้อมูลกระเป๋าเงิน...</p> : null}
-      {walletSwitchError ? <p className="text-sm text-danger">{walletSwitchError}</p> : null}
+      {walletSwitchPending ? (
+        <p className="text-sm text-foreground-muted">
+          กำลังโหลดข้อมูลกระเป๋าเงิน...
+        </p>
+      ) : null}
+      {walletSwitchError ? (
+        <p className="text-sm text-danger">{walletSwitchError}</p>
+      ) : null}
 
       <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
-        <Select key={activeWalletId} id="pocketId" name="pocketId" defaultValue={initialPocketId} required>
+        <Select
+          key={activeWalletId}
+          id="pocketId"
+          name="pocketId"
+          defaultValue={initialPocketId}
+          required
+        >
           {sheetData.pockets.map((pocket) => (
             <option key={pocket.id} value={pocket.id}>
               {pocket.name}
@@ -179,35 +238,73 @@ export function TransactionForm({
       </Field>
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
-          <CategoryPicker
-            key={activeWalletId}
-            name="categoryId"
-            categories={sheetData.categories}
-            transactionType={transactionType}
-            walletId={activeWalletId}
-            defaultSelected={onOriginalWallet && defaultCategoryId ? { id: defaultCategoryId, label: defaultCategoryLabel ?? "" } : null}
-          />
+        <CategoryPicker
+          key={activeWalletId}
+          name="categoryId"
+          categories={sheetData.categories}
+          transactionType={transactionType}
+          walletId={activeWalletId}
+          defaultSelected={
+            onOriginalWallet && defaultCategoryId
+              ? { id: defaultCategoryId, label: defaultCategoryLabel ?? "" }
+              : null
+          }
+        />
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
-        <Input id="title" name="title" type="text" defaultValue={defaultTitle ?? ""} placeholder="เช่น กาแฟ" />
+        <Input
+          id="title"
+          name="title"
+          type="text"
+          defaultValue={defaultTitle ?? ""}
+          placeholder="เช่น กาแฟ"
+        />
       </Field>
 
       <Field label="โน้ต (ถ้ามี)" htmlFor="note">
-        <Input id="note" name="note" type="text" defaultValue={defaultNote ?? ""} />
+        <Input
+          id="note"
+          name="note"
+          type="text"
+          defaultValue={defaultNote ?? ""}
+        />
       </Field>
 
       <Field label="วันที่" htmlFor="occurredAt">
-        <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />
+        <Input
+          id="occurredAt"
+          name="occurredAt"
+          type="date"
+          defaultValue={today}
+          required
+        />
       </Field>
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
-        <TagPicker key={activeWalletId} name="tagIds" tags={sheetData.tags} walletId={activeWalletId} defaultSelected={onOriginalWallet ? defaultTagIds : undefined} />
+        <TagPicker
+          key={activeWalletId}
+          name="tagIds"
+          tags={sheetData.tags}
+          walletId={activeWalletId}
+          defaultSelected={onOriginalWallet ? defaultTagIds : undefined}
+        />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg" variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"}>
-        {postOccurrence ? "บันทึกรายการ" : transactionType === "INCOME" ? "บันทึกรายรับ" : "บันทึกรายจ่าย"}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
+      <SubmitButton
+        size="lg"
+        variant={
+          transactionType === "INCOME" ? "financeIncome" : "financeExpense"
+        }
+      >
+        {postOccurrence
+          ? "บันทึกรายการ"
+          : transactionType === "INCOME"
+            ? "บันทึกรายรับ"
+            : "บันทึกรายจ่าย"}
       </SubmitButton>
     </form>
   );

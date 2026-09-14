@@ -13,7 +13,13 @@ import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTa
  * `/finance/budgets/[budgetId]`, a debt's payment form, ...), which stay
  * compact single-purpose subpages exactly as before.
  */
-const MODULE_SECTIONS = new Set(["reports", "budgets", "installments", "debts", "goals", "net-worth"]);
+const MODULE_SECTIONS = new Set([
+  "transactions",
+  "budgets",
+  "debts",
+  "goals",
+  "bills",
+]);
 
 const SECTION_TITLES: Record<string, string> = {
   "quick-add": "เพิ่มรายการ",
@@ -55,29 +61,38 @@ export function financeBackHref(pathname: string): string | undefined {
   const segments = pathname.split("/").filter(Boolean);
   const section = segments[1] ?? "";
   if (segments.length <= 2) return "/finance";
-  if (section === "installments" && segments[2] === "occurrences") return "/finance/installments";
+  if (section === "installments" && segments[2] === "occurrences")
+    return "/finance/installments";
   if (segments[2] === "occurrences") {
-    return segments.length === 4 ? `/finance/${section}` : `/finance/${section}/occurrences/${segments[3]}`;
+    return segments.length === 4
+      ? `/finance/${section}`
+      : `/finance/${section}/occurrences/${segments[3]}`;
   }
-  return segments.length === 3 ? `/finance/${section}` : `/finance/${section}/${segments[2]}`;
+  return segments.length === 3
+    ? `/finance/${section}`
+    : `/finance/${section}/${segments[2]}`;
 }
 
 export default function FinanceLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname === "/finance") return children;
   const section = pathname.split("/")[2] ?? "";
-  const isModuleRoot = MODULE_SECTIONS.has(section) && pathname === `/finance/${section}`;
+  const isModuleRoot =
+    MODULE_SECTIONS.has(section) && pathname === `/finance/${section}`;
 
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader title={SECTION_TITLES[section] ?? "การเงิน"} backHref={financeBackHref(pathname)} />
+    <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pt-2">
+      <PageHeader
+        title={SECTION_TITLES[section] ?? "การเงิน"}
+        backHref={financeBackHref(pathname)}
+      />
       {isModuleRoot ? (
         // finance-scope wraps the rail + the page's own content together
         // (never PageHeader itself, kept palette-neutral across every
         // finance subpage) — only these six module ROOT routes get it;
         // a deeper task page under the same section (new/edit/detail
         // forms) renders through the plain `else` branch below, unchanged.
-        <div className="finance-scope -mx-4 flex flex-col gap-4 px-4 pb-4">
+        <div className="flex flex-col gap-4 pb-4">
           <FinanceModuleTabs />
           {children}
         </div>

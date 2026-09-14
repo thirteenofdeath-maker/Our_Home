@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils/cn";
  */
 export const FINANCE_MODULES = [
   { href: "/finance", label: "ภาพรวม" },
-  { href: "/finance/reports", label: "รายงาน" },
-  { href: "/finance/budgets", label: "งบประมาณ" },
-  { href: "/finance/installments", label: "ผ่อนชำระ" },
-  { href: "/finance/debts", label: "ยืม-ให้ยืม" },
-  { href: "/finance/goals", label: "ออมเงิน" },
-  { href: "/finance/net-worth", label: "มูลค่าสุทธิ" },
+  { href: "/finance/transactions", label: "รายการ" },
+  { href: "/wallets", label: "กระเป๋า" },
+  { href: "/finance/budgets", label: "งบ" },
+  { href: "/finance/goals", label: "เป้าหมาย" },
+  { href: "/finance/bills", label: "บิล" },
+  { href: "/finance/debts", label: "หนี้" },
 ] as const;
 
 /**
@@ -38,7 +38,10 @@ export function FinanceModuleTabs() {
     <nav aria-label="โมดูลการเงิน" className="-mx-4">
       <ul className="flex h-11 items-center gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {FINANCE_MODULES.map((financeModule) => {
-          const active = pathname === financeModule.href;
+          const active =
+            pathname === financeModule.href ||
+            (financeModule.href === "/wallets" &&
+              pathname.startsWith("/wallets/"));
           return (
             <li key={financeModule.href} className="shrink-0">
               <Link
@@ -46,7 +49,9 @@ export function FinanceModuleTabs() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors",
-                  active ? "bg-finance-primary-soft text-finance-primary-strong" : "bg-transparent text-finance-muted",
+                  active
+                    ? "bg-finance-primary text-white shadow-sm"
+                    : "bg-finance-surface-strong text-finance-muted",
                 )}
               >
                 {financeModule.label}

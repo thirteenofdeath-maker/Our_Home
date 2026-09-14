@@ -4,7 +4,8 @@ import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 const source = read("src/components/shared/AppShell.tsx");
 
 let mockPathname = "/finance";
@@ -33,14 +34,20 @@ function renderShell(pathname: string): string {
 
 describe("AppShell visibility", () => {
   it("limits the full app chrome (top 'Our Home' header) to the exact four top-level roots only", () => {
-    expect(source).toContain('new Set(["/finance", "/pets", "/calendar", "/household"])');
+    expect(source).toMatch(
+      /new Set\(\[\s*"\/finance",\s*"\/pets",\s*"\/calendar",\s*"\/household",?\s*\]\)/,
+    );
     expect(source).toContain("TOP_LEVEL_ROUTES.has(pathname)");
     expect(source).toContain("isTopLevel ? globalHeader : null");
   });
 
   it("persists BottomNav across the entire authenticated app (every section, any depth) via the shared appSectionForPath classifier — not a locally-duplicated prefix list", () => {
-    expect(source).toContain('import { appSectionForPath } from "@/lib/navigation/app-section"');
-    expect(source).toMatch(/appSectionForPath\(pathname\)\s*!==\s*"onboarding"/);
+    expect(source).toContain(
+      'import { appSectionForPath } from "@/lib/navigation/app-section"',
+    );
+    expect(source).toMatch(
+      /appSectionForPath\(pathname\)\s*!==\s*"onboarding"/,
+    );
     expect(source).toContain("{showBottomNav ? <BottomNav /> : null}");
     // BottomNav no longer takes a centerAction prop at all.
     expect(source).not.toMatch(/<BottomNav\s+centerAction/);
@@ -58,21 +65,32 @@ describe("AppShell visibility", () => {
   it("gives every route where BottomNav renders the same bottom clearance — never computed per-route, so no page can under-clear it by omission", () => {
     const wallets = renderShell("/wallets/abc/manage");
     const finance = renderShell("/finance");
-    const walletsPadding = wallets.match(/pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/)?.[0];
-    const financePadding = finance.match(/pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/)?.[0];
+    const walletsPadding = wallets.match(
+      /pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/,
+    )?.[0];
+    const financePadding = finance.match(
+      /pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/,
+    )?.[0];
     expect(walletsPadding).not.toBeUndefined();
     expect(walletsPadding).toBe(financePadding);
   });
 
   it("renders the generic Finance quick-add FAB only on Finance routes with no module-specific creation action of their own", () => {
-    expect(source).toContain('new Set(["/finance", "/finance/reports", "/finance/net-worth"])');
+    expect(source).toMatch(
+      /FINANCE_GENERIC_FAB_ROUTES\s*=\s*new Set\(\[\s*"\/finance\/reports",\s*"\/finance\/net-worth",?\s*\]\)/,
+    );
+    expect(source).not.toMatch(
+      /FINANCE_GENERIC_FAB_ROUTES[\s\S]{0,120}"\/finance",/,
+    );
     expect(source).toContain("FINANCE_GENERIC_FAB_ROUTES.has(pathname)");
     expect(source).not.toContain("/finance/budgets");
     expect(source).not.toContain("/finance/goals");
   });
 
   it("gives every in-module route enough bottom padding to clear BottomNav + a FAB + the real safe-area inset — never a plain fixed guess", () => {
-    expect(source).toMatch(/pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/);
+    expect(source).toMatch(
+      /pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/,
+    );
   });
 
   it("keeps the padding numerically ahead of the FAB's own top edge, with a real margin — verified against a live scroll-to-bottom measurement (~84px clearance) at the current values", () => {
@@ -84,17 +102,26 @@ describe("AppShell visibility", () => {
     // exists (every single-create FAB now composes FormSheetButton/
     // AsyncFormSheetButton directly) — FinanceCreateFlow's own FAB uses
     // the same shared offset every other converted FAB copies verbatim.
-    const fabSource = read("src/features/finance/components/FinanceCreateFlow.tsx");
-    const fabOffsetMatch = fabSource.match(/bottom-\[calc\(env\(safe-area-inset-bottom\)\+([\d.]+)rem\)\]/);
+    const fabSource = read(
+      "src/features/finance/components/FinanceCreateFlow.tsx",
+    );
+    const fabOffsetMatch = fabSource.match(
+      /bottom-\[calc\(env\(safe-area-inset-bottom\)\+([\d.]+)rem\)\]/,
+    );
     expect(fabOffsetMatch).not.toBeNull();
     const fabOffsetRem = Number(fabOffsetMatch![1]);
     const fabDiameterRem = 3.5; // size-14
 
-    const paddingMatch = source.match(/pb-\[calc\(env\(safe-area-inset-bottom\)\+(\d+)rem\)\]/);
+    const paddingMatch = source.match(
+      /pb-\[calc\(env\(safe-area-inset-bottom\)\+(\d+)rem\)\]/,
+    );
     expect(paddingMatch).not.toBeNull();
     const paddingRem = Number(paddingMatch![1]);
 
     const fabTopEdgeRem = fabOffsetRem + fabDiameterRem;
-    expect(paddingRem, `padding (${paddingRem}rem) must clear the FAB's top edge (${fabTopEdgeRem}rem) by ≥1rem`).toBeGreaterThanOrEqual(fabTopEdgeRem + 1);
+    expect(
+      paddingRem,
+      `padding (${paddingRem}rem) must clear the FAB's top edge (${fabTopEdgeRem}rem) by ≥1rem`,
+    ).toBeGreaterThanOrEqual(fabTopEdgeRem + 1);
   });
 });

@@ -20,10 +20,14 @@ function isSettled(debt: DebtSummary): boolean {
   return debt.outstanding === "0.00" || debt.outstanding === "-0.00";
 }
 
-function buildHref(params: Record<string, string | undefined>, overrides: Record<string, string | undefined>): string {
+function buildHref(
+  params: Record<string, string | undefined>,
+  overrides: Record<string, string | undefined>,
+): string {
   const merged = { ...params, ...overrides };
   const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(merged)) if (value) query.set(key, value);
+  for (const [key, value] of Object.entries(merged))
+    if (value) query.set(key, value);
   const queryString = query.toString();
   return queryString ? `/finance/debts?${queryString}` : "/finance/debts";
 }
@@ -34,14 +38,24 @@ export default async function DebtsPage({
   searchParams: Promise<{ direction?: string; status?: string }>;
 }) {
   const params = await searchParams;
-  const direction: Direction = params.direction === "RECEIVABLE" ? "RECEIVABLE" : "LIABILITY";
-  const status: StatusFilter = params.status === "OUTSTANDING" || params.status === "SETTLED" ? params.status : "ALL";
+  const direction: Direction =
+    params.direction === "RECEIVABLE" ? "RECEIVABLE" : "LIABILITY";
+  const status: StatusFilter =
+    params.status === "OUTSTANDING" || params.status === "SETTLED"
+      ? params.status
+      : "ALL";
   const { supabase } = await requireUser();
 
   const rows = await listDebts(supabase, "PERSONAL");
   const active = rows.filter((d) => !d.archivedAt);
   const byDirection = active.filter((d) => d.debtType === direction);
-  const visible = byDirection.filter((d) => (status === "OUTSTANDING" ? !isSettled(d) : status === "SETTLED" ? isSettled(d) : true));
+  const visible = byDirection.filter((d) =>
+    status === "OUTSTANDING"
+      ? !isSettled(d)
+      : status === "SETTLED"
+        ? isSettled(d)
+        : true,
+  );
 
   // Outstanding total per currency for the current direction — an exact
   // sum (never JS floating point) of already-loaded `outstanding`
@@ -53,15 +67,23 @@ export default async function DebtsPage({
   const outstanding = byDirection.filter((d) => !isSettled(d));
   const totalsByCurrency = new Map<string, string>();
   for (const currency of new Set(outstanding.map((d) => d.currency))) {
-    totalsByCurrency.set(currency, sumMoney(outstanding.filter((d) => d.currency === currency).map((d) => d.outstanding)));
+    totalsByCurrency.set(
+      currency,
+      sumMoney(
+        outstanding
+          .filter((d) => d.currency === currency)
+          .map((d) => d.outstanding),
+      ),
+    );
   }
 
-  const commonParams = { direction, status: status === "ALL" ? undefined : status };
+  const commonParams = {
+    direction,
+    status: status === "ALL" ? undefined : status,
+  };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="font-semibold text-finance-text">ยืม·ให้ยืม</h1>
-
+    <div className="flex flex-col gap-4 pb-4">
       {/* One creation affordance at a time: when the visible list is
           empty, FinanceEmptyState below renders its own CTA, so this FAB
           is hidden rather than offering it twice. */}
@@ -71,8 +93,16 @@ export default async function DebtsPage({
         ariaLabel="ทิศทาง"
         activeValue={direction}
         options={[
-          { value: "LIABILITY", label: "ยืมเงิน", href: buildHref(commonParams, { direction: "LIABILITY" }) },
-          { value: "RECEIVABLE", label: "ให้ยืมเงิน", href: buildHref(commonParams, { direction: "RECEIVABLE" }) },
+          {
+            value: "LIABILITY",
+            label: "ยืมเงิน",
+            href: buildHref(commonParams, { direction: "LIABILITY" }),
+          },
+          {
+            value: "RECEIVABLE",
+            label: "ให้ยืมเงิน",
+            href: buildHref(commonParams, { direction: "RECEIVABLE" }),
+          },
         ]}
       />
 
@@ -80,28 +110,71 @@ export default async function DebtsPage({
         ariaLabel="สถานะ"
         activeValue={status}
         options={[
-          { value: "ALL", label: "ทั้งหมด", href: buildHref(commonParams, { status: undefined }) },
-          { value: "OUTSTANDING", label: "ยังไม่ได้คืน", href: buildHref(commonParams, { status: "OUTSTANDING" }) },
-          { value: "SETTLED", label: "คืนแล้ว", href: buildHref(commonParams, { status: "SETTLED" }) },
+          {
+            value: "ALL",
+            label: "ทั้งหมด",
+            href: buildHref(commonParams, { status: undefined }),
+          },
+          {
+            value: "OUTSTANDING",
+            label: "ยังไม่ได้คืน",
+            href: buildHref(commonParams, { status: "OUTSTANDING" }),
+          },
+          {
+            value: "SETTLED",
+            label: "คืนแล้ว",
+            href: buildHref(commonParams, { status: "SETTLED" }),
+          },
         ]}
       />
 
-      {outstanding.length > 0 ? (
-        <div className="flex flex-col gap-2 rounded-[1.25rem] bg-finance-surface-strong p-4">
-          <p className="text-xs font-medium text-finance-muted">{direction === "LIABILITY" ? "ยอดที่ยังต้องคืนรวม" : "ยอดที่ยังไม่ได้รับคืนรวม"}</p>
-          {[...totalsByCurrency.entries()].map(([currency, total]) => (
-            <p key={currency} className="text-2xl font-semibold tabular-nums text-finance-text">
-              {formatCurrency(total, currency)}
-            </p>
-          ))}
-          <p className="text-xs text-finance-muted">{outstanding.length} รายการค้างอยู่</p>
-        </div>
-      ) : null}
+      <div
+        className={`relative overflow-hidden rounded-[1.6rem] p-5 shadow-card ${direction === "LIABILITY" ? "bg-[linear-gradient(135deg,#fde5de,#f8f1e8)]" : "bg-[linear-gradient(135deg,#e3efe0,#f8f1e8)]"}`}
+      >
+        <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
+        <p className="relative text-sm font-medium text-finance-muted">
+          {direction === "LIABILITY"
+            ? "ยอดที่ยังต้องคืนรวม"
+            : "ยอดที่ยังไม่ได้รับคืนรวม"}
+        </p>
+        {outstanding.length > 0 ? (
+          <>
+            {[...totalsByCurrency.entries()].map(([currency, total]) => (
+              <p
+                key={currency}
+                className={`relative mt-1 text-3xl font-bold tabular-nums ${direction === "LIABILITY" ? "text-finance-expense" : "text-finance-income"}`}
+              >
+                {formatCurrency(total, currency)}
+              </p>
+            ))}
+          </>
+        ) : (
+          <p className="relative mt-1 text-3xl font-bold text-finance-text">
+            ฿0.00
+          </p>
+        )}
+        <p className="relative mt-3 text-sm text-finance-muted">
+          {outstanding.length} รายการค้างอยู่
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-finance-text">
+          รายการทั้งหมด
+        </h2>
+        <span className="text-sm text-finance-muted">
+          {visible.length} รายการ
+        </span>
+      </div>
 
       {visible.length === 0 ? (
         <FinanceEmptyState
           icon="finance"
-          title={direction === "LIABILITY" ? "ยังไม่มีรายการเงินที่ยืมมา" : "ยังไม่มีรายการเงินที่ให้ยืม"}
+          title={
+            direction === "LIABILITY"
+              ? "ยังไม่มีรายการเงินที่ยืมมา"
+              : "ยังไม่มีรายการเงินที่ให้ยืม"
+          }
           description="บันทึกยอดเงินต้นเพื่อติดตามยอดคงเหลือ"
           action={<AddDebtFab asEmptyStateCta />}
         />
@@ -110,25 +183,41 @@ export default async function DebtsPage({
           {visible.map((debt) => {
             const settled = isSettled(debt);
             return (
-              <Link key={debt.id} href={`/finance/debts/${debt.id}`} className="flex flex-col gap-1 rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">
+              <Link
+                key={debt.id}
+                href={`/finance/debts/${debt.id}`}
+                className="flex flex-col gap-1 rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-finance-text">{debt.counterparty ?? debt.name}</span>
+                  <span className="font-medium text-finance-text">
+                    {debt.counterparty ?? debt.name}
+                  </span>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      settled ? "bg-finance-income/15 text-finance-income" : "bg-finance-warning/20 text-finance-warning"
+                      settled
+                        ? "bg-finance-income/15 text-finance-income"
+                        : "bg-finance-warning/20 text-finance-warning"
                     }`}
                   >
                     {settled ? "คืนแล้ว" : "ค้างอยู่"}
                   </span>
                 </div>
-                {debt.name !== debt.counterparty ? <p className="text-xs text-finance-muted">{debt.name}</p> : null}
+                {debt.name !== debt.counterparty ? (
+                  <p className="text-xs text-finance-muted">{debt.name}</p>
+                ) : null}
                 <div className="flex items-baseline justify-between">
                   <span className="text-xs text-finance-muted">ยอดคงเหลือ</span>
-                  <span className={`font-semibold tabular-nums ${direction === "LIABILITY" ? "text-finance-expense" : "text-finance-income"}`}>
+                  <span
+                    className={`font-semibold tabular-nums ${direction === "LIABILITY" ? "text-finance-expense" : "text-finance-income"}`}
+                  >
                     {formatCurrency(debt.outstanding, debt.currency)}
                   </span>
                 </div>
-                {debt.dueDate ? <p className="text-xs text-finance-muted">ครบกำหนด {debt.dueDate}</p> : null}
+                {debt.dueDate ? (
+                  <p className="text-xs text-finance-muted">
+                    ครบกำหนด {debt.dueDate}
+                  </p>
+                ) : null}
               </Link>
             );
           })}

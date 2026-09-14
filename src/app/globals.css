@@ -44,7 +44,8 @@
   --radius-control: 0.75rem;
   --radius-card: 1.25rem;
   --radius-sheet: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
+  --shadow-card:
+    0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
 }
 
 /*
@@ -85,22 +86,22 @@
 .finance-vars,
 .finance-scope,
 .finance-ui-tone {
-  --finance-background: #ffffff;
-  --finance-surface: #fafbfc;
+  --finance-background: #fbf8f2;
+  --finance-surface: #fffaf3;
   --finance-surface-strong: #ffffff;
 
-  --finance-primary: #819aae;
-  --finance-primary-strong: #667f93;
-  --finance-primary-soft: #d7e2ec;
+  --finance-primary: #789579;
+  --finance-primary-strong: #4f7058;
+  --finance-primary-soft: #e4eee0;
 
-  --finance-text: #44505c;
-  --finance-muted: #8995a2;
+  --finance-text: #352e2c;
+  --finance-muted: #807973;
 
-  --finance-income: #7ea852;
-  --finance-expense: #ff6b55;
-  --finance-transfer: #7996aa;
+  --finance-income: #5e9467;
+  --finance-expense: #e87862;
+  --finance-transfer: #6597b7;
 
-  --finance-warning: #c99a3d;
+  --finance-warning: #d39b45;
 }
 
 .finance-scope {

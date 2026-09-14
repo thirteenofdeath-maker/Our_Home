@@ -9,7 +9,10 @@ import { nextLocalDate } from "@/features/finance/domain/finance";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
-import { searchTransactions, type TransactionSearchFilters } from "@/features/transactions/api";
+import {
+  searchTransactions,
+  type TransactionSearchFilters,
+} from "@/features/transactions/api";
 import { FinanceFilterSheet } from "@/features/transactions/components/FinanceFilterSheet";
 import { TransactionHistoryList } from "@/features/transactions/components/TransactionHistoryList";
 import { groupTransactionsByDate } from "@/features/transactions/domain/groupByDate";
@@ -47,24 +50,38 @@ const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
  * below (one per real transfer type) and merges the results, rather than
  * teaching the domain function a new value.
  */
-const PILLS: Array<{ value: "ALL" | "EXPENSE" | "INCOME" | "TRANSFER"; label: string }> = [
+const PILLS: Array<{
+  value: "ALL" | "EXPENSE" | "INCOME" | "TRANSFER";
+  label: string;
+}> = [
   { value: "ALL", label: "ทั้งหมด" },
   { value: "EXPENSE", label: "รายจ่าย" },
   { value: "INCOME", label: "รายรับ" },
   { value: "TRANSFER", label: "โอนเงิน" },
 ];
 
-function buildHref(params: Record<string, string | undefined>, overrides: Record<string, string | undefined>): string {
+function buildHref(
+  params: Record<string, string | undefined>,
+  overrides: Record<string, string | undefined>,
+): string {
   const merged = { ...params, ...overrides };
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(merged)) {
     if (value) query.set(key, value);
   }
   const queryString = query.toString();
-  return queryString ? `/finance/transactions?${queryString}` : "/finance/transactions";
+  return queryString
+    ? `/finance/transactions?${queryString}`
+    : "/finance/transactions";
 }
 
-function HiddenFields({ params, except }: { params: Record<string, string | undefined>; except: string[] }) {
+function HiddenFields({
+  params,
+  except,
+}: {
+  params: Record<string, string | undefined>;
+  except: string[];
+}) {
   return (
     <>
       {Object.entries(params)
@@ -98,8 +115,14 @@ export default async function TransactionSearchPage({
   // everything passed into TransactionSearchFilters.type below is still
   // exactly one of searchTransactions' own accepted values.
   const isTransferPill = rawParams.type === "TRANSFER";
-  const type: TypeFilter = TYPE_OPTIONS.some((o) => o.value === rawParams.type) ? (rawParams.type as TypeFilter) : "ALL";
-  const status: StatusFilter = STATUS_OPTIONS.some((o) => o.value === rawParams.status) ? (rawParams.status as StatusFilter) : "ACTIVE";
+  const type: TypeFilter = TYPE_OPTIONS.some((o) => o.value === rawParams.type)
+    ? (rawParams.type as TypeFilter)
+    : "ALL";
+  const status: StatusFilter = STATUS_OPTIONS.some(
+    (o) => o.value === rawParams.status,
+  )
+    ? (rawParams.status as StatusFilter)
+    : "ACTIVE";
   const walletId = rawParams.walletId || undefined;
   const pocketId = walletId ? rawParams.pocketId || undefined : undefined;
   const categoryId = rawParams.categoryId || undefined;
@@ -107,15 +130,26 @@ export default async function TransactionSearchPage({
 
   const household = await getMyPrimaryHousehold(supabase, user.id);
 
-  const [wallets, incomeCategories, expenseCategories, pockets, personalTags, householdTags] = await Promise.all([
+  const [
+    wallets,
+    incomeCategories,
+    expenseCategories,
+    pockets,
+    personalTags,
+    householdTags,
+  ] = await Promise.all([
     listMyWallets(supabase),
     listCategories(supabase, { transactionType: "INCOME" }),
     listCategories(supabase, { transactionType: "EXPENSE" }),
     walletId ? listPocketsForWallet(supabase, walletId) : Promise.resolve([]),
     listTags(supabase, { scope: "PERSONAL" }),
-    household ? listTags(supabase, { scope: "HOUSEHOLD", householdId: household.id }) : Promise.resolve([]),
+    household
+      ? listTags(supabase, { scope: "HOUSEHOLD", householdId: household.id })
+      : Promise.resolve([]),
   ]);
-  const categories = [...incomeCategories, ...expenseCategories].sort((a, b) => a.name.localeCompare(b.name));
+  const categories = [...incomeCategories, ...expenseCategories].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   const sharedFilters: Omit<TransactionSearchFilters, "type"> = {
     status,
@@ -124,55 +158,114 @@ export default async function TransactionSearchPage({
     categoryId,
     tagId,
     query: rawParams.q || undefined,
-    dateFrom: rawParams.dateFrom ? `${rawParams.dateFrom}T00:00:00+07:00` : undefined,
-    dateTo: rawParams.dateTo ? `${nextLocalDate(rawParams.dateTo)}T00:00:00+07:00` : undefined,
+    dateFrom: rawParams.dateFrom
+      ? `${rawParams.dateFrom}T00:00:00+07:00`
+      : undefined,
+    dateTo: rawParams.dateTo
+      ? `${nextLocalDate(rawParams.dateTo)}T00:00:00+07:00`
+      : undefined,
   };
 
   let results: TransactionHistoryItem[];
   if (isTransferPill) {
     const [pocketTransfers, walletTransfers] = await Promise.all([
-      searchTransactions(supabase, { ...sharedFilters, type: "POCKET_TRANSFER" }),
-      searchTransactions(supabase, { ...sharedFilters, type: "WALLET_TRANSFER" }),
+      searchTransactions(supabase, {
+        ...sharedFilters,
+        type: "POCKET_TRANSFER",
+      }),
+      searchTransactions(supabase, {
+        ...sharedFilters,
+        type: "WALLET_TRANSFER",
+      }),
     ]);
-    results = [...pocketTransfers, ...walletTransfers].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, 100);
+    results = [...pocketTransfers, ...walletTransfers]
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+      .slice(0, 100);
   } else {
     results = await searchTransactions(supabase, { ...sharedFilters, type });
   }
 
-  const activePillValue: (typeof PILLS)[number]["value"] = isTransferPill ? "TRANSFER" : type === "INCOME" || type === "EXPENSE" ? type : "ALL";
-  const hasAdvancedFilters = Boolean(rawParams.dateFrom || rawParams.dateTo || rawParams.walletId || rawParams.pocketId || rawParams.categoryId || rawParams.tagId || (rawParams.status && rawParams.status !== "ACTIVE"));
+  const activePillValue: (typeof PILLS)[number]["value"] = isTransferPill
+    ? "TRANSFER"
+    : type === "INCOME" || type === "EXPENSE"
+      ? type
+      : "ALL";
+  const hasAdvancedFilters = Boolean(
+    rawParams.dateFrom ||
+    rawParams.dateTo ||
+    rawParams.walletId ||
+    rawParams.pocketId ||
+    rawParams.categoryId ||
+    rawParams.tagId ||
+    (rawParams.status && rawParams.status !== "ACTIVE"),
+  );
 
   const today = bangkokDateKey();
   const groups = groupTransactionsByDate(results, today);
 
   return (
-    <div className="finance-scope -mx-4 flex flex-col gap-4 px-4 pb-8 pt-2">
+    <div className="flex flex-col gap-4 pb-4">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm text-finance-muted">ประวัติการเงิน</p>
+          <h2 className="text-xl font-semibold text-finance-text">
+            {results.length} รายการ
+          </h2>
+        </div>
+        <p className="text-xs text-finance-muted">
+          แสดงล่าสุดสูงสุด 100 รายการ
+        </p>
+      </div>
       <div className="flex items-center gap-2">
         <form method="GET" className="flex-1">
           <HiddenFields params={rawParams} except={["q"]} />
           <div className="relative">
-            <AppIcon name="search" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-finance-muted" />
+            <AppIcon
+              name="search"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-finance-muted"
+            />
             <input
               name="q"
               type="search"
               defaultValue={rawParams.q ?? ""}
               placeholder="ค้นหารายการ..."
               aria-label="ค้นหารายการ"
-              className="h-11 w-full rounded-full border-none bg-finance-surface-strong pl-9 pr-4 text-base text-finance-text shadow-sm outline-none focus:ring-3 focus:ring-finance-primary-soft"
+              className="h-12 w-full rounded-[1.1rem] border-none bg-finance-surface-strong pl-10 pr-4 text-base text-finance-text shadow-sm outline-none focus:ring-3 focus:ring-finance-primary-soft"
             />
           </div>
         </form>
 
         <FinanceFilterSheet active={hasAdvancedFilters}>
           <form method="GET" className="flex flex-col gap-3">
-            <HiddenFields params={rawParams} except={["dateFrom", "dateTo", "status", "walletId", "pocketId", "categoryId", "tagId"]} />
+            <HiddenFields
+              params={rawParams}
+              except={[
+                "dateFrom",
+                "dateTo",
+                "status",
+                "walletId",
+                "pocketId",
+                "categoryId",
+                "tagId",
+              ]}
+            />
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
               <Field label="จากวันที่" htmlFor="dateFrom">
-                <Input id="dateFrom" name="dateFrom" type="date" defaultValue={rawParams.dateFrom ?? ""} />
+                <Input
+                  id="dateFrom"
+                  name="dateFrom"
+                  type="date"
+                  defaultValue={rawParams.dateFrom ?? ""}
+                />
               </Field>
               <Field label="ถึงวันที่" htmlFor="dateTo">
-                <Input id="dateTo" name="dateTo" type="date" defaultValue={rawParams.dateTo ?? ""} />
+                <Input
+                  id="dateTo"
+                  name="dateTo"
+                  type="date"
+                  defaultValue={rawParams.dateTo ?? ""}
+                />
               </Field>
             </div>
 
@@ -187,7 +280,11 @@ export default async function TransactionSearchPage({
             </Field>
 
             <Field label="กระเป๋าเงิน" htmlFor="walletId">
-              <Select id="walletId" name="walletId" defaultValue={walletId ?? ""}>
+              <Select
+                id="walletId"
+                name="walletId"
+                defaultValue={walletId ?? ""}
+              >
                 <option value="">ทั้งหมด</option>
                 {wallets.map((w) => (
                   <option key={w.id} value={w.id}>
@@ -199,7 +296,11 @@ export default async function TransactionSearchPage({
 
             {walletId ? (
               <Field label="ช่อง (Pocket)" htmlFor="pocketId">
-                <Select id="pocketId" name="pocketId" defaultValue={pocketId ?? ""}>
+                <Select
+                  id="pocketId"
+                  name="pocketId"
+                  defaultValue={pocketId ?? ""}
+                >
                   <option value="">ทั้งหมด</option>
                   {pockets.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -211,7 +312,11 @@ export default async function TransactionSearchPage({
             ) : null}
 
             <Field label="หมวดหมู่" htmlFor="categoryId">
-              <Select id="categoryId" name="categoryId" defaultValue={categoryId ?? ""}>
+              <Select
+                id="categoryId"
+                name="categoryId"
+                defaultValue={categoryId ?? ""}
+              >
                 <option value="">ทั้งหมด</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -252,27 +357,44 @@ export default async function TransactionSearchPage({
                 text-primary-foreground regardless of Tailwind's utility
                 generation order, without touching Button.tsx itself or
                 any other button in the app. */}
-            <button type="submit" className={buttonClassName("primary", "md", "!bg-finance-primary !text-white")}>
+            <button
+              type="submit"
+              className={buttonClassName(
+                "primary",
+                "md",
+                "!bg-finance-primary !text-white",
+              )}
+            >
               ใช้ตัวกรอง
             </button>
-            <Link href="/finance/transactions" className={buttonClassName("ghost", "md", "!text-finance-text")}>
+            <Link
+              href="/finance/transactions"
+              className={buttonClassName("ghost", "md", "!text-finance-text")}
+            >
               ล้างตัวกรอง
             </Link>
           </form>
         </FinanceFilterSheet>
       </div>
 
-      <nav aria-label="ประเภทรายการ" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav
+        aria-label="ประเภทรายการ"
+        className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <ul className="flex w-max gap-2">
           {PILLS.map((pill) => {
             const active = activePillValue === pill.value;
             return (
               <li key={pill.value}>
                 <Link
-                  href={buildHref(rawParams, { type: pill.value === "ALL" ? undefined : pill.value })}
+                  href={buildHref(rawParams, {
+                    type: pill.value === "ALL" ? undefined : pill.value,
+                  })}
                   aria-current={active ? "page" : undefined}
                   className={`flex h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
-                    active ? "bg-finance-primary text-white" : "bg-finance-surface-strong text-finance-muted"
+                    active
+                      ? "bg-finance-primary text-white shadow-sm"
+                      : "bg-finance-surface-strong text-finance-muted shadow-sm"
                   }`}
                 >
                   {pill.label}
@@ -288,7 +410,9 @@ export default async function TransactionSearchPage({
       ) : (
         groups.map((group) => (
           <section key={group.key} className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-finance-muted">{group.label}</h2>
+            <h2 className="text-sm font-medium text-finance-muted">
+              {group.label}
+            </h2>
             <TransactionHistoryList items={group.items} variant="full" />
           </section>
         ))

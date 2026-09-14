@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 // Strips comments before substring checks, so a doc comment explaining
 // what a file deliberately does NOT do (e.g. "no tone=\"finance\"")
 // can't be mistaken for actual code doing that thing.
-const stripComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+const stripComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 const globals = read("src/app/globals.css");
 const field = read("src/components/ui/Field.tsx");
 const button = read("src/components/ui/Button.tsx");
@@ -19,9 +21,14 @@ describe("Finance UI tone architecture — globals.css", () => {
     // with .finance-vars/.finance-scope (raw --finance-* definitions),
     // and once standalone (the --color-* remap block this test checks)
     // — pick the block that actually contains a --color- property.
-    const blocks = [...globals.matchAll(/\.finance-ui-tone\s*\{([^}]*)\}/g)].map((m) => m[1]);
+    const blocks = [
+      ...globals.matchAll(/\.finance-ui-tone\s*\{([^}]*)\}/g),
+    ].map((m) => m[1]);
     const body = blocks.find((b) => b.includes("--color-"));
-    expect(body, "expected a standalone .finance-ui-tone block with --color-* remaps").toBeTruthy();
+    expect(
+      body,
+      "expected a standalone .finance-ui-tone block with --color-* remaps",
+    ).toBeTruthy();
     for (const [prop, target] of [
       ["--color-background", "--finance-background"],
       ["--color-surface", "--finance-surface-strong"],
@@ -32,19 +39,25 @@ describe("Finance UI tone architecture — globals.css", () => {
       ["--color-primary", "--finance-primary"],
       ["--color-primary-soft", "--finance-primary-soft"],
     ]) {
-      expect(body, `${prop} should map to var(${target})`).toMatch(new RegExp(`${prop}:\\s*var\\(${target}\\)`));
+      expect(body, `${prop} should map to var(${target})`).toMatch(
+        new RegExp(`${prop}:\\s*var\\(${target}\\)`),
+      );
     }
     expect(body).not.toMatch(HEX_COLOR);
   });
 
   it("never remaps --color-danger/--color-danger-foreground — validation/destructive styling stays semantically distinct from the Finance palette", () => {
-    const blocks = [...globals.matchAll(/\.finance-ui-tone\s*\{([^}]*)\}/g)].map((m) => m[1]);
+    const blocks = [
+      ...globals.matchAll(/\.finance-ui-tone\s*\{([^}]*)\}/g),
+    ].map((m) => m[1]);
     const body = blocks.find((b) => b.includes("--color-"))!;
     expect(body).not.toContain("--color-danger");
   });
 
   it(".finance-ui-tone is self-contained — it also carries the raw --finance-* variable definitions (via the shared selector with .finance-vars/.finance-scope), so a full-page route with no .finance-scope ancestor still resolves --finance-income/--finance-expense/--finance-transfer for the Button variants", () => {
-    expect(globals).toMatch(/\.finance-vars,\s*\n\.finance-scope,\s*\n\.finance-ui-tone\s*\{/);
+    expect(globals).toMatch(
+      /\.finance-vars,\s*\n\.finance-scope,\s*\n\.finance-ui-tone\s*\{/,
+    );
   });
 });
 
@@ -62,16 +75,30 @@ describe("Shared generic primitives are completely unchanged — Finance tone is
   });
 
   it("Button.tsx's primary/secondary/ghost/danger variants are byte-for-byte the same generic classes as before — only new, additive finance* variants were introduced", () => {
-    expect(button).toContain('primary: "bg-primary text-primary-foreground hover:opacity-90"');
-    expect(button).toContain('secondary: "bg-primary-soft text-foreground hover:brightness-95"');
-    expect(button).toContain('ghost: "bg-transparent text-foreground hover:bg-surface-muted"');
-    expect(button).toContain('danger: "bg-danger text-danger-foreground hover:opacity-90"');
+    expect(button).toContain(
+      'primary: "bg-primary text-primary-foreground hover:opacity-90"',
+    );
+    expect(button).toContain(
+      'secondary: "bg-primary-soft text-foreground hover:brightness-95"',
+    );
+    expect(button).toContain(
+      'ghost: "bg-transparent text-foreground hover:bg-surface-muted"',
+    );
+    expect(button).toContain(
+      'danger: "bg-danger text-danger-foreground hover:opacity-90"',
+    );
   });
 
   it("Button.tsx's new financeIncome/financeExpense/financeTransfer variants reuse the existing --finance-income/--finance-expense/--finance-transfer tokens via Tailwind utility classes — never a duplicated hex value", () => {
-    expect(button).toContain('financeIncome: "bg-finance-income text-white hover:opacity-90"');
-    expect(button).toContain('financeExpense: "bg-finance-expense text-white hover:opacity-90"');
-    expect(button).toContain('financeTransfer: "bg-finance-transfer text-white hover:opacity-90"');
+    expect(button).toContain(
+      'financeIncome: "bg-finance-income text-white hover:opacity-90"',
+    );
+    expect(button).toContain(
+      'financeExpense: "bg-finance-expense text-white hover:opacity-90"',
+    );
+    expect(button).toContain(
+      'financeTransfer: "bg-finance-transfer text-white hover:opacity-90"',
+    );
     expect(button).not.toMatch(HEX_COLOR);
   });
 });
@@ -104,16 +131,27 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
 
   it("DebtCreateForm (the create form) applies finance-ui-tone; DebtPaymentForm/AdditionalDebtPrincipalForm (actions on an EXISTING debt, not Create) do not — they're out of this task's scope", () => {
     const source = read("src/features/debts/components/DebtForms.tsx");
-    const createFormSrc = source.slice(source.indexOf("export function DebtCreateForm"), source.indexOf("export function DebtPaymentForm"));
+    const createFormSrc = source.slice(
+      source.indexOf("export function DebtCreateForm"),
+      source.indexOf("export function DebtPaymentForm"),
+    );
     expect(createFormSrc).toContain("finance-ui-tone");
-    const paymentFormSrc = source.slice(source.indexOf("export function DebtPaymentForm"), source.indexOf("export function AdditionalDebtPrincipalForm"));
+    const paymentFormSrc = source.slice(
+      source.indexOf("export function DebtPaymentForm"),
+      source.indexOf("export function AdditionalDebtPrincipalForm"),
+    );
     expect(paymentFormSrc).not.toContain("finance-ui-tone");
-    const principalFormSrc = source.slice(source.indexOf("export function AdditionalDebtPrincipalForm"));
+    const principalFormSrc = source.slice(
+      source.indexOf("export function AdditionalDebtPrincipalForm"),
+    );
     expect(principalFormSrc).not.toContain("finance-ui-tone");
   });
 
-  it("CategoryPicker and TagPicker wrap themselves in finance-ui-tone and pass tone=\"finance\" to their own BottomSheet — the picker list, quick-create form, and selected-state chips all belong to the same Finance V2 surface", () => {
-    for (const path of ["src/features/categories/components/CategoryPicker.tsx", "src/features/tags/components/TagPicker.tsx"]) {
+  it('CategoryPicker and TagPicker wrap themselves in finance-ui-tone and pass tone="finance" to their own BottomSheet — the picker list, quick-create form, and selected-state chips all belong to the same Finance V2 surface', () => {
+    for (const path of [
+      "src/features/categories/components/CategoryPicker.tsx",
+      "src/features/tags/components/TagPicker.tsx",
+    ]) {
       const source = read(path);
       expect(source, path).toContain("finance-ui-tone");
       expect(source, path).toMatch(/<BottomSheet[\s\S]*?tone="finance"/);
@@ -122,13 +160,17 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
 });
 
 describe("Finance form submit buttons use Finance V2 accents, income/expense/transfer semantic accents where it helps clarity", () => {
-  it("TransactionForm's submit uses financeIncome for INCOME and financeExpense for EXPENSE — never the generic \"danger\" variant, which stays reserved for real destructive/error actions", () => {
-    const source = read("src/features/transactions/components/TransactionForm.tsx");
-    expect(source).toContain('variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"}');
+  it('TransactionForm\'s submit uses financeIncome for INCOME and financeExpense for EXPENSE — never the generic "danger" variant, which stays reserved for real destructive/error actions', () => {
+    const source = read(
+      "src/features/transactions/components/TransactionForm.tsx",
+    );
+    expect(source).toMatch(
+      /variant=\{\s*transactionType === "INCOME"\s*\? "financeIncome"\s*:\s*"financeExpense"\s*\}/,
+    );
     expect(source).not.toMatch(/variant=\{transactionType[^}]*"danger"/);
   });
 
-  it("PocketTransferForm and WalletTransferForm submit with variant=\"financeTransfer\"", () => {
+  it('PocketTransferForm and WalletTransferForm submit with variant="financeTransfer"', () => {
     for (const path of [
       "src/features/transactions/components/PocketTransferForm.tsx",
       "src/features/transactions/components/WalletTransferForm.tsx",
@@ -169,7 +211,7 @@ describe("Non-Finance forms never receive the Finance UI tone", () => {
     }
   });
 
-  it("AddPetFab/AddCalendarEventFab/AddHouseholdTrigger never pass tone=\"finance\" and never reference finance-ui-tone", () => {
+  it('AddPetFab/AddCalendarEventFab/AddHouseholdTrigger never pass tone="finance" and never reference finance-ui-tone', () => {
     const triggers = [
       "src/features/pets/components/AddPetFab.tsx",
       "src/features/calendar/components/AddCalendarEventFab.tsx",
@@ -201,7 +243,7 @@ describe("Danger/error styling remains semantic — never remapped to a Finance 
     }
   });
 
-  it("ConfirmDialog (destructive confirmations) is never wrapped in finance-ui-tone and keeps its plain \"danger\" Button variant", () => {
+  it('ConfirmDialog (destructive confirmations) is never wrapped in finance-ui-tone and keeps its plain "danger" Button variant', () => {
     const source = read("src/components/ui/ConfirmDialog.tsx");
     expect(source).not.toContain("finance-ui-tone");
     expect(source).not.toMatch(/tone="finance"/);

@@ -1,6 +1,5 @@
 "use client";
 
-import { buttonClassName } from "@/components/ui/Button";
 import { AsyncFormSheetButton } from "@/components/ui/AsyncFormSheetButton";
 import { getBillSheetData } from "../quick-add-data";
 import { BillForm } from "./BillForm";
@@ -13,7 +12,7 @@ import { BillForm } from "./BillForm";
 export function AddBillTrigger() {
   return (
     <AsyncFormSheetButton
-      triggerClassName={buttonClassName("primary", "lg")}
+      triggerClassName="flex h-12 w-full items-center justify-center rounded-[1rem] bg-finance-primary text-sm font-semibold text-white shadow-sm transition-transform active:scale-[0.99]"
       sheetTitle="เพิ่มบิล"
       tone="finance"
       loadData={getBillSheetData}

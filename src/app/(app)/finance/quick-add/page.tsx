@@ -1,23 +1,68 @@
 import { notFound } from "next/navigation";
 
-import { QuickAddChoices } from "@/components/shared/GlobalQuickAdd";
-import { Card } from "@/components/ui/Card";
-import { getWallet } from "@/features/wallets/api";
+import { FinanceAddWorkspace } from "@/features/finance/components/FinanceAddWorkspace";
+import {
+  getIncomeExpenseSheetData,
+  getUnifiedTransferSheetData,
+} from "@/features/finance/quick-add-data";
+import { getInstallmentSheetData } from "@/features/installments/quick-add-data";
+import { getWallet, listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ walletId?: string }> }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ walletId?: string }>;
+}) {
   const query = await searchParams;
   const { supabase } = await requireUser();
-  if (!query.walletId) notFound();
-  const wallet = await getWallet(supabase, query.walletId);
-  if (!wallet || wallet.is_archived) notFound();
+  const wallets = await listMyWallets(supabase);
+  const requestedWallet = query.walletId
+    ? await getWallet(supabase, query.walletId)
+    : null;
+  const wallet =
+    requestedWallet && !requestedWallet.is_archived
+      ? requestedWallet
+      : wallets[0];
+  if (!wallet) notFound();
+
+  const creditCard =
+    wallets.find((item) => item.wallet_type === "CREDIT_CARD") ?? null;
+  const [
+    expense,
+    income,
+    transfer,
+    installment,
+    cardExpense,
+    cardIncome,
+    cardTransfer,
+  ] = await Promise.all([
+    getIncomeExpenseSheetData(wallet.id, "EXPENSE"),
+    getIncomeExpenseSheetData(wallet.id, "INCOME"),
+    getUnifiedTransferSheetData(wallet.id),
+    getInstallmentSheetData(),
+    creditCard
+      ? getIncomeExpenseSheetData(creditCard.id, "EXPENSE")
+      : Promise.resolve(null),
+    creditCard
+      ? getIncomeExpenseSheetData(creditCard.id, "INCOME")
+      : Promise.resolve(null),
+    creditCard
+      ? getUnifiedTransferSheetData(creditCard.id)
+      : Promise.resolve(null),
+  ]);
+
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <Card className="py-3">
-        <p className="text-xs text-foreground-muted">กระเป๋าเงินปัจจุบัน</p>
-        <p className="font-semibold">{wallet.name} · {wallet.currency} · {wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}</p>
-      </Card>
-      <QuickAddChoices walletId={wallet.id} />
-    </div>
+    <FinanceAddWorkspace
+      walletId={wallet.id}
+      expense={expense}
+      income={income}
+      transfer={transfer}
+      creditCardId={creditCard?.id ?? null}
+      cardExpense={cardExpense}
+      cardIncome={cardIncome}
+      cardTransfer={cardTransfer}
+      installment={installment}
+    />
   );
 }

@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 const reports = read("src/app/(app)/finance/reports/page.tsx");
 const budgets = read("src/app/(app)/finance/budgets/page.tsx");
@@ -18,8 +19,14 @@ describe("Finance V2 Phase 2 module pages", () => {
     // deliberately excludes `Array.from(...)`, which the reports page
     // uses for a plain in-memory Set dedupe, not a query.
     for (const [name, source] of Object.entries(allPages)) {
-      expect(source, `${name} should not call supabase.rpc directly`).not.toMatch(/\bsupabase\.rpc\(|\bs\.rpc\(/);
-      expect(source, `${name} should not call .from("...") directly`).not.toMatch(/\.from\(["'][a-z_]+["']\)/);
+      expect(
+        source,
+        `${name} should not call supabase.rpc directly`,
+      ).not.toMatch(/\bsupabase\.rpc\(|\bs\.rpc\(/);
+      expect(
+        source,
+        `${name} should not call .from("...") directly`,
+      ).not.toMatch(/\.from\(["'][a-z_]+["']\)/);
     }
   });
 
@@ -34,7 +41,7 @@ describe("Finance V2 Phase 2 module pages", () => {
 
   it("uses exact decimal-string arithmetic (subtractMoney/addMoney/sumMoney), never Number()/parseFloat for an authoritative displayed amount", () => {
     expect(reports).toContain("subtractMoney(m.income, m.expense)");
-    expect(debts).toContain("sumMoney(outstanding");
+    expect(debts).toMatch(/sumMoney\(\s*outstanding/);
     expect(netWorth).toContain("addMoney(row.walletAssets, row.receivables)");
     // Number()/parseFloat may still appear, but only for chart/progress
     // RATIOS (0-100% sizing), never assigned straight into a
@@ -47,16 +54,27 @@ describe("Finance V2 Phase 2 module pages", () => {
 
   describe("Reports category percentages — exact decimal-string aggregation", () => {
     it("never sums or sorts category amounts with Number()/parseFloat — uses the exact money helpers instead", () => {
-      expect(reports).not.toMatch(/reduce\s*\(\s*\(\s*sum\s*,\s*row\s*\)\s*=>\s*sum\s*\+\s*Number\(/);
-      expect(reports).not.toMatch(/sort\s*\(\s*\(\s*a\s*,\s*b\s*\)\s*=>\s*Number\(b\.amount\)\s*-\s*Number\(a\.amount\)\s*\)/);
-      expect(reports).toContain("sumMoney(sortedRows.map((row) => row.amount))");
+      expect(reports).not.toMatch(
+        /reduce\s*\(\s*\(\s*sum\s*,\s*row\s*\)\s*=>\s*sum\s*\+\s*Number\(/,
+      );
+      expect(reports).not.toMatch(
+        /sort\s*\(\s*\(\s*a\s*,\s*b\s*\)\s*=>\s*Number\(b\.amount\)\s*-\s*Number\(a\.amount\)\s*\)/,
+      );
+      expect(reports).toContain(
+        "sumMoney(sortedRows.map((row) => row.amount))",
+      );
       expect(reports).toContain("compareMoney(b.amount, a.amount)");
       expect(reports).toContain("percentOfTotal(row.amount, total)");
     });
 
     it("computes the total/percentage per byCurrency group, never mixing currencies into one denominator", () => {
-      const groupBlock = reports.slice(reports.indexOf("byCurrency.entries()"), reports.indexOf("byCurrency.entries()") + 1200);
-      expect(groupBlock).toContain("sumMoney(sortedRows.map((row) => row.amount))");
+      const groupBlock = reports.slice(
+        reports.indexOf("byCurrency.entries()"),
+        reports.indexOf("byCurrency.entries()") + 1200,
+      );
+      expect(groupBlock).toContain(
+        "sumMoney(sortedRows.map((row) => row.amount))",
+      );
       expect(groupBlock).toContain("percentOfTotal(");
     });
   });
@@ -68,13 +86,22 @@ describe("Finance V2 Phase 2 module pages", () => {
       // page itself, which names listInstallmentOccurrences in prose to
       // explain why it's used by the detail page but not here.
       expect(installments).not.toMatch(/listInstallmentOccurrences\(/);
-      expect(installments).not.toContain("import { listInstallmentOccurrences }");
+      expect(installments).not.toContain(
+        "import { listInstallmentOccurrences }",
+      );
       // No Promise.all/map loop issuing one query per plan.
       expect(installments).not.toMatch(/Promise\.all\(\s*(active|plans)\.map/);
     });
 
     it("shows only fields listInstallmentPlans itself returns — no paid count, remaining amount, next due date, or completion state", () => {
-      for (const invented of ["paidCount", "amountPaid", "amountRemaining", "nextDueDate", "totalCount", "isComplete"]) {
+      for (const invented of [
+        "paidCount",
+        "amountPaid",
+        "amountRemaining",
+        "nextDueDate",
+        "totalCount",
+        "isComplete",
+      ]) {
         expect(installments).not.toContain(invented);
       }
       expect(installments).toContain("plan.totalAmount");
@@ -94,29 +121,49 @@ describe("Finance V2 Phase 2 module pages", () => {
     });
 
     it("has no Number/parseFloat/parseInt/toFixed at all — nothing here needs a ratio or exact-money helper once occurrence data is gone", () => {
-      expect(installments).not.toMatch(/\bNumber\(|\bparseFloat\(|\bparseInt\(|\.toFixed\(/);
+      expect(installments).not.toMatch(
+        /\bNumber\(|\bparseFloat\(|\bparseInt\(|\.toFixed\(/,
+      );
     });
   });
 
   describe("one creation affordance at a time — no duplicate FAB / empty-state CTA", () => {
     it("each module's own creation action opens its real form directly in a sheet, not an inline header + Link and not a one-item choice sheet that navigates", () => {
       const fabByModule = {
-        budgets: ["src/app/(app)/finance/budgets/page.tsx", budgets, "AddBudgetFab"],
-        installments: ["src/app/(app)/finance/installments/page.tsx", installments, "AddInstallmentFab"],
+        budgets: [
+          "src/app/(app)/finance/budgets/page.tsx",
+          budgets,
+          "AddBudgetFab",
+        ],
+        installments: [
+          "src/app/(app)/finance/installments/page.tsx",
+          installments,
+          "AddInstallmentFab",
+        ],
         debts: ["src/app/(app)/finance/debts/page.tsx", debts, "AddDebtFab"],
         goals: ["src/app/(app)/finance/goals/page.tsx", goals, "AddGoalFab"],
       } as const;
       for (const [name, [, source, marker]] of Object.entries(fabByModule)) {
-        expect(source, `${name} should render <${marker}`).toContain(`<${marker}`);
-        expect(source, `${name} header row must not carry an unconditional create Link right after <h1>`).not.toMatch(/<h1[^>]*>[^<]*<\/h1>\s*<Link/);
+        expect(source, `${name} should render <${marker}`).toContain(
+          `<${marker}`,
+        );
+        expect(
+          source,
+          `${name} header row must not carry an unconditional create Link right after <h1>`,
+        ).not.toMatch(/<h1[^>]*>[^<]*<\/h1>\s*<Link/);
         // Pressing the FAB must never navigate — its own AsyncFormSheetButton
         // fetches supporting data JIT and renders the real form in place.
-        expect(source, `${name} must not still reference the old FloatingActionButton`).not.toContain("FloatingActionButton");
+        expect(
+          source,
+          `${name} must not still reference the old FloatingActionButton`,
+        ).not.toContain("FloatingActionButton");
       }
       // Each Fab component itself is the one place that knows the real
       // full-page route's data shape (via its own quick-add-data.ts
       // loader) — never re-fetched or hrefed from the list page.
-      const budgetFab = read("src/features/budgets/components/AddBudgetFab.tsx");
+      const budgetFab = read(
+        "src/features/budgets/components/AddBudgetFab.tsx",
+      );
       expect(budgetFab).toContain("getBudgetSheetData");
       expect(budgetFab).toContain("<CreateBudgetForm");
     });
@@ -125,7 +172,9 @@ describe("Finance V2 Phase 2 module pages", () => {
       expect(budgets).toContain("{active.length > 0 ? <AddBudgetFab");
       expect(installments).toContain("{active.length > 0 ? <AddInstallmentFab");
       expect(debts).toContain("{visible.length > 0 ? <AddDebtFab");
-      expect(goals).toContain('{!(status === "active" && visible.length === 0) ? <AddGoalFab');
+      expect(goals).toContain(
+        '{!(status === "active" && visible.length === 0) ? <AddGoalFab',
+      );
     });
   });
 
@@ -144,10 +193,18 @@ describe("Finance V2 Phase 2 module pages", () => {
     expect(debts).toContain("/finance/debts/${debt.id}");
     expect(goals).toContain("/finance/goals/${goal.goalId}");
 
-    expect(read("src/app/(app)/finance/budgets/new/page.tsx")).toContain("<CreateBudgetForm");
-    expect(read("src/app/(app)/finance/installments/new/page.tsx")).toContain("<CreateInstallmentForm");
-    expect(read("src/app/(app)/finance/debts/new/page.tsx")).toContain("<DebtCreateForm");
-    expect(read("src/app/(app)/finance/goals/new/page.tsx")).toContain("<GoalForm");
+    expect(read("src/app/(app)/finance/budgets/new/page.tsx")).toContain(
+      "<CreateBudgetForm",
+    );
+    expect(read("src/app/(app)/finance/installments/new/page.tsx")).toContain(
+      "<CreateInstallmentForm",
+    );
+    expect(read("src/app/(app)/finance/debts/new/page.tsx")).toContain(
+      "<DebtCreateForm",
+    );
+    expect(read("src/app/(app)/finance/goals/new/page.tsx")).toContain(
+      "<GoalForm",
+    );
   });
 
   it("derives Goals' progress entirely from the existing ledger/Pocket-derived RPC fields, never a recomputed or mutable field", () => {
@@ -157,7 +214,7 @@ describe("Finance V2 Phase 2 module pages", () => {
   });
 
   it("keeps LIABILITY vs RECEIVABLE debt semantics exactly as before — no new writer, no principal counted as income/expense", () => {
-    expect(debts).toContain('debtType === direction');
+    expect(debts).toContain("debtType === direction");
     expect(debts).not.toMatch(/create_debt|record_debt|debt_events/);
   });
 
