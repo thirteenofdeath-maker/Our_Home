@@ -156,7 +156,7 @@ export function TransactionForm({
       className={cn(
         "finance-ui-tone",
         variant === "sheet"
-          ? "flex flex-col gap-4"
+          ? "flex flex-col gap-3.5"
           : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card",
       )}
     >
@@ -184,8 +184,8 @@ export function TransactionForm({
       ) : null}
 
       <Field label="จำนวนเงิน" htmlFor="amount">
-        <div className="flex items-center rounded-[1.1rem] border border-border/70 bg-surface px-4 shadow-sm focus-within:border-primary focus-within:ring-3 focus-within:ring-primary-soft">
-          <span className="text-3xl font-semibold text-foreground">
+        <div className="flex h-14 items-center rounded-[1rem] border border-border/70 bg-surface px-3 shadow-sm focus-within:border-primary focus-within:ring-3 focus-within:ring-primary-soft">
+          <span className="text-2xl font-semibold text-foreground">
             {activeCurrency === "THB" ? "฿" : activeCurrency}
           </span>
           <Input
@@ -197,7 +197,7 @@ export function TransactionForm({
             placeholder="0.00"
             required
             autoFocus
-            className="h-20 border-0 bg-transparent text-4xl font-semibold shadow-none focus:ring-0"
+            className="h-12 border-0 bg-transparent px-3 text-3xl font-semibold shadow-none focus:ring-0"
           />
         </div>
       </Field>

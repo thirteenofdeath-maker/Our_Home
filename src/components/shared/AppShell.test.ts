@@ -33,10 +33,11 @@ function renderShell(pathname: string): string {
 }
 
 describe("AppShell visibility", () => {
-  it("limits the full app chrome (top 'Our Home' header) to the exact four top-level roots only", () => {
+  it("omits the redundant top header on Finance while keeping it on the other top-level roots", () => {
     expect(source).toMatch(
-      /new Set\(\[\s*"\/finance",\s*"\/pets",\s*"\/calendar",\s*"\/household",?\s*\]\)/,
+      /new Set\(\[\s*"\/pets",\s*"\/calendar",\s*"\/household",?\s*\]\)/,
     );
+    expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/finance"/);
     expect(source).toContain("TOP_LEVEL_ROUTES.has(pathname)");
     expect(source).toContain("isTopLevel ? globalHeader : null");
   });

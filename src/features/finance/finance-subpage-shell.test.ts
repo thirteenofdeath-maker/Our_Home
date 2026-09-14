@@ -181,37 +181,14 @@ describe("Finance subpage shell", () => {
     });
   });
 
-  describe("Finance V2 Phase 2 module rail", () => {
+  describe("Finance navigation", () => {
     const layout = read("src/app/(app)/finance/layout.tsx");
+    const hub = read("src/app/(app)/finance/page.tsx");
 
-    it("gives the requested Finance root pages the FinanceModuleTabs rail", () => {
-      expect(layout).toMatch(
-        /new Set\(\[\s*"transactions",\s*"budgets",\s*"debts",\s*"goals",\s*"bills",?\s*\]\)/,
-      );
-      expect(layout).toContain("<FinanceModuleTabs />");
-      expect(layout).toContain("isModuleRoot");
-    });
-
-    it("never adds the rail to a deeper task page under a module section (only its own root route)", () => {
-      expect(layout).toContain("pathname === `/finance/${section}`");
-    });
-
-    it("does not add the module rail to non-primary Finance tools", () => {
-      const moduleSections = layout.match(/new Set\(\[([^\]]*)\]\)/)?.[1] ?? "";
-      for (const section of [
-        "tags",
-        "templates",
-        "recurring",
-        "quick-add",
-        "import",
-        "export",
-        "insights",
-        "reports",
-        "installments",
-        "net-worth",
-      ]) {
-        expect(moduleSections).not.toContain(`"${section}"`);
-      }
+    it("does not repeat the module rail because the overview already links every primary destination", () => {
+      expect(layout).not.toContain("FinanceModuleTabs");
+      expect(hub).not.toContain("FinanceModuleTabs");
+      expect(layout).not.toContain("MODULE_SECTIONS");
     });
   });
 });

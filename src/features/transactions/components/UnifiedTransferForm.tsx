@@ -47,24 +47,24 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
 
   return (
     <>
-      <form action={formAction} className="finance-ui-tone flex flex-col gap-5">
+      <form action={formAction} className="finance-ui-tone flex flex-col gap-4">
         <input type="hidden" name="fromWalletId" value={from.walletId} />
         <input type="hidden" name="fromPocketId" value={from.pocketId} />
         <input type="hidden" name="toWalletId" value={to?.walletId ?? ""} />
         <input type="hidden" name="toPocketId" value={to?.pocketId ?? ""} />
         <input type="hidden" name="occurredAt" value={today} />
 
-        <div className="text-center">
-          <label htmlFor="unified-transfer-amount" className="text-xs font-medium text-finance-muted">จำนวนเงิน</label>
-          <div className="mx-auto mt-1 flex max-w-xs items-center justify-center gap-2 border-b border-finance-border pb-2">
-            <span className="text-3xl font-semibold text-finance-muted">{from.currency === "THB" ? "฿" : from.currency}</span>
-            <Input id="unified-transfer-amount" name="amount" value={amount} onChange={(event) => setAmount(event.target.value)} type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="0.00" required className="h-auto border-0 bg-transparent p-0 text-center text-4xl font-semibold shadow-none" />
+        <div>
+          <label htmlFor="unified-transfer-amount" className="text-sm font-medium text-finance-muted">จำนวนเงิน</label>
+          <div className="mt-1.5 flex h-14 items-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-3 shadow-sm focus-within:border-finance-primary focus-within:ring-3 focus-within:ring-finance-primary-soft">
+            <span className="text-2xl font-semibold text-finance-text">{from.currency === "THB" ? "฿" : from.currency}</span>
+            <Input id="unified-transfer-amount" name="amount" value={amount} onChange={(event) => setAmount(event.target.value)} type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="0.00" required className="h-12 border-0 bg-transparent px-3 text-3xl font-semibold shadow-none focus:ring-0" />
           </div>
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
           <EndpointButton label="จาก" endpoint={from} onClick={() => setPicker("from")} />
-          <span aria-hidden className="pb-8 text-xl text-finance-transfer">→</span>
+          <span aria-hidden className="self-center pt-5 text-xl text-finance-transfer">→</span>
           <EndpointButton label="ไปยัง" endpoint={to} onClick={() => setPicker("to")} />
         </div>
 
@@ -98,5 +98,5 @@ export function UnifiedTransferForm({ initialWalletId, endpoints, tags }: { init
 }
 
 function EndpointButton({ label, endpoint, onClick }: { label: string; endpoint: TransferEndpoint | null; onClick: () => void }) {
-  return <div><p className="mb-1 text-xs text-finance-muted">{label}</p><button type="button" onClick={onClick} className="flex min-h-28 w-full flex-col justify-center rounded-2xl border border-finance-border bg-finance-surface p-3 text-left shadow-sm"><span className="truncate text-xs text-finance-muted">{endpoint?.walletName ?? "เลือกปลายทาง"}</span><span className="truncate font-semibold text-finance-text">{endpoint?.pocketName ?? "เลือกปลายทาง"}</span>{endpoint ? <span className="mt-2 text-xs tabular-nums text-finance-muted">{formatCurrency(endpoint.balance, endpoint.currency)}</span> : null}</button></div>;
+  return <div><p className="mb-1 text-sm font-medium text-finance-muted">{label}</p><button type="button" onClick={onClick} className="flex min-h-[88px] w-full flex-col justify-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong p-3 text-left shadow-sm"><span className="truncate text-xs text-finance-muted">{endpoint?.walletName ?? "เลือกปลายทาง"}</span><span className="truncate text-sm font-semibold text-finance-text">{endpoint?.pocketName ?? "เลือกปลายทาง"}</span>{endpoint ? <span className="mt-1 text-xs tabular-nums text-finance-muted">{formatCurrency(endpoint.balance, endpoint.currency)}</span> : null}</button></div>;
 }

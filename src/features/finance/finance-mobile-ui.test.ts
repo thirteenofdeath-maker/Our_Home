@@ -7,6 +7,9 @@ const read = (path: string) =>
 const hub = read("src/app/(app)/finance/page.tsx");
 const wallets = read("src/app/(app)/wallets/page.tsx");
 const walletDetail = read("src/app/(app)/wallets/[walletId]/page.tsx");
+const addWorkspace = read(
+  "src/features/finance/components/FinanceAddWorkspace.tsx",
+);
 
 describe("approved mobile Finance UI", () => {
   it("replaces the three dashboard shortcuts with one visible เพิ่มรายการ entry point", () => {
@@ -22,6 +25,22 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toMatch(
       /defaultWallet|mainWallet|default_wallet|main_wallet/,
     );
+  });
+
+  it("shows all five add-entry types in one compact, non-scrolling mobile grid", () => {
+    for (const label of [
+      "รายจ่าย",
+      "รายรับ",
+      "โอนเงิน",
+      "บัตรเครดิต",
+      "ผ่อนชำระ",
+    ]) {
+      expect(addWorkspace).toContain(`label: "${label}"`);
+    }
+    expect(addWorkspace).toContain("grid-cols-6");
+    expect(addWorkspace).toContain('index < 3 ? "col-span-2" : "col-span-3"');
+    expect(addWorkspace).not.toContain("overflow-x-auto");
+    expect(addWorkspace).not.toContain("min-w-max");
   });
 
   it("renders currency totals independently without combining them", () => {

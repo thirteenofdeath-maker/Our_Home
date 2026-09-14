@@ -37,8 +37,8 @@ type InstallmentData = {
 const TABS: Array<{ value: EntryType; label: string; icon: AppIconName }> = [
   { value: "expense", label: "รายจ่าย", icon: "expense" },
   { value: "income", label: "รายรับ", icon: "income" },
-  { value: "card", label: "บัตรเครดิต", icon: "wallet" },
   { value: "transfer", label: "โอนเงิน", icon: "transfer" },
+  { value: "card", label: "บัตรเครดิต", icon: "wallet" },
   { value: "installment", label: "ผ่อนชำระ", icon: "calendar" },
 ];
 
@@ -67,19 +67,20 @@ export function FinanceAddWorkspace({
   const [cardMode, setCardMode] = useState<CardMode>("spend");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="finance-add-workspace flex flex-col gap-3">
       <nav
         aria-label="ประเภทการเพิ่มรายการ"
-        className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="rounded-[1.25rem] bg-finance-surface-strong p-1.5 shadow-sm"
       >
-        <div className="flex min-w-max gap-1 rounded-[1.35rem] bg-finance-surface-strong p-1 shadow-sm">
-          {TABS.map((tab) => (
+        <div className="grid grid-cols-6 gap-1.5">
+          {TABS.map((tab, index) => (
             <button
               key={tab.value}
               type="button"
               onClick={() => setEntryType(tab.value)}
               className={cn(
-                "flex h-12 min-w-24 items-center justify-center gap-1.5 rounded-[1rem] px-3 text-sm font-medium transition-colors",
+                "flex h-12 items-center justify-center gap-1.5 rounded-[0.9rem] px-2 text-[13px] font-medium transition-colors",
+                index < 3 ? "col-span-2" : "col-span-3",
                 entryType === tab.value
                   ? "bg-finance-primary-soft text-finance-primary-strong"
                   : "text-finance-muted",
@@ -92,7 +93,7 @@ export function FinanceAddWorkspace({
         </div>
       </nav>
 
-      <div className="rounded-[1.6rem] bg-finance-surface-strong p-4 shadow-card sm:p-5">
+      <div className="rounded-[1.35rem] bg-finance-surface-strong p-3.5 shadow-card sm:p-4">
         {entryType === "expense" ? (
           <EntryIntro
             title="เพิ่มรายจ่าย"
@@ -165,7 +166,7 @@ export function FinanceAddWorkspace({
               detail="บันทึกการใช้บัตร เงินคืน หรือกดเงินสด"
               tone="transfer"
             />
-            <div className="grid grid-cols-3 rounded-[1.1rem] border border-finance-primary-soft p-1">
+            <div className="grid grid-cols-3 rounded-[1rem] border border-finance-primary-soft p-1">
               {(
                 [
                   ["spend", "ใช้บัตร"],
@@ -178,7 +179,7 @@ export function FinanceAddWorkspace({
                   type="button"
                   onClick={() => setCardMode(value)}
                   className={cn(
-                    "h-10 rounded-[0.8rem] text-sm font-medium",
+                    "h-11 rounded-[0.75rem] text-sm font-medium",
                     cardMode === value
                       ? "bg-finance-primary-soft text-finance-primary-strong"
                       : "text-finance-muted",
@@ -265,15 +266,15 @@ function EntryIntro({
           ? "calendar"
           : "transfer";
   return (
-    <div className="mb-5 flex items-center gap-3">
+    <div className="mb-4 flex items-center gap-2.5">
       <span
-        className={`flex size-11 items-center justify-center rounded-full ${color}`}
+        className={`flex size-10 items-center justify-center rounded-full ${color}`}
       >
         <AppIcon name={icon} className="size-5" />
       </span>
       <div>
-        <h2 className="text-lg font-semibold text-finance-text">{title}</h2>
-        <p className="text-sm text-finance-muted">{detail}</p>
+        <h2 className="text-base font-semibold text-finance-text">{title}</h2>
+        <p className="text-xs text-finance-muted">{detail}</p>
       </div>
     </div>
   );

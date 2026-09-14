@@ -7,7 +7,6 @@ import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
 const TOP_LEVEL_ROUTES = new Set([
-  "/finance",
   "/pets",
   "/calendar",
   "/household",
@@ -47,7 +46,8 @@ export function AppShell({
   // also reads (for active-tab/tone), so the two can never disagree about
   // which routes count as "in the app". The top app header ("Our Home" +
   // avatar) stays exact-top-level-only, a deliberately separate concern
-  // from BottomNav persistence — see docs/ARCHITECTURE.md.
+  // from BottomNav persistence. Finance deliberately omits it because its
+  // overview already provides the complete module entry surface.
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (

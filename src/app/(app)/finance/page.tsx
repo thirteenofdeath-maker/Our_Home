@@ -13,7 +13,6 @@ import {
   getFinanceSummary,
   listRecentFinanceTransactions,
 } from "@/features/finance/api";
-import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import {
   currentFinanceMonth,
@@ -115,8 +114,6 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-5 px-4 pb-8 pt-3">
-      <FinanceModuleTabs />
-
       <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
         <Link
           href={`/finance?month=${prevMonth}`}
