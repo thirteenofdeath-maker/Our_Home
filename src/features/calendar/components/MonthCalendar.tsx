@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/Card";
 
 import { formatEventTime, monthDays, shiftMonth, toBangkokInput } from "../domain/calendar";
 import type { CalendarEventView } from "../types";
-import type { CalendarFinanceItem } from "../finance";
+import { calendarFinanceSourceLabel, calendarFinanceStatusLabel, type CalendarFinanceItem } from "../finance";
 
 function eventDate(event: CalendarEventView) {
   return event.is_all_day ? event.all_day_date : toBangkokInput(event.starts_at).slice(0, 10);
@@ -55,7 +55,7 @@ export function MonthCalendar({ month, selected, today, events, financeItems=[] 
     <section className="flex flex-col gap-2">
       <h2 className="font-semibold">กิจกรรมวันที่ {selected}</h2>
       {selectedEvents.length ? selectedEvents.map((event) => <Link key={event.id} href={`/calendar/${event.id}`}><Card className="flex items-start gap-3"><span className="mt-1 size-3 shrink-0 rounded-full" style={{ backgroundColor: event.creatorColor }} /><div><p className="font-medium">{event.title}</p><p className="text-sm text-foreground-muted">{event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!)} · {event.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}</p></div></Card></Link>) : <Card><p className="text-sm text-foreground-muted">ไม่มีกิจกรรมในวันนี้</p></Card>}
-      {selectedFinance.map(item=><Link key={`${item.source}-${item.sourceId}`} href={item.href}><Card><p className="font-medium">{item.title}</p><p className="text-sm text-foreground-muted">{item.source} · {item.status} · {item.scope==="PERSONAL"?"ส่วนตัว":"ครอบครัว"}</p></Card></Link>)}
+      {selectedFinance.map(item=><Link key={`${item.source}-${item.sourceId}`} href={item.href}><Card><p className="font-medium">{item.title}</p><p className="text-sm text-foreground-muted">{calendarFinanceSourceLabel(item.source)} · {calendarFinanceStatusLabel(item.status)} · {item.scope==="PERSONAL"?"ส่วนตัว":"ครอบครัว"}</p></Card></Link>)}
     </section>
   </>;
 }

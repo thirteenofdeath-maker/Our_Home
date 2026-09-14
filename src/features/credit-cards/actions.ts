@@ -464,3 +464,5 @@ export async function issueCreditCardStatementAction(_state:ActionState,formData
   revalidatePath(`/finance/cards/${card.accountId}`); revalidatePath(`/finance/cards/${card.accountId}/statements`);
   redirect(`/finance/cards/${card.accountId}/statements/${statementId}`);
 }
+
+export async function resolveCreditCardStatementAction(_state:ActionState,formData:FormData):Promise<ActionState>{const{supabase}=await requireUser();const p=z.object({cardAccountId:z.string().uuid(),statementId:z.string().uuid(),reason:z.string().trim().min(1,"กรุณาระบุเหตุผล").max(500)}).safeParse(Object.fromEntries(formData));if(!p.success)return{error:p.error.issues[0]?.message??"ข้อมูลการปิดภาระไม่ถูกต้อง"};const{error}=await supabase.rpc("resolve_credit_card_statement",{p_statement_id:p.data.statementId,p_reason:p.data.reason});if(error){logDatabaseErrorInDev("resolveCreditCardStatement failed",error);return{error:"ปิดภาระใบแจ้งยอดไม่สำเร็จ"}}revalidatePath(`/finance/cards/${p.data.cardAccountId}`);revalidatePath(`/finance/cards/${p.data.cardAccountId}/statements`);revalidatePath("/finance");redirect(`/finance/cards/${p.data.cardAccountId}/statements/${p.data.statementId}`)}

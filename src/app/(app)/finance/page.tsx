@@ -8,6 +8,7 @@ import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger
 import { listBills, listBillOccurrences, materializeBills } from "@/features/bills/api";
 import { BillOccurrenceCard } from "@/features/bills/components/BillOccurrenceCard";
 import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import { listCreditCardDueItems } from "@/features/credit-cards/api";
 import { getFinanceSummary, listRecentFinanceTransactions } from "@/features/finance/api";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
@@ -61,14 +62,16 @@ export default async function FinancePage({
   await materializeRecurringOccurrences(supabase, { scope: "PERSONAL" });
   await materializeBills(supabase, { scope: "PERSONAL" });
   const trendStart = financeMonthRange(shiftFinanceMonth(month, -5)).start;
-  const [wallets, summary, recent, budgets, upcomingRecurring, bills, finalHub] = await Promise.all([
+  const today=bangkokDateKey();
+  const [wallets, summary, recent, budgets, upcomingRecurring, bills, finalHub, cardDueItems] = await Promise.all([
     listMyWallets(supabase),
     getFinanceSummary(supabase, monthRange),
     listRecentFinanceTransactions(supabase, 10),
     getBudgetSummary(supabase, { periodMonth: financeMonthToPeriodMonth(month), monthStart: monthRange.start, monthEnd: monthRange.end }),
     listUpcomingOccurrencesForScope(supabase, { scope: "PERSONAL", limit: 3 }),
     listBills(supabase, { scope: "PERSONAL" }),
-    getFinalHub(supabase, { start: trendStart, end: monthRange.end, today: bangkokDateKey() }),
+    getFinalHub(supabase, { start: trendStart, end: monthRange.end, today }),
+    listCreditCardDueItems(supabase,today),
   ]);
   const billOccurrences = await listBillOccurrences(supabase, bills.filter((b) => !b.pausedAt).map((b) => b.billId), { status: "OPEN", limit: 3 });
   billOccurrences.sort((a, b) => {
@@ -150,6 +153,8 @@ export default async function FinancePage({
           <FinanceTrendCard currency="THB" showCurrencyLabel={false} trend={[]} income="0.00" expense="0.00" net="0.00" />
         )}
       </section>
+
+      {cardDueItems.length ? <section className="flex flex-col gap-2"><div className="flex items-center justify-between"><h2 className="font-semibold text-finance-text">ภาระบัตรที่ต้องจัดการ</h2><Link href="/finance/cards" className="flex min-h-11 items-center text-sm text-finance-primary-strong">ดูบัตรทั้งหมด</Link></div>{cardDueItems.slice(0,5).map(item=><Link key={`${item.source}-${item.sourceId}`} href={item.source==="CARD_STATEMENT"?`/finance/cards/${item.cardAccountId}/statements/${item.sourceId}`:`/finance/installments/card/${item.planId}`} className="flex items-center justify-between gap-3 rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm"><div><p className="font-medium text-finance-text">{item.title}</p><p className={`text-xs ${item.status==="OVERDUE"?"text-danger":"text-finance-muted"}`}>{item.status==="OVERDUE"?"เกินกำหนด":item.status==="DUE"?"ครบกำหนดวันนี้":"ใกล้ถึง"} · {item.dueDate} · {item.scope==="PERSONAL"?"ส่วนตัว":"ครอบครัว"}</p></div><span className="font-medium tabular-nums text-finance-text">{formatCurrency(item.amount,item.currency)}</span></Link>)}</section>:null}
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">

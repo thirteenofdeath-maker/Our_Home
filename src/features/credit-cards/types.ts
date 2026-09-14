@@ -44,9 +44,10 @@ export type CreditCardActivityItem = {
   isVoided: boolean;
 };
 
-export type CreditCardStatementStatus = "OPEN" | "PARTIALLY_PAID" | "PAID" | "OVERDUE";
+export type CreditCardStatementStatus = "OPEN" | "PARTIALLY_PAID" | "PAID" | "OVERDUE" | "RESOLVED";
 export type CreditCardStatement = {
   statementId:string; periodStart:string; periodEnd:string; dueDate:string;
   statementBalance:string; minimumAmountDue:string; paidToDate:string; creditsToDate:string;
-  effectiveAmountDue:string; status:CreditCardStatementStatus; minimumPaymentMet:boolean;
+  effectiveAmountDue:string; status:CreditCardStatementStatus; minimumPaymentMet:boolean;resolutionReason:string|null;resolvedAt:string|null;
 };
+export type CreditCardDueItem={source:"CARD_STATEMENT"|"CARD_INSTALLMENT";sourceId:string;cardAccountId:string;planId:string|null;title:string;dueDate:string;amount:string;currency:string;scope:MoneyScope;status:"OVERDUE"|"DUE"|"UPCOMING"};

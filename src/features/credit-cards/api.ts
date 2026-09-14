@@ -422,10 +422,12 @@ export async function issueCreditCardStatement(supabase:SupabaseClient<Database>
   if(error) throw error; return data;
 }
 
-type RawStatement={statement_id:string;period_start:string;period_end:string;due_date:string;statement_balance:string|number;minimum_amount_due:string|number;paid_to_date:string|number;credits_to_date:string|number;effective_amount_due:string|number;status:CreditCardStatement["status"];minimum_payment_met:boolean};
+type RawStatement={statement_id:string;period_start:string;period_end:string;due_date:string;statement_balance:string|number;minimum_amount_due:string|number;paid_to_date:string|number;credits_to_date:string|number;effective_amount_due:string|number;status:CreditCardStatement["status"];minimum_payment_met:boolean;resolution_reason:string|null;resolved_at:string|null};
 export async function listCreditCardStatements(supabase:SupabaseClient<Database>,cardAccountId:string):Promise<CreditCardStatement[]>{
   const {data,error}=await supabase.rpc("get_credit_card_statements",{p_card_account_id:cardAccountId});
   if(error){logDatabaseErrorInDev("listCreditCardStatements failed",error);return [];}
   return ((data??[]) as RawStatement[]).map(row=>({statementId:row.statement_id,periodStart:row.period_start,periodEnd:row.period_end,dueDate:row.due_date,
-    statementBalance:normalizeDatabaseMoney(row.statement_balance),minimumAmountDue:normalizeDatabaseMoney(row.minimum_amount_due),paidToDate:normalizeDatabaseMoney(row.paid_to_date),creditsToDate:normalizeDatabaseMoney(row.credits_to_date),effectiveAmountDue:normalizeDatabaseMoney(row.effective_amount_due),status:row.status,minimumPaymentMet:row.minimum_payment_met}));
+    statementBalance:normalizeDatabaseMoney(row.statement_balance),minimumAmountDue:normalizeDatabaseMoney(row.minimum_amount_due),paidToDate:normalizeDatabaseMoney(row.paid_to_date),creditsToDate:normalizeDatabaseMoney(row.credits_to_date),effectiveAmountDue:normalizeDatabaseMoney(row.effective_amount_due),status:row.status,minimumPaymentMet:row.minimum_payment_met,resolutionReason:row.resolution_reason,resolvedAt:row.resolved_at}));
 }
+
+export async function listCreditCardDueItems(supabase:SupabaseClient<Database>,today:string){const{data,error}=await supabase.rpc("get_credit_card_due_items",{p_today:today});if(error){logDatabaseErrorInDev("listCreditCardDueItems failed",error);return[]}return(data??[]).map(row=>({source:row.source as "CARD_STATEMENT"|"CARD_INSTALLMENT",sourceId:row.source_id,cardAccountId:row.card_account_id,planId:row.plan_id,title:row.title,dueDate:row.due_date,amount:normalizeDatabaseMoney(row.amount),currency:row.currency,scope:row.scope,status:row.status as "OVERDUE"|"DUE"|"UPCOMING"}))}
