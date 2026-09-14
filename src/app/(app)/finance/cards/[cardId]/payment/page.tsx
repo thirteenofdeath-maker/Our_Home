@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { getCreditCard } from "@/features/credit-cards/api";
+import { getCreditCard, getCreditCardOutstandingComponents } from "@/features/credit-cards/api";
 import { CreditCardPaymentForm } from "@/features/credit-cards/components/CreditCardPaymentForm";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { listMyWallets } from "@/features/wallets/api";
@@ -10,8 +10,11 @@ import { requireUser } from "@/lib/auth/require-user";
 export default async function CreditCardPaymentPage({ params }: { params: Promise<{ cardId: string }> }) {
   const { cardId } = await params;
   const { supabase } = await requireUser();
-  const card = await getCreditCard(supabase, cardId);
-  if (!card || card.isArchived || Number(card.liability) <= 0) notFound();
+  const [card, outstanding] = await Promise.all([
+    getCreditCard(supabase, cardId),
+    getCreditCardOutstandingComponents(supabase, cardId),
+  ]);
+  if (!card || !outstanding || card.isArchived || Number(outstanding.total) <= 0) notFound();
 
   const wallets = (await listMyWallets(supabase)).filter((wallet) =>
     !wallet.is_archived
@@ -27,7 +30,7 @@ export default async function CreditCardPaymentPage({ params }: { params: Promis
   return (
     <div className="finance-scope mx-auto flex w-full max-w-xl flex-col gap-4">
       <PageHeader title="จ่ายบัตร" backHref={`/finance/cards/${cardId}`} />
-      <CreditCardPaymentForm card={card} wallets={wallets} pocketsByWallet={Object.fromEntries(pocketPairs)} />
+      <CreditCardPaymentForm card={card} outstanding={outstanding} wallets={wallets} pocketsByWallet={Object.fromEntries(pocketPairs)} />
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -282,6 +282,50 @@ export async function createCreditCardPaymentAction(
   } catch (error) {
     logDatabaseErrorInDev("createCreditCardPaymentAction failed", error);
     return { error: "จ่ายบัตรไม่สำเร็จ — ตรวจสอบยอดค้าง สกุลเงิน และ Wallet ที่ใช้จ่าย" };
+  }
+
+  revalidatePath(`/finance/cards/${card.accountId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const issuerChargeFields = z.object({
+  cardAccountId: z.string().uuid(),
+  chargeKind: z.enum(["INTEREST", "FEE", "LATE_FEE"]),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+});
+
+export async function createCreditCardIssuerChargeAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = issuerChargeFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลยอดเรียกเก็บไม่ถูกต้อง" };
+  }
+  const card = await getCreditCard(supabase, parsed.data.cardAccountId);
+  if (!card || card.isArchived) {
+    return { error: "ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  }
+
+  let transactionId: string;
+  try {
+    transactionId = await createCreditCardIssuerCharge(supabase, {
+      cardAccountId: card.accountId,
+      chargeKind: parsed.data.chargeKind,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCreditCardIssuerChargeAction failed", error);
+    return { error: "บันทึกยอดเรียกเก็บไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง" };
   }
 
   revalidatePath(`/finance/cards/${card.accountId}`);

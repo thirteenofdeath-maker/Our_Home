@@ -69,7 +69,7 @@ describe("credit-card payment UI", () => {
 
   it("explains that payment is not another expense and caps the entered amount", () => {
     expect(form).toContain("รายการนี้ไม่ถูกนับเป็นรายจ่ายซ้ำ");
-    expect(form).toContain("max={card.liability}");
+    expect(form).toContain("max={outstanding.total}");
     expect(form).toContain("sticky bottom-3");
   });
 });

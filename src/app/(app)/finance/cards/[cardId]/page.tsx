@@ -10,7 +10,7 @@ import {
   archiveCreditCardAction,
   restoreCreditCardAction,
 } from "@/features/credit-cards/actions";
-import { getCreditCard, listCreditCardActivity } from "@/features/credit-cards/api";
+import { getCreditCard, getCreditCardOutstandingComponents, listCreditCardActivity } from "@/features/credit-cards/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -32,7 +32,10 @@ export default async function CreditCardDetailPage({
   const { supabase } = await requireUser();
   const card = await getCreditCard(supabase, cardId);
   if (!card) notFound();
-  const activity = await listCreditCardActivity(supabase, cardId);
+  const [activity, outstanding] = await Promise.all([
+    listCreditCardActivity(supabase, cardId),
+    getCreditCardOutstandingComponents(supabase, cardId),
+  ]);
   return (
     <div className="finance-scope -mx-4 flex flex-col gap-4 px-4 pb-8 pt-2">
       <PageHeader
@@ -69,6 +72,14 @@ export default async function CreditCardDetailPage({
           </p>
         ) : null}
       </Card>
+      {outstanding ? (
+        <Card className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <Row label="เงินต้น" value={formatCurrency(outstanding.principal, card.currency)} />
+          <Row label="ดอกเบี้ย" value={formatCurrency(outstanding.interest, card.currency)} />
+          <Row label="ค่าธรรมเนียม" value={formatCurrency(outstanding.fee, card.currency)} />
+          <Row label="ค่าปรับ" value={formatCurrency(outstanding.lateFee, card.currency)} />
+        </Card>
+      ) : null}
       <Card className="flex flex-col gap-3">
         <Row
           label="ประเภท"
@@ -104,21 +115,28 @@ export default async function CreditCardDetailPage({
             จ่ายบัตร
           </Link>
         )}
+        {card.isArchived ? (
+          <Button disabled variant="secondary">ดอกเบี้ย/ค่าธรรมเนียม</Button>
+        ) : (
+          <Link href={`/finance/cards/${cardId}/charges/new`} className={buttonClassName("secondary", "md")}>
+            ดอกเบี้ย/ค่าธรรมเนียม
+          </Link>
+        )}
         <Button disabled variant="secondary">
           Cashback
         </Button>
         <Button disabled variant="secondary">
           กดเงินสด
         </Button>
-        <Button disabled variant="secondary" className="col-span-2">
+        <Button disabled variant="secondary">
           ปรับยอด
         </Button>
       </Card>
       <Card className="flex flex-col gap-3">
         <h2 className="font-semibold text-finance-text">รายการบัตรล่าสุด</h2>
         {activity.length ? activity.map((item) => {
-          const reducesLiability = ["PURCHASE_REFUND", "PAYMENT_PRINCIPAL", "PAYMENT_INTEREST", "PAYMENT_FEE", "PAYMENT_LATE_FEE", "CASHBACK"].includes(item.eventKind);
-          const labels: Partial<Record<typeof item.eventKind, string>> = {
+          const reducesLiability = Number(item.amount) < 0;
+          const labels: Record<string, string> = {
             PURCHASE: "ซื้อผ่านบัตร",
             PURCHASE_REFUND: "คืนเงินเข้าบัตร",
             PAYMENT_PRINCIPAL: "จ่ายบัตร",
@@ -129,6 +147,8 @@ export default async function CreditCardDetailPage({
             CASH_ADVANCE: "กดเงินสด",
             BALANCE_ADJUSTMENT: "ปรับยอดบัตร",
           };
+          const isPayment = item.eventKinds.length > 0 && item.eventKinds.every((kind) => kind.startsWith("PAYMENT_"));
+          const fallbackLabel = isPayment ? "จ่ายบัตร" : labels[item.eventKinds[0] ?? ""] || "รายการบัตร";
           return (
           <Link
             key={item.eventId}
@@ -136,7 +156,7 @@ export default async function CreditCardDetailPage({
             className={`flex items-center justify-between gap-3 border-b border-border py-2 last:border-0 ${item.isVoided ? "opacity-50" : ""}`}
           >
             <div>
-              <p className="text-sm font-medium">{item.title || item.categoryName || labels[item.eventKind] || "รายการบัตร"}</p>
+              <p className="text-sm font-medium">{item.title || item.categoryName || fallbackLabel}</p>
               <p className="text-xs text-finance-muted">{new Date(item.occurredAt).toLocaleDateString("th-TH")}{item.isVoided ? " · ยกเลิกแล้ว" : ""}</p>
             </div>
             <span className={reducesLiability ? "text-income" : "text-expense"}>

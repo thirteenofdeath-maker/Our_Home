@@ -22,9 +22,19 @@ export type CreditCardAccount = {
   isArchived: boolean;
 };
 
+export type CreditCardEventKind = "PURCHASE" | "PURCHASE_REFUND" | "INTEREST_CHARGE" | "FEE_CHARGE" | "LATE_FEE_CHARGE" | "PAYMENT_PRINCIPAL" | "PAYMENT_INTEREST" | "PAYMENT_FEE" | "PAYMENT_LATE_FEE" | "CASHBACK" | "CASH_ADVANCE" | "BALANCE_ADJUSTMENT";
+
+export type CreditCardOutstandingComponents = {
+  principal: string;
+  interest: string;
+  fee: string;
+  lateFee: string;
+  total: string;
+};
+
 export type CreditCardActivityItem = {
   eventId: string;
-  eventKind: "PURCHASE" | "PURCHASE_REFUND" | "INTEREST_CHARGE" | "FEE_CHARGE" | "LATE_FEE_CHARGE" | "PAYMENT_PRINCIPAL" | "PAYMENT_INTEREST" | "PAYMENT_FEE" | "PAYMENT_LATE_FEE" | "CASHBACK" | "CASH_ADVANCE" | "BALANCE_ADJUSTMENT";
+  eventKinds: CreditCardEventKind[];
   amount: string;
   transactionId: string;
   occurredAt: string;

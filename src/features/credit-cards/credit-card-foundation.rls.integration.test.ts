@@ -119,8 +119,8 @@ const paymentConfigured = Boolean(
     env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
 );
 
-describe.skipIf(!paymentConfigured)("0057 credit-card payment RLS and accounting", () => {
-  it("pays principal as a transfer, rejects overpayment, and voids/restores without expense", async () => {
+describe.skipIf(!paymentConfigured)("0058 credit-card charges, allocation RLS and accounting", () => {
+  it("expenses issuer charges once, allocates one transfer, and voids/restores all slices", async () => {
     const owner = await signedIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
     const { data: accountId, error } = await owner.rpc("create_credit_card_account", {
       p_scope:"PERSONAL", p_household_id:null, p_name:`Payment card ${Date.now()}`, p_currency:"THB", p_issuer:null,
@@ -135,33 +135,66 @@ describe.skipIf(!paymentConfigured)("0057 credit-card payment RLS and accounting
       expect(purchaseError).toBeNull();
       expect(purchaseId).toBeTruthy();
 
+      const chargeIds: string[] = [];
+      for (const [kind, amount] of [["INTEREST", "25.00"], ["FEE", "10.00"], ["LATE_FEE", "5.00"]] as const) {
+        const charge = await owner.rpc("create_credit_card_issuer_charge", {
+          p_card_account_id:accountId!, p_charge_kind:kind, p_amount:amount,
+          p_title:`${kind} test`, p_note:null, p_occurred_at:new Date().toISOString(),
+        });
+        expect(charge.error).toBeNull();
+        chargeIds.push(charge.data!);
+      }
+
       const beforeSource = await owner.rpc("get_wallet_balance", { p_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID! });
       const { data: paymentId, error: paymentError } = await owner.rpc("create_credit_card_payment", {
         p_card_account_id:accountId!, p_from_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID!,
-        p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!, p_amount:"40.00",
+        p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!, p_amount:"50.00",
         p_title:"Payment", p_note:null, p_occurred_at:new Date().toISOString(),
       });
       expect(paymentError).toBeNull();
       expect(paymentId).toBeTruthy();
 
       const afterSource = await owner.rpc("get_wallet_balance", { p_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID! });
-      expect(Number(afterSource.data) - Number(beforeSource.data)).toBe(-40);
+      expect(Number(afterSource.data) - Number(beforeSource.data)).toBe(-50);
       let cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
-      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(60);
+      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(90);
+      const components = await owner.rpc("get_credit_card_outstanding_components", { p_card_account_id:accountId! });
+      expect(components.data?.[0]).toMatchObject({ principal:90, interest:0, fee:0, late_fee:0, total:90 });
+      const allocations = await owner.from("credit_card_liability_events").select("event_kind, amount").eq("transaction_id", paymentId!);
+      expect(allocations.data?.map((row) => [row.event_kind, Number(row.amount)])).toEqual(expect.arrayContaining([
+        ["PAYMENT_LATE_FEE", -5], ["PAYMENT_FEE", -10], ["PAYMENT_INTEREST", -25], ["PAYMENT_PRINCIPAL", -10],
+      ]));
+      const { data: transactionKinds } = await owner.from("transactions").select("id, transaction_type").in("id", [...chargeIds, paymentId!]);
+      expect(transactionKinds?.filter((row) => chargeIds.includes(row.id)).every((row) => row.transaction_type === "EXPENSE")).toBe(true);
+      expect(transactionKinds?.find((row) => row.id === paymentId)?.transaction_type).toBe("TRANSFER");
 
       const overpay = await owner.rpc("create_credit_card_payment", {
         p_card_account_id:accountId!, p_from_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID!,
-        p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!, p_amount:"61.00",
+        p_from_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!, p_amount:"91.00",
         p_title:null, p_note:null, p_occurred_at:new Date().toISOString(),
       });
       expect(overpay.error).not.toBeNull();
 
+      const genericChargeRefund = await owner.rpc("create_expense_adjustment_transaction", {
+        p_original_expense_id:chargeIds[0]!, p_adjustment_kind:"REFUND",
+        p_wallet_id:env.SUPABASE_TEST_PERSONAL_WALLET_ID!,
+        p_pocket_id:env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID!, p_amount:"1.00",
+        p_title:null, p_note:null, p_occurred_at:new Date().toISOString(), p_tag_ids:null,
+      });
+      expect(genericChargeRefund.error).not.toBeNull();
+
+      const paidChargeVoid = await owner.rpc("void_transaction", { p_transaction_id:chargeIds[0]!, p_void_reason:"test" });
+      expect(paidChargeVoid.error).not.toBeNull();
+
       expect((await owner.rpc("void_transaction", { p_transaction_id:paymentId!, p_void_reason:"test" })).error).toBeNull();
       cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
-      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(100);
+      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(140);
+      expect((await owner.rpc("void_transaction", { p_transaction_id:chargeIds[0]!, p_void_reason:"test" })).error).toBeNull();
+      expect((await owner.rpc("restore_transaction", { p_transaction_id:paymentId! })).error).not.toBeNull();
+      expect((await owner.rpc("restore_transaction", { p_transaction_id:chargeIds[0]! })).error).toBeNull();
       expect((await owner.rpc("restore_transaction", { p_transaction_id:paymentId! })).error).toBeNull();
       cards = await owner.rpc("get_credit_card_accounts", { p_include_archived:true });
-      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(60);
+      expect(Number(cards.data?.find((card: { account_id:string }) => card.account_id === accountId)?.liability)).toBe(90);
 
       const outsider = await signedIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
       const unauthorized = await outsider.rpc("create_credit_card_payment", {
@@ -170,6 +203,11 @@ describe.skipIf(!paymentConfigured)("0057 credit-card payment RLS and accounting
         p_title:null, p_note:null, p_occurred_at:new Date().toISOString(),
       });
       expect(unauthorized.error).not.toBeNull();
+      const unauthorizedCharge = await outsider.rpc("create_credit_card_issuer_charge", {
+        p_card_account_id:accountId!, p_charge_kind:"FEE", p_amount:"1.00",
+        p_title:null, p_note:null, p_occurred_at:new Date().toISOString(),
+      });
+      expect(unauthorizedCharge.error).not.toBeNull();
     } finally { await (async () => {
       const service = admin();
       const { data } = await service.from("credit_card_accounts").select("wallet_id, system_pocket_id").eq("id", accountId!).single();

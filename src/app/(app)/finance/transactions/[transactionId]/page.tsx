@@ -48,6 +48,11 @@ const CARD_EVENT_LABEL: Record<string, string> = {
   BALANCE_ADJUSTMENT: "ปรับยอดบัตรเครดิต",
 };
 
+function cardEventLabel(kinds: string[]): string {
+  if (kinds.length > 0 && kinds.every((kind) => kind.startsWith("PAYMENT_"))) return "จ่ายบัตรเครดิต";
+  return CARD_EVENT_LABEL[kinds[0] ?? ""] || "รายการบัตรเครดิต";
+}
+
 export default async function TransactionDetailPage({
   params,
 }: {
@@ -84,6 +89,7 @@ export default async function TransactionDetailPage({
     ? await Promise.all([getRefundableSummary(supabase, transactionId), listAdjustmentsForOriginal(supabase, transactionId)])
     : [null, []];
   const hasActiveAdjustments = adjustments.some((a) => !a.voidedAt);
+  const isCardPurchase = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "PURCHASE";
 
   // Every action below is a real, pre-existing route/flow, gated by the
   // exact same conditions the previous consolidated sheet used — never a
@@ -99,6 +105,8 @@ export default async function TransactionDetailPage({
   // never assumed.
   const canEdit = !adjustmentOrigin && !cardEvent;
   const canAdjust = isOriginalExpense && refundable && Number(refundable.remainingAdjustableAmount) > 0;
+  const canRefund = canAdjust && (!cardEvent || isCardPurchase);
+  const canReimburse = canAdjust;
   const editHref = attribution
     ? `/finance/transactions/${transaction.transactionId}/edit-attributed`
     : `/finance/transactions/${transaction.transactionId}/edit`;
@@ -119,7 +127,7 @@ export default async function TransactionDetailPage({
             : attribution
               ? "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว"
               : cardEvent
-                ? CARD_EVENT_LABEL[cardEvent.eventKind] || "รายการบัตรเครดิต"
+                ? cardEventLabel(cardEvent.eventKinds)
                 : transferChargeOrigin
                 ? `รายจ่าย · ${CHARGE_KIND_LABEL[transferChargeOrigin.kind]}ของการโอนเงิน`
                 : TYPE_LABEL[transaction.transactionType]}
@@ -277,15 +285,15 @@ export default async function TransactionDetailPage({
                     แก้ไข
                   </Link>
                 ) : null}
-                {canAdjust ? (
-                  <>
-                    <Link href={cardEvent?.eventKind === "PURCHASE" ? `/finance/cards/${cardEvent.cardAccountId}/purchases/${transaction.transactionId}/refund` : `/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "lg")}>
+                {canRefund ? (
+                    <Link href={isCardPurchase ? `/finance/cards/${cardEvent.cardAccountId}/purchases/${transaction.transactionId}/refund` : `/finance/transactions/${transaction.transactionId}/refund`} className={buttonClassName("secondary", "lg")}>
                       คืนเงิน
                     </Link>
+                ) : null}
+                {canReimburse ? (
                     <Link href={`/finance/transactions/${transaction.transactionId}/reimbursement`} className={buttonClassName("secondary", "lg")}>
                       เบิกคืน
                     </Link>
-                  </>
                 ) : null}
                 <CreateTemplateTrigger fromTransactionId={transaction.transactionId} triggerClassName={buttonClassName("secondary", "lg")}>
                   สร้าง Template จากรายการนี้

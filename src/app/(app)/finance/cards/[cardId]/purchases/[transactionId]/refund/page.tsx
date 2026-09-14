@@ -22,7 +22,7 @@ export default async function CardPurchaseRefundPage({
     getRefundableSummary(supabase, transactionId),
     getAttributionForTransaction(supabase, transactionId),
   ]);
-  if (!card || !event || event.cardAccountId !== cardId || event.eventKind !== "PURCHASE" || !transaction || !refundable) notFound();
+  if (!card || !event || event.cardAccountId !== cardId || event.eventKinds.length !== 1 || event.eventKinds[0] !== "PURCHASE" || !transaction || !refundable) notFound();
   const tags = attribution ? null : await listTags(supabase, { scope: card.scope, householdId: card.householdId });
   return (
     <div className="finance-scope mx-auto flex w-full max-w-xl flex-col gap-4">

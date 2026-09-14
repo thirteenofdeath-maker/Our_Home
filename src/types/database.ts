@@ -1037,7 +1037,9 @@ export interface Database {
       create_attributed_card_purchase:{Args:{p_card_account_id:string;p_household_id:string;p_household_category_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
       create_card_purchase_refund:{Args:{p_original_purchase_transaction_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null;p_tag_ids?:string[]|null};Returns:string};
       create_credit_card_payment:{Args:{p_card_account_id:string;p_from_wallet_id:string;p_from_pocket_id:string;p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
-      get_credit_card_activity:{Args:{p_card_account_id:string;p_limit?:number};Returns:unknown};
+      create_credit_card_issuer_charge:{Args:{p_card_account_id:string;p_charge_kind:"INTEREST"|"FEE"|"LATE_FEE";p_amount:string;p_title?:string|null;p_note?:string|null;p_occurred_at?:string|null};Returns:string};
+      get_credit_card_outstanding_components:{Args:{p_card_account_id:string};Returns:{principal:string|number;interest:string|number;fee:string|number;late_fee:string|number;total:string|number}[]};
+      get_credit_card_activity:{Args:{p_card_account_id:string;p_limit?:number};Returns:{event_id:string;event_kinds:string[];amount:string|number;transaction_id:string;occurred_at:string;title:string|null;category_name:string|null;is_voided:boolean}[]};
       create_attributed_household_expense: {
         Args: {
           p_household_id: string;

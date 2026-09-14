@@ -10,14 +10,16 @@ import { initialActionState } from "@/lib/types/action-state";
 import { formatCurrency } from "@/lib/utils/money";
 
 import { createCreditCardPaymentAction } from "../actions";
-import type { CreditCardAccount } from "../types";
+import type { CreditCardAccount, CreditCardOutstandingComponents } from "../types";
 
 export function CreditCardPaymentForm({
   card,
+  outstanding,
   wallets,
   pocketsByWallet,
 }: {
   card: CreditCardAccount;
+  outstanding: CreditCardOutstandingComponents;
   wallets: Wallet[];
   pocketsByWallet: Record<string, Pocket[]>;
 }) {
@@ -38,6 +40,12 @@ export function CreditCardPaymentForm({
         <p className="mt-2 text-xs text-finance-muted">
           เงินจะย้ายจาก Wallet ที่เลือกเข้าบัตร รายการนี้ไม่ถูกนับเป็นรายจ่ายซ้ำ
         </p>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-finance-muted">
+          <span>เงินต้น</span><span className="text-right">{formatCurrency(outstanding.principal, card.currency)}</span>
+          <span>ดอกเบี้ย</span><span className="text-right">{formatCurrency(outstanding.interest, card.currency)}</span>
+          <span>ค่าธรรมเนียม</span><span className="text-right">{formatCurrency(outstanding.fee, card.currency)}</span>
+          <span>ค่าปรับ</span><span className="text-right">{formatCurrency(outstanding.lateFee, card.currency)}</span>
+        </div>
       </div>
 
       {wallets.length ? (
@@ -67,8 +75,9 @@ export function CreditCardPaymentForm({
       )}
 
       <Field label="จำนวนเงินที่จ่าย" htmlFor="amount">
-        <Input id="amount" name="amount" inputMode="decimal" placeholder="0.00" max={card.liability} required autoFocus />
+        <Input id="amount" name="amount" inputMode="decimal" placeholder="0.00" max={outstanding.total} required autoFocus />
       </Field>
+      <p className="text-xs text-finance-muted">ระบบจัดสรรยอดตามลำดับ ค่าปรับ → ค่าธรรมเนียม → ดอกเบี้ย → เงินต้น และเก็บแต่ละส่วนแยกแบบแก้ย้อนหลังไม่ได้</p>
       <Field label="วันที่จ่าย" htmlFor="occurredAt">
         <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />
       </Field>
