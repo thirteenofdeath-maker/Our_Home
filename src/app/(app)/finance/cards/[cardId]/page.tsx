@@ -132,9 +132,13 @@ export default async function CreditCardDetailPage({
             Cashback
           </Link>
         )}
-        <Button disabled variant="secondary">
-          กดเงินสด
-        </Button>
+        {card.isArchived || Number(card.availableCredit) <= 0 ? (
+          <Button disabled variant="secondary">กดเงินสด</Button>
+        ) : (
+          <Link href={`/finance/cards/${cardId}/cash-advance`} className={buttonClassName("secondary", "md")}>
+            กดเงินสด
+          </Link>
+        )}
         <Button disabled variant="secondary">
           ปรับยอด
         </Button>

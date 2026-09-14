@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardCashAdvance, createCreditCardCashback, createCreditCardIssuerCharge, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -368,6 +368,52 @@ export async function createCreditCardCashbackAction(
   } catch (error) {
     logDatabaseErrorInDev("createCreditCardCashbackAction failed", error);
     return { error: "บันทึก Cashback ไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง" };
+  }
+
+  revalidatePath(`/finance/cards/${card.accountId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const cashAdvanceFields = z.object({
+  cardAccountId: z.string().uuid(),
+  toWalletId: z.string().uuid("กรุณาเลือก Wallet ปลายทาง"),
+  toPocketId: z.string().uuid("กรุณาเลือก Pocket ปลายทาง"),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+});
+
+export async function createCreditCardCashAdvanceAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = cashAdvanceFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลการกดเงินสดไม่ถูกต้อง" };
+  }
+  const card = await getCreditCard(supabase, parsed.data.cardAccountId);
+  if (!card || card.isArchived) {
+    return { error: "ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  }
+
+  let transactionId: string;
+  try {
+    transactionId = await createCreditCardCashAdvance(supabase, {
+      cardAccountId: card.accountId,
+      toWalletId: parsed.data.toWalletId,
+      toPocketId: parsed.data.toPocketId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCreditCardCashAdvanceAction failed", error);
+    return { error: "กดเงินสดไม่สำเร็จ — ตรวจสอบวงเงิน สกุลเงิน และ Wallet ปลายทาง" };
   }
 
   revalidatePath(`/finance/cards/${card.accountId}`);

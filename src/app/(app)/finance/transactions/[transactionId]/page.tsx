@@ -90,6 +90,8 @@ export default async function TransactionDetailPage({
     : [null, []];
   const hasActiveAdjustments = adjustments.some((a) => !a.voidedAt);
   const isCardPurchase = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "PURCHASE";
+  const isCardPayment = cardEvent?.eventKinds.every((kind) => kind.startsWith("PAYMENT_")) ?? false;
+  const isCashAdvance = cardEvent?.eventKinds.length === 1 && cardEvent.eventKinds[0] === "CASH_ADVANCE";
 
   // Every action below is a real, pre-existing route/flow, gated by the
   // exact same conditions the previous consolidated sheet used — never a
@@ -330,14 +332,18 @@ export default async function TransactionDetailPage({
             <>
               <VoidTransactionForm transactionId={transaction.transactionId} walletId="" />
               <p className="text-center text-xs text-foreground-muted">
-                {cardEvent ? "ยกเลิกแล้ว เงินจะกลับเข้า Wallet ต้นทางและยอดค้างบัตรจะเพิ่มกลับอัตโนมัติ" : "ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย"}
+                {isCardPayment
+                  ? "ยกเลิกแล้ว เงินจะกลับเข้า Wallet ต้นทางและยอดค้างบัตรจะเพิ่มกลับอัตโนมัติ"
+                  : isCashAdvance
+                    ? "ยกเลิกแล้ว เงินจะออกจาก Wallet ปลายทางและยอดค้างบัตรจะลดลงอัตโนมัติ"
+                    : "ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย"}
               </p>
             </>
           ) : (
             <ActionButton
               action={restoreTransactionAction}
               hiddenFields={{ transactionId: transaction.transactionId, walletId: "" }}
-              label={cardEvent ? "กู้คืนการจ่ายบัตร" : "กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"}
+              label={isCardPayment ? "กู้คืนการจ่ายบัตร" : isCashAdvance ? "กู้คืนการกดเงินสด" : "กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"}
               variant="primary"
               className="w-full"
             />

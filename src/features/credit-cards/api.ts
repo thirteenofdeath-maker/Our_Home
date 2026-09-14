@@ -299,6 +299,31 @@ export async function createCreditCardCashback(
   return data;
 }
 
+export async function createCreditCardCashAdvance(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    toWalletId: string;
+    toPocketId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_credit_card_cash_advance", {
+    p_card_account_id: params.cardAccountId,
+    p_to_wallet_id: params.toWalletId,
+    p_to_pocket_id: params.toPocketId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function createCreditCardIssuerCharge(
   supabase: SupabaseClient<Database>,
   params: {
