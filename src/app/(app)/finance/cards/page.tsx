@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { AppIcon } from "@/components/ui/AppIcon";
 import { buttonClassName } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -42,10 +41,9 @@ export default async function CreditCardsPage() {
         rightAction={
           <Link
             href="/finance/cards/new"
-            aria-label="เพิ่มบัตรเครดิต"
-            className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong"
+            className="flex min-h-11 items-center rounded-full bg-finance-primary-soft px-4 text-sm font-medium text-finance-primary-strong"
           >
-            <AppIcon name="plus" />
+            เพิ่มบัตร
           </Link>
         }
       />

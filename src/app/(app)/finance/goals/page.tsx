@@ -33,13 +33,10 @@ export default async function GoalsPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-semibold text-finance-text">เป้าหมายการออม</h1>
-
-      {/* One creation affordance at a time: the empty state below only
-          ever renders its own CTA on the "active" tab (see `action`
-          below) — hide this FAB in exactly that case rather than
-          offering the same action twice. */}
-      {!(status === "active" && visible.length === 0) ? <AddGoalFab /> : null}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-semibold text-finance-text">เป้าหมายการออม</h1>
+        {!(status === "active" && visible.length === 0) ? <AddGoalFab asEmptyStateCta /> : null}
+      </div>
 
       <FinanceSegmentedControl
         ariaLabel="สถานะเป้าหมาย"

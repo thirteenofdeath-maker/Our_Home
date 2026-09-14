@@ -4,13 +4,11 @@ import Link from "next/link";
 import { getAvatarDisplayUrl, getCurrentProfile } from "@/features/profile/api";
 import { Avatar } from "@/features/profile/components/Avatar";
 import { requireUser } from "@/lib/auth/require-user";
-import { listMyWallets } from "@/features/wallets/api";
-import { GlobalQuickAdd } from "@/components/shared/GlobalQuickAdd";
 import { AppShell } from "@/components/shared/AppShell";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { supabase, user } = await requireUser();
-  const [profile,wallets] = await Promise.all([getCurrentProfile(supabase, user.id),listMyWallets(supabase)]);
+  const profile = await getCurrentProfile(supabase, user.id);
   const avatarUrl = await getAvatarDisplayUrl(supabase, profile?.avatar_url ?? null);
 
   const globalHeader = (
@@ -22,5 +20,5 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </header>
   );
 
-  return <AppShell globalHeader={globalHeader} financeQuickAdd={<GlobalQuickAdd walletId={wallets[0]?.id ?? null} />}>{children}</AppShell>;
+  return <AppShell globalHeader={globalHeader}>{children}</AppShell>;
 }

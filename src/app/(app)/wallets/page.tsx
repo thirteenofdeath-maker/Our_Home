@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/shared/PageHeader";
-import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { getMyPrimaryHousehold } from "@/features/household/api";
@@ -37,13 +36,12 @@ export default async function WalletsPage() {
           // /wallets/new route renders, unchanged business logic — only
           // `variant="sheet"` differs, a presentation-only prop.
           <FormSheetButton
-            ariaLabel="เพิ่มกระเป๋าเงิน"
-            triggerClassName="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft"
+            triggerClassName="flex min-h-11 items-center rounded-full bg-finance-primary-soft px-4 text-sm font-medium text-finance-primary-strong"
             sheetTitle="สร้างกระเป๋าเงิน"
             form={<WalletForm defaultScope="PERSONAL" hasHousehold={Boolean(primaryHousehold)} variant="sheet" />}
             tone="finance"
           >
-            <AppIcon name="plus" />
+            เพิ่ม Wallet
           </FormSheetButton>
         }
       />

@@ -26,12 +26,10 @@ export default async function InstallmentsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-semibold text-finance-text">แผนผ่อนชำระ</h1>
-
-      {/* One creation affordance at a time: when the list is empty,
-          FinanceEmptyState below renders its own CTA, so this FAB is
-          hidden rather than offering the same action twice. */}
-      {active.length > 0 ? <AddInstallmentFab /> : null}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-semibold text-finance-text">แผนผ่อนชำระ</h1>
+        {active.length > 0 ? <AddInstallmentFab asEmptyStateCta /> : null}
+      </div>
 
       {active.length === 0 ? (
         <FinanceEmptyState

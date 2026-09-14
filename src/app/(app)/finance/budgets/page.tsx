@@ -39,12 +39,10 @@ export default async function BudgetsPage({
         </Link>
       </div>
 
-      <h1 className="font-semibold text-finance-text">งบประมาณ</h1>
-
-      {/* One creation affordance at a time: when the list is empty,
-          FinanceEmptyState below renders its own CTA, so this FAB is
-          hidden rather than offering the same action twice. */}
-      {active.length > 0 ? <AddBudgetFab periodMonth={periodMonth} /> : null}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-semibold text-finance-text">งบประมาณ</h1>
+        {active.length > 0 ? <AddBudgetFab periodMonth={periodMonth} asEmptyStateCta /> : null}
+      </div>
 
       {active.length === 0 ? (
         <FinanceEmptyState

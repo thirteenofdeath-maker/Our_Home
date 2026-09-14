@@ -24,7 +24,6 @@ function renderShell(pathname: string): string {
   return renderToStaticMarkup(
     createElement(AppShell, {
       globalHeader: createElement("header", null, "hdr"),
-      financeQuickAdd: createElement("div", null, "fab"),
       children: createElement("p", null, "content"),
     }),
   );
@@ -64,10 +63,9 @@ describe("AppShell visibility", () => {
     expect(walletsPadding).toBe(financePadding);
   });
 
-  it("renders the generic Finance quick-add FAB only on Finance routes with no module-specific creation action of their own", () => {
-    expect(source).toContain('new Set(["/finance", "/finance/reports", "/finance/net-worth"])');
-    expect(source).toContain("FINANCE_GENERIC_FAB_ROUTES.has(pathname)");
-    expect(source).not.toContain("/finance/budgets");
+  it("never mounts a global Finance quick-add FAB", () => {
+    expect(source).not.toContain("FINANCE_GENERIC_FAB_ROUTES");
+    expect(source).not.toContain("financeQuickAdd");
     expect(source).not.toContain("/finance/goals");
   });
 
@@ -75,26 +73,10 @@ describe("AppShell visibility", () => {
     expect(source).toMatch(/pb-\[calc\(env\(safe-area-inset-bottom\)\+\d+rem\)\]/);
   });
 
-  it("keeps the padding numerically ahead of the FAB's own top edge, with a real margin — verified against a live scroll-to-bottom measurement (~84px clearance) at the current values", () => {
-    // The tallest fixed obstruction on any in-module page is a FAB's own
-    // top edge: FAB bottom-offset + FAB diameter (size-14 = 3.5rem).
-    // AppShell's bottom padding must clear that by a real margin (≥1rem
-    // ≈ 16px), or a deep form's last control can sit visually under the
-    // FAB/BottomNav on a real device. FloatingActionButton.tsx no longer
-    // exists (every single-create FAB now composes FormSheetButton/
-    // AsyncFormSheetButton directly) — FinanceCreateFlow's own FAB uses
-    // the same shared offset every other converted FAB copies verbatim.
-    const fabSource = read("src/features/finance/components/FinanceCreateFlow.tsx");
-    const fabOffsetMatch = fabSource.match(/bottom-\[calc\(env\(safe-area-inset-bottom\)\+([\d.]+)rem\)\]/);
-    expect(fabOffsetMatch).not.toBeNull();
-    const fabOffsetRem = Number(fabOffsetMatch![1]);
-    const fabDiameterRem = 3.5; // size-14
-
+  it("keeps generous safe-area clearance below page content", () => {
     const paddingMatch = source.match(/pb-\[calc\(env\(safe-area-inset-bottom\)\+(\d+)rem\)\]/);
     expect(paddingMatch).not.toBeNull();
     const paddingRem = Number(paddingMatch![1]);
-
-    const fabTopEdgeRem = fabOffsetRem + fabDiameterRem;
-    expect(paddingRem, `padding (${paddingRem}rem) must clear the FAB's top edge (${fabTopEdgeRem}rem) by ≥1rem`).toBeGreaterThanOrEqual(fabTopEdgeRem + 1);
+    expect(paddingRem).toBeGreaterThanOrEqual(6);
   });
 });

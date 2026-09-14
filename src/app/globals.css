@@ -85,22 +85,22 @@
 .finance-vars,
 .finance-scope,
 .finance-ui-tone {
-  --finance-background: #ffffff;
-  --finance-surface: #fafbfc;
-  --finance-surface-strong: #ffffff;
+  --finance-background: #fbf7ef;
+  --finance-surface: #fff9ef;
+  --finance-surface-strong: #fffdf8;
 
-  --finance-primary: #819aae;
-  --finance-primary-strong: #667f93;
-  --finance-primary-soft: #d7e2ec;
+  --finance-primary: #7c9a83;
+  --finance-primary-strong: #5f7d67;
+  --finance-primary-soft: #e5eee3;
 
-  --finance-text: #44505c;
-  --finance-muted: #8995a2;
+  --finance-text: #4b4038;
+  --finance-muted: #88796d;
 
-  --finance-income: #7ea852;
-  --finance-expense: #ff6b55;
-  --finance-transfer: #7996aa;
+  --finance-income: #72935f;
+  --finance-expense: #d9785f;
+  --finance-transfer: #7894a8;
 
-  --finance-warning: #c99a3d;
+  --finance-warning: #c29a45;
 }
 
 .finance-scope {
