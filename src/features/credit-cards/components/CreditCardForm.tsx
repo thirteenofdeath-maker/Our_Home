@@ -169,7 +169,7 @@ export function CreditCardForm({
       </Field>
       {!card ? (
         <p className="rounded-control bg-finance-primary-soft p-3 text-sm text-finance-muted">
-          บัตรใหม่เริ่มที่ยอด 0 บาท การซื้อและจ่ายบัตรจะเปิดใช้ในขั้นถัดไป
+          บัตรใหม่เริ่มที่ยอด 0 บาท จากนั้นบันทึกการซื้อและจ่ายบัตรได้จากหน้ารายละเอียดบัตร
         </p>
       ) : null}
       {state.error ? (

@@ -222,6 +222,31 @@ export async function createCardPurchaseRefund(
   return data;
 }
 
+export async function createCreditCardPayment(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    fromWalletId: string;
+    fromPocketId: string;
+    amount: string;
+    title: string | null;
+    note: string | null;
+    occurredAt: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_credit_card_payment", {
+    p_card_account_id: params.cardAccountId,
+    p_from_wallet_id: params.fromWalletId,
+    p_from_pocket_id: params.fromPocketId,
+    p_amount: params.amount,
+    p_title: params.title,
+    p_note: params.note,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
 type RawActivity = {
   event_id: string;
   event_kind: CreditCardActivityItem["eventKind"];

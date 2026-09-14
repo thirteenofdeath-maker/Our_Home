@@ -33,6 +33,21 @@ const CHARGE_KIND_LABEL: Record<"FEE" | "INTEREST", string> = {
   INTEREST: "ดอกเบี้ย",
 };
 
+const CARD_EVENT_LABEL: Record<string, string> = {
+  PURCHASE: "ซื้อผ่านบัตรเครดิต",
+  PURCHASE_REFUND: "คืนเงินเข้าบัตร",
+  PAYMENT_PRINCIPAL: "จ่ายบัตรเครดิต",
+  PAYMENT_INTEREST: "จ่ายดอกเบี้ยบัตรเครดิต",
+  PAYMENT_FEE: "จ่ายค่าธรรมเนียมบัตรเครดิต",
+  PAYMENT_LATE_FEE: "จ่ายค่าปรับบัตรเครดิต",
+  INTEREST_CHARGE: "ดอกเบี้ยบัตรเครดิต",
+  FEE_CHARGE: "ค่าธรรมเนียมบัตรเครดิต",
+  LATE_FEE_CHARGE: "ค่าปรับบัตรเครดิต",
+  CASHBACK: "Cashback บัตรเครดิต",
+  CASH_ADVANCE: "กดเงินสดจากบัตรเครดิต",
+  BALANCE_ADJUSTMENT: "ปรับยอดบัตรเครดิต",
+};
+
 export default async function TransactionDetailPage({
   params,
 }: {
@@ -87,10 +102,9 @@ export default async function TransactionDetailPage({
   const editHref = attribution
     ? `/finance/transactions/${transaction.transactionId}/edit-attributed`
     : `/finance/transactions/${transaction.transactionId}/edit`;
-  // Phase V (0052): a plain (unlinked) transfer still cannot be voided in
-  // this version — only one carrying at least one fee/interest charge can
-  // (see void_transaction's own gate, 0052).
-  const canVoidOrRestoreTransfer = isTransfer && hasLinkedCharges;
+  // Plain transfers remain protected. Linked transfer-charge groups and
+  // classified card payments are safely voidable/restorable as a unit.
+  const canVoidOrRestoreTransfer = isTransfer && (hasLinkedCharges || Boolean(cardEvent));
   const transferCurrency = transaction.walletTransfer?.currency ?? "THB";
   const transferPrincipal = Number(transaction.pocketTransfer?.amount ?? transaction.walletTransfer?.amount ?? 0);
   const activeChargeTotal = transferCharges.filter((c) => !c.voidedAt).reduce((sum, c) => sum + Math.abs(Number(c.amount)), 0);
@@ -105,7 +119,7 @@ export default async function TransactionDetailPage({
             : attribution
               ? "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว"
               : cardEvent
-                ? cardEvent.eventKind === "PURCHASE_REFUND" ? "คืนเงินเข้าบัตร" : "ซื้อผ่านบัตรเครดิต"
+                ? CARD_EVENT_LABEL[cardEvent.eventKind] || "รายการบัตรเครดิต"
                 : transferChargeOrigin
                 ? `รายจ่าย · ${CHARGE_KIND_LABEL[transferChargeOrigin.kind]}ของการโอนเงิน`
                 : TYPE_LABEL[transaction.transactionType]}
@@ -301,23 +315,21 @@ export default async function TransactionDetailPage({
           )}
         </section>
       ) : canVoidOrRestoreTransfer ? (
-        // Phase V (0052): a transfer with at least one linked FEE/INTEREST
-        // charge CAN be voided/restored (a plain transfer still cannot —
-        // see void_transaction's own gate). Voiding/restoring here cascades
-        // atomically to every linked charge via sync_transfer_ledger_void_state.
+        // Classified card payments and transfers with linked charges are
+        // voidable/restorable. Plain transfers remain protected.
         <section className="flex flex-col gap-3">
           {!isVoided ? (
             <>
               <VoidTransactionForm transactionId={transaction.transactionId} walletId="" />
               <p className="text-center text-xs text-foreground-muted">
-                ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย
+                {cardEvent ? "ยกเลิกแล้ว เงินจะกลับเข้า Wallet ต้นทางและยอดค้างบัตรจะเพิ่มกลับอัตโนมัติ" : "ยกเลิกรายการนี้จะยกเลิกค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกันทั้งหมดด้วย"}
               </p>
             </>
           ) : (
             <ActionButton
               action={restoreTransactionAction}
               hiddenFields={{ transactionId: transaction.transactionId, walletId: "" }}
-              label="กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"
+              label={cardEvent ? "กู้คืนการจ่ายบัตร" : "กู้คืนรายการ (รวมค่าธรรมเนียม/ดอกเบี้ยที่เชื่อมโยงกัน)"}
               variant="primary"
               className="w-full"
             />

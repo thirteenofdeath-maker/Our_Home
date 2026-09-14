@@ -11,7 +11,7 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, getCreditCard, updateCreditCard } from "./api";
+import { createAttributedCardPurchase, createCardPurchase, createCardPurchaseRefund, createCreditCard, createCreditCardPayment, getCreditCard, updateCreditCard } from "./api";
 
 const optionalText = z
   .string()
@@ -238,6 +238,53 @@ export async function createCardPurchaseRefundAction(
     return { error: "คืนเงินไม่สำเร็จ — ตรวจสอบยอดที่ยังคืนได้และสถานะรายการ" };
   }
   revalidatePath(`/finance/transactions/${parsed.data.originalPurchaseTransactionId}`);
+  revalidatePath("/finance/cards");
+  revalidatePath("/finance");
+  redirect(`/finance/transactions/${transactionId}`);
+}
+
+const paymentFields = z.object({
+  cardAccountId: z.string().uuid(),
+  fromWalletId: z.string().uuid("กรุณาเลือก Wallet ที่ใช้จ่าย"),
+  fromPocketId: z.string().uuid("กรุณาเลือก Pocket ที่ใช้จ่าย"),
+  amount: positiveAmountSchema,
+  title: optionalLongText,
+  note: optionalLongText,
+  occurredAt,
+});
+
+export async function createCreditCardPaymentAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = paymentFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลการจ่ายบัตรไม่ถูกต้อง" };
+  }
+
+  const card = await getCreditCard(supabase, parsed.data.cardAccountId);
+  if (!card || card.isArchived) {
+    return { error: "ไม่พบบัตรเครดิตหรือบัตรถูกเก็บถาวรแล้ว" };
+  }
+
+  let transactionId: string;
+  try {
+    transactionId = await createCreditCardPayment(supabase, {
+      cardAccountId: card.accountId,
+      fromWalletId: parsed.data.fromWalletId,
+      fromPocketId: parsed.data.fromPocketId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createCreditCardPaymentAction failed", error);
+    return { error: "จ่ายบัตรไม่สำเร็จ — ตรวจสอบยอดค้าง สกุลเงิน และ Wallet ที่ใช้จ่าย" };
+  }
+
+  revalidatePath(`/finance/cards/${card.accountId}`);
   revalidatePath("/finance/cards");
   revalidatePath("/finance");
   redirect(`/finance/transactions/${transactionId}`);

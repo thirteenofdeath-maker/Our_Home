@@ -97,9 +97,13 @@ export default async function CreditCardDetailPage({
         <Link href={`/finance/cards/${cardId}/purchase`} className={buttonClassName("financeExpense", "md")}>
           ซื้อผ่านบัตร
         </Link>
-        <Button disabled variant="financeTransfer">
-          จ่ายบัตร (เร็ว ๆ นี้)
-        </Button>
+        {card.isArchived || Number(card.liability) <= 0 ? (
+          <Button disabled variant="financeTransfer">จ่ายบัตร</Button>
+        ) : (
+          <Link href={`/finance/cards/${cardId}/payment`} className={buttonClassName("financeTransfer", "md")}>
+            จ่ายบัตร
+          </Link>
+        )}
         <Button disabled variant="secondary">
           Cashback
         </Button>
@@ -112,21 +116,35 @@ export default async function CreditCardDetailPage({
       </Card>
       <Card className="flex flex-col gap-3">
         <h2 className="font-semibold text-finance-text">รายการบัตรล่าสุด</h2>
-        {activity.length ? activity.map((item) => (
+        {activity.length ? activity.map((item) => {
+          const reducesLiability = ["PURCHASE_REFUND", "PAYMENT_PRINCIPAL", "PAYMENT_INTEREST", "PAYMENT_FEE", "PAYMENT_LATE_FEE", "CASHBACK"].includes(item.eventKind);
+          const labels: Partial<Record<typeof item.eventKind, string>> = {
+            PURCHASE: "ซื้อผ่านบัตร",
+            PURCHASE_REFUND: "คืนเงินเข้าบัตร",
+            PAYMENT_PRINCIPAL: "จ่ายบัตร",
+            INTEREST_CHARGE: "ดอกเบี้ยบัตร",
+            FEE_CHARGE: "ค่าธรรมเนียมบัตร",
+            LATE_FEE_CHARGE: "ค่าปรับล่าช้า",
+            CASHBACK: "Cashback",
+            CASH_ADVANCE: "กดเงินสด",
+            BALANCE_ADJUSTMENT: "ปรับยอดบัตร",
+          };
+          return (
           <Link
             key={item.eventId}
             href={`/finance/transactions/${item.transactionId}`}
             className={`flex items-center justify-between gap-3 border-b border-border py-2 last:border-0 ${item.isVoided ? "opacity-50" : ""}`}
           >
             <div>
-              <p className="text-sm font-medium">{item.title || item.categoryName || (item.eventKind === "PURCHASE_REFUND" ? "คืนเงิน" : "ซื้อผ่านบัตร")}</p>
+              <p className="text-sm font-medium">{item.title || item.categoryName || labels[item.eventKind] || "รายการบัตร"}</p>
               <p className="text-xs text-finance-muted">{new Date(item.occurredAt).toLocaleDateString("th-TH")}{item.isVoided ? " · ยกเลิกแล้ว" : ""}</p>
             </div>
-            <span className={item.eventKind === "PURCHASE_REFUND" ? "text-income" : "text-expense"}>
-              {item.eventKind === "PURCHASE_REFUND" ? "−" : "+"}{formatCurrency(Math.abs(Number(item.amount)).toFixed(2), card.currency)}
+            <span className={reducesLiability ? "text-income" : "text-expense"}>
+              {reducesLiability ? "−" : "+"}{formatCurrency(Math.abs(Number(item.amount)).toFixed(2), card.currency)}
             </span>
           </Link>
-        )) : <p className="text-sm text-finance-muted">ยังไม่มีรายการผ่านบัตร</p>}
+        );
+        }) : <p className="text-sm text-finance-muted">ยังไม่มีรายการผ่านบัตร</p>}
       </Card>
       {card.isArchived ? (
         <form action={restoreCreditCardAction}>
