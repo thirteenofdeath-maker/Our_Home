@@ -30,6 +30,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency, subtractMoney } from "@/lib/utils/money";
 
 const SHORTCUTS: Array<{ href: string; label: string; icon: "wallet" | "pocket" | "transfer" | "finance" }> = [
+  { href: "/finance/cards", label: "บัตรเครดิต", icon: "finance" },
   { href: "/categories", label: "หมวดหมู่", icon: "pocket" },
   { href: "/finance/tags", label: "แท็ก", icon: "pocket" },
   { href: "/finance/templates", label: "Template", icon: "wallet" },

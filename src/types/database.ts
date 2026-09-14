@@ -156,6 +156,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      credit_card_accounts: {
+        Row: { id:string; wallet_id:string; system_pocket_id:string; issuer:string|null; network:string|null; last_four:string|null; credit_limit:number|string; statement_closing_day:number; payment_due_day:number; apr:number|string|null; created_by:string; created_at:string; updated_at:string };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_accounts_wallet_id_fkey";
+            columns: ["wallet_id"];
+            isOneToOne: true;
+            referencedRelation: "wallets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "credit_card_accounts_system_pocket_id_fkey";
+            columns: ["system_pocket_id"];
+            isOneToOne: true;
+            referencedRelation: "pockets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       pockets: {
         Row: {
           id: string;
@@ -982,6 +1003,10 @@ export interface Database {
       get_net_worth:{Args:Record<string,never>;Returns:unknown};
       get_finance_insights:{Args:{p_current_start:string;p_current_end:string;p_previous_start:string;p_today:string};Returns:unknown};
       get_finance_hub_final:{Args:{p_report_start:string;p_report_end:string;p_today:string};Returns:unknown};
+      credit_card_cycle_date:{Args:{p_year:number;p_month:number;p_day:number};Returns:string};
+      create_credit_card_account:{Args:{p_scope:MoneyScope;p_household_id:string|null;p_name:string;p_currency:string;p_issuer:string|null;p_network:string|null;p_last_four:string|null;p_credit_limit:string;p_statement_closing_day:number;p_payment_due_day:number;p_apr:string|null};Returns:string};
+      update_credit_card_account:{Args:{p_account_id:string;p_name:string;p_issuer:string|null;p_network:string|null;p_last_four:string|null;p_credit_limit:string;p_statement_closing_day:number;p_payment_due_day:number;p_apr:string|null};Returns:string};
+      get_credit_card_accounts:{Args:{p_include_archived?:boolean};Returns:unknown};
       create_attributed_household_expense: {
         Args: {
           p_household_id: string;

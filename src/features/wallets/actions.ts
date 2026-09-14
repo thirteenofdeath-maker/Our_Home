@@ -13,10 +13,11 @@ import type { ActionState } from "@/lib/types/action-state";
 import { archiveWallet, createWallet, deleteWallet, restoreWallet, updateWallet } from "./api";
 
 const walletTypeSchema = z.enum(["BANK", "CASH", "CREDIT_CARD", "E_WALLET", "OTHER"]);
+const creatableWalletTypeSchema = z.enum(["BANK", "CASH", "E_WALLET", "OTHER"]);
 
 const createWalletSchema = z.object({
   name: z.string().trim().min(1, "Wallet name is required").max(80, "Keep it under 80 characters"),
-  walletType: walletTypeSchema,
+  walletType: creatableWalletTypeSchema,
   currency: z
     .string()
     .trim()

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
@@ -7,7 +7,7 @@ import { listArchivedPocketsForWallet, listPocketsWithBalances } from "@/feature
 import { PocketCreateLink } from "@/features/pockets/components/PocketCreateLink";
 import { PocketManagerList } from "@/features/pockets/components/PocketManagerList";
 import { listTransactionsForWallet } from "@/features/transactions/api";
-import { getWallet, getWalletBalance } from "@/features/wallets/api";
+import { getManagedCardAccountId, getWallet, getWalletBalance } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -23,6 +23,8 @@ export default async function WalletDetailPage({
 
   const wallet = await getWallet(supabase, walletId);
   if (!wallet) notFound();
+  const managedCardId = await getManagedCardAccountId(supabase, walletId);
+  if (managedCardId) redirect(`/finance/cards/${managedCardId}`);
 
   const [balance, pockets, archivedPockets, history] = await Promise.all([
     getWalletBalance(supabase, walletId),

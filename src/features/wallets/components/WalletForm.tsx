@@ -12,7 +12,6 @@ import { createWalletAction } from "../actions";
 const WALLET_TYPES = [
   { value: "BANK", label: "บัญชีธนาคาร" },
   { value: "CASH", label: "เงินสด" },
-  { value: "CREDIT_CARD", label: "บัตรเครดิต" },
   { value: "E_WALLET", label: "e-Wallet" },
   { value: "OTHER", label: "อื่น ๆ" },
 ] as const;

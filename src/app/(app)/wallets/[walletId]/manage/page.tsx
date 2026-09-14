@@ -1,9 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { listArchivedPocketsForWallet, listPocketsWithBalances } from "@/features/pockets/api";
 import { PocketManagerList } from "@/features/pockets/components/PocketManagerList";
-import { getWallet } from "@/features/wallets/api";
+import { getManagedCardAccountId, getWallet } from "@/features/wallets/api";
 import { RenameWalletForm } from "@/features/wallets/components/RenameWalletForm";
 import { WalletLifecycleControls } from "@/features/wallets/components/WalletLifecycleControls";
 import { requireUser } from "@/lib/auth/require-user";
@@ -13,6 +13,8 @@ export default async function WalletManagementPage({ params }: { params: Promise
   const { supabase } = await requireUser();
   const wallet = await getWallet(supabase, walletId);
   if (!wallet) notFound();
+  const managedCardId = await getManagedCardAccountId(supabase, walletId);
+  if (managedCardId) redirect(`/finance/cards/${managedCardId}/edit`);
   const [pockets, archivedPockets] = await Promise.all([
     listPocketsWithBalances(supabase, walletId),
     listArchivedPocketsForWallet(supabase, walletId),

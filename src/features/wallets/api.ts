@@ -15,14 +15,18 @@ import type { Wallet } from "./types";
  * to). Listing "my wallets" is simply "list wallets".
  */
 export async function listMyWallets(supabase: SupabaseClient<Database>): Promise<Wallet[]> {
-  const { data, error } = await supabase
-    .from("wallets")
-    .select("*")
-    .eq("is_archived", false)
-    .order("created_at", { ascending: true });
+  const [{ data, error }, { data: managedCards, error: cardsError }] = await Promise.all([
+    supabase.from("wallets").select("*").eq("is_archived", false).order("created_at", { ascending: true }),
+    supabase.from("credit_card_accounts").select("wallet_id"),
+  ]);
 
   if (error) logDatabaseErrorInDev("listMyWallets failed", error);
-  return data ?? [];
+  if (cardsError) {
+    logDatabaseErrorInDev("listMyWallets managed-card lookup failed", cardsError);
+    return (data ?? []).filter((wallet) => wallet.wallet_type !== "CREDIT_CARD");
+  }
+  const managedIds = new Set((managedCards ?? []).map((row) => row.wallet_id));
+  return (data ?? []).filter((wallet) => !managedIds.has(wallet.id));
 }
 
 export async function getWallet(supabase: SupabaseClient<Database>, walletId: string): Promise<Wallet | null> {
@@ -42,14 +46,24 @@ export async function getWalletBalance(supabase: SupabaseClient<Database>, walle
 }
 
 export async function listArchivedWallets(supabase: SupabaseClient<Database>): Promise<Wallet[]> {
-  const { data, error } = await supabase
-    .from("wallets")
-    .select("*")
-    .eq("is_archived", true)
-    .order("created_at", { ascending: true });
+  const [{ data, error }, { data: managedCards, error: cardsError }] = await Promise.all([
+    supabase.from("wallets").select("*").eq("is_archived", true).order("created_at", { ascending: true }),
+    supabase.from("credit_card_accounts").select("wallet_id"),
+  ]);
 
   if (error) logDatabaseErrorInDev("listArchivedWallets failed", error);
-  return data ?? [];
+  if (cardsError) {
+    logDatabaseErrorInDev("listArchivedWallets managed-card lookup failed", cardsError);
+    return (data ?? []).filter((wallet) => wallet.wallet_type !== "CREDIT_CARD");
+  }
+  const managedIds = new Set((managedCards ?? []).map((row) => row.wallet_id));
+  return (data ?? []).filter((wallet) => !managedIds.has(wallet.id));
+}
+
+export async function getManagedCardAccountId(supabase: SupabaseClient<Database>, walletId: string): Promise<string | null> {
+  const { data, error } = await supabase.from("credit_card_accounts").select("id").eq("wallet_id", walletId).maybeSingle();
+  if (error) logDatabaseErrorInDev("getManagedCardAccountId failed", error);
+  return data?.id ?? null;
 }
 
 /**
