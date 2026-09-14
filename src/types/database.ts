@@ -1141,6 +1141,16 @@ export interface Database {
         };
         Returns: string;
       };
+      update_pocket_details: {
+        Args: {
+          p_pocket_id: string;
+          p_wallet_id: string;
+          p_name: string;
+          p_pocket_type: WalletType;
+          p_target_balance: string;
+        };
+        Returns: undefined;
+      };
       create_credit_card_pocket_with_available_credit: {
         Args: {
           p_wallet_id: string;

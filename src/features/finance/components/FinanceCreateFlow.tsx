@@ -36,6 +36,7 @@ type Stage =
 interface IncomeExpenseData {
   wallets: TransactionWalletOption[];
   pockets: Pocket[];
+  endpoints: TransferEndpoint[];
   categories: CategoryNode[];
   tags: TagOption[];
 }
@@ -274,6 +275,7 @@ export function FinanceCreateFlow({
               wallets={ieData.wallets}
               transactionType={stage === "income" ? "INCOME" : "EXPENSE"}
               pockets={ieData.pockets}
+              endpoints={ieData.endpoints}
               categories={ieData.categories}
               tags={ieData.tags}
               returnTo={FINANCE_RETURN_TO}

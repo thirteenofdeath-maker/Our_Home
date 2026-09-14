@@ -9,10 +9,16 @@ import { PocketRenameEditor, RenamePocketForm } from "./RenamePocketForm";
 describe("RenamePocketForm", () => {
   it("renders an enabled semantic trigger with a practical touch target", () => {
     const html = renderToStaticMarkup(
-      createElement(RenamePocketForm, { pocketId: "pocket-1", walletId: "wallet-1", currentName: "อาหาร" }),
+      createElement(RenamePocketForm, {
+        pocketId: "pocket-1",
+        walletId: "wallet-1",
+        currentName: "อาหาร",
+        currentBalance: "100.00",
+        currentType: "CASH",
+      }),
     );
     expect(html).toMatch(/<button[^>]*type="button"/);
-    expect(html).toContain("แก้ไขชื่อ");
+    expect(html).toContain("แก้ไข");
     expect(html).toContain("h-11");
     expect(html).not.toMatch(/\sdisabled(?:=|\s|>)/);
     expect(html).toContain('aria-expanded="false"');
@@ -24,11 +30,15 @@ describe("RenamePocketForm", () => {
         pocketId: "pocket-1",
         walletId: "wallet-1",
         currentName: "อาหาร",
+        currentBalance: "100.00",
+        currentType: "CASH",
         formAction: vi.fn(),
         onCancel: vi.fn(),
       }),
     );
     expect(html).toContain('name="name"');
+    expect(html).toContain('name="balance"');
+    expect(html).toContain('name="pocketType"');
     expect(html).toContain('value="อาหาร"');
     expect(html).toContain("บันทึก");
     expect(html).toContain("ยกเลิก");
@@ -36,8 +46,20 @@ describe("RenamePocketForm", () => {
   });
 
   it("wires click-to-edit and Cancel-to-closed state without nested forms", () => {
-    const component = readFileSync(resolve(process.cwd(), "src/features/pockets/components/RenamePocketForm.tsx"), "utf8");
-    const manager = readFileSync(resolve(process.cwd(), "src/features/pockets/components/PocketManagerList.tsx"), "utf8");
+    const component = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/pockets/components/RenamePocketForm.tsx",
+      ),
+      "utf8",
+    );
+    const manager = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/pockets/components/PocketManagerList.tsx",
+      ),
+      "utf8",
+    );
     expect(component).toContain("onClick={() => setEditing(true)}");
     expect(component).toContain("onCancel={() => setEditing(false)}");
     expect(manager).not.toMatch(/<form[^>]*>[\s\S]*<RenamePocketForm/);

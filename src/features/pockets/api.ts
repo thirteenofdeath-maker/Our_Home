@@ -136,18 +136,20 @@ export async function updatePocket(
   supabase: SupabaseClient<Database>,
   pocketId: string,
   walletId: string,
-  params: { name: string },
+  params: {
+    name: string;
+    pocketType: Database["public"]["Enums"]["wallet_type"];
+    targetBalance: string;
+  },
 ): Promise<void> {
-  const { data, error } = await supabase
-    .from("pockets")
-    .update({ name: params.name })
-    .eq("id", pocketId)
-    .eq("wallet_id", walletId)
-    .select("id")
-    .single();
+  const { error } = await supabase.rpc("update_pocket_details", {
+    p_pocket_id: pocketId,
+    p_wallet_id: walletId,
+    p_name: params.name,
+    p_pocket_type: params.pocketType,
+    p_target_balance: params.targetBalance,
+  });
   if (error) throw error;
-  if (!data || data.id !== pocketId)
-    throw new Error("Pocket update did not return the intended row");
 }
 
 /** Rejected by `pockets_require_active_sibling_to_archive` (0030) if this is the wallet's last active pocket. */

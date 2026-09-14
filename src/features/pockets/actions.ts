@@ -115,7 +115,7 @@ export async function createPocketAction(
   redirect(`/wallets/${parsed.data.walletId}`);
 }
 
-const renamePocketSchema = z.object({
+const updatePocketSchema = z.object({
   pocketId: z.string().uuid(),
   walletId: z.string().uuid(),
   name: z
@@ -123,6 +123,11 @@ const renamePocketSchema = z.object({
     .trim()
     .min(1, "Pocket name is required")
     .max(60, "Keep it under 60 characters"),
+  pocketType: z.enum(["BANK", "CASH", "CREDIT_CARD", "E_WALLET", "OTHER"]),
+  balance: z
+    .string()
+    .trim()
+    .regex(/^-?\d{1,12}(\.\d{1,2})?$/, "ยอดเงินไม่ถูกต้อง"),
 });
 
 export async function renamePocketAction(
@@ -131,10 +136,12 @@ export async function renamePocketAction(
 ): Promise<ActionState> {
   const { supabase } = await requireUser();
 
-  const parsed = renamePocketSchema.safeParse({
+  const parsed = updatePocketSchema.safeParse({
     pocketId: formData.get("pocketId"),
     walletId: formData.get("walletId"),
     name: formData.get("name"),
+    pocketType: formData.get("pocketType"),
+    balance: formData.get("balance"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -143,14 +150,26 @@ export async function renamePocketAction(
   try {
     await updatePocket(supabase, parsed.data.pocketId, parsed.data.walletId, {
       name: parsed.data.name,
+      pocketType: parsed.data.pocketType,
+      targetBalance: normalizeSignedAmount(parsed.data.balance),
     });
   } catch (err) {
     logDatabaseErrorInDev("renamePocket failed", err);
-    return { error: "เปลี่ยนชื่อ Pocket ไม่สำเร็จ กรุณาลองอีกครั้ง" };
+    return {
+      error:
+        "แก้ไข Pocket ไม่สำเร็จ — ไม่สามารถเปลี่ยนระหว่างบัตรเครดิตกับ Pocket ทั่วไปได้",
+    };
   }
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);
   redirect(`/wallets/${parsed.data.walletId}`);
+}
+
+function normalizeSignedAmount(value: string): string {
+  const negative = value.startsWith("-");
+  const unsigned = negative ? value.slice(1) : value;
+  const [whole, fraction = ""] = unsigned.split(".");
+  return `${negative ? "-" : ""}${whole}.${fraction.padEnd(2, "0").slice(0, 2)}`;
 }
 
 const pocketMutationSchema = z.object({

@@ -20,6 +20,7 @@ type EntryType = "expense" | "income" | "card" | "transfer" | "installment";
 type TransactionData = {
   wallets: TransactionWalletOption[];
   pockets: Pocket[];
+  endpoints: TransferEndpoint[];
   categories: CategoryNode[];
   tags: TagOption[];
 };
@@ -122,6 +123,7 @@ export function FinanceAddWorkspace({
             wallets={expense.wallets}
             transactionType="EXPENSE"
             pockets={expense.pockets}
+            endpoints={expense.endpoints}
             categories={expense.categories}
             tags={expense.tags}
             returnTo={FINANCE_RETURN_TO}
@@ -134,6 +136,7 @@ export function FinanceAddWorkspace({
             wallets={income.wallets}
             transactionType="INCOME"
             pockets={income.pockets}
+            endpoints={income.endpoints}
             categories={income.categories}
             tags={income.tags}
             returnTo={FINANCE_RETURN_TO}

@@ -35,18 +35,36 @@ export async function getIncomeExpenseSheetData(
   ]);
   if (!wallet) throw new Error("ไม่พบกระเป๋าเงิน");
 
-  const [pockets, categories, tags] = await Promise.all([
+  const [pockets, categories, tags, pocketSets] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
     listCategoriesForWallet(supabase, { transactionType, wallet }),
     listTags(supabase, {
       scope: wallet.scope,
       householdId: wallet.household_id,
     }),
+    Promise.all(
+      wallets.map(async (candidate) => ({
+        wallet: candidate,
+        pockets: await listPocketsWithBalances(supabase, candidate.id),
+      })),
+    ),
   ]);
 
   return {
     wallets: wallets.map(({ id, name, scope }) => ({ id, name, scope })),
     pockets: pockets.filter((pocket) => pocket.pocket_type !== "CREDIT_CARD"),
+    endpoints: pocketSets.flatMap(({ wallet: candidate, pockets: items }) =>
+      items
+        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
+        .map((pocket) => ({
+          walletId: candidate.id,
+          walletName: candidate.name,
+          pocketId: pocket.id,
+          pocketName: pocket.name,
+          currency: pocket.currency,
+          balance: pocket.balance,
+        })),
+    ),
     categories: buildCategoryTree(categories),
     tags,
   };

@@ -197,50 +197,51 @@ describe("listPocketsWithBalances", () => {
 });
 
 describe("updatePocket", () => {
-  it("renames only the intended Pocket inside its actual Wallet", async () => {
-    const calls: Array<{ method: string; args: unknown[] }> = [];
+  it("updates name, type, and ledger-derived target balance atomically", async () => {
+    const calls: Array<{ fn: string; args: unknown }> = [];
     const supabase = {
-      from: () =>
-        fakeTable((m, a) => calls.push({ method: m, args: a }), {
-          data: { id: "p1" },
-          error: null,
-        }),
+      rpc: async (fn: string, args: unknown) => {
+        calls.push({ fn, args });
+        return { data: null, error: null };
+      },
     };
 
-    await updatePocket(supabase as never, "p1", walletId, { name: "Renamed" });
-
-    expect(calls.find((c) => c.method === "update")?.args[0]).toEqual({
+    await updatePocket(supabase as never, "p1", walletId, {
       name: "Renamed",
+      pocketType: "BANK",
+      targetBalance: "125.00",
     });
-    expect(calls.filter((c) => c.method === "eq")).toEqual([
-      { method: "eq", args: ["id", "p1"] },
-      { method: "eq", args: ["wallet_id", walletId] },
+
+    expect(calls).toEqual([
+      {
+        fn: "update_pocket_details",
+        args: {
+          p_pocket_id: "p1",
+          p_wallet_id: walletId,
+          p_name: "Renamed",
+          p_pocket_type: "BANK",
+          p_target_balance: "125.00",
+        },
+      },
     ]);
-    expect(calls).toContainEqual({ method: "select", args: ["id"] });
   });
 
-  it("treats an RLS-filtered or wallet-mismatched zero-row update as failure", async () => {
-    const noRows = {
-      from: () =>
-        fakeTable(() => {}, {
-          data: null,
-          error: { code: "PGRST116", message: "0 rows" },
-        }),
+  it("surfaces an authorization or validation failure from the RPC", async () => {
+    const rejecting = {
+      rpc: async () => ({
+        data: null,
+        error: { code: "42501", message: "not authorized" },
+      }),
     };
     await expect(
-      updatePocket(noRows as never, "p1", "wrong-wallet", { name: "Renamed" }),
+      updatePocket(rejecting as never, "p1", "wrong-wallet", {
+        name: "Renamed",
+        pocketType: "CASH",
+        targetBalance: "0.00",
+      }),
     ).rejects.toMatchObject({
-      code: "PGRST116",
+      code: "42501",
     });
-  });
-
-  it("rejects an unexpected returned row instead of reporting false success", async () => {
-    const wrongRow = {
-      from: () => fakeTable(() => {}, { data: { id: "p2" }, error: null }),
-    };
-    await expect(
-      updatePocket(wrongRow as never, "p1", walletId, { name: "Renamed" }),
-    ).rejects.toThrow("Pocket update did not return the intended row");
   });
 });
 

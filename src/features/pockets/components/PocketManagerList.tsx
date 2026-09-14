@@ -82,6 +82,8 @@ export function PocketManagerList({
                       pocketId={pocket.id}
                       walletId={walletId}
                       currentName={pocket.name}
+                      currentBalance={pocket.balance}
+                      currentType={pocket.pocket_type}
                     />
                     <ActionButton
                       action={archivePocketAction}

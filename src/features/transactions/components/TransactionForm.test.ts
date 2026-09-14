@@ -59,10 +59,10 @@ describe("TransactionForm — renders in both variants without crashing", () => 
 });
 
 describe("TransactionForm — in-sheet wallet switch stays inside the same form sheet", () => {
-  it('passes onWalletChange to TransactionWalletSelect only in variant="sheet" — variant="page" keeps the original router.replace navigation', () => {
-    expect(source).toContain(
-      'onWalletChange={variant === "sheet" ? handleWalletChange : undefined}',
-    );
+  it('uses the grouped Wallet/Pocket card picker only in variant="sheet"', () => {
+    expect(source).toContain('variant === "sheet" && endpoints');
+    expect(source).toContain("<TransactionEndpointPicker");
+    expect(source).toContain("<TransactionWalletSelect");
   });
 
   it("re-fetches Pocket/Category/Tag data through the exact same selector used by the full-page route and FinanceCreateFlow — never a new/duplicated query", () => {
@@ -90,7 +90,9 @@ describe("TransactionForm — in-sheet wallet switch stays inside the same form 
   });
 
   it("resets Pocket/Category/Tag selections when the wallet changes so no stale id from the old wallet survives", () => {
-    expect(source).toContain('setActivePocketId(data.pockets[0]?.id ?? "")');
+    expect(source).toContain(
+      'setActivePocketId(nextPocketId ?? data.pockets[0]?.id ?? "")',
+    );
     expect(source).toContain("value={activePocketId}");
     expect(source).toMatch(/<CategoryPicker\s*\n\s*key=\{activeWalletId\}/);
     expect(source).toMatch(/<TagPicker\s*\n\s*key=\{activeWalletId\}/);
@@ -111,7 +113,7 @@ describe("TransactionForm — in-sheet wallet switch stays inside the same form 
     );
   });
 
-  it("disables the wallet select while a switch is in flight, preventing a duplicate change mid-fetch", () => {
+  it("disables account selection while a switch is in flight", () => {
     expect(source).toContain("disabled={walletSwitchPending}");
   });
 });

@@ -77,6 +77,12 @@ describe("BottomSheet mobile sizing", () => {
     expect(source).toMatch(/h-1\.5 w-10 rounded-full/);
   });
 
+  it("uses one non-wrapping textual back action on every slide-up card", () => {
+    expect(source).toContain('closeLabel = "ย้อนกลับ"');
+    expect(source).toContain("whitespace-nowrap");
+    expect(source).not.toContain("&times;");
+  });
+
   // Regression for a real, shipped bug: a <dialog> hides itself when
   // closed via the browser's own `dialog:not([open]) { display: none }`
   // rule — an ordinary (non-!important) UA rule. Putting an unconditional

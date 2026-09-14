@@ -86,14 +86,14 @@ export function BottomSheet({
   children,
   size = "large",
   tone = "default",
-  closeLabel,
+  closeLabel = "ย้อนกลับ",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   size?: "content" | "large";
-  /** Replaces the default × affordance when a flow wants a textual back action. */
+  /** Textual back action shared by every slide-up card. */
   closeLabel?: string;
   /**
    * `"default"` (unchanged) reads the app's generic `--color-*` tokens —
@@ -228,18 +228,14 @@ export function BottomSheet({
           type="button"
           onClick={onClose}
           className={cn(
-            "flex size-11 items-center justify-center rounded-full",
+            "flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-2",
             tone === "finance"
               ? "text-finance-muted hover:bg-finance-primary-soft"
               : "text-foreground-muted hover:bg-surface-muted",
           )}
-          aria-label={closeLabel ?? "Close"}
+          aria-label={closeLabel}
         >
-          {closeLabel ? (
-            <span className="px-1 text-sm font-medium">{closeLabel}</span>
-          ) : (
-            <>&times;</>
-          )}
+          <span className="text-sm font-medium">{closeLabel}</span>
         </button>
       </div>
       <div className={cn("overflow-y-auto p-4", size === "large" && "flex-1")}>
