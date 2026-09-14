@@ -13,17 +13,37 @@ import { z } from "zod";
  */
 const POSITIVE_DECIMAL_PATTERN = /^\d{1,12}(\.\d{1,2})?$/;
 
+export const nonnegativeAmountSchema = z
+  .string()
+  .trim()
+  .min(1, "Amount is required")
+  .regex(
+    POSITIVE_DECIMAL_PATTERN,
+    "Enter a valid amount (up to 2 decimal places)",
+  );
+
 export const positiveAmountSchema = z
   .string()
   .trim()
   .min(1, "Amount is required")
-  .regex(POSITIVE_DECIMAL_PATTERN, "Enter a valid amount (up to 2 decimal places)")
-  .refine((value) => !/^0(\.0{1,2})?$/.test(value), "Amount must be greater than zero");
+  .regex(
+    POSITIVE_DECIMAL_PATTERN,
+    "Enter a valid amount (up to 2 decimal places)",
+  )
+  .refine(
+    (value) => !/^0(\.0{1,2})?$/.test(value),
+    "Amount must be greater than zero",
+  );
 
 export type PositiveAmount = z.infer<typeof positiveAmountSchema>;
 
 /** Normalizes "120" / "120.5" / "120.50" to a consistent "120.50" string for storage. */
 export function normalizeAmount(value: PositiveAmount): string {
+  const [whole, fraction = ""] = value.split(".");
+  return `${whole}.${fraction.padEnd(2, "0").slice(0, 2)}`;
+}
+
+export function normalizeNonnegativeAmount(value: string): string {
   const [whole, fraction = ""] = value.split(".");
   return `${whole}.${fraction.padEnd(2, "0").slice(0, 2)}`;
 }

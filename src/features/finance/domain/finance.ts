@@ -8,16 +8,28 @@ export const FINANCE_TIME_ZONE = "Asia/Bangkok";
 export const FINANCE_RETURN_TO = "/finance";
 
 export function currentFinanceMonth(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: FINANCE_TIME_ZONE, year: "numeric", month: "2-digit" }).formatToParts(now);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: FINANCE_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
   return `${get("year")}-${get("month")}`;
 }
 
-export function financeMonthRange(month: string): { start: string; end: string } {
-  if (!/^\d{4}-\d{2}$/.test(month)) throw new TypeError("Invalid finance month");
+export function financeMonthRange(month: string): {
+  start: string;
+  end: string;
+} {
+  if (!/^\d{4}-\d{2}$/.test(month))
+    throw new TypeError("Invalid finance month");
   const [year, value] = month.split("-").map(Number);
   const next = new Date(Date.UTC(year, value, 1)).toISOString().slice(0, 7);
-  return { start: `${month}-01T00:00:00+07:00`, end: `${next}-01T00:00:00+07:00` };
+  return {
+    start: `${month}-01T00:00:00+07:00`,
+    end: `${next}-01T00:00:00+07:00`,
+  };
 }
 
 /**
@@ -29,19 +41,25 @@ export function financeMonthRange(month: string): { start: string; end: string }
 export function nextLocalDate(date: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new TypeError("Invalid date");
   const [year, month, day] = date.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(year, month - 1, day + 1))
+    .toISOString()
+    .slice(0, 10);
 }
 
 /** "YYYY-MM" -> "YYYY-MM" shifted by `delta` months. Used for Budget month navigation (prev/next). */
 export function shiftFinanceMonth(month: string, delta: number): string {
-  if (!/^\d{4}-\d{2}$/.test(month)) throw new TypeError("Invalid finance month");
+  if (!/^\d{4}-\d{2}$/.test(month))
+    throw new TypeError("Invalid finance month");
   const [year, value] = month.split("-").map(Number);
-  return new Date(Date.UTC(year, value - 1 + delta, 1)).toISOString().slice(0, 7);
+  return new Date(Date.UTC(year, value - 1 + delta, 1))
+    .toISOString()
+    .slice(0, 7);
 }
 
 /** "YYYY-MM" -> canonical first-of-month date string ("YYYY-MM-01"), matching `budgets.period_month`. */
 export function financeMonthToPeriodMonth(month: string): string {
-  if (!/^\d{4}-\d{2}$/.test(month)) throw new TypeError("Invalid finance month");
+  if (!/^\d{4}-\d{2}$/.test(month))
+    throw new TypeError("Invalid finance month");
   return `${month}-01`;
 }
 
@@ -79,13 +97,28 @@ export function financeTransferHref(walletId: string): string {
 // ---------------------------------------------------------------------
 
 export interface FinanceSummaryWire {
-  wallet_balances?: Array<{ wallet_id: string; currency: string; amount: string | number }>;
+  wallet_balances?: Array<{
+    wallet_id: string;
+    currency: string;
+    amount: string | number;
+  }>;
   currency_totals?: Array<{ currency: string; amount: string | number }>;
-  month_totals?: Array<{ currency: string; income: string | number; expense: string | number }>;
-  category_totals?: Array<{ category_id: string | null; name: string; currency: string; amount: string | number }>;
+  month_totals?: Array<{
+    currency: string;
+    income: string | number;
+    expense: string | number;
+  }>;
+  category_totals?: Array<{
+    category_id: string | null;
+    name: string;
+    currency: string;
+    amount: string | number;
+  }>;
 }
 
-export function mapFinanceSummaryWire(wire: FinanceSummaryWire): FinanceSummary {
+export function mapFinanceSummaryWire(
+  wire: FinanceSummaryWire,
+): FinanceSummary {
   return {
     walletBalances: (wire.wallet_balances ?? []).map((item) => ({
       walletId: item.wallet_id,
@@ -125,7 +158,13 @@ export function mapFinanceSummaryWire(wire: FinanceSummaryWire): FinanceSummary 
 
 export interface FinanceTransactionRow {
   id: string;
-  transaction_type: "INCOME" | "EXPENSE" | "TRANSFER" | "DEBT_PRINCIPAL";
+  transaction_type:
+    | "INCOME"
+    | "EXPENSE"
+    | "TRANSFER"
+    | "DEBT_PRINCIPAL"
+    | "CARD_ADJUSTMENT"
+    | "OPENING_BALANCE";
   title: string | null;
   note: string | null;
   occurred_at: string;
@@ -146,11 +185,17 @@ export function mapRecentFinanceTransactions(
   entries: FinanceEntryRow[],
 ): FinanceRecentTransaction[] {
   return transactions.flatMap((transaction): FinanceRecentTransaction[] => {
-    const lines = entries.filter((entry) => entry.transaction_id === transaction.id);
+    const lines = entries.filter(
+      (entry) => entry.transaction_id === transaction.id,
+    );
     if (!lines.length) return [];
 
-    const from = lines.find((line) => isNegative(normalizeDatabaseMoney(line.amount))) ?? lines[0];
-    const to = lines.find((line) => !isNegative(normalizeDatabaseMoney(line.amount))) ?? lines[0];
+    const from =
+      lines.find((line) => isNegative(normalizeDatabaseMoney(line.amount))) ??
+      lines[0];
+    const to =
+      lines.find((line) => !isNegative(normalizeDatabaseMoney(line.amount))) ??
+      lines[0];
     const viewed = transaction.transaction_type === "EXPENSE" ? from : to;
 
     const base: FinanceRecentTransaction = {
@@ -167,11 +212,15 @@ export function mapRecentFinanceTransactions(
       // `.is("deleted_at", null)`, so every row reaching this mapper is
       // active by construction — see docs/FINANCE.md Phase B.
       voidedAt: null,
-      amount: transaction.transaction_type === "EXPENSE" ? normalizeDatabaseMoney(viewed.amount) : positiveMoney(viewed.amount),
+      amount:
+        transaction.transaction_type === "EXPENSE"
+          ? normalizeDatabaseMoney(viewed.amount)
+          : positiveMoney(viewed.amount),
       currency: viewed.wallet?.currency ?? "THB",
     };
 
-    if (transaction.transaction_type !== "TRANSFER" || lines.length < 2) return [base];
+    if (transaction.transaction_type !== "TRANSFER" || lines.length < 2)
+      return [base];
 
     if (from.wallet_id === to.wallet_id) {
       return [

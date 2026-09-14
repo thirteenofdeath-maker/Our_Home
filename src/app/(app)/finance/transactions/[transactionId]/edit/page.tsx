@@ -23,8 +23,15 @@ export default async function EditTransactionPage({
 
   const transaction = await getTransactionDetail(supabase, transactionId);
   if (!transaction) notFound();
-  // Transfers are immutable in this phase (see docs/FINANCE.md Phase B).
-  if (transaction.transactionType === "TRANSFER" || transaction.transactionType === "DEBT_PRINCIPAL" || !transaction.walletId) notFound();
+  // Only user-entered income and expense transactions use this editor.
+  // Transfers, debt records, managed-card adjustments, and opening balances
+  // each have their own accounting invariants and stay immutable here.
+  if (
+    (transaction.transactionType !== "INCOME" &&
+      transaction.transactionType !== "EXPENSE") ||
+    !transaction.walletId
+  )
+    notFound();
   // A refund/reimbursement is immutable in Phase D V1 — void it and
   // create a corrected one instead (see docs/FINANCE.md Phase D).
   if (await getAdjustmentOrigin(supabase, transactionId)) notFound();
@@ -35,7 +42,10 @@ export default async function EditTransactionPage({
         title="รายการนี้ถูกยกเลิกแล้ว"
         description="กู้คืนรายการก่อนจึงจะแก้ไขได้"
         action={
-          <Link href={`/finance/transactions/${transactionId}`} className={buttonClassName("secondary", "md")}>
+          <Link
+            href={`/finance/transactions/${transactionId}`}
+            className={buttonClassName("secondary", "md")}
+          >
             กลับไปหน้ารายการ
           </Link>
         }
@@ -48,16 +58,29 @@ export default async function EditTransactionPage({
 
   const [pockets, categories, tags, currentTags] = await Promise.all([
     listPocketsForWallet(supabase, transaction.walletId),
-    listCategoriesForWallet(supabase, { transactionType: transaction.transactionType, wallet }),
-    listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
+    listCategoriesForWallet(supabase, {
+      transactionType: transaction.transactionType,
+      wallet,
+    }),
+    listTags(supabase, {
+      scope: wallet.scope,
+      householdId: wallet.household_id,
+    }),
     listTagsForTransaction(supabase, transactionId),
   ]);
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{transaction.transactionType === "INCOME" ? "แก้ไขรายรับ" : "แก้ไขรายจ่าย"}</h1>
+      <h1 className="text-xl font-semibold">
+        {transaction.transactionType === "INCOME"
+          ? "แก้ไขรายรับ"
+          : "แก้ไขรายจ่าย"}
+      </h1>
       <EditTransactionForm
-        transaction={{ ...transaction, transactionType: transaction.transactionType }}
+        transaction={{
+          ...transaction,
+          transactionType: transaction.transactionType,
+        }}
         walletId={transaction.walletId}
         pockets={pockets}
         categories={buildCategoryTree(categories)}

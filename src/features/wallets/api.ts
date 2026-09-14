@@ -14,7 +14,9 @@ import type { Wallet } from "./types";
  * own PERSONAL wallets, plus HOUSEHOLD wallets for households they belong
  * to). Listing "my wallets" is simply "list wallets".
  */
-export async function listMyWallets(supabase: SupabaseClient<Database>): Promise<Wallet[]> {
+export async function listMyWallets(
+  supabase: SupabaseClient<Database>,
+): Promise<Wallet[]> {
   const { data, error } = await supabase
     .from("wallets")
     .select("*")
@@ -25,8 +27,15 @@ export async function listMyWallets(supabase: SupabaseClient<Database>): Promise
   return data ?? [];
 }
 
-export async function getWallet(supabase: SupabaseClient<Database>, walletId: string): Promise<Wallet | null> {
-  const { data, error } = await supabase.from("wallets").select("*").eq("id", walletId).maybeSingle();
+export async function getWallet(
+  supabase: SupabaseClient<Database>,
+  walletId: string,
+): Promise<Wallet | null> {
+  const { data, error } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("id", walletId)
+    .maybeSingle();
   if (error) {
     logDatabaseErrorInDev("getWallet failed", error);
     return null;
@@ -34,14 +43,21 @@ export async function getWallet(supabase: SupabaseClient<Database>, walletId: st
   return data;
 }
 
-export async function getWalletBalance(supabase: SupabaseClient<Database>, walletId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("get_wallet_balance", { p_wallet_id: walletId });
+export async function getWalletBalance(
+  supabase: SupabaseClient<Database>,
+  walletId: string,
+): Promise<string> {
+  const { data, error } = await supabase.rpc("get_wallet_balance", {
+    p_wallet_id: walletId,
+  });
   if (error) logDatabaseErrorInDev("getWalletBalance failed", error);
   if (error || data === null) return "0.00";
   return normalizeDatabaseMoney(data);
 }
 
-export async function listArchivedWallets(supabase: SupabaseClient<Database>): Promise<Wallet[]> {
+export async function listArchivedWallets(
+  supabase: SupabaseClient<Database>,
+): Promise<Wallet[]> {
   const { data, error } = await supabase
     .from("wallets")
     .select("*")
@@ -64,24 +80,94 @@ export async function createWallet(
   supabase: SupabaseClient<Database>,
   params: {
     name: string;
-    walletType: Database["public"]["Tables"]["wallets"]["Row"]["wallet_type"];
+    walletType: Exclude<
+      Database["public"]["Tables"]["wallets"]["Row"]["wallet_type"],
+      "CREDIT_CARD"
+    >;
     currency: string;
     scope: "PERSONAL" | "HOUSEHOLD";
     ownerUserId: string | null;
     householdId: string | null;
     firstPocketName: string;
   },
-): Promise<Wallet> {
-  const { data, error } = await supabase.rpc("create_wallet_with_first_pocket", {
-    p_scope: params.scope,
-    p_owner_user_id: params.ownerUserId,
-    p_household_id: params.householdId,
-    p_name: params.name,
-    p_wallet_type: params.walletType,
-    p_currency: params.currency,
-    p_first_pocket_name: params.firstPocketName,
-  });
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_wallet_with_first_pocket",
+    {
+      p_scope: params.scope,
+      p_owner_user_id: params.ownerUserId,
+      p_household_id: params.householdId,
+      p_name: params.name,
+      p_wallet_type: params.walletType,
+      p_currency: params.currency,
+      p_first_pocket_name: params.firstPocketName,
+    },
+  );
 
+  if (error) throw error;
+  return data.id;
+}
+
+export async function createWalletWithInitialBalance(
+  supabase: SupabaseClient<Database>,
+  params: {
+    name: string;
+    walletType: Exclude<
+      Database["public"]["Tables"]["wallets"]["Row"]["wallet_type"],
+      "CREDIT_CARD"
+    >;
+    currency: string;
+    scope: "PERSONAL" | "HOUSEHOLD";
+    ownerUserId: string | null;
+    householdId: string | null;
+    firstPocketName: string;
+    initialBalance: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_wallet_with_initial_balance",
+    {
+      p_scope: params.scope,
+      p_owner_user_id: params.ownerUserId,
+      p_household_id: params.householdId,
+      p_name: params.name,
+      p_wallet_type: params.walletType,
+      p_currency: params.currency,
+      p_first_pocket_name: params.firstPocketName,
+      p_initial_balance: params.initialBalance,
+    },
+  );
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createCreditCardWallet(
+  supabase: SupabaseClient<Database>,
+  params: {
+    name: string;
+    currency: string;
+    scope: "PERSONAL" | "HOUSEHOLD";
+    householdId: string | null;
+    creditLimit: string;
+    availableCredit: string;
+    statementClosingDay: number;
+    paymentDueDay: number;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_credit_card_account_with_available_credit",
+    {
+      p_scope: params.scope,
+      p_household_id: params.householdId,
+      p_name: params.name,
+      p_currency: params.currency,
+      p_credit_limit: params.creditLimit,
+      p_available_credit: params.availableCredit,
+      p_statement_closing_day: params.statementClosingDay,
+      p_payment_due_day: params.paymentDueDay,
+    },
+  );
   if (error) throw error;
   return data;
 }
@@ -95,28 +181,53 @@ export async function createWallet(
 export async function updateWallet(
   supabase: SupabaseClient<Database>,
   walletId: string,
-  params: { name?: string; walletType?: Database["public"]["Tables"]["wallets"]["Row"]["wallet_type"]; icon?: string | null; currency?: string },
+  params: {
+    name?: string;
+    walletType?: Database["public"]["Tables"]["wallets"]["Row"]["wallet_type"];
+    icon?: string | null;
+    currency?: string;
+  },
 ): Promise<void> {
   const { error } = await supabase
     .from("wallets")
-    .update({ name: params.name, wallet_type: params.walletType, icon: params.icon, currency: params.currency })
+    .update({
+      name: params.name,
+      wallet_type: params.walletType,
+      icon: params.icon,
+      currency: params.currency,
+    })
     .eq("id", walletId);
   if (error) throw error;
 }
 
 /** Rejected by `wallets_before_update_archive_zero_balance` (0030) unless the wallet's derived balance is exactly zero. */
-export async function archiveWallet(supabase: SupabaseClient<Database>, walletId: string): Promise<void> {
-  const { error } = await supabase.from("wallets").update({ is_archived: true }).eq("id", walletId);
+export async function archiveWallet(
+  supabase: SupabaseClient<Database>,
+  walletId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("wallets")
+    .update({ is_archived: true })
+    .eq("id", walletId);
   if (error) throw error;
 }
 
-export async function restoreWallet(supabase: SupabaseClient<Database>, walletId: string): Promise<void> {
-  const { error } = await supabase.from("wallets").update({ is_archived: false }).eq("id", walletId);
+export async function restoreWallet(
+  supabase: SupabaseClient<Database>,
+  walletId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("wallets")
+    .update({ is_archived: false })
+    .eq("id", walletId);
   if (error) throw error;
 }
 
 /** Rejected by `wallets_prevent_delete_if_used` (0030) if the wallet has any transaction history. */
-export async function deleteWallet(supabase: SupabaseClient<Database>, walletId: string): Promise<void> {
+export async function deleteWallet(
+  supabase: SupabaseClient<Database>,
+  walletId: string,
+): Promise<void> {
   const { error } = await supabase.from("wallets").delete().eq("id", walletId);
   if (error) throw error;
 }
