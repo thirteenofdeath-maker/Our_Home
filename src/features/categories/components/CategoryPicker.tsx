@@ -38,6 +38,7 @@ export function CategoryPicker({
   categories,
   transactionType,
   walletId,
+  categoryScope,
   defaultSelected = null,
 }: {
   name: string;
@@ -46,8 +47,18 @@ export function CategoryPicker({
   /** The wallet this transaction is for. A new inline category is scoped
    * to this wallet's owner/household — never to the client's own idea of
    * "current scope", since that can't be trusted and doesn't account for
-   * a user belonging to more than one household. */
-  walletId: string;
+   * a user belonging to more than one household. Omit when `categoryScope`
+   * is supplied instead (a personal-wallet-funded household expense has
+   * no single wallet whose owner/household the new category should take —
+   * it must be the household being attributed to, not the funding
+   * wallet's own owner). */
+  walletId?: string;
+  /** Used instead of `walletId` when the category tree being shown isn't
+   * derived from one specific wallet (e.g. the household category list
+   * shown for a personal-funded household expense) — resolved server-side
+   * against the caller's own primary household (createCategoryAction),
+   * never a client-supplied household id. */
+  categoryScope?: "HOUSEHOLD";
   /** Pre-selects an existing category — used when editing a transaction. */
   defaultSelected?: { id: string; label: string } | null;
 }) {
@@ -106,7 +117,8 @@ export function CategoryPicker({
     const formData = new FormData();
     formData.set("name", newName.trim());
     formData.set("transactionType", transactionType);
-    formData.set("walletId", walletId);
+    if (categoryScope) formData.set("scope", categoryScope);
+    else formData.set("walletId", walletId ?? "");
     if (addingUnder?.parentId) formData.set("parentId", addingUnder.parentId);
 
     startTransition(async () => {

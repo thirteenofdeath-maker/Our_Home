@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { buttonClassName } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -8,7 +8,7 @@ import { listCategoriesForWallet } from "@/features/categories/api";
 import { listPocketsForWallet } from "@/features/pockets/api";
 import { getAdjustmentOrigin } from "@/features/refunds/api";
 import { listTags, listTagsForTransaction } from "@/features/tags/api";
-import { getTransactionDetail } from "@/features/transactions/api";
+import { getAttributionForTransaction, getTransactionDetail } from "@/features/transactions/api";
 import { EditTransactionForm } from "@/features/transactions/components/EditTransactionForm";
 import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -28,6 +28,13 @@ export default async function EditTransactionPage({
   // A refund/reimbursement is immutable in Phase D V1 — void it and
   // create a corrected one instead (see docs/FINANCE.md Phase D).
   if (await getAdjustmentOrigin(supabase, transactionId)) notFound();
+  // Phase U (0051): update_income_expense_transaction rejects an
+  // attributed household expense outright — redirect to the dedicated
+  // edit experience rather than ever attempting the generic RPC here and
+  // surfacing its raw rejection.
+  if (await getAttributionForTransaction(supabase, transactionId)) {
+    redirect(`/finance/transactions/${transactionId}/edit-attributed`);
+  }
 
   if (transaction.voidedAt) {
     return (

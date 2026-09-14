@@ -13,9 +13,31 @@ import type { TagOption } from "@/features/tags/types";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 
-import { createIncomeExpenseAction } from "../actions";
+import { createExpenseAction, createIncomeExpenseAction } from "../actions";
+import { ExpenseScopeSelect, type ExpenseScope } from "./ExpenseScopeSelect";
+import { HouseholdExpenseFundingSelect, type FundingWalletOption } from "./HouseholdExpenseFundingSelect";
 import { TransactionWalletSelect, type TransactionWalletOption } from "./TransactionWalletSelect";
 import { postRecurringOccurrenceAction } from "@/features/recurring/actions";
+
+/**
+ * Present only for the plain "new expense" full-page route (never for
+ * INCOME, never for a Template/Recurring prefill, never for the Finance
+ * quick-add sheet — see docs on why those are deliberately out of scope
+ * for this pass). When present, the form requires an EXPLICIT ส่วนตัว/
+ * ครอบครัว choice (Phase U / 0051) instead of inferring scope from
+ * whichever wallet happens to be selected.
+ */
+export interface HouseholdExpenseContext {
+  household: { id: string; name: string };
+  payerDisplayName: string;
+  /** Fixed for the whole form — unlike the personal-scope category tree, this never changes when the funding wallet changes (the household category is independent of which wallet pays for it). */
+  householdCategories: CategoryNode[];
+  householdWallets: FundingWalletOption[];
+  /** The caller's OWN personal wallets only — see HouseholdExpenseFundingSelect. */
+  personalWallets: FundingWalletOption[];
+  /** Preloaded for every wallet in householdWallets + personalWallets, so switching the funding wallet needs no extra fetch (unlike the personal-scope branch's per-wallet category/tag re-fetch). */
+  pocketsByWallet: Record<string, Pocket[]>;
+}
 
 export function TransactionForm({
   walletId,
@@ -37,6 +59,7 @@ export function TransactionForm({
   templateId,
   occurrenceId,
   variant = "page",
+  householdExpenseContext,
 }: {
   walletId: string;
   wallets: TransactionWalletOption[];
@@ -86,8 +109,27 @@ export function TransactionForm({
    * flow (see FinanceCreateFlow.tsx) — a card-inside-a-card would look
    * wrong and double the padding. */
   variant?: "page" | "sheet";
+  /**
+   * Enables the explicit-scope household-expense flow (Phase U / 0051).
+   * Only ever passed by the plain "new expense" full-page route
+   * (transactionType === "EXPENSE", no Template/Recurring prefill) —
+   * see the interface doc above for why every other caller omits it.
+   */
+  householdExpenseContext?: HouseholdExpenseContext;
 }) {
-  const [state, formAction] = useActionState(postOccurrence ? postRecurringOccurrenceAction : createIncomeExpenseAction, initialActionState);
+  const isHouseholdExpenseFlow = Boolean(householdExpenseContext) && transactionType === "EXPENSE" && !postOccurrence && !templateId;
+
+  const [state, formAction] = useActionState(
+    postOccurrence ? postRecurringOccurrenceAction : isHouseholdExpenseFlow ? createExpenseAction : createIncomeExpenseAction,
+    initialActionState,
+  );
+
+  // Phase U (0051): neither option is preselected — see ExpenseScopeSelect.
+  // The Finance dashboard's own Personal/Household VIEW filter (a
+  // read-only report filter) must never leak into this field as a
+  // preselected value; those are independent axes.
+  const [expenseScope, setExpenseScope] = useState<ExpenseScope | null>(null);
+  const [householdFundingWalletId, setHouseholdFundingWalletId] = useState("");
 
   // In `variant="sheet"`, switching the wallet must never navigate away
   // (see TransactionWalletSelect's `onWalletChange`) — instead this form
@@ -131,12 +173,28 @@ export function TransactionForm({
   const initialPocketId = (onOriginalWallet ? defaultPocketId : null) ?? sheetData.pockets[0]?.id;
   const today = postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
 
+  // Phase U (0051): true only once ครอบครัว is chosen AND the chosen
+  // funding wallet is one of the payer's OWN personal wallets — the one
+  // combination that routes to create_attributed_household_expense
+  // instead of the plain household-wallet path. Recomputed from props/
+  // state only, never trusted as a hidden field a client could tamper
+  // with (the server action re-derives the funding wallet's real scope
+  // independently — see createExpenseAction).
+  const isAttributedPath =
+    isHouseholdExpenseFlow &&
+    expenseScope === "HOUSEHOLD" &&
+    Boolean(householdExpenseContext) &&
+    householdExpenseContext!.personalWallets.some((wallet) => wallet.id === householdFundingWalletId);
+  const householdFundingPockets = householdExpenseContext?.pocketsByWallet[householdFundingWalletId] ?? [];
+  const effectiveWalletId = isHouseholdExpenseFlow && expenseScope === "HOUSEHOLD" ? householdFundingWalletId : activeWalletId;
+  const canSubmit = !isHouseholdExpenseFlow || (expenseScope === "PERSONAL" && Boolean(activeWalletId)) || (expenseScope === "HOUSEHOLD" && Boolean(householdFundingWalletId));
+
   return (
     <form
       action={formAction}
       className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
     >
-      <input type="hidden" name="walletId" value={activeWalletId} />
+      <input type="hidden" name="walletId" value={effectiveWalletId} />
       <input type="hidden" name="transactionType" value={transactionType} />
       {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
       {postOccurrence ? <input type="hidden" name="occurrenceId" value={postOccurrence.occurrenceId} /> : null}
@@ -155,30 +213,102 @@ export function TransactionForm({
         <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={defaultAmount ?? ""} placeholder="0.00" required autoFocus />
       </Field>
 
-      <TransactionWalletSelect
-        wallets={wallets}
-        currentWalletId={activeWalletId}
-        transactionType={transactionType}
-        returnTo={returnTo}
-        templateId={templateId}
-        occurrenceId={occurrenceId}
-        onWalletChange={variant === "sheet" ? handleWalletChange : undefined}
-        disabled={walletSwitchPending}
-      />
+      {isHouseholdExpenseFlow ? (
+        <ExpenseScopeSelect
+          value={expenseScope}
+          disabled={walletSwitchPending}
+          onChange={(next) => {
+            setExpenseScope(next);
+            setHouseholdFundingWalletId("");
+            if (next === "PERSONAL") {
+              const firstPersonalWallet = wallets.find((wallet) => wallet.scope === "PERSONAL");
+              if (firstPersonalWallet) handleWalletChange(firstPersonalWallet.id);
+            }
+          }}
+        />
+      ) : null}
+
+      {isHouseholdExpenseFlow && expenseScope === null ? (
+        <p className="text-sm text-foreground-muted">เลือกก่อนว่ารายการนี้เป็นของใคร เพื่อเลือกกระเป๋าเงินที่ใช้ได้</p>
+      ) : null}
+
+      {isHouseholdExpenseFlow && expenseScope === "PERSONAL" ? (
+        <TransactionWalletSelect
+          wallets={wallets.filter((wallet) => wallet.scope === "PERSONAL")}
+          currentWalletId={activeWalletId}
+          transactionType={transactionType}
+          onWalletChange={handleWalletChange}
+          disabled={walletSwitchPending}
+        />
+      ) : null}
+
+      {isHouseholdExpenseFlow && expenseScope === "HOUSEHOLD" ? (
+        <HouseholdExpenseFundingSelect
+          householdWallets={householdExpenseContext!.householdWallets}
+          personalWallets={householdExpenseContext!.personalWallets}
+          householdName={householdExpenseContext!.household.name}
+          payerDisplayName={householdExpenseContext!.payerDisplayName}
+          value={householdFundingWalletId}
+          onChange={setHouseholdFundingWalletId}
+        />
+      ) : null}
+
+      {!isHouseholdExpenseFlow ? (
+        <TransactionWalletSelect
+          wallets={wallets}
+          currentWalletId={activeWalletId}
+          transactionType={transactionType}
+          returnTo={returnTo}
+          templateId={templateId}
+          occurrenceId={occurrenceId}
+          onWalletChange={variant === "sheet" ? handleWalletChange : undefined}
+          disabled={walletSwitchPending}
+        />
+      ) : null}
       {walletSwitchPending ? <p className="text-sm text-foreground-muted">กำลังโหลดข้อมูลกระเป๋าเงิน...</p> : null}
       {walletSwitchError ? <p className="text-sm text-danger">{walletSwitchError}</p> : null}
 
-      <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
-        <Select key={activeWalletId} id="pocketId" name="pocketId" defaultValue={initialPocketId} required>
-          {sheetData.pockets.map((pocket) => (
-            <option key={pocket.id} value={pocket.id}>
-              {pocket.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {isHouseholdExpenseFlow && expenseScope === "HOUSEHOLD" ? (
+        <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
+          <Select key={householdFundingWalletId} id="pocketId" name="pocketId" defaultValue={householdFundingPockets[0]?.id} required disabled={!householdFundingWalletId}>
+            {householdFundingPockets.map((pocket) => (
+              <option key={pocket.id} value={pocket.id}>
+                {pocket.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : (
+        <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId">
+          <Select key={activeWalletId} id="pocketId" name="pocketId" defaultValue={initialPocketId} required>
+            {sheetData.pockets.map((pocket) => (
+              <option key={pocket.id} value={pocket.id}>
+                {pocket.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
 
-      <Field label="หมวดหมู่" htmlFor="categoryId">
+      {isHouseholdExpenseFlow && expenseScope === "HOUSEHOLD" ? (
+        <>
+          <Field label="หมวดหมู่" htmlFor="categoryId">
+            <CategoryPicker
+              key="household-category"
+              name="categoryId"
+              categories={householdExpenseContext!.householdCategories}
+              transactionType="EXPENSE"
+              categoryScope="HOUSEHOLD"
+            />
+          </Field>
+          {isAttributedPath ? (
+            <p className="rounded-card border border-primary/30 bg-primary-soft/40 p-3 text-sm text-foreground">
+              จ่ายจากกระเป๋าส่วนตัวแทนครอบครัว — รายการนี้จะถูกบันทึกเป็นรายจ่ายของครอบครัว: {householdExpenseContext!.household.name}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <Field label="หมวดหมู่" htmlFor="categoryId">
           <CategoryPicker
             key={activeWalletId}
             name="categoryId"
@@ -187,7 +317,8 @@ export function TransactionForm({
             walletId={activeWalletId}
             defaultSelected={onOriginalWallet && defaultCategoryId ? { id: defaultCategoryId, label: defaultCategoryLabel ?? "" } : null}
           />
-      </Field>
+        </Field>
+      )}
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
         <Input id="title" name="title" type="text" defaultValue={defaultTitle ?? ""} placeholder="เช่น กาแฟ" />
@@ -201,12 +332,14 @@ export function TransactionForm({
         <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />
       </Field>
 
-      <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
-        <TagPicker key={activeWalletId} name="tagIds" tags={sheetData.tags} walletId={activeWalletId} defaultSelected={onOriginalWallet ? defaultTagIds : undefined} />
-      </Field>
+      {!(isHouseholdExpenseFlow && expenseScope === "HOUSEHOLD") ? (
+        <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
+          <TagPicker key={activeWalletId} name="tagIds" tags={sheetData.tags} walletId={activeWalletId} defaultSelected={onOriginalWallet ? defaultTagIds : undefined} />
+        </Field>
+      ) : null}
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg" variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"}>
+      <SubmitButton size="lg" variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"} {...(!canSubmit ? { disabled: true } : {})}>
         {postOccurrence ? "บันทึกรายการ" : transactionType === "INCOME" ? "บันทึกรายรับ" : "บันทึกรายจ่าย"}
       </SubmitButton>
     </form>

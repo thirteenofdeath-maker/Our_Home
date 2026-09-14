@@ -6,7 +6,7 @@ import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { getAdjustmentOrigin, getRefundableSummary, listAdjustmentsForOriginal } from "@/features/refunds/api";
 import { restoreTransactionAction } from "@/features/transactions/actions";
-import { getTransactionDetail } from "@/features/transactions/api";
+import { getAttributionForTransaction, getTransactionDetail } from "@/features/transactions/api";
 import { VoidTransactionForm } from "@/features/transactions/components/VoidTransactionForm";
 import { CreateTemplateTrigger } from "@/features/templates/components/CreateTemplateTrigger";
 import { listTagsForTransaction } from "@/features/tags/api";
@@ -37,10 +37,11 @@ export default async function TransactionDetailPage({
   const transaction = await getTransactionDetail(supabase, transactionId);
   if (!transaction) notFound();
 
-  const [tags, adjustmentOrigin, attachments] = await Promise.all([
+  const [tags, adjustmentOrigin, attachments, attribution] = await Promise.all([
     listTagsForTransaction(supabase, transactionId),
     getAdjustmentOrigin(supabase, transactionId),
     listTransactionAttachments(supabase, transactionId),
+    getAttributionForTransaction(supabase, transactionId),
   ]);
 
   const isTransfer = transaction.transactionType === "TRANSFER";
@@ -63,26 +64,41 @@ export default async function TransactionDetailPage({
   // reimbursement), so they're direct, always-visible links — no bottom
   // slide-up menu. "สร้าง Template จากรายการนี้" IS a Create action, so
   // it alone opens the real create-form sheet (CreateTemplateTrigger).
+  // Phase U (0051): an attributed household expense stays type EXPENSE and
+  // is never itself a refund/reimbursement (see 0051's cross-table
+  // invariants), so `adjustmentOrigin` and `attribution` are mutually
+  // exclusive in practice — checked as two independent conditions anyway,
+  // never assumed.
   const canEdit = !adjustmentOrigin;
   const canAdjust = isOriginalExpense && refundable && Number(refundable.remainingAdjustableAmount) > 0;
+  const editHref = attribution
+    ? `/finance/transactions/${transaction.transactionId}/edit-attributed`
+    : `/finance/transactions/${transaction.transactionId}/edit`;
 
   return (
     <div className="flex flex-col gap-6">
       <header>
         <p className="text-sm text-foreground-muted">
-          {adjustmentOrigin ? ADJUSTMENT_LABEL[adjustmentOrigin.kind] : TYPE_LABEL[transaction.transactionType]}
+          {adjustmentOrigin
+            ? ADJUSTMENT_LABEL[adjustmentOrigin.kind]
+            : attribution
+              ? "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว"
+              : TYPE_LABEL[transaction.transactionType]}
         </p>
         <h1 className="text-xl font-semibold">
           {transaction.pocketTransfer
             ? `${transaction.pocketTransfer.fromPocketName} → ${transaction.pocketTransfer.toPocketName}`
             : transaction.walletTransfer
               ? `${transaction.walletTransfer.fromWalletName} → ${transaction.walletTransfer.toWalletName}`
-              : transaction.title || transaction.categoryName || TYPE_LABEL[transaction.transactionType]}
+              : transaction.title || attribution?.householdCategoryName || transaction.categoryName || TYPE_LABEL[transaction.transactionType]}
         </h1>
         {adjustmentOrigin ? (
           <p className="mt-1 text-sm text-foreground-muted">
             จากรายการ: {adjustmentOrigin.originalTitle || adjustmentOrigin.originalCategoryName || "รายจ่าย"}
           </p>
+        ) : null}
+        {attribution ? (
+          <p className="mt-1 text-sm text-foreground-muted">ครอบครัว: {attribution.householdName}</p>
         ) : null}
       </header>
 
@@ -118,7 +134,7 @@ export default async function TransactionDetailPage({
             />
             <Row label="กระเป๋าเงิน" value={transaction.walletName ?? "?"} />
             <Row label="ช่อง (Pocket)" value={transaction.pocketName ?? "?"} />
-            {!adjustmentOrigin ? <Row label="หมวดหมู่" value={transaction.categoryName ?? "-"} /> : null}
+            {!adjustmentOrigin ? <Row label="หมวดหมู่" value={attribution?.householdCategoryName ?? transaction.categoryName ?? "-"} /> : null}
           </>
         )}
         <Row label="ชื่อรายการ" value={transaction.title || "-"} />
@@ -192,7 +208,7 @@ export default async function TransactionDetailPage({
                   slide motion. */}
               <div className="flex flex-col gap-2">
                 {canEdit ? (
-                  <Link href={`/finance/transactions/${transaction.transactionId}/edit`} className={buttonClassName("secondary", "lg")}>
+                  <Link href={editHref} className={buttonClassName("secondary", "lg")}>
                     แก้ไข
                   </Link>
                 ) : null}

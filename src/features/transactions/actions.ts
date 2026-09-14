@@ -5,12 +5,23 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { getMyPrimaryHousehold } from "@/features/household/api";
+import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createIncomeExpense, createPocketTransfer, createWalletTransfer, restoreTransaction, updateIncomeExpense, voidTransaction } from "./api";
+import {
+  createAttributedHouseholdExpense,
+  createIncomeExpense,
+  createPocketTransfer,
+  createWalletTransfer,
+  restoreTransaction,
+  updateAttributedHouseholdExpense,
+  updateIncomeExpense,
+  voidTransaction,
+} from "./api";
 
 /**
  * Tags submit as repeated hidden inputs sharing one field name
@@ -99,6 +110,119 @@ export async function createIncomeExpenseAction(_prevState: ActionState, formDat
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);
   revalidatePath(FINANCE_RETURN_TO);
+  redirect(parsed.data.returnTo ?? `/wallets/${parsed.data.walletId}`);
+}
+
+// ---------------------------------------------------------------------
+// Phase U (0051): Personal-Funded Household Expense. The expense form
+// requires an EXPLICIT scope choice (never defaulted — see
+// ExpenseScopeSelect) that is independent of which wallet ends up funding
+// it. This single action re-derives the funding wallet's REAL scope/
+// owner server-side (never trusts the client's own idea of which wallet
+// is "personal" vs "household", even though the form's own selector
+// already only offers valid combinations) and routes to whichever of the
+// three write paths that combination requires:
+//   PERSONAL scope + personal wallet  -> the existing normal path
+//   HOUSEHOLD scope + household wallet -> the existing normal path
+//   HOUSEHOLD scope + personal wallet -> create_attributed_household_expense
+// Any other combination (e.g. PERSONAL scope + a household wallet, which
+// the selector never actually offers) is rejected outright, never
+// silently reinterpreted as one of the three valid paths above.
+// ---------------------------------------------------------------------
+
+const createExpenseSchema = z.object({
+  expenseScope: z.enum(["PERSONAL", "HOUSEHOLD"], { error: () => "กรุณาเลือกว่ารายการนี้เป็นของใคร" }),
+  walletId: z.string().uuid(),
+  pocketId: z.string().uuid(),
+  categoryId: z.string().uuid("เลือกหมวดหมู่"),
+  amount: positiveAmountSchema,
+  title: optionalText,
+  note: optionalText,
+  occurredAt: occurredAtSchema,
+  returnTo: returnToSchema,
+  tagIds: tagIdsSchema,
+});
+
+export async function createExpenseAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+
+  const parsed = createExpenseSchema.safeParse({
+    expenseScope: formData.get("expenseScope"),
+    walletId: formData.get("walletId"),
+    pocketId: formData.get("pocketId"),
+    categoryId: formData.get("categoryId"),
+    amount: formData.get("amount"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+    returnTo: formData.get("returnTo"),
+    tagIds: formData.getAll("tagIds"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  }
+
+  const wallet = await getWallet(supabase, parsed.data.walletId);
+  if (!wallet) {
+    return { error: "ไม่พบกระเป๋าเงิน" };
+  }
+
+  try {
+    if (parsed.data.expenseScope === "PERSONAL") {
+      if (wallet.scope !== "PERSONAL") {
+        return { error: "กระเป๋าเงินนี้ไม่ใช่กระเป๋าส่วนตัว เลือก \"ส่วนตัว\" ต้องใช้กระเป๋าส่วนตัวเท่านั้น" };
+      }
+      await createIncomeExpense(supabase, {
+        transactionType: "EXPENSE",
+        walletId: parsed.data.walletId,
+        pocketId: parsed.data.pocketId,
+        categoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+        tagIds: parsed.data.tagIds,
+      });
+    } else if (wallet.scope === "HOUSEHOLD") {
+      await createIncomeExpense(supabase, {
+        transactionType: "EXPENSE",
+        walletId: parsed.data.walletId,
+        pocketId: parsed.data.pocketId,
+        categoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+        tagIds: parsed.data.tagIds,
+      });
+    } else {
+      // HOUSEHOLD scope funded from the caller's own PERSONAL wallet —
+      // the attributed path. householdId is derived server-side from the
+      // caller's own primary household membership; never accepted from
+      // the client, even though the form only ever shows one household.
+      const household = await getMyPrimaryHousehold(supabase, user.id);
+      if (!household) {
+        return { error: "ไม่พบครอบครัวของคุณ" };
+      }
+      await createAttributedHouseholdExpense(supabase, {
+        householdId: household.id,
+        householdCategoryId: parsed.data.categoryId,
+        walletId: parsed.data.walletId,
+        pocketId: parsed.data.pocketId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+      });
+    }
+  } catch (err) {
+    logDatabaseErrorInDev("createExpenseAction failed", err);
+    return { error: "ไม่สามารถบันทึกรายจ่ายได้" };
+  }
+
+  revalidatePath(`/wallets/${parsed.data.walletId}`);
+  revalidatePath(FINANCE_RETURN_TO);
+  revalidatePath("/household/activity");
   redirect(parsed.data.returnTo ?? `/wallets/${parsed.data.walletId}`);
 }
 
@@ -327,6 +451,63 @@ export async function updateIncomeExpenseAction(_prevState: ActionState, formDat
   revalidatePath(`/wallets/${parsed.data.walletId}`);
   revalidatePath(`/finance/transactions/${parsed.data.transactionId}`);
   revalidatePath("/finance/transactions");
+  revalidatePath(FINANCE_RETURN_TO);
+  redirect(`/finance/transactions/${parsed.data.transactionId}`);
+}
+
+const editAttributedHouseholdExpenseSchema = z.object({
+  transactionId: z.string().uuid(),
+  walletId: z.string().uuid(),
+  pocketId: z.string().uuid(),
+  householdCategoryId: z.string().uuid("เลือกหมวดหมู่"),
+  amount: positiveAmountSchema,
+  title: optionalText,
+  note: optionalText,
+  occurredAt: occurredAtSchema,
+});
+
+/**
+ * The ONLY edit path for an attributed household expense (Phase U /
+ * 0051) — update_income_expense_transaction rejects these transactions
+ * outright at the database level, so this dedicated action is what the
+ * edit-attributed route submits to instead.
+ */
+export async function updateAttributedHouseholdExpenseAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase } = await requireUser();
+
+  const parsed = editAttributedHouseholdExpenseSchema.safeParse({
+    transactionId: formData.get("transactionId"),
+    walletId: formData.get("walletId"),
+    pocketId: formData.get("pocketId"),
+    householdCategoryId: formData.get("householdCategoryId"),
+    amount: formData.get("amount"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  }
+
+  try {
+    await updateAttributedHouseholdExpense(supabase, {
+      transactionId: parsed.data.transactionId,
+      pocketId: parsed.data.pocketId,
+      householdCategoryId: parsed.data.householdCategoryId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (err) {
+    logDatabaseErrorInDev("updateAttributedHouseholdExpenseAction failed", err);
+    return { error: "ไม่สามารถบันทึกการแก้ไขได้" };
+  }
+
+  revalidatePath(`/wallets/${parsed.data.walletId}`);
+  revalidatePath(`/finance/transactions/${parsed.data.transactionId}`);
+  revalidatePath("/finance/transactions");
+  revalidatePath("/household/activity");
   revalidatePath(FINANCE_RETURN_TO);
   redirect(`/finance/transactions/${parsed.data.transactionId}`);
 }

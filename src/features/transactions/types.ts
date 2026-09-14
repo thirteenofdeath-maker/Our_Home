@@ -61,4 +61,16 @@ export interface TransactionHistoryItem {
     kind: "REFUND" | "REIMBURSEMENT";
     originalTitle: string | null;
   };
+  /**
+   * Set only when this row is a personal-funded household expense (Phase
+   * U / 0051) — a PERSONAL EXPENSE transaction attributed to a household
+   * via household_expense_attributions. `categoryName` above is always
+   * null for these (category lives in the attribution, not on the
+   * transaction — see docs, migration 0051 header), so the UI must use
+   * `attribution.categoryName` instead when this is set.
+   */
+  attribution?: {
+    householdName: string;
+    categoryName: string;
+  };
 }

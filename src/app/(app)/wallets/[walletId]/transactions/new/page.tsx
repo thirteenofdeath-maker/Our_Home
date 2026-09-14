@@ -4,10 +4,13 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { listCategoriesForWallet } from "@/features/categories/api";
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { getMyPrimaryHousehold } from "@/features/household/api";
 import { listPocketsForWallet } from "@/features/pockets/api";
+import { getCurrentProfile } from "@/features/profile/api";
 import { getOccurrence } from "@/features/recurring/api";
 import { getTemplate } from "@/features/templates/api";
 import { listTags } from "@/features/tags/api";
+import type { HouseholdExpenseContext } from "@/features/transactions/components/TransactionForm";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
 import { getWallet, listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -26,7 +29,7 @@ export default async function NewTransactionPage({
   // here too so an unrecognized value never reaches the form at all.
   const safeReturnTo = returnTo === FINANCE_RETURN_TO ? FINANCE_RETURN_TO : undefined;
 
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const [wallet, wallets] = await Promise.all([getWallet(supabase, walletId), listMyWallets(supabase)]);
   if (!wallet) notFound();
 
@@ -35,6 +38,36 @@ export default async function NewTransactionPage({
     listCategoriesForWallet(supabase, { transactionType, wallet }),
     listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
   ]);
+
+  // Phase U (0051): the explicit-scope household-expense flow is only
+  // ever relevant for EXPENSE creation, and only when the caller actually
+  // has a household to attribute to — with none, "ครอบครัว" would offer
+  // nothing selectable, so the form falls back to its existing implicit
+  // behavior entirely (see TransactionForm's isHouseholdExpenseFlow gate).
+  let householdExpenseContext: HouseholdExpenseContext | undefined;
+  if (transactionType === "EXPENSE") {
+    const [household, profile] = await Promise.all([getMyPrimaryHousehold(supabase, user.id), getCurrentProfile(supabase, user.id)]);
+    if (household) {
+      const householdWallets = wallets.filter((w) => w.scope === "HOUSEHOLD" && w.household_id === household.id);
+      const personalWallets = wallets.filter((w) => w.scope === "PERSONAL" && w.owner_user_id === user.id);
+      const eligibleWallets = [...householdWallets, ...personalWallets];
+      const [householdCategories, pocketsByWalletEntries] = await Promise.all([
+        listCategoriesForWallet(supabase, {
+          transactionType: "EXPENSE",
+          wallet: { scope: "HOUSEHOLD", owner_user_id: null, household_id: household.id },
+        }),
+        Promise.all(eligibleWallets.map(async (w) => [w.id, await listPocketsForWallet(supabase, w.id)] as const)),
+      ]);
+      householdExpenseContext = {
+        household: { id: household.id, name: household.name },
+        payerDisplayName: profile?.display_name ?? "คุณ",
+        householdCategories: buildCategoryTree(householdCategories),
+        householdWallets: householdWallets.map(({ id, name, currency }) => ({ id, name, currency })),
+        personalWallets: personalWallets.map(({ id, name, currency }) => ({ id, name, currency })),
+        pocketsByWallet: Object.fromEntries(pocketsByWalletEntries),
+      };
+    }
+  }
 
   // "ใช้ Template" prefill (docs/FINANCE.md Phase F). templateId is
   // authoritative — the server loads and re-validates it; nothing about
@@ -129,6 +162,7 @@ export default async function NewTransactionPage({
         postOccurrence={occurrenceApplies ? { occurrenceId: occurrence!.occurrenceId, dueDate: occurrence!.dueDate } : undefined}
         templateId={templateApplies ? templateId : undefined}
         occurrenceId={occurrenceApplies ? occurrenceId : undefined}
+        householdExpenseContext={householdExpenseContext}
       />
     </div>
   );

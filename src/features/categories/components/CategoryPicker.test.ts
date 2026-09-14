@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import type { CategoryNode } from "../types";
 import { CategoryPicker, filterCategories } from "./CategoryPicker";
+
+const source = readFileSync(resolve(process.cwd(), "src/features/categories/components/CategoryPicker.tsx"), "utf8");
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -29,5 +33,17 @@ describe("CategoryPicker", () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.name).toBe("บ้านและที่อยู่อาศัย");
     expect(filtered[0]?.children.map((item) => item.id)).toEqual(["child-rent"]);
+  });
+
+  it("Phase U (0051): accepts categoryScope instead of walletId, for a household category tree with no single funding wallet", () => {
+    const html = renderToStaticMarkup(
+      createElement(CategoryPicker, { name: "categoryId", categories: [food], transactionType: "EXPENSE", categoryScope: "HOUSEHOLD" }),
+    );
+    expect(html).toContain("อาหารและเครื่องดื่ม");
+  });
+
+  it("submits scope=HOUSEHOLD (never walletId) for an inline-created category when categoryScope is set — createCategoryAction resolves the household server-side from this, never a client-supplied id", () => {
+    expect(source).toContain('if (categoryScope) formData.set("scope", categoryScope);');
+    expect(source).toContain('else formData.set("walletId", walletId ?? "");');
   });
 });

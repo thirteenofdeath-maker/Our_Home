@@ -32,6 +32,7 @@ function isTransfer(item: TransactionHistoryItem): boolean {
 function rowVisual(item: TransactionHistoryItem): { icon: AppIconName; className: string } {
   if (item.voidedAt) return { icon: isTransfer(item) ? "transfer" : item.amount.startsWith("-") ? "expense" : "income", className: "bg-finance-muted/15 text-finance-muted" };
   if (item.adjustment) return { icon: "income", className: "bg-finance-income/15 text-finance-income" };
+  if (item.attribution) return { icon: "expense", className: "bg-finance-expense/15 text-finance-expense" };
   if (isTransfer(item)) return { icon: "transfer", className: "bg-finance-transfer/15 text-finance-transfer" };
   return item.amount.startsWith("-")
     ? { icon: "expense", className: "bg-finance-expense/15 text-finance-expense" }
@@ -81,24 +82,31 @@ export function TransactionHistoryList({
         // Whether the title fell back to the category name (no title/note
         // of its own, not a transfer) — if so, the subtitle below must
         // not repeat that same category name again right underneath it.
-        const usingCategoryAsTitle = !transfer && !item.title && Boolean(item.categoryName);
+        const usingCategoryAsTitle = !transfer && !item.title && Boolean(item.categoryName || item.attribution?.categoryName);
         const title = item.pocketTransfer
           ? `${item.pocketTransfer.fromPocketName} → ${item.pocketTransfer.toPocketName}`
           : item.walletTransfer
             ? `${item.walletTransfer.fromWalletName} / ${item.walletTransfer.fromPocketName} → ${item.walletTransfer.toWalletName} / ${item.walletTransfer.toPocketName}`
-            : item.title || item.categoryName || TYPE_LABEL[item.transactionType];
+            : item.title || item.attribution?.categoryName || item.categoryName || TYPE_LABEL[item.transactionType];
 
+        // Attribution (0051) takes priority over the plain category
+        // subtitle — categoryName is always null for these rows (the
+        // category lives in the attribution, not on the transaction), so
+        // falling through to the plain branch would show a bare "รายจ่าย"
+        // with no category at all.
         const subtitle = item.adjustment
           ? `${ADJUSTMENT_LABEL[item.adjustment.kind]}${item.adjustment.originalTitle ? ` · ${item.adjustment.originalTitle}` : ""}`
-          : item.pocketTransfer
-            ? "โอนเงินระหว่างช่อง"
-            : transfer
-              ? item.amount.startsWith("-")
-                ? "โอนเงินออก"
-                : "โอนเงินเข้า"
-              : usingCategoryAsTitle
-                ? TYPE_LABEL[item.transactionType]
-                : `${TYPE_LABEL[item.transactionType]}${item.categoryName ? ` · ${item.categoryName}` : ""}`;
+          : item.attribution
+            ? `รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว · ${item.attribution.householdName}`
+            : item.pocketTransfer
+              ? "โอนเงินระหว่างช่อง"
+              : transfer
+                ? item.amount.startsWith("-")
+                  ? "โอนเงินออก"
+                  : "โอนเงินเข้า"
+                : usingCategoryAsTitle
+                  ? TYPE_LABEL[item.transactionType]
+                  : `${TYPE_LABEL[item.transactionType]}${item.categoryName ? ` · ${item.categoryName}` : ""}`;
 
         const context = variant === "wallet" ? item.pocketName : `${item.walletName} / ${item.pocketName}`;
         const visual = rowVisual(item);

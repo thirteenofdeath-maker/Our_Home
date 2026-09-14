@@ -86,4 +86,11 @@ describe("TransactionHistoryList", () => {
     const html = renderToStaticMarkup(createElement(TransactionHistoryList, { items: [] }));
     expect(html).toContain("ยังไม่มีรายการ");
   });
+
+  it("labels a personal-funded household expense (Phase U / 0051) even though categoryName is null for that row", () => {
+    const item = baseItem({ title: null, categoryName: null, attribution: { householdName: "บ้านสุขสันต์", categoryName: "ค่าไฟ" } });
+    const html = renderToStaticMarkup(createElement(TransactionHistoryList, { items: [item] }));
+    expect(html).toContain("ค่าไฟ"); // the household category, used as the title fallback since there's no title of its own
+    expect(html).toContain("รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว · บ้านสุขสันต์");
+  });
 });

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -51,6 +53,9 @@ export default async function HouseholdPage() {
         <p className="text-sm text-foreground-muted">ครอบครัว</p>
         <h1 className="text-xl font-semibold">{household.name}</h1>
       </header>
+      <Link href="/household/activity" className="text-sm font-medium text-primary">
+        รายจ่ายครอบครัวที่จ่ายด้วยเงินส่วนตัว →
+      </Link>
       <HouseholdOverview members={members} userId={user.id} role={household.myRole} />
     </div>
   );

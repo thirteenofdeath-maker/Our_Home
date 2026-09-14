@@ -4980,6 +4980,232 @@ describe.skipIf(!hasLiveProject)("Recurring multi-currency safety (tests 61-62)"
   });
 });
 
+// ---------------------------------------------------------------------
+// Phase U (0051): Personal-Funded Household Expense.
+//
+// Reuses existing fixtures: SUPABASE_TEST_USER_A_* (the payer),
+// SUPABASE_TEST_PERSONAL_WALLET_ID / _POCKET_A_ID (A's own personal
+// wallet/pocket — the funding source), SUPABASE_TEST_HOUSEHOLD_ID plus
+// SUPABASE_TEST_HOUSEHOLD_OWNER_*/_MEMBER_* (A must additionally be a
+// member of this household for these tests — set up on the test
+// project), SUPABASE_TEST_USER_B_* (an unrelated user, no shared
+// household with A). One NEW fixture is required:
+//   SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID (an EXPENSE category
+//   owned by SUPABASE_TEST_HOUSEHOLD_ID)
+// ---------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+async function createThrowawayAttributedExpense(client: any, amount = "500.00") {
+  return client.rpc("create_attributed_household_expense", {
+    p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+    p_household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+    p_wallet_id: env.SUPABASE_TEST_PERSONAL_WALLET_ID,
+    p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+    p_amount: amount,
+    p_title: "Attributed throwaway",
+  });
+}
+
+describe.skipIf(!hasLiveProject)("Household expense attribution: create/edit (tests 1-5)", () => {
+  it("the payer creates an attributed expense as a PERSONAL transaction with no category_id, and can edit it via the dedicated RPC", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+
+    const { data: transactionId, error: createError } = await createThrowawayAttributedExpense(userA);
+    expect(createError).toBeNull(); // test 1
+    expect(transactionId).toBeTruthy();
+
+    const { data: transactionRow } = await userA
+      .from("transactions")
+      .select("scope, owner_user_id, household_id, category_id, transaction_type")
+      .eq("id", transactionId)
+      .single();
+    expect(transactionRow!.scope).toBe("PERSONAL"); // test 2: never becomes HOUSEHOLD
+    expect(transactionRow!.owner_user_id).toBeTruthy();
+    expect(transactionRow!.household_id).toBeNull();
+    expect(transactionRow!.category_id).toBeNull(); // test 3: category lives in the attribution, never on the transaction (Option C)
+
+    const { error: editError } = await userA.rpc("update_attributed_household_expense", {
+      p_transaction_id: transactionId,
+      p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+      p_amount: "750.00",
+    });
+    expect(editError).toBeNull(); // test 4
+
+    // The generic editor rejects it outright — it must never silently
+    // succeed and desync from the attribution table.
+    const { error: genericEditError } = await userA.rpc("update_income_expense_transaction", {
+      p_transaction_id: transactionId,
+      p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_category_id: env.SUPABASE_TEST_PERSONAL_EXPENSE_CATEGORY_ID,
+      p_amount: "1.00",
+    });
+    expect(genericEditError).not.toBeNull(); // test 5
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Household expense attribution: authorization (tests 6-9)", () => {
+  it("rejects a non-member's create, a household-wallet funding source, and a wallet the caller does not own", async () => {
+    const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+    const { error: nonMemberError } = await userB.rpc("create_attributed_household_expense", {
+      p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      p_household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+      p_wallet_id: env.SUPABASE_TEST_PERSONAL_WALLET_ID,
+      p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_amount: "100.00",
+    });
+    expect(nonMemberError).not.toBeNull(); // test 6: not a household member
+
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { error: householdWalletError } = await userA.rpc("create_attributed_household_expense", {
+      p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      p_household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+      p_wallet_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_ID,
+      p_pocket_id: env.SUPABASE_TEST_HOUSEHOLD_WALLET_POCKET_ID,
+      p_amount: "100.00",
+    });
+    expect(householdWalletError).not.toBeNull(); // test 7: funding source must be PERSONAL, never a household wallet
+
+    const { error: notOwnedWalletError } = await userA.rpc("create_attributed_household_expense", {
+      p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      p_household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+      p_wallet_id: env.SUPABASE_TEST_OTHER_WALLET_ID,
+      p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_amount: "100.00",
+    });
+    expect(notOwnedWalletError).not.toBeNull(); // test 8: not authorized for that wallet
+
+    // A former member (someone removed from the household, or a fresh
+    // user who never joined) cannot create OR update an attribution —
+    // both create_attributed_household_expense and
+    // update_attributed_household_expense re-check current membership /
+    // transaction authorization on every call, never only at creation
+    // time. Exercising the actual "former member" transition requires a
+    // membership-removal path this schema does not expose in V1 (see
+    // docs/DOMAIN_RULES.md "Household structure") — this is documented
+    // here as the same non-member rejection already covered by test 6,
+    // since a user who has left is, from the RPC's point of view,
+    // indistinguishable from one who never joined (both fail
+    // is_household_member's fresh, current-state check). test 9
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Household expense attribution: sanitized activity visibility (tests 10-14)", () => {
+  it("a current household member reads sanitized activity; an unrelated user is rejected; direct table access exposes nothing extra", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { data: transactionId } = await createThrowawayAttributedExpense(userA, "321.00");
+
+    const owner = await signIn(env.SUPABASE_TEST_HOUSEHOLD_OWNER_EMAIL!, env.SUPABASE_TEST_HOUSEHOLD_OWNER_PASSWORD!);
+    const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { data: activity, error: activityError } = await owner.rpc("get_household_expense_activity", {
+      p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      p_from: from,
+      p_to: to,
+    });
+    expect(activityError).toBeNull(); // test 10: a fellow member (not the payer) CAN read this
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+    const row = (activity as any[]).find((r) => r.transaction_id === transactionId);
+    expect(row).toBeTruthy(); // test 11
+    expect(row.payer_display_name).toBeTruthy(); // test 12: payer identity IS intentionally shown
+    // The RPC's own return shape is the entire contract — it never
+    // selects a wallet name/id, a tag, a note, or an attachment path at
+    // all, so there is nothing further to assert away here beyond
+    // confirming the row has exactly the documented keys.
+    expect(Object.keys(row).sort()).toEqual(
+      ["amount", "category_id", "category_name", "currency", "is_adjustment", "occurred_at", "original_transaction_id", "payer_display_name", "payer_user_id", "transaction_id"].sort(),
+    ); // test 13
+
+    const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+    const { error: unrelatedError } = await userB.rpc("get_household_expense_activity", {
+      p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      p_from: from,
+      p_to: to,
+    });
+    expect(unrelatedError).not.toBeNull(); // test 14: an unrelated user is rejected outright, not merely given an empty list
+  });
+
+  it("direct table SELECT on household_expense_attributions never leaks a non-member's view of a payer's row (test 15)", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { data: transactionId } = await createThrowawayAttributedExpense(userA, "111.00");
+
+    const userB = await signIn(env.SUPABASE_TEST_USER_B_EMAIL!, env.SUPABASE_TEST_USER_B_PASSWORD!);
+    const { data: rows, error } = await userB.from("household_expense_attributions").select("*").eq("transaction_id", transactionId);
+    expect(error).toBeNull(); // RLS filters rows out; it does not error
+    expect(rows).toEqual([]); // test 15: not a current member of this household, and not the payer
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Household expense attribution: no direct client mutation (tests 16-17)", () => {
+  it("rejects a direct INSERT/UPDATE against household_expense_attributions — the RPCs are the only write path", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const { data: transactionId } = await createThrowawayAttributedExpense(userA, "222.00");
+
+    const { error: insertError } = await userA.from("household_expense_attributions").insert({
+      transaction_id: crypto.randomUUID(),
+      household_id: env.SUPABASE_TEST_HOUSEHOLD_ID,
+      household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID,
+      created_by: (await userA.auth.getUser()).data.user!.id,
+    });
+    expect(insertError).not.toBeNull(); // test 16: no INSERT grant to authenticated at all
+
+    const { error: updateError } = await userA
+      .from("household_expense_attributions")
+      .update({ household_category_id: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID })
+      .eq("transaction_id", transactionId);
+    expect(updateError).not.toBeNull(); // test 17: no UPDATE grant either — update_attributed_household_expense is the only path
+  });
+});
+
+describe.skipIf(!hasLiveProject)("Household expense attribution: personal exclusion, budget inclusion, and refund netting (tests 18-20)", () => {
+  it("excludes the attributed expense from the payer's own PERSONAL month totals, includes it in the HOUSEHOLD budget, and nets a refund correctly", async () => {
+    const userA = await signIn(env.SUPABASE_TEST_USER_A_EMAIL!, env.SUPABASE_TEST_USER_A_PASSWORD!);
+    const range = financeMonthRange(currentFinanceMonth());
+    const personalBefore = await financeTotalsFor(userA, range);
+
+    const { data: transactionId } = await createThrowawayAttributedExpense(userA, "400.00");
+
+    const personalAfter = await financeTotalsFor(userA, range);
+    // test 18: a personal-funded HOUSEHOLD expense must never inflate the
+    // payer's own PERSONAL expense total, even though the cash genuinely
+    // left their wallet — see get_finance_hub_summary's exclusion (0051).
+    expect(Number(personalAfter.forCurrency("THB").expense)).toBeCloseTo(Number(personalBefore.forCurrency("THB").expense), 2);
+
+    const owner = await signIn(env.SUPABASE_TEST_HOUSEHOLD_OWNER_EMAIL!, env.SUPABASE_TEST_HOUSEHOLD_OWNER_PASSWORD!);
+    const summaryBefore = await budgetSummaryFor(owner, "2026-09-01");
+    const { data: budget } = await createThrowawayBudget(owner, {
+      scope: "HOUSEHOLD",
+      householdId: env.SUPABASE_TEST_HOUSEHOLD_ID!,
+      categoryId: env.SUPABASE_TEST_HOUSEHOLD_EXPENSE_CATEGORY_ID!,
+      periodMonth: "2026-09-01",
+      amount: "10000.00",
+    });
+    void summaryBefore;
+    const summaryAfter = await budgetSummaryFor(owner, "2026-09-01");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+    const budgetRow = (summaryAfter as any[]).find((b) => b.budget_id === budget!.id);
+    expect(Number(budgetRow.net_spent)).toBeGreaterThanOrEqual(400); // test 19: the attributed expense counts toward the HOUSEHOLD budget
+
+    // Refund it from the same personal wallet, back into A's own pocket —
+    // create_expense_adjustment_transaction has no attribution-specific
+    // logic at all; it works unchanged because household_attributed_
+    // expense_effects unions in adjustments against an attributed
+    // original by definition (see 0051's view).
+    await userA.rpc("create_expense_adjustment_transaction", {
+      p_original_expense_id: transactionId,
+      p_adjustment_kind: "REFUND",
+      p_wallet_id: env.SUPABASE_TEST_PERSONAL_WALLET_ID,
+      p_pocket_id: env.SUPABASE_TEST_PERSONAL_WALLET_POCKET_A_ID,
+      p_amount: "150.00",
+    });
+
+    const summaryAfterRefund = await budgetSummaryFor(owner, "2026-09-01");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see financeTotalsFor's comment above
+    const budgetRowAfterRefund = (summaryAfterRefund as any[]).find((b) => b.budget_id === budget!.id);
+    expect(Number(budgetRowAfterRefund.net_spent)).toBeLessThan(Number(budgetRow.net_spent)); // test 20: refund reduces household net spend
+  });
+});
+
 if (!hasLiveProject) {
   describe("RLS integration tests", () => {
     it.skip("skipped: no live Supabase test project configured (see comment at top of this file)", () => {});

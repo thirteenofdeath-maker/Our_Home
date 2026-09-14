@@ -31,6 +31,62 @@ async function withAdjustmentInfo(
   });
 }
 
+interface RawAttributionInfoRow {
+  transaction_id: string;
+  household_category_id: string;
+  household: { name: string } | null;
+  category: { name: string } | null;
+}
+
+/**
+ * Batched (0051) — one query for however many transaction ids are passed,
+ * mirroring listAdjustmentInfoForTransactions exactly. Used to annotate
+ * history/search rows for a personal-funded household expense with
+ * "รายจ่ายครอบครัว · จ่ายด้วยเงินส่วนตัว" instead of the wallet's own
+ * (in this case NULL) category label.
+ */
+export async function listAttributionInfoForTransactions(
+  supabase: SupabaseClient<Database>,
+  transactionIds: string[],
+): Promise<Map<string, { householdName: string; categoryName: string }>> {
+  const result = new Map<string, { householdName: string; categoryName: string }>();
+  if (transactionIds.length === 0) return result;
+
+  const { data, error } = await supabase
+    .from("household_expense_attributions")
+    .select("transaction_id, household_category_id, household:households(name), category:categories!household_expense_attributions_household_category_id_fkey(name)")
+    .in("transaction_id", transactionIds);
+
+  if (error) {
+    logDatabaseErrorInDev("listAttributionInfoForTransactions failed", error);
+    return result;
+  }
+
+  for (const row of (data ?? []) as unknown as RawAttributionInfoRow[]) {
+    result.set(row.transaction_id, {
+      householdName: row.household?.name ?? "ครอบครัว",
+      categoryName: row.category?.name ?? "ไม่ทราบหมวดหมู่",
+    });
+  }
+  return result;
+}
+
+async function withAttributionInfo(
+  supabase: SupabaseClient<Database>,
+  items: TransactionHistoryItem[],
+): Promise<TransactionHistoryItem[]> {
+  if (items.length === 0) return items;
+  const info = await listAttributionInfoForTransactions(
+    supabase,
+    items.map((item) => item.transactionId),
+  );
+  if (info.size === 0) return items;
+  return items.map((item) => {
+    const match = info.get(item.transactionId);
+    return match ? { ...item, attribution: { householdName: match.householdName, categoryName: match.categoryName } } : item;
+  });
+}
+
 export async function createIncomeExpense(
   supabase: SupabaseClient<Database>,
   params: {
@@ -189,7 +245,7 @@ export async function listTransactionsForWallet(
     }
   }
 
-  return withAdjustmentInfo(supabase, groupHistoryRows(rows, expandedRows, walletId));
+  return withAttributionInfo(supabase, await withAdjustmentInfo(supabase, groupHistoryRows(rows, expandedRows, walletId)));
 }
 
 export function groupHistoryRows(
@@ -309,6 +365,111 @@ export async function voidTransaction(
 export async function restoreTransaction(supabase: SupabaseClient<Database>, transactionId: string): Promise<void> {
   const { error } = await supabase.rpc("restore_transaction", { p_transaction_id: transactionId });
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------------
+// Phase U (0051): Personal-Funded Household Expense. The transaction
+// stays PERSONAL end to end — these wrap the two RPCs that are the ONLY
+// write path for the attribution (household_expense_attributions has no
+// direct client grant at all, see 0051). update_income_expense_transaction
+// rejects an attributed transaction outright, so it is never a valid
+// target here; use updateAttributedHouseholdExpense instead.
+// ---------------------------------------------------------------------
+
+export async function createAttributedHouseholdExpense(
+  supabase: SupabaseClient<Database>,
+  params: {
+    householdId: string;
+    householdCategoryId: string;
+    walletId: string;
+    pocketId: string;
+    amount: string;
+    title?: string | null;
+    note?: string | null;
+    occurredAt?: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_attributed_household_expense", {
+    p_household_id: params.householdId,
+    p_household_category_id: params.householdCategoryId,
+    p_wallet_id: params.walletId,
+    p_pocket_id: params.pocketId,
+    p_amount: params.amount,
+    p_title: params.title ?? null,
+    p_note: params.note ?? null,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function updateAttributedHouseholdExpense(
+  supabase: SupabaseClient<Database>,
+  params: {
+    transactionId: string;
+    pocketId: string;
+    householdCategoryId: string;
+    amount: string;
+    title?: string | null;
+    note?: string | null;
+    occurredAt?: string;
+  },
+): Promise<void> {
+  const { error } = await supabase.rpc("update_attributed_household_expense", {
+    p_transaction_id: params.transactionId,
+    p_pocket_id: params.pocketId,
+    p_household_category_id: params.householdCategoryId,
+    p_amount: params.amount,
+    p_title: params.title ?? null,
+    p_note: params.note ?? null,
+    p_occurred_at: params.occurredAt,
+  });
+  if (error) throw error;
+}
+
+export interface AttributionForTransaction {
+  householdId: string;
+  householdName: string;
+  householdCategoryId: string;
+  householdCategoryName: string;
+}
+
+interface RawAttributionRow {
+  household_id: string;
+  household_category_id: string;
+  household: { name: string } | null;
+  category: { name: string } | null;
+}
+
+/**
+ * "Is this transaction an attributed household expense, and if so which
+ * household/category" — for the detail page (label + edit-route branch)
+ * and the edit-attributed form (prefill). A transaction with no
+ * attribution row is a plain personal expense; this is not an error case.
+ */
+export async function getAttributionForTransaction(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+): Promise<AttributionForTransaction | null> {
+  const { data, error } = await supabase
+    .from("household_expense_attributions")
+    .select("household_id, household_category_id, household:households(name), category:categories!household_expense_attributions_household_category_id_fkey(name)")
+    .eq("transaction_id", transactionId)
+    .maybeSingle();
+
+  if (error) {
+    logDatabaseErrorInDev("getAttributionForTransaction failed", error);
+    return null;
+  }
+  if (!data) return null;
+
+  const row = data as unknown as RawAttributionRow;
+  return {
+    householdId: row.household_id,
+    householdName: row.household?.name ?? "ครอบครัว",
+    householdCategoryId: row.household_category_id,
+    householdCategoryName: row.category?.name ?? "ไม่ทราบหมวดหมู่",
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -584,7 +745,7 @@ export async function searchTransactions(
   if (filters.type === "POCKET_TRANSFER") items = items.filter((item) => item.pocketTransfer);
   if (filters.type === "WALLET_TRANSFER") items = items.filter((item) => item.walletTransfer);
 
-  return withAdjustmentInfo(supabase, items);
+  return withAttributionInfo(supabase, await withAdjustmentInfo(supabase, items));
 }
 
 /**
