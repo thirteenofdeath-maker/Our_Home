@@ -8,9 +8,13 @@ const wallets = read("src/app/(app)/wallets/page.tsx");
 const walletDetail = read("src/app/(app)/wallets/[walletId]/page.tsx");
 
 describe("approved mobile Finance UI", () => {
-  it("keeps a visible เพิ่มรายการ card on existing route helpers", () => {
-    expect(hub).toContain("เพิ่มรายการ");
-    expect(hub).toContain("บันทึกรายรับ รายจ่าย หรือโอนเงิน");
+  it("keeps the illustrated quick-action hero on existing route helpers", () => {
+    expect(hub).toContain("FinanceDashboardHero");
+    const hero = read("src/features/finance/components/FinanceDashboardHero.tsx");
+    expect(hero).toContain("เพิ่มรายจ่าย");
+    expect(hero).toContain("เพิ่มรายรับ");
+    expect(hero).toContain("โอนเงิน");
+    expect(hero).toContain("/illustrations/finance/home-hero.webp");
     for (const helper of ["financeIncomeHref(initialWallet.id)", "financeExpenseHref(initialWallet.id)", "financeTransferHref(initialWallet.id)"]) expect(hub).toContain(helper);
     expect(hub).not.toContain("primaryWallet");
     expect(hub).not.toMatch(/defaultWallet|mainWallet|default_wallet|main_wallet/);

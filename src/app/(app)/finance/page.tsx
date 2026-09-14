@@ -10,7 +10,7 @@ import { BillOccurrenceCard } from "@/features/bills/components/BillOccurrenceCa
 import { bangkokDateKey } from "@/features/calendar/domain/calendar";
 import { listCreditCardDueItems } from "@/features/credit-cards/api";
 import { getFinanceSummary, listRecentFinanceTransactions } from "@/features/finance/api";
-import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
+import { FinanceDashboardHero } from "@/features/finance/components/FinanceDashboardHero";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import {
   currentFinanceMonth,
@@ -85,7 +85,10 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 flex flex-col gap-4 px-4 pb-6 pt-2">
-      <FinanceModuleTabs />
+      <div className="grid grid-cols-2 rounded-[1.5rem] border border-white/80 bg-finance-surface-strong p-1.5 shadow-sm" aria-label="ขอบเขตข้อมูล">
+        <span className="flex min-h-12 items-center justify-center gap-2 rounded-[1.15rem] bg-[linear-gradient(135deg,#e4efd9,#cfe2c7)] text-lg font-bold text-[#315d3d]"><AppIcon name="household" />ส่วนตัว</span>
+        <Link href="/household" className="flex min-h-12 items-center justify-center gap-2 rounded-[1.15rem] text-lg font-bold text-finance-text"><AppIcon name="household" />ครอบครัว</Link>
+      </div>
 
       <div className="flex items-center justify-between">
         <Link href={`/finance?month=${prevMonth}`} aria-label="เดือนก่อนหน้า" className="flex size-8 items-center justify-center rounded-full bg-finance-surface-strong text-finance-text shadow-sm">
@@ -110,23 +113,13 @@ export default async function FinancePage({
       </div>
 
       {initialWallet ? (
-        <section className="flex flex-col gap-2">
-          <div className="flex items-baseline gap-2">
-            <h2 className="font-semibold text-finance-text">เพิ่มรายการ</h2>
-            <p className="text-xs text-finance-muted">บันทึกรายรับ รายจ่าย หรือโอนเงิน</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2" aria-label="เพิ่มรายการด่วน">
-            <Link href={financeIncomeHref(initialWallet.id)} className="flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] bg-finance-surface-strong text-sm font-medium text-finance-text shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-full bg-finance-income/15 text-finance-income"><AppIcon name="income" /></span>รายรับ
-            </Link>
-            <Link href={financeExpenseHref(initialWallet.id)} className="flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] bg-finance-surface-strong text-sm font-medium text-finance-text shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-full bg-finance-expense/15 text-finance-expense"><AppIcon name="expense" /></span>รายจ่าย
-            </Link>
-            <Link href={financeTransferHref(initialWallet.id)} className="flex min-h-18 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] bg-finance-surface-strong text-sm font-medium text-finance-text shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-full bg-finance-transfer/15 text-finance-transfer"><AppIcon name="transfer" /></span>โอนเงิน
-            </Link>
-          </div>
-        </section>
+        <FinanceDashboardHero
+          balances={summary.currencyTotals}
+          monthTotals={summary.monthTotals}
+          incomeHref={financeIncomeHref(initialWallet.id)}
+          expenseHref={financeExpenseHref(initialWallet.id)}
+          transferHref={financeTransferHref(initialWallet.id)}
+        />
       ) : (
         <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm">
           <p className="text-sm text-finance-muted">เพิ่มกระเป๋าเงินก่อนบันทึกรายการ</p>

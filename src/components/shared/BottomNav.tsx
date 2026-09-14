@@ -17,9 +17,10 @@ import { appSectionForPath, type AppSection } from "@/lib/navigation/app-section
  * and app-section.ts, the shared source of truth both read).
  */
 export const NAV_ITEMS = [
+  { href: "/", label: "วันนี้", icon: "household", section: "neutral" },
   { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
+  { href: "/calendar", label: "แผน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
-  { href: "/calendar", label: "ปฏิทิน", icon: "calendar", section: "calendar" },
   { href: "/household", label: "ครอบครัว", icon: "household", section: "household" },
 ] as const satisfies ReadonlyArray<{ href: string; label: string; icon: AppIconName; section: AppSection }>;
 
@@ -37,15 +38,19 @@ export function BottomNav() {
   const isFinance = section === "finance";
 
   function renderItem(item: (typeof NAV_ITEMS)[number]) {
-    const active = section === item.section;
+    const active = item.href === "/" ? pathname === "/" : section === item.section;
     return (
       <li key={item.href}>
         <Link
           href={item.href}
           aria-current={active ? "page" : undefined}
           className={cn(
-            "flex h-14 flex-col items-center justify-center gap-0.5 rounded-control text-[10px] font-medium transition-colors",
-            active ? (isFinance ? "text-finance-primary-strong" : "text-primary") : isFinance ? "text-finance-muted" : "text-foreground-muted",
+            "flex h-16 flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1 text-[10px] font-medium transition-colors",
+            active
+              ? isFinance
+                ? "bg-finance-primary-soft text-finance-primary-strong"
+                : "bg-primary-soft text-primary"
+              : isFinance ? "text-finance-muted" : "text-foreground-muted",
           )}
         >
           <AppIcon name={item.icon as AppIconName} className="size-5" />
@@ -59,7 +64,7 @@ export function BottomNav() {
     <nav className={cn("fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-10", isFinance && "finance-scope")}>
       <ul
         className={cn(
-          "mx-auto grid max-w-xl grid-cols-4 items-center gap-1 rounded-[2rem] px-2 py-1 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 rounded-[2.25rem] border border-white/80 px-2 py-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

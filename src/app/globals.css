@@ -205,3 +205,18 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* Finance V3: card-grouped forms from the approved illustrated mockups. */
+.finance-form-v3 > div:not(.finance-amount-panel):not(.sticky) {
+  border: 1px solid rgb(255 255 255 / 0.8);
+  border-radius: 1.35rem;
+  background: var(--finance-surface-strong);
+  padding: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.finance-form-v3 label,
+.finance-form-v3 > div > span:first-child {
+  color: var(--finance-text);
+  font-weight: 650;
+}

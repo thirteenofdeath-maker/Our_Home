@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import Image from "next/image";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -30,9 +31,11 @@ export function CreditCardPaymentForm({
   const canSubmit = Boolean(walletId && pockets.length && Number(card.liability) > 0);
 
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-card bg-finance-surface-strong p-4 shadow-card">
+    <form action={action} className="finance-form-v3 finance-ui-tone flex flex-col gap-3">
       <input type="hidden" name="cardAccountId" value={card.accountId} />
-      <div className="rounded-control bg-finance-primary-soft p-3 text-sm">
+      <div className="relative isolate overflow-hidden pt-28 text-sm">
+        <Image src="/illustrations/finance/card-cat.webp" alt="แมวถือบัตรเครดิต" width={460} height={300} priority className="pointer-events-none absolute -right-8 -top-12 z-0 h-auto w-72 object-contain" />
+        <div className="relative z-10 rounded-[1.1rem] bg-finance-primary-soft/80 p-3 backdrop-blur-sm">
         <div className="flex justify-between gap-3 font-medium">
           <span>ยอดค้างชำระ</span>
           <span>{formatCurrency(card.liability, card.currency)}</span>
@@ -45,6 +48,7 @@ export function CreditCardPaymentForm({
           <span>ดอกเบี้ย</span><span className="text-right">{formatCurrency(outstanding.interest, card.currency)}</span>
           <span>ค่าธรรมเนียม</span><span className="text-right">{formatCurrency(outstanding.fee, card.currency)}</span>
           <span>ค่าปรับ</span><span className="text-right">{formatCurrency(outstanding.lateFee, card.currency)}</span>
+        </div>
         </div>
       </div>
 
@@ -75,7 +79,7 @@ export function CreditCardPaymentForm({
       )}
 
       <Field label="จำนวนเงินที่จ่าย" htmlFor="amount">
-        <Input id="amount" name="amount" inputMode="decimal" placeholder="0.00" max={outstanding.total} required autoFocus />
+        <Input id="amount" name="amount" inputMode="decimal" placeholder="0.00" max={outstanding.total} required autoFocus className="h-20 text-4xl font-bold tabular-nums" />
       </Field>
       <p className="text-xs text-finance-muted">ระบบจัดสรรยอดตามลำดับ ค่าปรับ → ค่าธรรมเนียม → ดอกเบี้ย → เงินต้น และเก็บแต่ละส่วนแยกแบบแก้ย้อนหลังไม่ได้</p>
       <Field label="วันที่จ่าย" htmlFor="occurredAt">
@@ -85,7 +89,7 @@ export function CreditCardPaymentForm({
       <Field label="โน้ต" htmlFor="note"><Input id="note" name="note" /></Field>
 
       {state.error ? <p role="alert" className="text-sm text-danger">{state.error}</p> : null}
-      <div className="sticky bottom-3 z-10">
+      <div className="sticky bottom-3 z-10 rounded-[1.4rem] bg-finance-background/90 p-1 backdrop-blur">
         <SubmitButton size="lg" variant="financeTransfer" disabled={!canSubmit}>บันทึกการจ่ายบัตร</SubmitButton>
       </div>
     </form>

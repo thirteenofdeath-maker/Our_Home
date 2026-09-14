@@ -1,5 +1,7 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/AppIcon";
+
 export type ExpenseScope = "PERSONAL" | "HOUSEHOLD";
 
 /**
@@ -26,8 +28,8 @@ export function ExpenseScopeSelect({
       <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="รายการนี้เป็นของใคร?">
         {(
           [
-            { scope: "PERSONAL" as const, label: "ส่วนตัว" },
-            { scope: "HOUSEHOLD" as const, label: "ครอบครัว" },
+            { scope: "PERSONAL" as const, label: "ส่วนตัว", description: "รายจ่ายของฉัน" },
+            { scope: "HOUSEHOLD" as const, label: "ครอบครัว", description: "รายจ่ายของบ้าน" },
           ]
         ).map((option) => (
           <button
@@ -39,11 +41,12 @@ export function ExpenseScopeSelect({
             onClick={() => onChange(option.scope)}
             className={
               value === option.scope
-                ? "flex h-13 items-center justify-center rounded-control border-2 border-primary bg-primary-soft text-base font-medium text-foreground"
-                : "flex h-13 items-center justify-center rounded-control border border-border/70 bg-surface text-base text-foreground-muted"
+                ? "flex min-h-20 items-center justify-center gap-3 rounded-[1.25rem] border-2 border-primary bg-primary-soft px-3 text-left text-base font-medium text-foreground"
+                : "flex min-h-20 items-center justify-center gap-3 rounded-[1.25rem] border border-border/70 bg-surface px-3 text-left text-base text-foreground-muted"
             }
           >
-            {option.label}
+            <span className={`flex size-12 shrink-0 items-center justify-center rounded-full ${option.scope === "PERSONAL" ? "bg-[#fde2da] text-[#795044]" : "bg-[#dceefa] text-[#45657d]"}`}><AppIcon name={option.scope === "PERSONAL" ? "wallet" : "household"} /></span>
+            <span><span className="block font-bold">{option.label}</span><span className="block text-xs font-normal opacity-75">{option.description}</span></span>
           </button>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -52,7 +53,19 @@ export default async function CreditCardDetailPage({
           </Link>
         }
       />
-      <Card className="bg-finance-primary p-5 text-white">
+      <section className="relative min-h-28 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#fffdf8,#f2f6e9)] px-5 py-4 shadow-card">
+        <p className="text-sm font-medium text-finance-muted">จัดการบัตรเครดิต</p>
+        <p className="mt-1 max-w-[45%] text-xl font-bold text-[#352725]">ดูแลภาระวันนี้ เพื่อบ้านที่สุขขึ้น</p>
+        <Image src="/illustrations/finance/card-cat.webp" alt="แมวถือบัตรเครดิต" width={430} height={286} priority className="pointer-events-none absolute -right-8 -top-14 h-auto w-64 object-contain" />
+      </section>
+      <nav className="grid grid-cols-5 rounded-[1.35rem] bg-finance-surface-strong p-1.5 text-center text-xs shadow-card" aria-label="เมนูการเงินบัตรเครดิต">
+        <Link href={`/finance/cards/${cardId}/purchase`} className="rounded-xl px-1 py-3 text-finance-muted">รายจ่าย</Link>
+        <Link href={`/finance/cards/${cardId}/cashback`} className="rounded-xl px-1 py-3 text-finance-muted">รายรับ</Link>
+        <span className="rounded-xl bg-finance-primary-soft px-1 py-3 font-bold text-finance-primary-strong">บัตรเครดิต</span>
+        <Link href={`/finance/cards/${cardId}/payment`} className="rounded-xl px-1 py-3 text-finance-muted">โอนเงิน</Link>
+        <Link href={`/finance/cards/${cardId}/installments/new`} className="rounded-xl px-1 py-3 text-finance-muted">ผ่อนชำระ</Link>
+      </nav>
+      <Card className="bg-[linear-gradient(135deg,#668b72,#7da486)] p-5 text-white">
         <p className="text-sm text-white/75">ยอดค้างชำระ</p>
         <p className="mt-1 text-3xl font-semibold">
           {formatCurrency(card.liability, card.currency)}
@@ -109,7 +122,7 @@ export default async function CreditCardDetailPage({
           value={card.apr == null ? "ไม่ระบุ" : `${card.apr}% (ข้อมูลเท่านั้น)`}
         />
       </Card>
-      <Card className="grid grid-cols-2 gap-2">
+      <Card className="grid grid-cols-3 gap-1 rounded-[1.5rem] p-1.5">
         <Link href={`/finance/cards/${cardId}/purchase`} className={buttonClassName("financeExpense", "md")}>
           ซื้อผ่านบัตร
         </Link>
@@ -121,10 +134,10 @@ export default async function CreditCardDetailPage({
           </Link>
         )}
         {card.isArchived ? (
-          <Button disabled variant="secondary">ดอกเบี้ย/ค่าธรรมเนียม</Button>
+          <Button disabled variant="secondary">ค่าบริการ</Button>
         ) : (
           <Link href={`/finance/cards/${cardId}/charges/new`} className={buttonClassName("secondary", "md")}>
-            ดอกเบี้ย/ค่าธรรมเนียม
+            ค่าบริการ
           </Link>
         )}
         {card.isArchived ? (

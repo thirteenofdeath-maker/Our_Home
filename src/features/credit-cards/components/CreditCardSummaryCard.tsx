@@ -8,7 +8,7 @@ export function CreditCardSummaryCard({ card }: { card: CreditCardAccount }) {
   return (
     <Link
       href={`/finance/cards/${card.accountId}`}
-      className={`rounded-[1.5rem] bg-finance-primary p-4 text-white shadow-card ${card.isArchived ? "opacity-60" : ""}`}
+      className={`rounded-[1.5rem] border border-white/80 bg-[linear-gradient(135deg,#64866f,#82a78b)] p-5 text-white shadow-[0_14px_34px_rgb(84_116_94_/_0.22)] ${card.isArchived ? "opacity-60" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>

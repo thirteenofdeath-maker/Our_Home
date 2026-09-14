@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { buttonClassName } from "@/components/ui/Button";
@@ -47,6 +48,11 @@ export default async function CreditCardsPage() {
           </Link>
         }
       />
+      <section className="relative min-h-28 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#fffdf8,#eef4e6)] px-5 py-4 shadow-card">
+        <p className="max-w-[46%] text-lg font-bold text-[#352725]">จัดการบัตรเครดิต</p>
+        <p className="mt-1 max-w-[44%] text-sm text-finance-muted">รู้ยอดค้าง วงเงิน และวันครบกำหนดในที่เดียว</p>
+        <Image src="/illustrations/finance/card-cat.webp" alt="แมวถือบัตรเครดิต" width={430} height={286} priority className="pointer-events-none absolute -right-8 -top-14 h-auto w-64 object-contain" />
+      </section>
       {active.length ? (
         <>
           <section className="flex flex-col gap-3">

@@ -9,16 +9,16 @@ vi.mock("next/navigation", () => ({
 
 import { BottomNav, NAV_ITEMS } from "./BottomNav";
 
-describe("Bottom navigation — pure navigation, exactly four destinations", () => {
+describe("Bottom navigation — pure navigation, five approved destinations", () => {
   it("points the finance destination at /finance", () => {
     const finance = NAV_ITEMS.find((item) => item.label === "การเงิน");
     expect(finance?.href).toBe("/finance");
   });
 
-  it("has exactly four items, and never Wallet/Category/Tasks/Shopping as competing destinations", () => {
-    expect(NAV_ITEMS).toHaveLength(4);
+  it("has the five mockup destinations, and never Wallet/Category/Tasks/Shopping as competing destinations", () => {
+    expect(NAV_ITEMS).toHaveLength(5);
     const hrefs = NAV_ITEMS.map((item) => item.href);
-    expect(hrefs).toEqual(["/finance", "/pets", "/calendar", "/household"]);
+    expect(hrefs).toEqual(["/", "/finance", "/calendar", "/pets", "/household"]);
     expect(hrefs).not.toContain("/wallets");
     expect(hrefs).not.toContain("/categories");
     expect(hrefs).not.toContain("/tasks");
@@ -29,18 +29,18 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
     expect(BottomNav.length).toBe(0);
   });
 
-  it("always renders exactly four real <a> destinations, on every module alike", () => {
+  it("always renders exactly five real <a> destinations, on every module alike", () => {
     for (const pathname of ["/finance", "/pets", "/calendar", "/household"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
-      expect((html.match(/<a /g) ?? []).length).toBe(4);
+      expect((html.match(/<a /g) ?? []).length).toBe(5);
     }
   });
 
-  it("always uses a plain 4-column grid — no 5-column center-cell layout survives", () => {
+  it("uses the five-column approved navigation without a floating center action", () => {
     mockPathname = "/finance";
     const html = renderToStaticMarkup(createElement(BottomNav));
-    expect(html).toContain("grid-cols-4");
+    expect(html).toContain("grid-cols-5");
     expect(html).not.toContain("grid-cols-[1fr_1fr_4rem_1fr_1fr]");
     expect(html).not.toContain("4rem_1fr_1fr");
   });
@@ -88,16 +88,16 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
     const finance = renderToStaticMarkup(createElement(BottomNav));
     expect(finance).toContain("finance-scope");
     expect(finance).toContain("inset-x-4");
-    expect(finance).toContain("rounded-[2rem]");
+    expect(finance).toContain("rounded-[2.25rem]");
     expect(finance).toContain("bg-finance-surface-strong");
 
     for (const pathname of ["/pets", "/calendar", "/household"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
       expect(html, `${pathname} should not carry finance-scope`).not.toContain("finance-scope");
-      // Same structural shell as Finance: fixed, inset-x-4, rounded-[2rem].
+      // Same structural shell as Finance: fixed, inset-x-4, rounded-[2.25rem].
       expect(html).toContain("inset-x-4");
-      expect(html).toContain("rounded-[2rem]");
+      expect(html).toContain("rounded-[2.25rem]");
       expect(html).toContain("bg-surface");
     }
   });

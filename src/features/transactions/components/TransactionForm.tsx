@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import Image from "next/image";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -192,7 +193,7 @@ export function TransactionForm({
   return (
     <form
       action={formAction}
-      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "finance-form-v3 flex flex-col gap-3")}
     >
       <input type="hidden" name="walletId" value={effectiveWalletId} />
       <input type="hidden" name="transactionType" value={transactionType} />
@@ -209,9 +210,14 @@ export function TransactionForm({
         </div>
       ) : null}
 
-      <Field label="จำนวนเงิน" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={defaultAmount ?? ""} placeholder="0.00" required autoFocus />
-      </Field>
+      <div className="finance-amount-panel relative isolate min-h-44 overflow-hidden rounded-[1.5rem] border border-white/80 bg-finance-surface-strong p-4 shadow-card">
+        <div className={transactionType === "EXPENSE" ? "relative z-10 max-w-[58%]" : "relative z-10"}>
+          <Field label="จำนวนเงิน" htmlFor="amount">
+            <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={defaultAmount ?? ""} placeholder="0.00" required autoFocus className="h-20 border-0 bg-transparent px-0 text-4xl font-bold shadow-none focus:ring-0" />
+          </Field>
+        </div>
+        {transactionType === "EXPENSE" ? <Image src="/illustrations/finance/expense-cat.webp" alt="แมวกับกระเป๋าเงิน" width={420} height={280} className="pointer-events-none absolute -bottom-8 -right-10 z-0 h-auto w-[58%] object-contain" /> : null}
+      </div>
 
       {isHouseholdExpenseFlow ? (
         <ExpenseScopeSelect
@@ -339,9 +345,11 @@ export function TransactionForm({
       ) : null}
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg" variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"} {...(!canSubmit ? { disabled: true } : {})}>
-        {postOccurrence ? "บันทึกรายการ" : transactionType === "INCOME" ? "บันทึกรายรับ" : "บันทึกรายจ่าย"}
-      </SubmitButton>
+      <div className="sticky bottom-3 z-10 rounded-[1.4rem] bg-finance-background/90 p-1 backdrop-blur">
+        <SubmitButton size="lg" variant={transactionType === "INCOME" ? "financeIncome" : "financeExpense"} {...(!canSubmit ? { disabled: true } : {})}>
+          {postOccurrence ? "บันทึกรายการ" : transactionType === "INCOME" ? "บันทึกรายรับ" : "บันทึกรายจ่าย"}
+        </SubmitButton>
+      </div>
     </form>
   );
 }
