@@ -17,12 +17,13 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       expect(detail).not.toContain('"/pets/new"');
     });
 
-    it("never bypasses the existing household/member permission gate", () => {
+    it("keeps pet profile creation gated while care records are available to household members", () => {
       // Same canManage = canInviteRole(...) check that already gated the
       // page's own creation action before this FAB existed — the FAB
       // reuses it, never renders unconditionally.
       expect(list).toMatch(/canManage\s*\?\s*<AddPetFab/);
-      expect(detail).toMatch(/canManage\s*\?\s*<AddPetFab/);
+      expect(detail).toMatch(/!pet\.archived_at\s*\?\s*<FormSheetButton/);
+      expect(detail).toContain("<PetCareRecordForm");
       expect(list).toContain("canInviteRole(household.myRole");
       expect(detail).toContain("canInviteRole(role");
     });

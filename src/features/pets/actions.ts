@@ -9,7 +9,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 
-import { createPet, deletePetPhoto, getPet, setPetArchived, updatePet, uploadPetPhoto } from "./api";
+import { archivePetCareRecord, createPet, createPetCareRecord, deletePetDocument, deletePetPhoto, getPet, setPetArchived, updatePet, uploadPetDocument, uploadPetPhoto } from "./api";
+import { PET_DOCUMENT_MIME_EXTENSIONS, petCareRecordSchema, petDocumentPath, validatePetDocument } from "./domain/care-record";
 import { petFormSchema, PET_PHOTO_MIME_EXTENSIONS, petPhotoPath, validatePetPhoto } from "./domain/pet";
 
 function parse(formData: FormData) {
@@ -77,4 +78,89 @@ export async function archivePetAction(formData: FormData) {
   catch (error) { logDatabaseErrorInDev("archivePetAction failed", error); return; }
   revalidatePath("/pets"); revalidatePath(`/pets/${petId}`);
   redirect(`/pets/${petId}`);
+}
+
+function careDocument(formData: FormData) {
+  const value = formData.get("document");
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+export async function createPetCareRecordAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = petCareRecordSchema.safeParse({
+    petId: formData.get("petId"),
+    recordType: formData.get("recordType"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    recordedAt: formData.get("recordedAt"),
+    scheduledAt: formData.get("scheduledAt"),
+    value: formData.get("value") ?? "",
+    unit: formData.get("unit") ?? "",
+    provider: formData.get("provider") ?? "",
+    transactionId: formData.get("transactionId") ?? "",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+
+  const pet = await getPet(supabase, parsed.data.petId);
+  if (!pet) return { error: "ไม่พบสัตว์เลี้ยง" };
+  const file = careDocument(formData);
+  if (file) {
+    const error = validatePetDocument(file);
+    if (error) return { error };
+  }
+  const recordId = randomUUID();
+  const documentPath = file
+    ? petDocumentPath(
+        pet.household_id,
+        pet.id,
+        recordId,
+        file.type as keyof typeof PET_DOCUMENT_MIME_EXTENSIONS,
+      )
+    : null;
+  try {
+    if (file && documentPath) await uploadPetDocument(supabase, documentPath, file);
+    await createPetCareRecord(supabase, {
+      id: recordId,
+      pet_id: pet.id,
+      household_id: pet.household_id,
+      created_by: user.id,
+      record_type: parsed.data.recordType,
+      title: parsed.data.title,
+      note: parsed.data.note,
+      recorded_at: parsed.data.recordedAt,
+      scheduled_at: parsed.data.scheduledAt,
+      value: parsed.data.value,
+      unit: parsed.data.unit,
+      provider: parsed.data.provider,
+      transaction_id: parsed.data.transactionId,
+      document_path: documentPath,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("createPetCareRecordAction failed", error);
+    if (documentPath) await deletePetDocument(supabase, documentPath);
+    return { error: "เพิ่มบันทึกไม่สำเร็จ" };
+  }
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath(`/pets/${pet.id}`);
+  return {};
+}
+
+export async function archivePetCareRecordAction(formData: FormData) {
+  const { supabase } = await requireUser();
+  const recordId = formData.get("recordId");
+  const petId = formData.get("petId");
+  if (typeof recordId !== "string" || typeof petId !== "string") return;
+  try {
+    await archivePetCareRecord(supabase, recordId);
+  } catch (error) {
+    logDatabaseErrorInDev("archivePetCareRecordAction failed", error);
+    return;
+  }
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath(`/pets/${petId}`);
 }

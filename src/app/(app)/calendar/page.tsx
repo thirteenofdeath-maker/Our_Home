@@ -30,6 +30,7 @@ import { TaskForm } from "@/features/plan/components/TaskForm";
 import { TaskList } from "@/features/plan/components/TaskList";
 import { requireUser } from "@/lib/auth/require-user";
 import { cn } from "@/lib/utils/cn";
+import { listScheduledPetCareRecords } from "@/features/pets/api";
 
 function activeView(value: unknown): PlanView {
   return value === "tasks" || value === "reminders" || value === "notes"
@@ -78,6 +79,7 @@ export default async function CalendarPage({
     allReminders,
     activeNotes,
     archivedNotes,
+    petCareRecords,
   ] = await Promise.all([
     listCalendarEvents(supabase, household?.id ?? null, user.id),
     view === "calendar"
@@ -91,6 +93,14 @@ export default async function CalendarPage({
     listPlanNotes(supabase),
     view === "notes" && showArchivedNotes
       ? listPlanNotes(supabase, { archived: true })
+      : Promise.resolve([]),
+    view === "calendar" && household
+      ? listScheduledPetCareRecords(
+          supabase,
+          household.id,
+          `${month}-01T00:00:00+07:00`,
+          `${endMonth}-01T00:00:00+07:00`,
+        )
       : Promise.resolve([]),
   ]);
 
@@ -153,6 +163,7 @@ export default async function CalendarPage({
             financeItems={financeItems}
             tasks={allTasks}
             reminders={allReminders}
+            petCareRecords={petCareRecords}
           />
           {archivedEvents.length ? (
             <section>

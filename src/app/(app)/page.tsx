@@ -15,7 +15,8 @@ import {
   listRecentFinanceTransactions,
 } from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPets } from "@/features/pets/api";
+import { listPetCareRecords, listPets, listScheduledPetCareRecords } from "@/features/pets/api";
+import { PET_CARE_RECORD_LABEL, petCareDateLabel } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
 import { listMyWallets } from "@/features/wallets/api";
@@ -74,6 +75,7 @@ export default async function HomePage() {
     finance,
     recentTransactions,
     pets,
+    petCare,
   ] = await Promise.all([
     listCalendarEvents(supabase, householdId, user.id),
     listPlanTasks(supabase),
@@ -85,6 +87,14 @@ export default async function HomePage() {
     }),
     listRecentFinanceTransactions(supabase, { limit: 5 }),
     householdId ? listPets(supabase, householdId) : Promise.resolve([]),
+    householdId
+      ? listScheduledPetCareRecords(
+          supabase,
+          householdId,
+          `${today}T00:00:00+07:00`,
+          `${upcomingEnd}T00:00:00+07:00`,
+        )
+      : Promise.resolve([]),
   ]);
 
   const todayEvents = events.filter((event) => eventDate(event) === today);
@@ -94,6 +104,12 @@ export default async function HomePage() {
   const upcomingReminders = reminders.filter(
     (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) <= tomorrow,
   );
+  const recentPetCare = (await Promise.all(
+    pets.map(async (pet) => ({ pet, records: await listPetCareRecords(supabase, pet.id) })),
+  ))
+    .flatMap(({ pet, records }) => records.map((record) => ({ pet, record })))
+    .toSorted((a, b) => b.record.created_at.localeCompare(a.record.created_at))
+    .slice(0, 3);
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -149,6 +165,19 @@ export default async function HomePage() {
         upcomingReminders.length === 0 ? (
           <EmptyToday text="วันนี้ยังไม่มีนัดหมายหรืองานค้าง" />
         ) : null}
+      </TodaySection>
+
+      <TodaySection title="ดูแลสัตว์เลี้ยง" href="/pets" linkLabel="ดูสัตว์เลี้ยง">
+        {petCare.slice(0, 4).map((record) => (
+          <TodayItem
+            key={record.id}
+            href={`/pets/${record.pet_id}`}
+            marker={PET_CARE_RECORD_LABEL[record.record_type]}
+            title={`${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`}
+            detail={petCareDateLabel(record.scheduled_at!)}
+          />
+        ))}
+        {petCare.length === 0 ? <EmptyToday text="ไม่มีตารางดูแลใน 7 วันข้างหน้า" /> : null}
       </TodaySection>
 
       <TodaySection
@@ -230,7 +259,16 @@ export default async function HomePage() {
             detail={formatCurrency(item.amount, item.currency)}
           />
         ))}
-        {recentTransactions.length === 0 ? (
+        {recentPetCare.map(({ pet, record }) => (
+          <TodayItem
+            key={`pet-activity-${record.id}`}
+            href={`/pets/${pet.id}`}
+            marker={PET_CARE_RECORD_LABEL[record.record_type]}
+            title={`${pet.name} · ${record.title}`}
+            detail={petCareDateLabel(record.created_at)}
+          />
+        ))}
+        {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
           <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
         ) : null}
       </TodaySection>
@@ -296,7 +334,7 @@ function TodayItem({
         <p className="min-w-0 flex-1 truncate font-medium text-finance-text">
           {title}
         </p>
-        <p className="shrink-0 text-sm text-finance-muted">{detail}</p>
+        <p className="max-w-[42%] shrink-0 truncate text-sm text-finance-muted">{detail}</p>
       </Card>
     </Link>
   );

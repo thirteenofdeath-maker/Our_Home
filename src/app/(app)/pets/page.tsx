@@ -15,9 +15,9 @@ export default async function PetsPage() {
   // page's own creation affordance already used — the FAB never bypasses
   // household/member permission rules, it just relocates the same check.
   const canManage = canInviteRole(household.myRole, "member");
-  return <div className="flex flex-col gap-5"><header><p className="text-sm text-foreground-muted">{household.name}</p><h1 className="text-xl font-semibold">สัตว์เลี้ยง</h1></header>
+  return <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3"><header><p className="text-sm text-finance-muted">{household.name}</p><h1 className="text-xl font-semibold text-finance-text">สัตว์เลี้ยง</h1></header>
     {canManage ? <AddPetFab /> : null}
-    <section className="flex flex-col gap-3">{active.length ? active.map((pet)=><PetCard key={pet.id} pet={pet}/>) : <Card><p className="text-sm text-foreground-muted">ยังไม่มีสัตว์เลี้ยง</p></Card>}</section>
+    <section className="flex flex-col gap-3">{active.length ? active.map((pet)=><PetCard key={pet.id} pet={pet}/>) : <Card className="rounded-[1.25rem] bg-finance-surface-strong"><p className="text-sm text-finance-muted">ยังไม่มีสัตว์เลี้ยง</p></Card>}</section>
     {archived.length ? <section className="flex flex-col gap-3"><h2 className="font-semibold">เก็บเข้าคลัง</h2>{archived.map((pet)=><PetCard key={pet.id} pet={pet}/>)}</section> : null}
   </div>;
 }

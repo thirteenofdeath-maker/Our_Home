@@ -14,6 +14,8 @@ import { togglePlanTaskAction } from "@/features/plan/actions";
 import { planDateLabel } from "@/features/plan/domain";
 import type { PlanReminder, PlanTask } from "@/features/plan/types";
 import { reminderDateLabel } from "@/features/plan/domain";
+import { PET_CARE_RECORD_LABEL, petCareDateLabel } from "@/features/pets/domain/care-record";
+import type { PetCareRecord } from "@/features/pets/types";
 
 function eventDate(event: CalendarEventView) {
   return event.is_all_day
@@ -29,6 +31,7 @@ export function MonthCalendar({
   financeItems = [],
   tasks = [],
   reminders = [],
+  petCareRecords = [],
 }: {
   month: string;
   selected: string;
@@ -37,6 +40,7 @@ export function MonthCalendar({
   financeItems?: CalendarFinanceItem[];
   tasks?: PlanTask[];
   reminders?: PlanReminder[];
+  petCareRecords?: (PetCareRecord & { pet: { name: string } | null })[];
 }) {
   const byDate = new Map<string, CalendarEventView[]>();
   for (const event of events) {
@@ -49,9 +53,13 @@ export function MonthCalendar({
   const selectedReminders = reminders.filter(
     (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) === selected,
   );
+  const selectedPetCare = petCareRecords.filter(
+    (record) => toBangkokInput(record.scheduled_at).slice(0, 10) === selected,
+  );
   const financeCountByDate = new Map<string, number>();
   const taskCountByDate = new Map<string, number>();
   const reminderCountByDate = new Map<string, number>();
+  const petCareCountByDate = new Map<string, number>();
   for (const item of financeItems)
     financeCountByDate.set(
       item.date,
@@ -69,6 +77,10 @@ export function MonthCalendar({
     if (reminder.is_completed) continue;
     const date = toBangkokInput(reminder.reminds_at).slice(0, 10);
     reminderCountByDate.set(date, (reminderCountByDate.get(date) ?? 0) + 1);
+  }
+  for (const record of petCareRecords) {
+    const date = toBangkokInput(record.scheduled_at).slice(0, 10);
+    petCareCountByDate.set(date, (petCareCountByDate.get(date) ?? 0) + 1);
   }
 
   return (
@@ -109,12 +121,13 @@ export function MonthCalendar({
             const financeCount = financeCountByDate.get(day.date) ?? 0;
             const taskCount = taskCountByDate.get(day.date) ?? 0;
             const reminderCount = reminderCountByDate.get(day.date) ?? 0;
+            const petCareCount = petCareCountByDate.get(day.date) ?? 0;
             return (
               <Link
                 key={day.date}
                 href={`/calendar?month=${month}&date=${day.date}`}
                 aria-current={isToday ? "date" : undefined}
-                aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
+                aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${petCareCount ? ` ดูแลสัตว์เลี้ยง ${petCareCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
                 data-selected={isSelected || undefined}
                 className={`min-h-14 rounded-[0.9rem] p-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${isSelected ? "bg-finance-primary text-white shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-35"}`}
               >
@@ -139,6 +152,9 @@ export function MonthCalendar({
                 ) : null}
                 {reminderCount ? (
                   <span className="text-[10px]">◷ {reminderCount}</span>
+                ) : null}
+                {petCareCount ? (
+                  <span className="text-[10px]">♡ {petCareCount}</span>
                 ) : null}
               </Link>
             );
@@ -230,6 +246,16 @@ export function MonthCalendar({
               <p className="font-medium text-finance-text">{reminder.title}</p>
               <p className="text-sm text-finance-muted">
                 เตือน · {reminderDateLabel(reminder.reminds_at)}
+              </p>
+            </Card>
+          </Link>
+        ))}
+        {selectedPetCare.map((record) => (
+          <Link key={record.id} href={`/pets/${record.pet_id}`}>
+            <Card className="rounded-[1.25rem] bg-finance-surface-strong">
+              <p className="font-medium text-finance-text">{record.title}</p>
+              <p className="text-sm text-finance-muted">
+                {record.pet?.name ?? "สัตว์เลี้ยง"} · {PET_CARE_RECORD_LABEL[record.record_type]} · {petCareDateLabel(record.scheduled_at!)}
               </p>
             </Card>
           </Link>

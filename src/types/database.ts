@@ -26,6 +26,14 @@ export type ExpenseAdjustmentKind = "REFUND" | "REIMBURSEMENT";
 export type ProfileGender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
 export type PetSpecies = "CAT" | "DOG" | "RABBIT" | "BIRD" | "FISH" | "OTHER";
 export type PetSex = "MALE" | "FEMALE" | "UNKNOWN";
+export type PetCareRecordType =
+  | "HEALTH"
+  | "VACCINE"
+  | "MEDICATION"
+  | "VET"
+  | "WEIGHT"
+  | "EXPENSE"
+  | "DOCUMENT";
 export type CalendarEventScope = "PERSONAL" | "HOUSEHOLD";
 export type PlanTaskPriority = "LOW" | "NORMAL" | "HIGH";
 export type PlanNoteColor =
@@ -139,6 +147,58 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      pet_care_records: {
+        Row: {
+          id: string;
+          pet_id: string;
+          household_id: string;
+          created_by: string;
+          record_type: PetCareRecordType;
+          title: string;
+          note: string | null;
+          recorded_at: string;
+          scheduled_at: string | null;
+          value: string | number | null;
+          unit: string | null;
+          provider: string | null;
+          transaction_id: string | null;
+          document_path: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          pet_id: string;
+          household_id: string;
+          created_by: string;
+          record_type: PetCareRecordType;
+          title: string;
+          note?: string | null;
+          recorded_at?: string;
+          scheduled_at?: string | null;
+          value?: string | number | null;
+          unit?: string | null;
+          provider?: string | null;
+          transaction_id?: string | null;
+          document_path?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          record_type?: PetCareRecordType;
+          title?: string;
+          note?: string | null;
+          recorded_at?: string;
+          scheduled_at?: string | null;
+          value?: string | number | null;
+          unit?: string | null;
+          provider?: string | null;
+          transaction_id?: string | null;
+          document_path?: string | null;
+          archived_at?: string | null;
+        };
         Relationships: [];
       };
       calendar_events: {

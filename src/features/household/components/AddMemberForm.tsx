@@ -22,7 +22,7 @@ export function AddMemberForm({
   const [state, formAction] = useActionState(addHouseholdMemberAction, initialActionState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
+    <form action={formAction} className="finance-ui-tone flex flex-col gap-3">
       <input type="hidden" name="householdId" value={householdId} />
       <Field label="อีเมลของสมาชิก" htmlFor="email">
         <Input id="email" name="email" type="email" placeholder="ต้องเป็นอีเมลที่สมัครสมาชิกไว้แล้ว" required />

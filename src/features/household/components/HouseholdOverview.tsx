@@ -28,29 +28,29 @@ export function HouseholdOverview({ members, userId, role }: {
     <>
       {current ? (
         <section data-testid="current-user" aria-labelledby="your-profile-heading" className="flex flex-col gap-3">
-          <h2 id="your-profile-heading" className="font-semibold">โปรไฟล์ของคุณ</h2>
+          <h2 id="your-profile-heading" className="font-semibold text-finance-text">โปรไฟล์ของคุณ</h2>
           <MemberCard member={current} isCurrent />
           <Link href="/profile/edit" className={buttonClassName("secondary", "md")}>แก้ไขโปรไฟล์</Link>
         </section>
       ) : null}
 
       <section data-testid="other-members" aria-labelledby="other-members-heading" className="flex flex-col gap-3">
-        <h2 id="other-members-heading" className="font-semibold">สมาชิกในครอบครัว</h2>
+        <h2 id="other-members-heading" className="font-semibold text-finance-text">สมาชิกในครอบครัว</h2>
         {others.length > 0 ? (
           <div className="flex flex-col gap-2">
             {others.map((member) => <MemberCard key={member.id} member={member} />)}
           </div>
         ) : (
-          <Card><p className="text-sm text-foreground-muted">ยังไม่มีสมาชิกคนอื่นในครอบครัว</p></Card>
+          <Card className="rounded-[1.25rem] bg-finance-surface-strong"><p className="text-sm text-finance-muted">ยังไม่มีสมาชิกคนอื่นในครอบครัว</p></Card>
         )}
       </section>
 
       <section aria-labelledby="member-management-heading">
-        <Card className="flex flex-col gap-3">
+        <Card className="flex flex-col gap-3 rounded-[1.25rem] bg-finance-surface-strong">
           <div>
-            <h2 id="member-management-heading" className="font-semibold">การจัดการสมาชิก</h2>
-            <p className="mt-1 text-sm text-foreground-muted">
-              {canManage ? "เชิญสมาชิกและจัดการสิทธิ์ของครอบครัว" : "ดูรายชื่อสมาชิกทั้งหมดในครอบครัว"}
+            <h2 id="member-management-heading" className="font-semibold text-finance-text">สมาชิกและสิทธิ์</h2>
+            <p className="mt-1 text-sm text-finance-muted">
+              {canManage ? "เชิญสมาชิกด้วยอีเมลและจัดการบทบาทของครอบครัว" : "ดูรายชื่อสมาชิกและบทบาทในครอบครัว"}
             </p>
           </div>
           <Link href="/household/members" className={buttonClassName("primary", "md")}>

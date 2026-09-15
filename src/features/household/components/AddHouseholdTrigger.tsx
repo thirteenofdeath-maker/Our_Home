@@ -10,7 +10,7 @@ import { CreateHouseholdForm } from "./CreateHouseholdForm";
  */
 export function AddHouseholdTrigger({ triggerClassName, children }: { triggerClassName: string; children: React.ReactNode }) {
   return (
-    <FormSheetButton triggerClassName={triggerClassName} sheetTitle="สร้างครอบครัว" form={<CreateHouseholdForm variant="sheet" />}>
+    <FormSheetButton triggerClassName={triggerClassName} sheetTitle="สร้างครอบครัว" tone="finance" form={<CreateHouseholdForm variant="sheet" />}>
       {children}
     </FormSheetButton>
   );

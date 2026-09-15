@@ -197,28 +197,28 @@ describe("Finance form submit buttons use Finance V2 accents, income/expense/tra
   });
 });
 
-describe("Modules outside the shared Finance/Plan visual language stay isolated", () => {
-  it("Pet and Household forms contain no finance token reference", () => {
+describe("Pets and Family reuse the Finance/Plan visual language", () => {
+  it("Pet and Household forms opt into the shared form tone", () => {
     const forms = [
       "src/features/pets/components/PetForm.tsx",
       "src/features/household/components/CreateHouseholdForm.tsx",
       "src/features/household/components/AddMemberForm.tsx",
+      "src/features/pets/components/PetCareRecordForm.tsx",
     ];
     for (const path of forms) {
       const source = read(path);
-      expect(source, path).not.toMatch(/finance/i);
+      expect(source, path).toContain("finance-ui-tone");
     }
   });
 
-  it('Pet and Household triggers never pass tone="finance"', () => {
+  it('Pet and Household triggers pass tone="finance"', () => {
     const triggers = [
       "src/features/pets/components/AddPetFab.tsx",
       "src/features/household/components/AddHouseholdTrigger.tsx",
     ];
     for (const path of triggers) {
       const source = stripComments(read(path));
-      expect(source, path).not.toContain('tone="finance"');
-      expect(source, path).not.toContain("finance-ui-tone");
+      expect(source, path).toContain('tone="finance"');
     }
   });
 
