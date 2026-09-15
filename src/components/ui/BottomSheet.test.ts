@@ -59,12 +59,22 @@ describe("BottomSheet mobile sizing", () => {
     expect(classes).not.toContain("overflow-y-auto");
     expect(classes).toContain("flex-col");
     const contentDiv =
-      source.match(/<div className=\{cn\("([^"]*)"/)?.[1] ?? "";
+      source.match(/<div\s+className=\{cn\(\s*"([^"]*)"/)?.[1] ?? "";
     expect(contentDiv).toContain("overflow-y-auto");
   });
 
   it("keeps the safe-area bottom inset so the close affordance/actions stay reachable above iOS chrome", () => {
     expect(source).toContain("env(safe-area-inset-bottom)");
+  });
+
+  it("locks every sheet to vertical touch gestures and clips horizontal overflow", () => {
+    const classes = dialogClassCandidates();
+    expect(classes).toContain("touch-pan-y");
+    expect(classes).toContain("overflow-x-hidden");
+    expect(classes).toContain("overscroll-x-none");
+    expect(source).toMatch(
+      /min-w-0 max-w-full touch-pan-y overflow-x-hidden overflow-y-auto overscroll-x-none/,
+    );
   });
 
   it("closes on a genuine backdrop tap — a native <dialog> does not do this on its own", () => {
