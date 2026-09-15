@@ -27,6 +27,8 @@ export type ProfileGender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
 export type PetSpecies = "CAT" | "DOG" | "RABBIT" | "BIRD" | "FISH" | "OTHER";
 export type PetSex = "MALE" | "FEMALE" | "UNKNOWN";
 export type CalendarEventScope = "PERSONAL" | "HOUSEHOLD";
+export type PlanTaskPriority = "LOW" | "NORMAL" | "HIGH";
+export type PlanNoteColor = "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
 
 export interface Database {
   public: {
@@ -165,6 +167,115 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      plan_tasks: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          details: string | null;
+          list_name: string;
+          due_date: string | null;
+          due_time: string | null;
+          priority: PlanTaskPriority;
+          is_completed: boolean;
+          completed_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          details?: string | null;
+          list_name?: string;
+          due_date?: string | null;
+          due_time?: string | null;
+          priority?: PlanTaskPriority;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          details?: string | null;
+          list_name?: string;
+          due_date?: string | null;
+          due_time?: string | null;
+          priority?: PlanTaskPriority;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_task_steps: {
+        Row: {
+          id: string;
+          task_id: string;
+          created_by: string;
+          title: string;
+          position: number;
+          is_completed: boolean;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          created_by: string;
+          title: string;
+          position?: number;
+          is_completed?: boolean;
+          completed_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          position?: number;
+          is_completed?: boolean;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_notes: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string | null;
+          content: string | null;
+          color: PlanNoteColor;
+          pinned_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title?: string | null;
+          content?: string | null;
+          color?: PlanNoteColor;
+          pinned_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string | null;
+          content?: string | null;
+          color?: PlanNoteColor;
+          pinned_at?: string | null;
+          archived_at?: string | null;
+        };
         Relationships: [];
       };
       wallets: {
