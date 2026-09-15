@@ -129,7 +129,7 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
     });
   }
 
-  it("DebtCreateForm (the create form) applies finance-ui-tone; DebtPaymentForm/AdditionalDebtPrincipalForm (actions on an EXISTING debt, not Create) do not — they're out of this task's scope", () => {
+  it("all debt forms apply finance-ui-tone so their shared Wallet/Pocket picker has identical tokens", () => {
     const source = read("src/features/debts/components/DebtForms.tsx");
     const createFormSrc = source.slice(
       source.indexOf("export function DebtCreateForm"),
@@ -140,11 +140,11 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
       source.indexOf("export function DebtPaymentForm"),
       source.indexOf("export function AdditionalDebtPrincipalForm"),
     );
-    expect(paymentFormSrc).not.toContain("finance-ui-tone");
+    expect(paymentFormSrc).toContain("finance-ui-tone");
     const principalFormSrc = source.slice(
       source.indexOf("export function AdditionalDebtPrincipalForm"),
     );
-    expect(principalFormSrc).not.toContain("finance-ui-tone");
+    expect(principalFormSrc).toContain("finance-ui-tone");
   });
 
   it('CategoryPicker and TagPicker wrap themselves in finance-ui-tone and pass tone="finance" to their own BottomSheet — the picker list, quick-create form, and selected-state chips all belong to the same Finance V2 surface', () => {

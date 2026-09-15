@@ -17,10 +17,19 @@ const data = readFileSync(
   resolve(process.cwd(), "src/features/finance/quick-add-data.ts"),
   "utf8",
 );
+const picker = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/features/finance/components/FinancePocketPicker.tsx",
+  ),
+  "utf8",
+);
 
 describe("UnifiedTransferForm", () => {
   it("keeps one parent form mounted while FROM and TO use a child BottomSheet", () => {
-    expect(source).toMatch(/<BottomSheet\s+open=\{picker !== null\}/);
+    expect(source).toMatch(
+      /<FinancePocketPickerSheet\s+open=\{picker !== null\}/,
+    );
     expect(source).toContain('setPicker("from")');
     expect(source).toContain('setPicker("to")');
     expect(source).toContain("onClose={() => setPicker(null)}");
@@ -67,9 +76,9 @@ describe("UnifiedTransferForm", () => {
   });
 
   it("uses the shared selected and unselected Pocket colors", () => {
-    expect(source).toContain('"bg-finance-primary-soft"');
-    expect(source).toContain('"bg-finance-surface-strong"');
-    expect(source).toContain("endpoint.pocketId === from.pocketId");
-    expect(source).toContain("endpoint.pocketId === to?.pocketId");
+    expect(picker).toContain('"bg-finance-primary-soft"');
+    expect(picker).toContain('"bg-finance-surface-strong"');
+    expect(source).toContain('picker === "from" ? from.pocketId');
+    expect(source).toContain("to?.pocketId ?? null");
   });
 });

@@ -1,1 +1,63 @@
-"use client";import{useActionState,useState}from"react";import{Field,Input,Select}from"@/components/ui/Field";import{SubmitButton}from"@/components/ui/SubmitButton";import type{Wallet}from"@/features/wallets/types";import type{Pocket}from"@/features/pockets/types";import{bangkokDateKey}from"@/features/calendar/domain/calendar";import{initialActionState}from"@/lib/types/action-state";import{payInstallmentAction}from"../actions";export function PayInstallmentForm({id,amount,categoryId,wallets,pockets}:{id:string;amount:string;categoryId:string;wallets:Wallet[];pockets:Record<string,Pocket[]>}){const[state,action]=useActionState(payInstallmentAction,initialActionState);const[wallet,setWallet]=useState(wallets[0]?.id??"");return<form action={action} className="flex flex-col gap-4"><input type="hidden" name="occurrenceId" value={id}/><input type="hidden" name="categoryId" value={categoryId}/><Field label="ยอดงวด" htmlFor="amount"><Input id="amount" name="amount" value={amount} readOnly/></Field><Field label="Wallet" htmlFor="walletId"><Select id="walletId" name="walletId" value={wallet} onChange={e=>setWallet(e.target.value)} required>{wallets.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</Select></Field><Field label="Pocket" htmlFor="pocketId"><Select id="pocketId" name="pocketId" required>{(pockets[wallet]??[]).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field><Field label="วันที่จ่าย" htmlFor="occurredAt"><Input id="occurredAt" name="occurredAt" type="date" defaultValue={bangkokDateKey()} required/></Field>{state.error?<p className="text-danger">{state.error}</p>:null}<SubmitButton>จ่ายงวดนี้</SubmitButton></form>}
+"use client";
+
+import { useActionState, useState } from "react";
+
+import { Field, Input } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import {
+  buildFinancePocketOptions,
+  FinancePocketField,
+} from "@/features/finance/components/FinancePocketPicker";
+import type { PocketWithBalance } from "@/features/pockets/types";
+import type { Wallet } from "@/features/wallets/types";
+import { initialActionState } from "@/lib/types/action-state";
+
+import { payInstallmentAction } from "../actions";
+
+export function PayInstallmentForm({
+  id,
+  amount,
+  categoryId,
+  wallets,
+  pockets,
+}: {
+  id: string;
+  amount: string;
+  categoryId: string;
+  wallets: Wallet[];
+  pockets: Record<string, PocketWithBalance[]>;
+}) {
+  const [state, action] = useActionState(
+    payInstallmentAction,
+    initialActionState,
+  );
+  const options = buildFinancePocketOptions(wallets, pockets);
+  const [pocketId, setPocketId] = useState(options[0]?.pocketId ?? "");
+
+  return (
+    <form action={action} className="finance-ui-tone flex flex-col gap-4">
+      <input type="hidden" name="occurrenceId" value={id} />
+      <input type="hidden" name="categoryId" value={categoryId} />
+      <Field label="ยอดงวด" htmlFor="amount">
+        <Input id="amount" name="amount" value={amount} readOnly />
+      </Field>
+      <FinancePocketField
+        options={options}
+        selectedPocketId={pocketId}
+        onSelect={(option) => setPocketId(option.pocketId)}
+      />
+      <Field label="วันที่จ่าย" htmlFor="occurredAt">
+        <Input
+          id="occurredAt"
+          name="occurredAt"
+          type="date"
+          defaultValue={bangkokDateKey()}
+          required
+        />
+      </Field>
+      {state.error ? <p className="text-danger">{state.error}</p> : null}
+      <SubmitButton>จ่ายงวดนี้</SubmitButton>
+    </form>
+  );
+}

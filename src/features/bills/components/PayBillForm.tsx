@@ -1,2 +1,123 @@
-"use client";import { useActionState,useState } from "react";import { Field,Input,Select } from "@/components/ui/Field";import { SubmitButton } from "@/components/ui/SubmitButton";import type { CategoryNode } from "@/features/categories/types";import type { Pocket } from "@/features/pockets/types";import type { TagOption } from "@/features/tags/types";import type { Wallet } from "@/features/wallets/types";import { initialActionState } from "@/lib/types/action-state";import { bangkokDateKey } from "@/features/calendar/domain/calendar";import { payBillAction } from "../actions";import type { BillOccurrenceSummary } from "../types";
-export function PayBillForm({item,wallets,pocketsByWallet,categories,tags}:{item:BillOccurrenceSummary;wallets:Wallet[];pocketsByWallet:Record<string,Pocket[]>;categories:CategoryNode[];tags:TagOption[]}){const [state,action]=useActionState(payBillAction,initialActionState);const validWallets=wallets.filter(w=>w.scope===item.scope&&w.currency===item.currency);const [walletId,setWalletId]=useState(item.walletId&&!item.walletArchived?item.walletId:validWallets[0]?.id??"");const pockets=pocketsByWallet[walletId]??[];const flat=categories.flatMap(c=>[c,...c.children]);return <form action={action} className="flex flex-col gap-4"><input type="hidden" name="occurrenceId" value={item.occurrenceId}/><Field label="จำนวนเงินจริง" htmlFor="amount"><Input id="amount" name="amount" defaultValue={item.expectedAmount} inputMode="decimal" required/></Field><Field label="Wallet" htmlFor="walletId"><Select id="walletId" name="walletId" value={walletId} onChange={e=>setWalletId(e.target.value)} required>{validWallets.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</Select></Field><Field label="Pocket" htmlFor="pocketId"><Select id="pocketId" name="pocketId" defaultValue={item.pocketId&&!item.pocketArchived?item.pocketId:pockets[0]?.id} required>{pockets.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field><Field label="หมวดหมู่" htmlFor="categoryId"><Select id="categoryId" name="categoryId" defaultValue={!item.categoryArchived?item.categoryId:""} required><option value="" disabled>เลือกหมวดหมู่</option>{flat.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field><Field label="วันที่จ่าย" htmlFor="occurredAt"><Input id="occurredAt" name="occurredAt" type="date" defaultValue={bangkokDateKey()} required/></Field><Field label="ชื่อรายการ" htmlFor="title"><Input id="title" name="title" defaultValue={item.title??item.name}/></Field><Field label="โน้ต" htmlFor="note"><Input id="note" name="note" defaultValue={item.note??""}/></Field><div>{tags.map(t=><label key={t.id} className="mr-3 inline-flex gap-1"><input type="checkbox" name="tagIds" value={t.id} defaultChecked={item.tags.some(x=>x.id===t.id&&x.archivedAt===null)}/>{t.name}</label>)}</div>{state.error?<p className="text-sm text-danger">{state.error}</p>:null}<SubmitButton size="lg">ยืนยันจ่ายบิล</SubmitButton></form>}
+"use client";
+
+import { useActionState, useState } from "react";
+
+import { Field, Input, Select } from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import type { CategoryNode } from "@/features/categories/types";
+import {
+  buildFinancePocketOptions,
+  FinancePocketField,
+} from "@/features/finance/components/FinancePocketPicker";
+import type { PocketWithBalance } from "@/features/pockets/types";
+import type { TagOption } from "@/features/tags/types";
+import type { Wallet } from "@/features/wallets/types";
+import { initialActionState } from "@/lib/types/action-state";
+
+import { payBillAction } from "../actions";
+import type { BillOccurrenceSummary } from "../types";
+
+export function PayBillForm({
+  item,
+  wallets,
+  pocketsByWallet,
+  categories,
+  tags,
+}: {
+  item: BillOccurrenceSummary;
+  wallets: Wallet[];
+  pocketsByWallet: Record<string, PocketWithBalance[]>;
+  categories: CategoryNode[];
+  tags: TagOption[];
+}) {
+  const [state, action] = useActionState(payBillAction, initialActionState);
+  const validWallets = wallets.filter(
+    (wallet) =>
+      wallet.scope === item.scope && wallet.currency === item.currency,
+  );
+  const options = buildFinancePocketOptions(validWallets, pocketsByWallet);
+  const initialPocketId =
+    item.pocketId &&
+    !item.pocketArchived &&
+    options.some((option) => option.pocketId === item.pocketId)
+      ? item.pocketId
+      : (options[0]?.pocketId ?? "");
+  const [pocketId, setPocketId] = useState(initialPocketId);
+  const categoryOptions = categories.flatMap((category) => [
+    category,
+    ...category.children,
+  ]);
+
+  return (
+    <form action={action} className="finance-ui-tone flex flex-col gap-4">
+      <input type="hidden" name="occurrenceId" value={item.occurrenceId} />
+      <Field label="จำนวนเงินจริง" htmlFor="amount">
+        <Input
+          id="amount"
+          name="amount"
+          defaultValue={item.expectedAmount}
+          inputMode="decimal"
+          required
+        />
+      </Field>
+      <FinancePocketField
+        options={options}
+        selectedPocketId={pocketId}
+        onSelect={(option) => setPocketId(option.pocketId)}
+      />
+      <Field label="หมวดหมู่" htmlFor="categoryId">
+        <Select
+          id="categoryId"
+          name="categoryId"
+          defaultValue={!item.categoryArchived ? item.categoryId : ""}
+          required
+        >
+          <option value="" disabled>
+            เลือกหมวดหมู่
+          </option>
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="วันที่จ่าย" htmlFor="occurredAt">
+        <Input
+          id="occurredAt"
+          name="occurredAt"
+          type="date"
+          defaultValue={bangkokDateKey()}
+          required
+        />
+      </Field>
+      <Field label="ชื่อรายการ" htmlFor="title">
+        <Input id="title" name="title" defaultValue={item.title ?? item.name} />
+      </Field>
+      <Field label="โน้ต" htmlFor="note">
+        <Input id="note" name="note" defaultValue={item.note ?? ""} />
+      </Field>
+      <div>
+        {tags.map((tag) => (
+          <label key={tag.id} className="mr-3 inline-flex gap-1">
+            <input
+              type="checkbox"
+              name="tagIds"
+              value={tag.id}
+              defaultChecked={item.tags.some(
+                (selected) =>
+                  selected.id === tag.id && selected.archivedAt === null,
+              )}
+            />
+            {tag.name}
+          </label>
+        ))}
+      </div>
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
+      <SubmitButton size="lg">ยืนยันจ่ายบิล</SubmitButton>
+    </form>
+  );
+}

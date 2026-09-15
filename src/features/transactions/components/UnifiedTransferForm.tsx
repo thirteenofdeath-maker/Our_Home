@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 
-import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FinancePocketPickerSheet } from "@/features/finance/components/FinancePocketPicker";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import { createUnifiedTransferAction } from "@/features/transactions/actions";
@@ -15,7 +15,6 @@ import {
   type TransferEndpoint,
 } from "@/features/transactions/domain/unified-transfer";
 import { initialActionState } from "@/lib/types/action-state";
-import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
 
 type Picker = "from" | "to" | null;
@@ -42,18 +41,6 @@ export function UnifiedTransferForm({
     initialActionState,
   );
   const today = new Date().toLocaleDateString("en-CA");
-  const walletGroups = useMemo(
-    () =>
-      endpoints.reduce<TransferEndpoint[][]>((groups, endpoint) => {
-        const group = groups.find(
-          (items) => items[0]?.walletId === endpoint.walletId,
-        );
-        if (group) group.push(endpoint);
-        else groups.push([endpoint]);
-        return groups;
-      }, []),
-    [endpoints],
-  );
 
   function chooseFrom(endpoint: TransferEndpoint) {
     setFrom(endpoint);
@@ -167,63 +154,21 @@ export function UnifiedTransferForm({
         </SubmitButton>
       </form>
 
-      <BottomSheet
+      <FinancePocketPickerSheet
         open={picker !== null}
         onClose={() => setPicker(null)}
         title={picker === "from" ? "เลือกต้นทาง" : "เลือกปลายทาง"}
-        tone="finance"
-      >
-        <div className="flex flex-col gap-4">
-          {walletGroups.map((group) => (
-            <section key={group[0].walletId}>
-              <h3 className="mb-1 text-sm font-semibold text-finance-text">
-                {group[0].walletName}
-              </h3>
-              <div className="flex flex-col gap-1">
-                {group.map((endpoint) => {
-                  const disabled =
-                    picker === "to" &&
-                    !isValidTransferDestination(from, endpoint);
-                  return (
-                    <button
-                      key={endpoint.pocketId}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() =>
-                        picker === "from"
-                          ? chooseFrom(endpoint)
-                          : chooseTo(endpoint)
-                      }
-                      className={cn(
-                        "flex min-h-14 w-full items-center justify-between rounded-2xl px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40",
-                        (
-                          picker === "from"
-                            ? endpoint.pocketId === from.pocketId
-                            : endpoint.pocketId === to?.pocketId
-                        )
-                          ? "bg-finance-primary-soft"
-                          : "bg-finance-surface-strong",
-                      )}
-                    >
-                      <span>
-                        <span className="block font-medium text-finance-text">
-                          {endpoint.pocketName}
-                        </span>
-                        <span className="text-xs text-finance-muted">
-                          {endpoint.walletName}
-                        </span>
-                      </span>
-                      <span className="tabular-nums text-finance-text">
-                        {formatCurrency(endpoint.balance, endpoint.currency)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      </BottomSheet>
+        options={endpoints}
+        selectedPocketId={
+          picker === "from" ? from.pocketId : (to?.pocketId ?? null)
+        }
+        onSelect={(endpoint) =>
+          picker === "from" ? chooseFrom(endpoint) : chooseTo(endpoint)
+        }
+        isOptionDisabled={(endpoint) =>
+          picker === "to" && !isValidTransferDestination(from, endpoint)
+        }
+      />
     </>
   );
 }

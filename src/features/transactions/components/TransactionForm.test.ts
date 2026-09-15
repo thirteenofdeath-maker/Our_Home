@@ -61,7 +61,7 @@ describe("TransactionForm — renders in both variants without crashing", () => 
 describe("TransactionForm — in-sheet wallet switch stays inside the same form sheet", () => {
   it('uses the grouped Wallet/Pocket card picker only in variant="sheet"', () => {
     expect(source).toContain('variant === "sheet" && endpoints');
-    expect(source).toContain("<TransactionEndpointPicker");
+    expect(source).toContain("<FinancePocketField");
     expect(source).toContain("<TransactionWalletSelect");
   });
 
