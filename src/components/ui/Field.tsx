@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cn } from "@/lib/utils/cn";
 
 const controlClassName =
-  "h-13 w-full rounded-control border border-border/70 bg-surface px-4 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-3 focus:ring-primary-soft";
+  "h-13 min-w-0 w-full max-w-full rounded-control border border-border/70 bg-surface px-4 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-3 focus:ring-primary-soft";
 
 export function Field({
   label,
@@ -17,7 +17,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-sm font-medium text-foreground-muted">
         {label}
       </label>
