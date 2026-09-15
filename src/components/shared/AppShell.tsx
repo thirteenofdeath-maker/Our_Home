@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
-const TOP_LEVEL_ROUTES = new Set(["/pets", "/calendar", "/household"]);
+const TOP_LEVEL_ROUTES = new Set(["/pets", "/household"]);
 
 /**
  * The Finance routes with no module-specific creation action of their
@@ -39,8 +39,8 @@ export function AppShell({
   // also reads (for active-tab/tone), so the two can never disagree about
   // which routes count as "in the app". The top app header ("Our Home" +
   // avatar) stays exact-top-level-only, a deliberately separate concern
-  // from BottomNav persistence. Finance deliberately omits it because its
-  // overview already provides the complete module entry surface.
+  // from BottomNav persistence. Finance and Plan deliberately omit it because
+  // their own overview headers already provide the complete module entry surface.
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (

@@ -33,11 +33,12 @@ function renderShell(pathname: string): string {
 }
 
 describe("AppShell visibility", () => {
-  it("omits the redundant top header on Finance while keeping it on the other top-level roots", () => {
+  it("omits the redundant top header on Finance and Plan while keeping it on the remaining top-level roots", () => {
     expect(source).toMatch(
-      /new Set\(\[\s*"\/pets",\s*"\/calendar",\s*"\/household",?\s*\]\)/,
+      /new Set\(\[\s*"\/pets",\s*"\/household",?\s*\]\)/,
     );
     expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/finance"/);
+    expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/calendar"/);
     expect(source).toContain("TOP_LEVEL_ROUTES.has(pathname)");
     expect(source).toContain("isTopLevel ? globalHeader : null");
   });
