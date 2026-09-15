@@ -146,7 +146,7 @@ export async function createPetCareRecordAction(
   revalidatePath("/");
   revalidatePath("/calendar");
   revalidatePath(`/pets/${pet.id}`);
-  return {};
+  return { success: true };
 }
 
 export async function archivePetCareRecordAction(formData: FormData) {

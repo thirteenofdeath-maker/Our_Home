@@ -22,7 +22,7 @@ import {
 export const NAV_ITEMS = [
   { href: "/", label: "หน้าหลัก", icon: "home", section: "home" },
   { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
-  { href: "/calendar", label: "แพลน", icon: "calendar", section: "calendar" },
+  { href: "/calendar", label: "แผนงาน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
   {
     href: "/household",

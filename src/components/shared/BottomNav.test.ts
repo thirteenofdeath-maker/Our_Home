@@ -29,7 +29,7 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
     expect(labels).toEqual([
       "หน้าหลัก",
       "การเงิน",
-      "แพลน",
+      "แผนงาน",
       "สัตว์เลี้ยง",
       "ครอบครัว",
     ]);

@@ -141,7 +141,7 @@ export default async function CalendarPage({
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       <header>
         <p className="text-sm text-finance-muted">ทุกแผนในบ้าน ที่เดียว</p>
-        <h1 className="text-xl font-semibold text-finance-text">แพลน</h1>
+        <h1 className="text-xl font-semibold text-finance-text">แผนงาน</h1>
       </header>
       <PlanSummary
         today={today}

@@ -14,7 +14,7 @@ const views: Array<{ value: PlanView; label: string }> = [
 export function PlanTabs({ active }: { active: PlanView }) {
   return (
     <nav
-      aria-label="มุมมองแพลน"
+      aria-label="มุมมองแผนงาน"
       className="grid grid-cols-4 rounded-full bg-finance-surface-strong p-1 shadow-sm"
     >
       {views.map((view) => (
