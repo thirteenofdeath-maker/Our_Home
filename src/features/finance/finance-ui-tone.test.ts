@@ -197,11 +197,10 @@ describe("Finance form submit buttons use Finance V2 accents, income/expense/tra
   });
 });
 
-describe("Non-Finance forms never receive the Finance UI tone", () => {
-  it("Pet/Calendar/Household forms contain no finance-ui-tone, no finance-* class, no finance token reference at all", () => {
+describe("Modules outside the shared Finance/Plan visual language stay isolated", () => {
+  it("Pet and Household forms contain no finance token reference", () => {
     const forms = [
       "src/features/pets/components/PetForm.tsx",
-      "src/features/calendar/components/CalendarEventForm.tsx",
       "src/features/household/components/CreateHouseholdForm.tsx",
       "src/features/household/components/AddMemberForm.tsx",
     ];
@@ -211,10 +210,9 @@ describe("Non-Finance forms never receive the Finance UI tone", () => {
     }
   });
 
-  it('AddPetFab/AddCalendarEventFab/AddHouseholdTrigger never pass tone="finance" and never reference finance-ui-tone', () => {
+  it('Pet and Household triggers never pass tone="finance"', () => {
     const triggers = [
       "src/features/pets/components/AddPetFab.tsx",
-      "src/features/calendar/components/AddCalendarEventFab.tsx",
       "src/features/household/components/AddHouseholdTrigger.tsx",
     ];
     for (const path of triggers) {
@@ -222,6 +220,17 @@ describe("Non-Finance forms never receive the Finance UI tone", () => {
       expect(source, path).not.toContain('tone="finance"');
       expect(source, path).not.toContain("finance-ui-tone");
     }
+  });
+
+  it("Plan deliberately reuses the Finance V2 sheet tone", () => {
+    const trigger = stripComments(
+      read("src/features/calendar/components/AddCalendarEventFab.tsx"),
+    );
+    const form = stripComments(
+      read("src/features/calendar/components/CalendarEventForm.tsx"),
+    );
+    expect(trigger).toContain('tone="finance"');
+    expect(form).toContain("finance-ui-tone");
   });
 });
 

@@ -18,9 +18,12 @@ export function PlanSummary({
     timeZone: "UTC",
   }).format(new Date(`${today}T00:00:00Z`));
   return (
-    <Card className="overflow-hidden bg-[linear-gradient(135deg,#e7efe3,#f8f2e8)] p-5">
-      <p className="text-sm font-medium text-foreground-muted">วันนี้ · {date}</p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
+    <Card className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#e8f1e5,#f7f4e9_52%,#f5eadc)] p-5 shadow-card">
+      <div className="absolute -right-8 -top-10 size-32 rounded-full bg-white/45" />
+      <p className="relative text-sm font-medium text-finance-muted">
+        วันนี้ · {date}
+      </p>
+      <div className="relative mt-4 grid grid-cols-3 gap-2">
         <SummaryMetric value={eventCount} label="กิจกรรม" />
         <SummaryMetric value={taskCount} label="งานค้าง" />
         <SummaryMetric value={noteCount} label="โน้ต" />
@@ -31,9 +34,11 @@ export function PlanSummary({
 
 function SummaryMetric({ value, label }: { value: number; label: string }) {
   return (
-    <div className="min-w-0 rounded-[1rem] bg-white/75 px-2 py-3 text-center">
-      <p className="text-xl font-semibold tabular-nums">{value}</p>
-      <p className="truncate text-xs text-foreground-muted">{label}</p>
+    <div className="min-w-0 rounded-[1.15rem] bg-white/75 px-2 py-3 text-center backdrop-blur-sm">
+      <p className="text-xl font-semibold tabular-nums text-finance-text">
+        {value}
+      </p>
+      <p className="truncate text-xs text-finance-muted">{label}</p>
     </div>
   );
 }
