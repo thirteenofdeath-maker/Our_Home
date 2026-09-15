@@ -17,7 +17,7 @@ const SECTION_TITLES: Record<string, string> = {
   goals: "เป้าหมายการออม",
   debts: "หนี้และเงินยืม",
   reports: "รายงานการเงิน",
-  "net-worth": "มูลค่าสุทธิ",
+  "net-worth": "ทรัพย์สินสุทธิ",
   insights: "ข้อมูลเชิงลึก",
   import: "นำเข้า CSV",
   export: "ส่งออก CSV",

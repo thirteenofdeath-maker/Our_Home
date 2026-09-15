@@ -35,7 +35,7 @@ const SHORTCUTS = [
   { href: "/categories", label: "หมวดหมู่", icon: "pocket" },
   { href: "/finance/installments", label: "ผ่อนชำระ", icon: "calendar" },
   { href: "/finance/recurring", label: "รายการประจำ", icon: "finance" },
-  { href: "/finance/net-worth", label: "มูลค่าสุทธิ", icon: "wallet" },
+  { href: "/finance/net-worth", label: "ทรัพย์สินสุทธิ", icon: "wallet" },
   { href: "/finance/tags", label: "แท็ก", icon: "pocket" },
   { href: "/finance/import", label: "นำเข้า", icon: "transfer" },
   { href: "/finance/export", label: "ส่งออก", icon: "transfer" },
