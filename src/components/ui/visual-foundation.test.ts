@@ -17,9 +17,9 @@ describe("mobile visual foundation", () => {
     expect(read("src/components/ui/Field.tsx")).toContain("focus:ring-3 focus:ring-primary-soft");
   });
 
-  it("keeps the four real destinations and gives each an icon", () => {
+  it("keeps the five real destinations and gives each an icon", () => {
     const nav = read("src/components/shared/BottomNav.tsx");
-    expect(nav.match(/href: "\/(?:finance|pets|calendar|household)"/g)).toHaveLength(4);
+    expect(nav.match(/href: "\/(?:wallets|finance|calendar|pets|household)"/g)).toHaveLength(5);
     expect(nav).toContain("<AppIcon");
   });
 });

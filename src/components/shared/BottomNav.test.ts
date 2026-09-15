@@ -9,17 +9,18 @@ vi.mock("next/navigation", () => ({
 
 import { BottomNav, NAV_ITEMS } from "./BottomNav";
 
-describe("Bottom navigation — pure navigation, exactly four destinations", () => {
+describe("Bottom navigation — pure navigation, exactly five destinations", () => {
   it("points the finance destination at /finance", () => {
     const finance = NAV_ITEMS.find((item) => item.label === "การเงิน");
     expect(finance?.href).toBe("/finance");
   });
 
-  it("has exactly four items, and never Wallet/Category/Tasks/Shopping as competing destinations", () => {
-    expect(NAV_ITEMS).toHaveLength(4);
+  it("uses the requested Home, Finance, Plan, Pets, Household order", () => {
+    expect(NAV_ITEMS).toHaveLength(5);
     const hrefs = NAV_ITEMS.map((item) => item.href);
-    expect(hrefs).toEqual(["/finance", "/pets", "/calendar", "/household"]);
-    expect(hrefs).not.toContain("/wallets");
+    const labels = NAV_ITEMS.map((item) => item.label);
+    expect(hrefs).toEqual(["/wallets", "/finance", "/calendar", "/pets", "/household"]);
+    expect(labels).toEqual(["หน้าหลัก", "การเงิน", "แพลน", "สัตว์เลี้ยง", "ครอบครัว"]);
     expect(hrefs).not.toContain("/categories");
     expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/shopping");
@@ -29,18 +30,18 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
     expect(BottomNav.length).toBe(0);
   });
 
-  it("always renders exactly four real <a> destinations, on every module alike", () => {
-    for (const pathname of ["/finance", "/pets", "/calendar", "/household"]) {
+  it("always renders exactly five real <a> destinations, on every module alike", () => {
+    for (const pathname of ["/wallets", "/finance", "/calendar", "/pets", "/household"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
-      expect((html.match(/<a /g) ?? []).length).toBe(4);
+      expect((html.match(/<a /g) ?? []).length).toBe(5);
     }
   });
 
-  it("always uses a plain 4-column grid — no 5-column center-cell layout survives", () => {
+  it("always uses a plain equal 5-column grid — no special center-cell layout", () => {
     mockPathname = "/finance";
     const html = renderToStaticMarkup(createElement(BottomNav));
-    expect(html).toContain("grid-cols-4");
+    expect(html).toContain("grid-cols-5");
     expect(html).not.toContain("grid-cols-[1fr_1fr_4rem_1fr_1fr]");
     expect(html).not.toContain("4rem_1fr_1fr");
   });
@@ -54,6 +55,7 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
   it("keeps a nested route's parent destination active (startsWith, not just exact match)", () => {
     const cases: Array<[string, string]> = [
       ["/finance/reports", "/finance"],
+      ["/wallets/abc/manage", "/wallets"],
       ["/pets/new", "/pets"],
       ["/calendar/2026-01-01", "/calendar"],
       ["/household/members", "/household"],
@@ -67,8 +69,8 @@ describe("Bottom navigation — pure navigation, exactly four destinations", () 
     }
   });
 
-  it("keeps การเงิน active on Finance-owned secondary route families, not just /finance itself", () => {
-    for (const pathname of ["/wallets", "/wallets/abc/manage", "/categories", "/categories/xyz"]) {
+  it("keeps การเงิน active on its secondary route families", () => {
+    for (const pathname of ["/categories", "/categories/xyz"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
       const activeAnchor = html.match(/<a[^>]*href="\/finance"[^>]*>/)?.[0] ?? "";

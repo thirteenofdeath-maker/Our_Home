@@ -54,7 +54,6 @@ export default async function WalletsPage({
     <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pb-8 pt-2">
       <PageHeader
         title="กระเป๋าเงิน"
-        backHref="/finance"
         rightAction={
           <FormSheetButton
             ariaLabel="เพิ่มกระเป๋าเงิน"

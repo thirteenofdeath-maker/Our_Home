@@ -11,21 +11,22 @@ import { appSectionForPath, type AppSection } from "@/lib/navigation/app-section
  * Pure navigation, nothing else — the "+" quick-add action lives in a
  * separate FloatingActionButton layer now (see FloatingActionButton.tsx
  * and each module's own FAB usage), never a cell inside this grid. Exactly
- * these four real destinations, always rendered as links, on every module
+ * these five real destinations, always rendered as links, on every module
  * (including deep/nested routes within one, AND every Finance-owned
  * secondary route family like /wallets or /categories — see AppShell.tsx
  * and app-section.ts, the shared source of truth both read).
  */
 export const NAV_ITEMS = [
+  { href: "/wallets", label: "หน้าหลัก", icon: "home", section: "home" },
   { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
+  { href: "/calendar", label: "แพลน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
-  { href: "/calendar", label: "ปฏิทิน", icon: "calendar", section: "calendar" },
   { href: "/household", label: "ครอบครัว", icon: "household", section: "household" },
 ] as const satisfies ReadonlyArray<{ href: string; label: string; icon: AppIconName; section: AppSection }>;
 
 /**
  * One floating-capsule architecture for every module — fixed above the
- * safe area, inset from the screen edges, rounded, elevated shadow, four
+ * safe area, inset from the screen edges, rounded, elevated shadow, five
  * equal columns. Only the color tokens differ: Finance routes get the
  * Finance V2 blue-gray accent (via `.finance-scope`), every other module
  * keeps the app's default primary accent — never a structural difference
@@ -59,7 +60,7 @@ export function BottomNav() {
     <nav className={cn("fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-10", isFinance && "finance-scope")}>
       <ul
         className={cn(
-          "mx-auto grid max-w-xl grid-cols-4 items-center gap-1 rounded-[2rem] px-2 py-1 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 rounded-[2rem] px-2 py-1 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

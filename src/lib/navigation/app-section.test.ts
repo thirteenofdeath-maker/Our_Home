@@ -3,11 +3,12 @@ import { describe, expect, it } from "vitest";
 import { appSectionForPath } from "./app-section";
 
 describe("appSectionForPath", () => {
-  it("classifies every Finance-owned route family, including secondary ones beyond /finance itself", () => {
+  it("classifies the wallet family as Home and the remaining Finance-owned routes as Finance", () => {
+    expect(appSectionForPath("/")).toBe("home");
+    expect(appSectionForPath("/wallets")).toBe("home");
+    expect(appSectionForPath("/wallets/abc/manage")).toBe("home");
     expect(appSectionForPath("/finance")).toBe("finance");
     expect(appSectionForPath("/finance/transactions/abc")).toBe("finance");
-    expect(appSectionForPath("/wallets")).toBe("finance");
-    expect(appSectionForPath("/wallets/abc/manage")).toBe("finance");
     expect(appSectionForPath("/categories")).toBe("finance");
   });
 
@@ -29,7 +30,6 @@ describe("appSectionForPath", () => {
   });
 
   it("falls back to neutral for anything unrecognized, never throwing", () => {
-    expect(appSectionForPath("/")).toBe("neutral");
     expect(appSectionForPath("/something-unknown")).toBe("neutral");
   });
 
