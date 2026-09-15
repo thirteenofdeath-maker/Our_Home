@@ -10,9 +10,13 @@ import type { PetCareRecordWithDocument } from "../types";
 export function PetCareTimeline({
   petId,
   records,
+  userId,
+  canManageAll,
 }: {
   petId: string;
   records: PetCareRecordWithDocument[];
+  userId: string;
+  canManageAll: boolean;
 }) {
   if (!records.length) {
     return <Card className="rounded-[1.25rem] bg-finance-surface-strong"><p className="text-sm text-finance-muted">ยังไม่มีประวัติสุขภาพหรือตารางดูแล</p></Card>;
@@ -39,11 +43,13 @@ export function PetCareTimeline({
           <div className="mt-3 flex flex-wrap gap-2">
             {record.transaction_id ? <Link className={buttonClassName("secondary", "md", "w-auto")} href={`/finance/transactions/${record.transaction_id}`}>ดูรายการการเงิน</Link> : null}
             {record.documentUrl ? <a className={buttonClassName("secondary", "md", "w-auto")} href={record.documentUrl} target="_blank" rel="noreferrer">เปิดเอกสาร</a> : null}
-            <form action={archivePetCareRecordAction}>
-              <input type="hidden" name="recordId" value={record.id} />
-              <input type="hidden" name="petId" value={petId} />
-              <button type="submit" className={buttonClassName("ghost", "md", "w-auto text-finance-muted")}>เก็บเข้าคลัง</button>
-            </form>
+            {canManageAll || record.created_by === userId ? (
+              <form action={archivePetCareRecordAction}>
+                <input type="hidden" name="recordId" value={record.id} />
+                <input type="hidden" name="petId" value={petId} />
+                <button type="submit" className={buttonClassName("ghost", "md", "w-auto text-finance-muted")}>เก็บเข้าคลัง</button>
+              </form>
+            ) : null}
           </div>
         </Card>
       ))}
