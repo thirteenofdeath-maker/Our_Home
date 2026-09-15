@@ -137,7 +137,7 @@ export function CreditCardTransactionForm({
             onClick={() => setPicker("card")}
           />
         ) : (
-          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 [&>*]:min-w-0">
             {mode === "PAYMENT" ? (
               <RouteButton
                 label="จาก"
@@ -190,7 +190,7 @@ export function CreditCardTransactionForm({
           <p>{info}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
             วันที่
             <Input

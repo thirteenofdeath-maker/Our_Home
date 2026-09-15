@@ -2,7 +2,12 @@
 
 import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import {
+  Field,
+  Input,
+  Select,
+  TwoColumnFieldGrid,
+} from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
@@ -71,7 +76,7 @@ export function BillForm({
       <Field label="ชื่อบิล" htmlFor="name">
         <Input id="name" name="name" defaultValue={bill?.name ?? ""} required />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <TwoColumnFieldGrid>
         <Field label="ยอดคาดไว้" htmlFor="amount">
           <Input
             id="amount"
@@ -90,7 +95,7 @@ export function BillForm({
             required
           />
         </Field>
-      </div>
+      </TwoColumnFieldGrid>
       <Field label="หมวดหมู่รายจ่าย" htmlFor="categoryId">
         <CategoryPicker
           key={scope}
@@ -138,7 +143,7 @@ export function BillForm({
           required
         />
       </Field>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <TwoColumnFieldGrid>
         <Field label="วันเริ่ม/ครบกำหนด" htmlFor="startDate">
           <Input
             id="startDate"
@@ -156,7 +161,7 @@ export function BillForm({
             defaultValue={bill?.endDate ?? ""}
           />
         </Field>
-      </div>
+      </TwoColumnFieldGrid>
       <Field label="ชื่อในรายการ" htmlFor="title">
         <Input id="title" name="title" defaultValue={bill?.title ?? ""} />
       </Field>

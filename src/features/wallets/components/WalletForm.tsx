@@ -2,7 +2,12 @@
 
 import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import {
+  Field,
+  Input,
+  Select,
+  TwoColumnFieldGrid,
+} from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
@@ -97,7 +102,7 @@ export function WalletForm({
 
       {walletType === "CREDIT_CARD" ? (
         <div className="flex flex-col gap-3 rounded-[1.15rem] bg-finance-primary-soft/60 p-3">
-          <div className="grid grid-cols-2 gap-3">
+          <TwoColumnFieldGrid>
             <Field label="วงเงินทั้งหมด" htmlFor="creditLimit">
               <Input
                 id="creditLimit"
@@ -118,11 +123,11 @@ export function WalletForm({
                 required
               />
             </Field>
-          </div>
+          </TwoColumnFieldGrid>
           <p className="text-xs text-finance-muted">
             ระบบจะคำนวณยอดใช้ไปเริ่มต้นจากวงเงินทั้งหมดลบวงเงินคงเหลือ
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <TwoColumnFieldGrid>
             <Field label="วันตัดรอบ" htmlFor="statementClosingDay">
               <Input
                 id="statementClosingDay"
@@ -145,7 +150,7 @@ export function WalletForm({
                 required
               />
             </Field>
-          </div>
+          </TwoColumnFieldGrid>
         </div>
       ) : (
         <Field label="ยอดเงินเริ่มต้น (ถ้ามี)" htmlFor="initialBalance">
