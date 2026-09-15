@@ -9,7 +9,7 @@ const form = read(
 );
 const flow = read("src/features/finance/components/FinanceCreateFlow.tsx");
 const migration = read(
-  "supabase/migrations/0071_mixed_wallet_credit_card_transactions.sql",
+  "supabase/migrations/20260914223116_mixed_wallet_credit_card_transactions.sql",
 );
 
 describe("credit-card quick add", () => {

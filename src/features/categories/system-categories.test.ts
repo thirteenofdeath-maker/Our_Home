@@ -18,9 +18,17 @@ function category(overrides: Partial<CategoryNode>): CategoryNode {
 }
 
 describe("0050 default system category pack", () => {
-  it("is the sole migration after the live 0049 head", () => {
-    const later = readdirSync(resolve(process.cwd(), "supabase/migrations")).filter((name) => /^005\d_/.test(name));
-    expect(later).toEqual(["0050_default_system_categories.sql"]);
+  it("keeps the system category pack immediately after the 0049 finance hub migration", () => {
+    const migrations = readdirSync(
+      resolve(process.cwd(), "supabase/migrations"),
+    )
+      .filter((name) => name.endsWith(".sql"))
+      .sort();
+    const index = migrations.indexOf("0050_default_system_categories.sql");
+    expect(migrations[index - 1]).toBe("0049_finance_hub_final.sql");
+    expect(migrations[index + 1]).toBe(
+      "0051_household_expense_attribution.sql",
+    );
   });
 
   it("models system identity without fake ownership and protects user identity", () => {
