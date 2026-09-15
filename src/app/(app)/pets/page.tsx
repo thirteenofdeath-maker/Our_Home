@@ -1,23 +1,107 @@
+import Link from "next/link";
+
+import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { canInviteRole } from "@/features/household/domain/member";
-import { listPets } from "@/features/pets/api";
+import { listPetCareRecords, listPets } from "@/features/pets/api";
 import { AddPetFab } from "@/features/pets/components/AddPetFab";
-import { PetCard } from "@/features/pets/components/PetCard";
+import { PetCard, SEX_LABEL, SPECIES_LABEL } from "@/features/pets/components/PetCard";
+import { PetPhoto } from "@/features/pets/components/PetPhoto";
+import { petCareDateLabel } from "@/features/pets/domain/care-record";
+import { ageFromBirthday } from "@/features/pets/domain/pet";
 import { requireUser } from "@/lib/auth/require-user";
 
 export default async function PetsPage() {
   const { supabase, user } = await requireUser();
   const household = await getMyPrimaryHousehold(supabase, user.id);
   if (!household) return <Card>สร้างครอบครัวก่อนเพิ่มสัตว์เลี้ยง</Card>;
-  const [active, archived] = await Promise.all([listPets(supabase, household.id), listPets(supabase, household.id, true)]);
-  // Reuses the exact existing permission gate (canInviteRole) that the
-  // page's own creation affordance already used — the FAB never bypasses
-  // household/member permission rules, it just relocates the same check.
+
+  const [active, archived] = await Promise.all([
+    listPets(supabase, household.id),
+    listPets(supabase, household.id, true),
+  ]);
+  const recordsByPet = new Map(
+    await Promise.all(active.map(async (pet) => [pet.id, await listPetCareRecords(supabase, pet.id)] as const)),
+  );
   const canManage = canInviteRole(household.myRole, "member");
-  return <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3"><header><p className="text-sm text-finance-muted">{household.name}</p><h1 className="text-xl font-semibold text-finance-text">สัตว์เลี้ยง</h1></header>
-    {canManage ? <AddPetFab /> : null}
-    <section className="flex flex-col gap-3">{active.length ? active.map((pet)=><PetCard key={pet.id} pet={pet}/>) : <Card className="rounded-[1.25rem] bg-finance-surface-strong"><p className="text-sm text-finance-muted">ยังไม่มีสัตว์เลี้ยง</p></Card>}</section>
-    {archived.length ? <section className="flex flex-col gap-3"><h2 className="font-semibold">เก็บเข้าคลัง</h2>{archived.map((pet)=><PetCard key={pet.id} pet={pet}/>)}</section> : null}
-  </div>;
+  const featured = active[0] ?? null;
+  const records = featured ? recordsByPet.get(featured.id) ?? [] : [];
+  const age = featured ? ageFromBirthday(featured.birthday) : null;
+  const latestWeight = records.find((record) => record.record_type === "WEIGHT");
+  const latestHealth = records.find((record) => record.record_type === "HEALTH");
+  const latestVaccine = records.find((record) => record.record_type === "VACCINE");
+  const nextCare = records
+    .filter((record) => record.scheduled_at && new Date(record.scheduled_at) >= new Date())
+    .toSorted((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
+
+  return (
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+      <header>
+        <p className="text-sm text-finance-muted">{household.name}</p>
+        <h1 className="text-xl font-semibold text-finance-text">สัตว์เลี้ยงของเรา</h1>
+        <p className="mt-1 text-sm text-finance-muted">ดูแลสุขภาพและตารางสำคัญในที่เดียว</p>
+      </header>
+      {canManage ? <AddPetFab /> : null}
+
+      {featured ? (
+        <>
+          <Link href={`/pets/${featured.id}`} className="block focus-visible:outline-2 focus-visible:outline-finance-primary">
+            <section className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#f7e8dc,#f8f5ec_55%,#e4efdf)] p-5 shadow-card">
+              <div className="absolute -right-10 -top-12 size-36 rounded-full bg-white/40" />
+              <div className="relative flex items-center gap-4">
+                <PetPhoto name={featured.name} url={featured.photoUrl} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-finance-primary-strong">โปรไฟล์สัตว์เลี้ยง</p>
+                  <h2 className="truncate text-2xl font-semibold text-finance-text">{featured.name}</h2>
+                  <p className="text-sm text-finance-muted">
+                    {SPECIES_LABEL[featured.species]}{featured.breed ? ` · ${featured.breed}` : ""}{featured.sex ? ` · ${SEX_LABEL[featured.sex]}` : ""}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-finance-text">{age === null ? "ยังไม่ระบุวันเกิด" : `อายุ ${age} ปี`}</p>
+                </div>
+                <AppIcon name="chevron" className="size-5 shrink-0 text-finance-muted" />
+              </div>
+            </section>
+          </Link>
+
+          <section className="grid grid-cols-2 gap-3" aria-label={`สรุปการดูแล ${featured.name}`}>
+            <PetSummaryCard icon="info" title="สุขภาพโดยรวม" value={latestHealth?.title ?? "ยังไม่มีบันทึก"} detail={latestHealth ? petCareDateLabel(latestHealth.recorded_at) : "เพิ่มบันทึกสุขภาพ"} tone="green" />
+            <PetSummaryCard icon="plus" title="วัคซีน" value={latestVaccine?.title ?? "ยังไม่มีข้อมูล"} detail={latestVaccine ? petCareDateLabel(latestVaccine.recorded_at) : "เพิ่มประวัติวัคซีน"} tone="blue" />
+            <PetSummaryCard icon="calendar" title="นัดถัดไป" value={nextCare?.title ?? "ยังไม่มีนัด"} detail={nextCare?.scheduled_at ? petCareDateLabel(nextCare.scheduled_at) : "วางแผนการดูแล"} tone="pink" />
+            <PetSummaryCard icon="finance" title="น้ำหนักล่าสุด" value={latestWeight?.value ? `${latestWeight.value} ${latestWeight.unit ?? ""}` : "ยังไม่มีข้อมูล"} detail={latestWeight ? petCareDateLabel(latestWeight.recorded_at) : "เริ่มติดตามน้ำหนัก"} tone="yellow" />
+          </section>
+        </>
+      ) : (
+        <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
+          <p className="font-medium text-finance-text">ยังไม่มีสัตว์เลี้ยง</p>
+          <p className="mt-1 text-sm text-finance-muted">เพิ่มสัตว์เลี้ยงเพื่อเริ่มบันทึกสุขภาพและการดูแล</p>
+        </Card>
+      )}
+
+      {active.length > 1 ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-semibold text-finance-text">สัตว์เลี้ยงตัวอื่น</h2>
+          {active.slice(1).map((pet) => <PetCard key={pet.id} pet={pet} />)}
+        </section>
+      ) : null}
+      {archived.length ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-semibold text-finance-text">เก็บเข้าคลัง</h2>
+          {archived.map((pet) => <PetCard key={pet.id} pet={pet} />)}
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function PetSummaryCard({ icon, title, value, detail, tone }: { icon: AppIconName; title: string; value: string; detail: string; tone: "green" | "blue" | "pink" | "yellow" }) {
+  const toneClass = tone === "green" ? "bg-[#e9f3df] text-[#5f8158]" : tone === "blue" ? "bg-[#e4f0f8] text-[#5685a1]" : tone === "pink" ? "bg-[#f8e5df] text-[#a8685c]" : "bg-[#f8efcf] text-[#9a7b32]";
+  return (
+    <Card className="min-w-0 rounded-[1.4rem] bg-finance-surface-strong p-3">
+      <span className={`flex size-9 items-center justify-center rounded-full ${toneClass}`}><AppIcon name={icon} className="size-4" /></span>
+      <p className="mt-3 text-xs text-finance-muted">{title}</p>
+      <p className="mt-0.5 line-clamp-2 font-semibold text-finance-text">{value}</p>
+      <p className="mt-1 truncate text-[11px] text-finance-muted">{detail}</p>
+    </Card>
+  );
 }

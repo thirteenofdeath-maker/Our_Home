@@ -53,6 +53,17 @@ function thaiToday(date: string) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
+function weekDates(date: string) {
+  const current = new Date(`${date}T00:00:00Z`);
+  const start = new Date(current);
+  start.setUTCDate(current.getUTCDate() - current.getUTCDay());
+  return new Array<string>(7).fill("").map((_, index) => {
+    const day = new Date(start);
+    day.setUTCDate(start.getUTCDate() + index);
+    return day.toISOString().slice(0, 10);
+  });
+}
+
 export default async function HomePage() {
   const { supabase, user } = await requireUser();
 
@@ -116,6 +127,7 @@ export default async function HomePage() {
     .slice(0, 3);
   const displayName = profile?.display_name || user.email?.split("@")[0] || "คุณ";
   const todayItemCount = todayEvents.length + dueTasks.length + upcomingReminders.length;
+  const currentWeek = weekDates(today);
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
@@ -135,8 +147,33 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch">
-        <DashboardCard title="กิจกรรมวันนี้" href="/calendar" linkLabel="ดูทั้งหมด" icon="calendar" className="md:row-span-2">
+      <section className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card" aria-label="ปฏิทินครอบครัวสัปดาห์นี้">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-finance-muted">สัปดาห์นี้</p>
+            <h2 className="font-semibold text-finance-text">ปฏิทินครอบครัว</h2>
+          </div>
+          <Link href="/calendar" className="text-sm font-medium text-finance-primary-strong">ดูทั้งหมด</Link>
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {currentWeek.map((date) => {
+            const count = events.filter((event) => eventDate(event) === date).length
+              + tasks.filter((task) => !task.is_completed && task.due_date === date).length
+              + reminders.filter((reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) === date).length;
+            const isToday = date === today;
+            return (
+              <Link key={date} href={`/calendar?date=${date}`} className={`flex min-w-0 flex-col items-center rounded-[0.9rem] px-1 py-2 ${isToday ? "bg-finance-primary text-white" : "bg-finance-primary-soft/35 text-finance-text"}`}>
+                <span className={`text-[10px] ${isToday ? "text-white/80" : "text-finance-muted"}`}>{new Intl.DateTimeFormat("th-TH", { weekday: "narrow", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))}</span>
+                <span className="mt-0.5 text-sm font-semibold tabular-nums">{Number(date.slice(-2))}</span>
+                <span className={`mt-1 size-1.5 rounded-full ${count ? (isToday ? "bg-white" : "bg-finance-primary") : "bg-transparent"}`} />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="grid min-w-0 grid-cols-2 gap-3">
+        <DashboardCard title="งานวันนี้" href="/calendar" linkLabel="ดูทั้งหมด" icon="calendar" className="col-span-2">
           <p className="mb-3 text-sm text-finance-muted">{todayItemCount ? `${todayItemCount} รายการที่ต้องดู` : "วันนี้ยังไม่มีรายการค้าง"}</p>
           <div className="flex min-w-0 flex-col gap-2">
             {todayEvents.slice(0, 3).map((event) => <TodayItem key={`event-${event.id}`} href={`/calendar/${event.id}`} marker="นัดหมาย" title={event.title} detail={event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!)} />)}
@@ -146,7 +183,7 @@ export default async function HomePage() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="การเงินของบ้าน" href="/finance" linkLabel="ดูรายละเอียด" icon="wallet">
+        <DashboardCard title="การเงิน" href="/finance" linkLabel="ดู" icon="wallet">
           <div className="space-y-2">
             {finance.monthTotals.length ? finance.monthTotals.map((total) => (
               <div key={total.currency} className="rounded-[1rem] bg-finance-primary-soft/60 p-3">
@@ -159,7 +196,7 @@ export default async function HomePage() {
           </div>
         </DashboardCard>
 
-        <DashboardCard title="การดูแลสัตว์เลี้ยง" href="/pets" linkLabel="ดูทั้งหมด" icon="pets">
+        <DashboardCard title="สัตว์เลี้ยง" href="/pets" linkLabel="ดู" icon="pets">
           <p className="text-sm text-finance-muted">{pets.length ? `${pets.length} ตัว · ${pets.map((pet) => pet.name).join(" · ")}` : "ยังไม่มีสัตว์เลี้ยง"}</p>
           <div className="mt-3 flex min-w-0 flex-col gap-2">
             {petCare.slice(0, 2).map((record) => <TodayItem key={record.id} href={`/pets/${record.pet_id}`} marker={PET_CARE_RECORD_LABEL[record.record_type]} title={`${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`} detail={petCareDateLabel(record.scheduled_at!)} />)}

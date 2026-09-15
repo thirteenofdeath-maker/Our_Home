@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
 
 export interface FinanceTrendPoint {
@@ -7,17 +6,28 @@ export interface FinanceTrendPoint {
   expense: string;
 }
 
-/**
- * One currency's trend + this-month totals. The caller renders one of
- * these per currency present in `getFinanceSummary`'s `monthTotals` —
- * amounts across different currencies are never combined into a single
- * card (see docs/DOMAIN_RULES.md). The bar heights below are a ratio
- * computed with `Number()` purely to scale pixels — never rendered as a
- * money figure; every displayed amount still comes from its original
- * decimal string via `formatCurrency`, and `net` is computed by the
- * caller with exact integer-cent arithmetic (`subtractMoney`), not
- * floating point.
- */
+const CHART_WIDTH = 320;
+const CHART_TOP = 12;
+const CHART_BOTTOM = 112;
+
+export function buildSeriesPath(values: number[], maxValue: number) {
+  if (!values.length) return "";
+  const denominator = Math.max(maxValue, 1);
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? CHART_WIDTH / 2 : (index / (values.length - 1)) * CHART_WIDTH;
+      const y = CHART_BOTTOM - (Math.max(value, 0) / denominator) * (CHART_BOTTOM - CHART_TOP);
+      return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
+
+function monthShortLabel(month: string) {
+  return new Intl.DateTimeFormat("th-TH", { month: "short", timeZone: "UTC" }).format(
+    new Date(`${month}-01T00:00:00Z`),
+  );
+}
+
 export function FinanceTrendCard({
   currency,
   showCurrencyLabel,
@@ -33,69 +43,79 @@ export function FinanceTrendCard({
   expense: string;
   net: string;
 }) {
-  const maxValue = Math.max(1, ...trend.flatMap((point) => [Number(point.income), Number(point.expense)]));
-  const lastMonth = trend.length > 0 ? trend[trend.length - 1]!.month : null;
+  const incomeValues = trend.map((point) => Number(point.income));
+  const expenseValues = trend.map((point) => Number(point.expense));
+  const maxValue = Math.max(1, ...incomeValues, ...expenseValues);
+  const incomePath = buildSeriesPath(incomeValues, maxValue);
+  const expensePath = buildSeriesPath(expenseValues, maxValue);
+  const fillPath = incomePath
+    ? `${incomePath} L${CHART_WIDTH} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
+    : "";
+  const gradientId = `income-area-${currency.replace(/[^a-z0-9]/gi, "-")}`;
 
   return (
-    <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-[0_1px_2px_rgb(68_80_92_/_0.04),0_8px_20px_rgb(68_80_92_/_0.06)]">
-      <p className="text-sm font-medium text-finance-muted">แนวโน้ม{showCurrencyLabel ? ` · ${currency}` : ""}</p>
+    <div className="overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-finance-text">
+            ภาพรวมรายรับ–รายจ่าย{showCurrencyLabel ? ` · ${currency}` : ""}
+          </h3>
+          <p className="mt-0.5 text-xs text-finance-muted">ย้อนหลัง {trend.length || 6} เดือน</p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-1 text-[11px] text-finance-muted sm:flex-row sm:gap-3">
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-finance-income" />รายรับ</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-finance-expense" />รายจ่าย</span>
+        </div>
+      </div>
 
       {trend.length > 0 ? (
-        // The `h-40` here is the ONLY source of truth for the chart's
-        // pixel height. Every percentage-height bar below needs its
-        // DIRECT parent to have a definite (non-auto) height for that
-        // percentage to resolve to anything at all — a bar nested
-        // straight inside a plain `flex-1` column (whose own height is
-        // `auto`) resolves to computed height 0 per the CSS spec, which
-        // is exactly what made this chart render as a tall, visually
-        // empty block on real devices despite correct underlying data.
-        // `h-full` on the column makes it inherit this `h-40` (a real
-        // pixel value) as ITS OWN definite height, which is what the
-        // bars actually measure their percentage against.
-        <div className="mt-3 flex h-40 gap-1.5" aria-hidden="true">
-          {trend.map((point) => {
-            const isCurrent = point.month === lastMonth;
-            return (
-              // Expense bar first (left), income bar second (right) within
-              // each column — this must match the left-to-right order of
-              // the summary row below (รายจ่ายรวม, รายรับรวม, คงเหลือ), or
-              // the chart visually reads as contradicting its own numbers
-              // (see FinanceTrendCard.test.ts "series ordering" guard).
-              <div key={point.month} className="flex h-full flex-1 items-end gap-0.5">
-                <div
-                  data-series="expense"
-                  className={cn("w-full rounded-t-sm", isCurrent ? "bg-finance-expense" : "bg-finance-expense/40")}
-                  style={{ height: `${Math.max((Number(point.expense) / maxValue) * 100, 2)}%` }}
-                />
-                <div
-                  data-series="income"
-                  className={cn("w-full rounded-t-sm", isCurrent ? "bg-finance-income" : "bg-finance-income/40")}
-                  style={{ height: `${Math.max((Number(point.income) / maxValue) * 100, 2)}%` }}
-                />
-              </div>
-            );
-          })}
+        <div className="mt-4 min-w-0">
+          <svg
+            viewBox={`0 0 ${CHART_WIDTH} 132`}
+            role="img"
+            aria-label={`กราฟรายรับและรายจ่าย ${currency} ย้อนหลัง ${trend.length} เดือน`}
+            className="h-36 w-full overflow-visible"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--finance-income)" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="var(--finance-income)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {[CHART_TOP, 62, CHART_BOTTOM].map((y) => (
+              <line key={y} x1="0" y1={y} x2={CHART_WIDTH} y2={y} stroke="currentColor" className="text-finance-primary-soft" strokeDasharray="4 5" />
+            ))}
+            <path d={fillPath} fill={`url(#${gradientId})`} className="text-finance-income" />
+            <path data-series="income" d={incomePath} fill="none" stroke="currentColor" className="text-finance-income" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+            <path data-series="expense" d={expensePath} fill="none" stroke="currentColor" className="text-finance-expense" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className="mt-1 flex justify-between text-[10px] text-finance-muted">
+            {trend.map((point, index) => (
+              <span key={point.month} className={index > 0 && index < trend.length - 1 ? "hidden sm:inline" : ""}>{monthShortLabel(point.month)}</span>
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="mt-3 flex h-16 items-center justify-center rounded-[1rem] bg-finance-primary-soft">
-          <p className="text-xs text-finance-muted">ยังไม่มีข้อมูลแนวโน้ม</p>
+        <div className="mt-4 flex h-36 items-center justify-center rounded-[1rem] bg-finance-primary-soft/55">
+          <p className="text-xs text-finance-muted">ยังไม่มีข้อมูลรายรับ–รายจ่าย</p>
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div>
-          <p className="text-xs text-finance-muted">รายจ่ายรวม</p>
-          <p className="truncate font-semibold tabular-nums text-finance-expense">{formatCurrency(expense, currency)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-finance-muted">รายรับรวม</p>
-          <p className="truncate font-semibold tabular-nums text-finance-income">{formatCurrency(income, currency)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-finance-muted">คงเหลือ</p>
-          <p className={`truncate font-semibold tabular-nums ${net.startsWith("-") ? "text-finance-expense" : "text-finance-text"}`}>{formatCurrency(net, currency)}</p>
-        </div>
+      <div className="mt-4 grid grid-cols-3 divide-x divide-finance-primary/15 rounded-[1rem] bg-finance-primary-soft/45 py-3 text-center">
+        <FinanceTotal label="รายรับรวม" value={formatCurrency(income, currency)} tone="income" />
+        <FinanceTotal label="รายจ่ายรวม" value={formatCurrency(expense, currency)} tone="expense" />
+        <FinanceTotal label="คงเหลือ" value={formatCurrency(net, currency)} tone={net.startsWith("-") ? "expense" : "default"} />
       </div>
+    </div>
+  );
+}
+
+function FinanceTotal({ label, value, tone }: { label: string; value: string; tone: "income" | "expense" | "default" }) {
+  return (
+    <div className="min-w-0 px-1.5">
+      <p className="truncate text-[11px] text-finance-muted">{label}</p>
+      <p className={`mt-1 truncate text-sm font-semibold tabular-nums ${tone === "income" ? "text-finance-income" : tone === "expense" ? "text-finance-expense" : "text-finance-text"}`}>{value}</p>
     </div>
   );
 }

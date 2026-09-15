@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 
 import {
@@ -85,18 +86,19 @@ export function MonthCalendar({
 
   return (
     <>
-      <section className="rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card sm:p-4">
+      <section className="overflow-hidden rounded-[1.65rem] bg-finance-surface-strong p-4 shadow-card">
         <nav
           aria-label="เปลี่ยนเดือน"
-          className="flex items-center justify-between"
+          className="flex items-center justify-between gap-2"
         >
           <Link
-            className="flex min-h-11 items-center px-2 text-sm font-medium text-finance-primary-strong"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong"
             href={`/calendar?month=${shiftMonth(month, -1)}`}
+            aria-label="เดือนก่อนหน้า"
           >
-            เดือนก่อน
+            <AppIcon name="chevron" className="size-4 rotate-180" />
           </Link>
-          <h2 className="font-semibold text-finance-text">
+          <h2 className="min-w-0 truncate text-lg font-semibold text-finance-text">
             {new Intl.DateTimeFormat("th-TH", {
               month: "long",
               year: "numeric",
@@ -104,15 +106,16 @@ export function MonthCalendar({
             }).format(new Date(`${month}-01T00:00:00Z`))}
           </h2>
           <Link
-            className="flex min-h-11 items-center px-2 text-sm font-medium text-finance-primary-strong"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong"
             href={`/calendar?month=${shiftMonth(month, 1)}`}
+            aria-label="เดือนถัดไป"
           >
-            เดือนถัดไป
+            <AppIcon name="chevron" className="size-4" />
           </Link>
         </nav>
-        <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs text-finance-muted">
+        <div className="mt-4 grid grid-cols-7 gap-y-2 text-center text-xs text-finance-muted">
           {["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].map((day) => (
-            <div key={day}>{day}</div>
+            <div key={day} className="pb-1 font-medium">{day}</div>
           ))}
           {monthDays(month).map((day) => {
             const dayEvents = byDate.get(day.date) ?? [];
@@ -129,42 +132,42 @@ export function MonthCalendar({
                 aria-current={isToday ? "date" : undefined}
                 aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${petCareCount ? ` ดูแลสัตว์เลี้ยง ${petCareCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
                 data-selected={isSelected || undefined}
-                className={`min-h-14 rounded-[0.9rem] p-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${isSelected ? "bg-finance-primary text-white shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-35"}`}
+                className={`mx-auto flex size-10 flex-col items-center justify-center rounded-full text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${isSelected ? "bg-finance-primary text-white shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-30"}`}
               >
-                <span className="tabular-nums">
+                <span className="text-sm tabular-nums">
                   {Number(day.date.slice(-2))}
                 </span>
-                <span className="mt-1 flex gap-0.5">
-                  {dayEvents.slice(0, 3).map((event) => (
+                <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
+                  {dayEvents.slice(0, 1).map((event) => (
                     <span
                       key={event.id}
-                      className="size-1.5 rounded-full"
+                      className="size-1 rounded-full"
                       style={{ backgroundColor: event.creatorColor }}
                       aria-hidden="true"
                     />
                   ))}
+                  {taskCount ? <span className="size-1 rounded-full bg-finance-income" /> : null}
+                  {reminderCount ? <span className="size-1 rounded-full bg-finance-warning" /> : null}
+                  {petCareCount ? <span className="size-1 rounded-full bg-finance-expense" /> : null}
+                  {financeCount ? <span className="size-1 rounded-full bg-finance-transfer" /> : null}
                 </span>
-                {taskCount ? (
-                  <span className="text-[10px]">✓ {taskCount}</span>
-                ) : null}
-                {financeCount ? (
-                  <span className="text-[10px]">฿ {financeCount}</span>
-                ) : null}
-                {reminderCount ? (
-                  <span className="text-[10px]">◷ {reminderCount}</span>
-                ) : null}
-                {petCareCount ? (
-                  <span className="text-[10px]">♡ {petCareCount}</span>
-                ) : null}
               </Link>
             );
           })}
         </div>
       </section>
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold text-finance-text">
-          กิจกรรมวันที่ {selected}
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-finance-muted">รายการประจำวัน</p>
+            <h2 className="font-semibold text-finance-text">
+              {new Intl.DateTimeFormat("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${selected}T00:00:00Z`))}
+            </h2>
+          </div>
+          <span className="shrink-0 rounded-full bg-finance-primary-soft px-3 py-1 text-xs font-medium text-finance-primary-strong">
+            {selectedEvents.length + selectedFinance.length + selectedTasks.length + selectedReminders.length + selectedPetCare.length} รายการ
+          </span>
+        </div>
         {selectedEvents.length ? (
           selectedEvents.map((event) => (
             <Link key={event.id} href={`/calendar/${event.id}`}>

@@ -143,14 +143,16 @@ export default async function CalendarPage({
         <p className="text-sm text-finance-muted">ทุกแผนในบ้าน ที่เดียว</p>
         <h1 className="text-xl font-semibold text-finance-text">แผนงาน</h1>
       </header>
-      <PlanSummary
-        today={today}
-        eventCount={todayEventCount}
-        taskCount={dueTaskCount}
-        reminderCount={upcomingReminderCount}
-        noteCount={activeNotes.length}
-      />
       <PlanTabs active={view} />
+      {view !== "calendar" ? (
+        <PlanSummary
+          today={today}
+          eventCount={todayEventCount}
+          taskCount={dueTaskCount}
+          reminderCount={upcomingReminderCount}
+          noteCount={activeNotes.length}
+        />
+      ) : null}
 
       {view === "calendar" ? (
         <>

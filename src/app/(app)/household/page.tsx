@@ -60,18 +60,32 @@ export default async function HouseholdPage() {
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <header>
-        <p className="text-sm text-finance-muted">ครอบครัว</p>
-        <h1 className="text-xl font-semibold text-finance-text">{household.name}</h1>
-      </header>
+      <section className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#f3e8d8,#f7f4ea_55%,#e1eee1)] p-5 shadow-card">
+        <div className="absolute -right-12 -top-14 size-40 rounded-full bg-white/40" />
+        <div className="relative">
+          <p className="text-xs font-medium text-finance-primary-strong">บ้านของเรา</p>
+          <h1 className="mt-1 text-2xl font-semibold text-finance-text">{household.name}</h1>
+          <p className="mt-1 text-sm text-finance-muted">พื้นที่ร่วมกันสำหรับทุกเรื่องสำคัญของครอบครัว</p>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <div className="rounded-[1rem] bg-white/70 p-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-finance-primary-strong"><AppIcon name="household" className="size-4" /><span className="text-xs">สมาชิก</span></div>
+              <p className="mt-1 font-semibold text-finance-text">{members.length} คน</p>
+            </div>
+            <div className="rounded-[1rem] bg-white/70 p-3 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-finance-primary-strong"><AppIcon name="pets" className="size-4" /><span className="text-xs">สัตว์เลี้ยง</span></div>
+              <p className="mt-1 font-semibold text-finance-text">{pets.length} ตัว</p>
+            </div>
+          </div>
+        </div>
+      </section>
       <HouseholdOverview members={members} userId={user.id} role={household.myRole} />
       <section className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-[1.4rem] bg-finance-surface-strong p-4 shadow-card">
-          <h2 className="font-semibold text-finance-text">ส่วนตัว</h2>
+          <div className="flex items-center gap-2"><AppIcon name="info" className="size-5 text-finance-primary-strong" /><h2 className="font-semibold text-finance-text">ข้อมูลส่วนตัว</h2></div>
           <p className="mt-1 text-sm text-finance-muted">มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับโน้ต งาน และการเงินส่วนตัว</p>
         </div>
         <div className="rounded-[1.4rem] bg-finance-primary-soft p-4 shadow-card">
-          <h2 className="font-semibold text-finance-text">ครอบครัว</h2>
+          <div className="flex items-center gap-2"><AppIcon name="household" className="size-5 text-finance-primary-strong" /><h2 className="font-semibold text-finance-text">ข้อมูลของบ้าน</h2></div>
           <p className="mt-1 text-sm text-finance-muted">สมาชิกในบ้านเห็นข้อมูลร่วมกันตามบทบาทของตน</p>
         </div>
       </section>
