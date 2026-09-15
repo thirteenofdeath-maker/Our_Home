@@ -10,7 +10,11 @@ const source = readFileSync(
 describe("Today dashboard composition", () => {
   it("is a read-model dashboard rather than a redirect to wallets", () => {
     expect(source).not.toContain('redirect("/wallets")');
-    expect(source).toContain("ภาพรวมของบ้านวันนี้");
+    expect(source).toContain("greetingForBangkok()");
+    expect(source).toContain("กิจกรรมวันนี้");
+    expect(source).toContain("การเงินของบ้าน");
+    expect(source).toContain("การดูแลสัตว์เลี้ยง");
+    expect(source).toContain("<QuickLink");
   });
 
   it("composes source modules without writing duplicate records", () => {
