@@ -9,8 +9,11 @@ export interface CreditCardAccountOption {
   householdId: string | null;
   currency: string;
   creditLimit: string;
+  walletBalance: string;
   liability: string;
+  cardCredit: string;
   availableCredit: string;
+  archived: boolean;
 }
 
 export interface CreditCardEndpoint {

@@ -11,13 +11,14 @@ import type { Pocket, PocketWithBalance } from "./types";
 export async function listPocketsForWallet(
   supabase: SupabaseClient<Database>,
   walletId: string,
+  options: { includeArchived?: boolean } = {},
 ): Promise<Pocket[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("pockets")
     .select("*")
-    .eq("wallet_id", walletId)
-    .eq("is_archived", false)
-    .order("sort_order", { ascending: true });
+    .eq("wallet_id", walletId);
+  if (!options.includeArchived) query = query.eq("is_archived", false);
+  const { data, error } = await query.order("sort_order", { ascending: true });
 
   if (error) logDatabaseErrorInDev("listPocketsForWallet failed", error);
   return data ?? [];
@@ -26,8 +27,9 @@ export async function listPocketsForWallet(
 export async function listPocketsWithBalances(
   supabase: SupabaseClient<Database>,
   walletId: string,
+  options: { includeArchived?: boolean } = {},
 ): Promise<PocketWithBalance[]> {
-  const pockets = await listPocketsForWallet(supabase, walletId);
+  const pockets = await listPocketsForWallet(supabase, walletId, options);
 
   return Promise.all(
     pockets.map(async (pocket) => {

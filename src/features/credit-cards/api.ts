@@ -9,9 +9,10 @@ import type { CreditCardAccountOption } from "./types";
 
 export async function listCreditCardAccounts(
   supabase: SupabaseClient<Database>,
+  options: { includeArchived?: boolean } = {},
 ): Promise<CreditCardAccountOption[]> {
   const { data, error } = await supabase.rpc("get_credit_card_accounts", {
-    p_include_archived: false,
+    p_include_archived: options.includeArchived ?? false,
   });
   if (error) throw error;
   return (data ?? []).map((row) => ({
@@ -23,8 +24,11 @@ export async function listCreditCardAccounts(
     householdId: row.household_id,
     currency: row.currency,
     creditLimit: normalizeDatabaseMoney(row.credit_limit),
+    walletBalance: normalizeDatabaseMoney(row.wallet_balance),
     liability: normalizeDatabaseMoney(row.liability),
+    cardCredit: normalizeDatabaseMoney(row.card_credit),
     availableCredit: normalizeDatabaseMoney(row.available_credit),
+    archived: row.is_archived,
   }));
 }
 
