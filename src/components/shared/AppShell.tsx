@@ -6,8 +6,6 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
-const TOP_LEVEL_ROUTES = new Set(["/pets", "/household"]);
-
 /**
  * The Finance routes with no module-specific creation action of their
  * own (currently net-worth only) — these get the generic
@@ -23,29 +21,22 @@ const FINANCE_GENERIC_FAB_ROUTES = new Set(["/finance/net-worth"]);
 
 export function AppShell({
   children,
-  globalHeader,
   financeQuickAdd,
 }: {
   children: ReactNode;
-  globalHeader: ReactNode;
   financeQuickAdd: ReactNode;
 }) {
   const pathname = usePathname();
-  const isTopLevel = TOP_LEVEL_ROUTES.has(pathname);
   // BottomNav now persists across the ENTIRE authenticated app — every
   // route under (app), at any depth, in any section — with exactly one
   // exception: Onboarding, which has nothing yet to navigate between.
   // `appSectionForPath` is the single shared classifier BottomNav itself
   // also reads (for active-tab/tone), so the two can never disagree about
-  // which routes count as "in the app". The top app header ("Our Home" +
-  // avatar) stays exact-top-level-only, a deliberately separate concern
-  // from BottomNav persistence. Finance and Plan deliberately omit it because
-  // their own overview headers already provide the complete module entry surface.
+  // which routes count as "in the app".
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      {isTopLevel ? globalHeader : null}
       {/* The bottom padding must clear BOTH the floating BottomNav AND,
           on top of it, a bottom-right FAB where one exists — plus the
           real safe-area inset, not a guessed fixed value, so an iPhone's

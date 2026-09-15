@@ -24,7 +24,6 @@ function renderShell(pathname: string): string {
   /* eslint-disable react/no-children-prop */
   return renderToStaticMarkup(
     createElement(AppShell, {
-      globalHeader: createElement("header", null, "hdr"),
       financeQuickAdd: createElement("div", null, "fab"),
       children: createElement("p", null, "content"),
     }),
@@ -33,14 +32,9 @@ function renderShell(pathname: string): string {
 }
 
 describe("AppShell visibility", () => {
-  it("omits the redundant top header on Finance and Plan while keeping it on the remaining top-level roots", () => {
-    expect(source).toMatch(
-      /new Set\(\[\s*"\/pets",\s*"\/household",?\s*\]\)/,
-    );
-    expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/finance"/);
-    expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/calendar"/);
-    expect(source).toContain("TOP_LEVEL_ROUTES.has(pathname)");
-    expect(source).toContain("isTopLevel ? globalHeader : null");
+  it("does not render or accept the removed global Our Home/profile header", () => {
+    expect(source).not.toContain("TOP_LEVEL_ROUTES");
+    expect(source).not.toContain("globalHeader");
   });
 
   it("persists BottomNav across the entire authenticated app (every section, any depth) via the shared appSectionForPath classifier — not a locally-duplicated prefix list", () => {
