@@ -2,13 +2,7 @@
 
 import { useActionState, useState } from "react";
 
-import {
-  Field,
-  Input,
-  Select,
-  Textarea,
-  TwoColumnFieldGrid,
-} from "@/components/ui/Field";
+import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
 import { createPlanTaskAction, updatePlanTaskAction } from "../actions";
@@ -82,7 +76,7 @@ export function TaskForm({
           </Select>
         )}
       </Field>
-      <TwoColumnFieldGrid>
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
         <Field label="วันที่ครบกำหนด" htmlFor="plan-task-date">
           <Input
             id="plan-task-date"
@@ -99,7 +93,7 @@ export function TaskForm({
             defaultValue={task?.due_time?.slice(0, 5) ?? ""}
           />
         </Field>
-      </TwoColumnFieldGrid>
+      </div>
       <Field label="ความสำคัญ" htmlFor="plan-task-priority">
         <Select
           id="plan-task-priority"

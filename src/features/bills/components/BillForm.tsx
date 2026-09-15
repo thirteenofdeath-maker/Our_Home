@@ -143,7 +143,7 @@ export function BillForm({
           required
         />
       </Field>
-      <TwoColumnFieldGrid>
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
         <Field label="วันเริ่ม/ครบกำหนด" htmlFor="startDate">
           <Input
             id="startDate"
@@ -161,7 +161,7 @@ export function BillForm({
             defaultValue={bill?.endDate ?? ""}
           />
         </Field>
-      </TwoColumnFieldGrid>
+      </div>
       <Field label="ชื่อในรายการ" htmlFor="title">
         <Input id="title" name="title" defaultValue={bill?.title ?? ""} />
       </Field>
