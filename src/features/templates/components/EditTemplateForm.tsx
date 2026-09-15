@@ -28,9 +28,17 @@ export function EditTemplateForm({
   categories: CategoryNode[];
   tags: TagOption[];
 }) {
-  const [state, formAction] = useActionState(updateTemplateAction, initialActionState);
-  const [walletId, setWalletId] = useState(template.walletArchived ? "" : template.walletId ?? "");
-  const pockets = useMemo(() => (walletId ? pocketsByWallet[walletId] ?? [] : []), [pocketsByWallet, walletId]);
+  const [state, formAction] = useActionState(
+    updateTemplateAction,
+    initialActionState,
+  );
+  const [walletId, setWalletId] = useState(
+    template.walletArchived ? "" : (template.walletId ?? ""),
+  );
+  const pockets = useMemo(
+    () => (walletId ? (pocketsByWallet[walletId] ?? []) : []),
+    [pocketsByWallet, walletId],
+  );
   const currentActiveTags = template.tags.filter((t) => !t.archivedAt);
 
   return (
@@ -38,25 +46,53 @@ export function EditTemplateForm({
       <input type="hidden" name="id" value={template.templateId} />
 
       <Field label="ชื่อ Template" htmlFor="name">
-        <Input id="name" name="name" type="text" defaultValue={template.name} required autoFocus />
+        <Input
+          id="name"
+          name="name"
+          type="text"
+          defaultValue={template.name}
+          required
+          autoFocus
+        />
       </Field>
 
       {template.walletArchived ? (
-        <p className="text-sm text-danger">Wallet ที่บันทึกไว้ ({template.walletName}) ถูกเก็บถาวรแล้ว กรุณาเลือก Wallet ใหม่</p>
+        <p className="text-sm text-danger">
+          Wallet ที่บันทึกไว้ ({template.walletName}) ถูกเก็บถาวรแล้ว กรุณาเลือก
+          Wallet ใหม่
+        </p>
       ) : null}
       {template.pocketArchived ? (
-        <p className="text-sm text-danger">Pocket ที่บันทึกไว้ ({template.pocketName}) ถูกเก็บถาวรแล้ว กรุณาเลือก Pocket ใหม่</p>
+        <p className="text-sm text-danger">
+          Pocket ที่บันทึกไว้ ({template.pocketName}) ถูกเก็บถาวรแล้ว กรุณาเลือก
+          Pocket ใหม่
+        </p>
       ) : null}
       {template.categoryArchived ? (
-        <p className="text-sm text-danger">หมวดหมู่ที่บันทึกไว้ ({template.categoryName}) ถูกเก็บถาวรแล้ว กรุณาเลือกใหม่</p>
+        <p className="text-sm text-danger">
+          หมวดหมู่ที่บันทึกไว้ ({template.categoryName}) ถูกเก็บถาวรแล้ว
+          กรุณาเลือกใหม่
+        </p>
       ) : null}
 
       <Field label="จำนวน (ถ้ามี)" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={template.amount ?? ""} placeholder="0.00" />
+        <Input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          defaultValue={template.amount ?? ""}
+          placeholder="0.00"
+        />
       </Field>
 
       <Field label="Wallet (ถ้ามี)" htmlFor="walletId">
-        <Select id="walletId" name="walletId" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+        <Select
+          id="walletId"
+          name="walletId"
+          value={walletId}
+          onChange={(e) => setWalletId(e.target.value)}
+        >
           <option value="">ไม่กำหนด</option>
           {wallets.map((w) => (
             <option key={w.id} value={w.id}>
@@ -68,7 +104,13 @@ export function EditTemplateForm({
 
       {walletId ? (
         <Field label="Pocket (ถ้ามี)" htmlFor="pocketId">
-          <Select id="pocketId" name="pocketId" defaultValue={walletId === template.walletId ? template.pocketId ?? "" : ""}>
+          <Select
+            id="pocketId"
+            name="pocketId"
+            defaultValue={
+              walletId === template.walletId ? (template.pocketId ?? "") : ""
+            }
+          >
             <option value="">ไม่กำหนด</option>
             {pockets.map((p) => (
               <option key={p.id} value={p.id}>
@@ -80,15 +122,33 @@ export function EditTemplateForm({
       ) : null}
 
       <Field label="หมวดหมู่ (ถ้ามี)" htmlFor="categoryId">
-        <CategorySelect categories={categories} defaultValue={template.categoryArchived ? "" : template.categoryId ?? ""} />
+        <CategorySelect
+          categories={categories}
+          transactionType={template.transactionType}
+          walletId={walletId || undefined}
+          defaultValue={
+            template.categoryArchived ? "" : (template.categoryId ?? "")
+          }
+        />
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
-        <Input id="title" name="title" type="text" defaultValue={template.title ?? ""} placeholder="เช่น กาแฟ" />
+        <Input
+          id="title"
+          name="title"
+          type="text"
+          defaultValue={template.title ?? ""}
+          placeholder="เช่น กาแฟ"
+        />
       </Field>
 
       <Field label="โน้ต (ถ้ามี)" htmlFor="note">
-        <Input id="note" name="note" type="text" defaultValue={template.note ?? ""} />
+        <Input
+          id="note"
+          name="note"
+          type="text"
+          defaultValue={template.note ?? ""}
+        />
       </Field>
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
@@ -101,7 +161,9 @@ export function EditTemplateForm({
         />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
       <SubmitButton size="lg">บันทึกการแก้ไข</SubmitButton>
     </form>
   );

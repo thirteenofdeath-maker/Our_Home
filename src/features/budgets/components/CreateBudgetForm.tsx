@@ -2,32 +2,13 @@
 
 import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import { initialActionState } from "@/lib/types/action-state";
 
 import { createBudgetAction } from "../actions";
-
-function CategoryOptions({ categories }: { categories: CategoryNode[] }) {
-  return (
-    <>
-      <option value="" disabled>
-        เลือกหมวดหมู่
-      </option>
-      {categories.flatMap((category) => [
-        <option key={category.id} value={category.id}>
-          {category.name}
-        </option>,
-        ...category.children.map((child) => (
-          <option key={child.id} value={child.id}>
-            {category.name} &gt; {child.name}
-          </option>
-        )),
-      ])}
-    </>
-  );
-}
 
 export function CreateBudgetForm({
   periodMonth,
@@ -48,7 +29,10 @@ export function CreateBudgetForm({
    * "sheet": both variants render the same className. */
   variant?: "page" | "sheet";
 }) {
-  const [state, formAction] = useActionState(createBudgetAction, initialActionState);
+  const [state, formAction] = useActionState(
+    createBudgetAction,
+    initialActionState,
+  );
   const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">("PERSONAL");
   void variant;
 
@@ -57,9 +41,17 @@ export function CreateBudgetForm({
       <input type="hidden" name="periodMonth" value={periodMonth} />
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภทงบประมาณ</legend>
+        <legend className="mb-1 text-sm font-medium text-foreground-muted">
+          ประเภทงบประมาณ
+        </legend>
         <label className="flex items-center gap-2 text-sm">
-          <input type="radio" name="scope" value="PERSONAL" checked={scope === "PERSONAL"} onChange={() => setScope("PERSONAL")} />
+          <input
+            type="radio"
+            name="scope"
+            value="PERSONAL"
+            checked={scope === "PERSONAL"}
+            onChange={() => setScope("PERSONAL")}
+          />
           ส่วนตัว
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -76,20 +68,43 @@ export function CreateBudgetForm({
       </fieldset>
 
       <Field label="หมวดหมู่ (รายจ่ายเท่านั้น)" htmlFor="categoryId">
-        <Select id="categoryId" name="categoryId" defaultValue="" required>
-          <CategoryOptions categories={scope === "PERSONAL" ? personalCategories : householdCategories} />
-        </Select>
+        <CategoryPicker
+          key={scope}
+          name="categoryId"
+          categories={
+            scope === "PERSONAL" ? personalCategories : householdCategories
+          }
+          transactionType="EXPENSE"
+          allowCreate={false}
+        />
       </Field>
 
       <Field label="สกุลเงิน" htmlFor="currency">
-        <Input id="currency" name="currency" type="text" defaultValue="THB" maxLength={3} required />
+        <Input
+          id="currency"
+          name="currency"
+          type="text"
+          defaultValue="THB"
+          maxLength={3}
+          required
+        />
       </Field>
 
       <Field label="งบประมาณ" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required autoFocus />
+        <Input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          required
+          autoFocus
+        />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
       <SubmitButton size="lg">สร้างงบประมาณ</SubmitButton>
     </form>
   );

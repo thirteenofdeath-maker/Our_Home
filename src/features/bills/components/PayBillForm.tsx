@@ -2,9 +2,10 @@
 
 import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import {
   buildFinancePocketOptions,
@@ -44,10 +45,9 @@ export function PayBillForm({
       ? item.pocketId
       : (options[0]?.pocketId ?? "");
   const [pocketId, setPocketId] = useState(initialPocketId);
-  const categoryOptions = categories.flatMap((category) => [
-    category,
-    ...category.children,
-  ]);
+  const selectedWalletId = options.find(
+    (option) => option.pocketId === pocketId,
+  )?.walletId;
 
   return (
     <form action={action} className="finance-ui-tone flex flex-col gap-4">
@@ -67,21 +67,17 @@ export function PayBillForm({
         onSelect={(option) => setPocketId(option.pocketId)}
       />
       <Field label="หมวดหมู่" htmlFor="categoryId">
-        <Select
-          id="categoryId"
+        <CategoryPicker
           name="categoryId"
-          defaultValue={!item.categoryArchived ? item.categoryId : ""}
-          required
-        >
-          <option value="" disabled>
-            เลือกหมวดหมู่
-          </option>
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
+          categories={categories}
+          transactionType="EXPENSE"
+          walletId={selectedWalletId}
+          defaultSelected={
+            !item.categoryArchived && item.categoryId
+              ? { id: item.categoryId, label: "" }
+              : null
+          }
+        />
       </Field>
       <Field label="วันที่จ่าย" htmlFor="occurredAt">
         <Input

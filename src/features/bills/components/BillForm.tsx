@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import {
   buildFinancePocketOptions,
@@ -16,9 +17,6 @@ import { initialActionState } from "@/lib/types/action-state";
 
 import { createBillAction, updateBillAction } from "../actions";
 import type { BillSummary } from "../types";
-
-const flat = (items: CategoryNode[]) =>
-  items.flatMap((item) => [item, ...item.children]);
 
 export function BillForm({
   bill,
@@ -48,6 +46,9 @@ export function BillForm({
   const [pocketId, setPocketId] = useState(bill?.pocketId ?? "");
   const scopedWallets = wallets.filter((wallet) => wallet.scope === scope);
   const options = buildFinancePocketOptions(scopedWallets, pocketsByWallet);
+  const selectedWalletId = options.find(
+    (option) => option.pocketId === pocketId,
+  )?.walletId;
   const recurring = bill?.recurrenceType ?? "MONTHLY";
 
   return (
@@ -91,21 +92,18 @@ export function BillForm({
         </Field>
       </div>
       <Field label="หมวดหมู่รายจ่าย" htmlFor="categoryId">
-        <Select
-          id="categoryId"
+        <CategoryPicker
+          key={scope}
           name="categoryId"
-          defaultValue={bill?.categoryId ?? ""}
-          required
-        >
-          <option value="" disabled>
-            เลือกหมวดหมู่
-          </option>
-          {flat(categories[scope]).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
+          categories={categories[scope]}
+          transactionType="EXPENSE"
+          walletId={selectedWalletId}
+          defaultSelected={
+            bill?.scope === scope && bill.categoryId
+              ? { id: bill.categoryId, label: "" }
+              : null
+          }
+        />
       </Field>
       <FinancePocketField
         label="กระเป๋าเงินเริ่มต้น (ไม่บังคับ)"

@@ -69,13 +69,23 @@ export function CreateTemplateForm({
   variant?: "page" | "sheet";
 }) {
   void variant;
-  const [state, formAction] = useActionState(createTemplateAction, initialActionState);
-  const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">(initialScope ?? "PERSONAL");
-  const [transactionType, setTransactionType] = useState<"INCOME" | "EXPENSE">(initialTransactionType ?? "EXPENSE");
+  const [state, formAction] = useActionState(
+    createTemplateAction,
+    initialActionState,
+  );
+  const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">(
+    initialScope ?? "PERSONAL",
+  );
+  const [transactionType, setTransactionType] = useState<"INCOME" | "EXPENSE">(
+    initialTransactionType ?? "EXPENSE",
+  );
   const [walletId, setWalletId] = useState<string>(initialWalletId ?? "");
 
   const wallets = scope === "PERSONAL" ? personalWallets : householdWallets;
-  const pockets = useMemo(() => (walletId ? pocketsByWallet[walletId] ?? [] : []), [pocketsByWallet, walletId]);
+  const pockets = useMemo(
+    () => (walletId ? (pocketsByWallet[walletId] ?? []) : []),
+    [pocketsByWallet, walletId],
+  );
   const categories =
     scope === "PERSONAL"
       ? transactionType === "INCOME"
@@ -89,9 +99,20 @@ export function CreateTemplateForm({
   return (
     <form action={formAction} className="finance-ui-tone flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภท Template</legend>
+        <legend className="mb-1 text-sm font-medium text-foreground-muted">
+          ประเภท Template
+        </legend>
         <label className="flex items-center gap-2 text-sm">
-          <input type="radio" name="scope" value="PERSONAL" checked={scope === "PERSONAL"} onChange={() => { setScope("PERSONAL"); setWalletId(""); }} />
+          <input
+            type="radio"
+            name="scope"
+            value="PERSONAL"
+            checked={scope === "PERSONAL"}
+            onChange={() => {
+              setScope("PERSONAL");
+              setWalletId("");
+            }}
+          />
           ส่วนตัว
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -100,7 +121,10 @@ export function CreateTemplateForm({
             name="scope"
             value="HOUSEHOLD"
             checked={scope === "HOUSEHOLD"}
-            onChange={() => { setScope("HOUSEHOLD"); setWalletId(""); }}
+            onChange={() => {
+              setScope("HOUSEHOLD");
+              setWalletId("");
+            }}
             disabled={!hasHousehold}
           />
           ครอบครัว{!hasHousehold ? " (สร้างครอบครัวก่อน)" : ""}
@@ -108,27 +132,61 @@ export function CreateTemplateForm({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-foreground-muted">ประเภทรายการ</legend>
+        <legend className="mb-1 text-sm font-medium text-foreground-muted">
+          ประเภทรายการ
+        </legend>
         <label className="flex items-center gap-2 text-sm">
-          <input type="radio" name="transactionType" value="EXPENSE" checked={transactionType === "EXPENSE"} onChange={() => setTransactionType("EXPENSE")} />
+          <input
+            type="radio"
+            name="transactionType"
+            value="EXPENSE"
+            checked={transactionType === "EXPENSE"}
+            onChange={() => setTransactionType("EXPENSE")}
+          />
           รายจ่าย
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="radio" name="transactionType" value="INCOME" checked={transactionType === "INCOME"} onChange={() => setTransactionType("INCOME")} />
+          <input
+            type="radio"
+            name="transactionType"
+            value="INCOME"
+            checked={transactionType === "INCOME"}
+            onChange={() => setTransactionType("INCOME")}
+          />
           รายรับ
         </label>
       </fieldset>
 
       <Field label="ชื่อ Template" htmlFor="name">
-        <Input id="name" name="name" type="text" defaultValue={initialName ?? ""} placeholder="เช่น กาแฟตอนเช้า" required autoFocus />
+        <Input
+          id="name"
+          name="name"
+          type="text"
+          defaultValue={initialName ?? ""}
+          placeholder="เช่น กาแฟตอนเช้า"
+          required
+          autoFocus
+        />
       </Field>
 
       <Field label="จำนวน (ถ้ามี)" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={initialAmount ?? ""} placeholder="0.00" />
+        <Input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          defaultValue={initialAmount ?? ""}
+          placeholder="0.00"
+        />
       </Field>
 
       <Field label="Wallet (ถ้ามี)" htmlFor="walletId">
-        <Select id="walletId" name="walletId" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+        <Select
+          id="walletId"
+          name="walletId"
+          value={walletId}
+          onChange={(e) => setWalletId(e.target.value)}
+        >
           <option value="">ไม่กำหนด</option>
           {wallets.map((w) => (
             <option key={w.id} value={w.id}>
@@ -140,7 +198,13 @@ export function CreateTemplateForm({
 
       {walletId ? (
         <Field label="Pocket (ถ้ามี)" htmlFor="pocketId">
-          <Select id="pocketId" name="pocketId" defaultValue={walletId === initialWalletId ? initialPocketId ?? "" : ""}>
+          <Select
+            id="pocketId"
+            name="pocketId"
+            defaultValue={
+              walletId === initialWalletId ? (initialPocketId ?? "") : ""
+            }
+          >
             <option value="">ไม่กำหนด</option>
             {pockets.map((p) => (
               <option key={p.id} value={p.id}>
@@ -152,22 +216,47 @@ export function CreateTemplateForm({
       ) : null}
 
       <Field label="หมวดหมู่ (ถ้ามี)" htmlFor="categoryId">
-        <CategorySelect categories={categories} defaultValue={initialCategoryId ?? ""} />
+        <CategorySelect
+          key={`${scope}:${transactionType}`}
+          categories={categories}
+          transactionType={transactionType}
+          walletId={walletId || undefined}
+          defaultValue={initialCategoryId ?? ""}
+        />
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
-        <Input id="title" name="title" type="text" defaultValue={initialTitle ?? ""} placeholder="เช่น กาแฟ" />
+        <Input
+          id="title"
+          name="title"
+          type="text"
+          defaultValue={initialTitle ?? ""}
+          placeholder="เช่น กาแฟ"
+        />
       </Field>
 
       <Field label="โน้ต (ถ้ามี)" htmlFor="note">
-        <Input id="note" name="note" type="text" defaultValue={initialNote ?? ""} />
+        <Input
+          id="note"
+          name="note"
+          type="text"
+          defaultValue={initialNote ?? ""}
+        />
       </Field>
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
-        <TagPicker name="tagIds" tags={tags} walletId={walletId || undefined} personalScopeOnly={scope === "PERSONAL"} defaultSelected={initialTagIds} />
+        <TagPicker
+          name="tagIds"
+          tags={tags}
+          walletId={walletId || undefined}
+          personalScopeOnly={scope === "PERSONAL"}
+          defaultSelected={initialTagIds}
+        />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
       <SubmitButton size="lg">บันทึก Template</SubmitButton>
     </form>
   );

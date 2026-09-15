@@ -43,6 +43,7 @@ export default async function Page({
         wallets={eligible}
         pockets={p}
         categories={buildCategoryTree(c)}
+        transactionType={d.debtType === "LIABILITY" ? "EXPENSE" : "INCOME"}
       />
     </div>
   );

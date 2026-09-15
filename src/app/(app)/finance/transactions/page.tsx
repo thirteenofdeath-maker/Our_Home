@@ -4,6 +4,8 @@ import { buttonClassName } from "@/components/ui/Button";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { listCategories } from "@/features/categories/api";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
+import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { bangkokDateKey } from "@/features/calendar/domain/calendar";
 import { nextLocalDate } from "@/features/finance/domain/finance";
 import { getMyPrimaryHousehold } from "@/features/household/api";
@@ -147,9 +149,10 @@ export default async function TransactionSearchPage({
       ? listTags(supabase, { scope: "HOUSEHOLD", householdId: household.id })
       : Promise.resolve([]),
   ]);
-  const categories = [...incomeCategories, ...expenseCategories].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const categories = buildCategoryTree([
+    ...incomeCategories,
+    ...expenseCategories,
+  ]);
 
   const sharedFilters: Omit<TransactionSearchFilters, "type"> = {
     status,
@@ -312,18 +315,18 @@ export default async function TransactionSearchPage({
             ) : null}
 
             <Field label="หมวดหมู่" htmlFor="categoryId">
-              <Select
-                id="categoryId"
+              <CategoryPicker
                 name="categoryId"
-                defaultValue={categoryId ?? ""}
-              >
-                <option value="">ทั้งหมด</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+                categories={categories}
+                transactionType="EXPENSE"
+                defaultSelected={
+                  categoryId ? { id: categoryId, label: "" } : null
+                }
+                allowEmpty
+                emptyLabel="ทั้งหมด"
+                allowCreate={false}
+                placeholder="ทั้งหมด"
+              />
             </Field>
 
             {personalTags.length > 0 || householdTags.length > 0 ? (

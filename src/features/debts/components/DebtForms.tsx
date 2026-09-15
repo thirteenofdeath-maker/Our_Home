@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import {
   buildFinancePocketOptions,
@@ -127,7 +128,11 @@ export function DebtPaymentForm({
   wallets,
   pockets,
   categories,
-}: CashProps & { categories: CategoryNode[] }) {
+  transactionType,
+}: CashProps & {
+  categories: CategoryNode[];
+  transactionType: "INCOME" | "EXPENSE";
+}) {
   const [state, action] = useActionState(
     recordDebtPaymentAction,
     initialActionState,
@@ -135,10 +140,10 @@ export function DebtPaymentForm({
   const [pocketId, setPocketId] = useState(() =>
     firstPocketId(wallets, pockets),
   );
-  const categoryOptions = categories.flatMap((item) => [
-    item,
-    ...item.children,
-  ]);
+  const options = buildFinancePocketOptions(wallets, pockets);
+  const selectedWalletId = options.find(
+    (option) => option.pocketId === pocketId,
+  )?.walletId;
 
   return (
     <form action={action} className="finance-ui-tone flex flex-col gap-3">
@@ -156,13 +161,12 @@ export function DebtPaymentForm({
         onSelectPocket={setPocketId}
       />
       <Field label="หมวดดอกเบี้ย" htmlFor="categoryId">
-        <Select id="categoryId" name="categoryId">
-          {categoryOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
+        <CategoryPicker
+          name="categoryId"
+          categories={categories}
+          transactionType={transactionType}
+          walletId={selectedWalletId}
+        />
       </Field>
       {state.error ? <p className="text-danger">{state.error}</p> : null}
       <SubmitButton>บันทึกการชำระ</SubmitButton>
