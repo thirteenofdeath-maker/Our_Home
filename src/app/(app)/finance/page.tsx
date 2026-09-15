@@ -223,10 +223,7 @@ export default async function FinancePage({
       </section>
 
       {initialWallet ? (
-        <FinanceCreateFlow
-          walletId={initialWallet.id}
-          triggerVariant="dashboard"
-        />
+        <FinanceCreateFlow walletId={initialWallet.id} />
       ) : (
         <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
           <p className="text-sm text-finance-muted">

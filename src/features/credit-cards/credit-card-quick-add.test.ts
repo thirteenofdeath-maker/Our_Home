@@ -34,12 +34,10 @@ describe("credit-card quick add", () => {
     expect(form).toContain('name="amount"');
   });
 
-  it("removes the dashboard arrow and uses one textual sheet back control", () => {
-    const dashboardTrigger = flow.slice(
-      flow.indexOf('triggerVariant === "dashboard"'),
-      flow.indexOf(") : (", flow.indexOf('triggerVariant === "dashboard"')),
-    );
-    expect(dashboardTrigger).not.toContain('name="chevron"');
+  it("uses one icon-only FAB and one textual sheet back control", () => {
+    expect(flow).toContain('aria-label="เพิ่มรายการการเงิน"');
+    expect(flow).toContain("fixed z-20 flex size-14");
+    expect(flow).not.toContain('name="chevron"');
     expect(flow).toContain('closeLabel="ย้อนกลับ"');
     expect(flow).not.toContain('aria-label="ย้อนกลับไปเลือกประเภท"');
     expect(flow).toContain("onClose={showBack ? goBack : closeFlow}");

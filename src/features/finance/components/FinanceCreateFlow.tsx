@@ -67,13 +67,7 @@ interface InstallmentData {
  * Income/Expense reuse TransactionForm. Transfer uses a unified client
  * orchestrator which dispatches to the existing pocket/wallet writers.
  */
-export function FinanceCreateFlow({
-  walletId,
-  triggerVariant = "fab",
-}: {
-  walletId: string;
-  triggerVariant?: "fab" | "dashboard";
-}) {
+export function FinanceCreateFlow({ walletId }: { walletId: string }) {
   const [stage, setStage] = useState<Stage>("closed");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [ieData, setIeData] = useState<IncomeExpenseData | null>(null);
@@ -183,35 +177,14 @@ export function FinanceCreateFlow({
 
   return (
     <div className="finance-scope contents">
-      {triggerVariant === "dashboard" ? (
-        <button
-          type="button"
-          aria-label="เพิ่มรายการการเงิน"
-          onClick={openChoice}
-          className="flex min-h-16 w-full items-center justify-between rounded-[1.35rem] bg-[linear-gradient(110deg,var(--finance-expense),#f29a7d)] px-5 text-left text-white shadow-[0_12px_28px_rgb(232_120_98_/_0.22)] transition-transform active:scale-[0.99]"
-        >
-          <span className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full bg-white/20">
-              <AppIcon name="plus" />
-            </span>
-            <span>
-              <span className="block text-lg font-semibold">เพิ่มรายการ</span>
-              <span className="block text-xs text-white/80">
-                รายจ่าย · รายรับ · โอนเงิน · บัตร · ผ่อนชำระ
-              </span>
-            </span>
-          </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          aria-label="เพิ่มรายการการเงิน"
-          onClick={openChoice}
-          className="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
-        >
-          <AppIcon name="plus" />
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label="เพิ่มรายการการเงิน"
+        onClick={openChoice}
+        className="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+      >
+        <AppIcon name="plus" />
+      </button>
 
       <BottomSheet
         open={sheetOpen}

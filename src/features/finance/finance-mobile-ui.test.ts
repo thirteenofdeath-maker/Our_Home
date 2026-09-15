@@ -15,10 +15,13 @@ const createFlow = read(
 );
 
 describe("approved mobile Finance UI", () => {
-  it("replaces the three dashboard shortcuts with one visible เพิ่มรายการ entry point", () => {
+  it("uses the shared floating add entry point instead of a dashboard banner", () => {
     expect(createFlow).toContain("เพิ่มรายการ");
     expect(hub).toContain("<FinanceCreateFlow");
-    expect(hub).toContain('triggerVariant="dashboard"');
+    expect(hub).not.toContain("triggerVariant");
+    expect(createFlow).not.toContain("triggerVariant");
+    expect(createFlow).toContain("fixed z-20 flex size-14");
+    expect(createFlow).not.toContain("min-h-16 w-full");
     expect(createFlow).toContain("<BottomSheet");
     expect(hub).not.toContain(
       "/finance/quick-add?walletId=${initialWallet.id}",
