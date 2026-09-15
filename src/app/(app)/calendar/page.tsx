@@ -15,18 +15,26 @@ import {
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPlanNotes, listPlanTasks } from "@/features/plan/api";
+import {
+  listPlanNotes,
+  listPlanReminders,
+  listPlanTasks,
+} from "@/features/plan/api";
 import { NoteForm } from "@/features/plan/components/NoteForm";
 import { NoteGrid } from "@/features/plan/components/NoteGrid";
 import { PlanSummary } from "@/features/plan/components/PlanSummary";
 import { PlanTabs, type PlanView } from "@/features/plan/components/PlanTabs";
+import { ReminderForm } from "@/features/plan/components/ReminderForm";
+import { ReminderList } from "@/features/plan/components/ReminderList";
 import { TaskForm } from "@/features/plan/components/TaskForm";
 import { TaskList } from "@/features/plan/components/TaskList";
 import { requireUser } from "@/lib/auth/require-user";
 import { cn } from "@/lib/utils/cn";
 
 function activeView(value: unknown): PlanView {
-  return value === "tasks" || value === "notes" ? value : "calendar";
+  return value === "tasks" || value === "reminders" || value === "notes"
+    ? value
+    : "calendar";
 }
 
 function eventDate(event: {
@@ -67,6 +75,7 @@ export default async function CalendarPage({
     archivedEvents,
     financeItems,
     allTasks,
+    allReminders,
     activeNotes,
     archivedNotes,
   ] = await Promise.all([
@@ -78,6 +87,7 @@ export default async function CalendarPage({
       ? listCalendarFinanceItems(supabase, `${month}-01`, `${endMonth}-01`)
       : Promise.resolve([]),
     listPlanTasks(supabase),
+    listPlanReminders(supabase),
     listPlanNotes(supabase),
     view === "notes" && showArchivedNotes
       ? listPlanNotes(supabase, { archived: true })
@@ -113,6 +123,9 @@ export default async function CalendarPage({
   const dueTaskCount = allTasks.filter(
     (task) => !task.is_completed && task.due_date && task.due_date <= today,
   ).length;
+  const upcomingReminderCount = allReminders.filter(
+    (reminder) => !reminder.is_completed,
+  ).length;
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -124,6 +137,7 @@ export default async function CalendarPage({
         today={today}
         eventCount={todayEventCount}
         taskCount={dueTaskCount}
+        reminderCount={upcomingReminderCount}
         noteCount={activeNotes.length}
       />
       <PlanTabs active={view} />
@@ -138,6 +152,7 @@ export default async function CalendarPage({
             events={events}
             financeItems={financeItems}
             tasks={allTasks}
+            reminders={allReminders}
           />
           {archivedEvents.length ? (
             <section>
@@ -189,6 +204,16 @@ export default async function CalendarPage({
             ))}
           </nav>
           <TaskList tasks={filteredTasks} />
+        </>
+      ) : null}
+
+      {view === "reminders" ? (
+        <>
+          <PlanCreateButton
+            title="เพิ่มรายการเตือน"
+            form={<ReminderForm hasHousehold={Boolean(household)} />}
+          />
+          <ReminderList reminders={allReminders} />
         </>
       ) : null}
 

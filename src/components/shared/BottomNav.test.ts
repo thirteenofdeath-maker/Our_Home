@@ -19,8 +19,20 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
     expect(NAV_ITEMS).toHaveLength(5);
     const hrefs = NAV_ITEMS.map((item) => item.href);
     const labels = NAV_ITEMS.map((item) => item.label);
-    expect(hrefs).toEqual(["/wallets", "/finance", "/calendar", "/pets", "/household"]);
-    expect(labels).toEqual(["หน้าหลัก", "การเงิน", "แพลน", "สัตว์เลี้ยง", "ครอบครัว"]);
+    expect(hrefs).toEqual([
+      "/",
+      "/finance",
+      "/calendar",
+      "/pets",
+      "/household",
+    ]);
+    expect(labels).toEqual([
+      "หน้าหลัก",
+      "การเงิน",
+      "แพลน",
+      "สัตว์เลี้ยง",
+      "ครอบครัว",
+    ]);
     expect(hrefs).not.toContain("/categories");
     expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/shopping");
@@ -31,7 +43,13 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
   });
 
   it("always renders exactly five real <a> destinations, on every module alike", () => {
-    for (const pathname of ["/wallets", "/finance", "/calendar", "/pets", "/household"]) {
+    for (const pathname of [
+      "/wallets",
+      "/finance",
+      "/calendar",
+      "/pets",
+      "/household",
+    ]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
       expect((html.match(/<a /g) ?? []).length).toBe(5);
@@ -55,7 +73,7 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
   it("keeps a nested route's parent destination active (startsWith, not just exact match)", () => {
     const cases: Array<[string, string]> = [
       ["/finance/reports", "/finance"],
-      ["/wallets/abc/manage", "/wallets"],
+      ["/wallets/abc/manage", "/"],
       ["/pets/new", "/pets"],
       ["/calendar/2026-01-01", "/calendar"],
       ["/household/members", "/household"],
@@ -64,8 +82,14 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
       // The active <a> for this destination carries aria-current="page".
-      const activeAnchor = html.match(new RegExp(`<a[^>]*href="${activeHref.replace("/", "\\/")}"[^>]*>`))?.[0] ?? "";
-      expect(activeAnchor, `${pathname} should keep ${activeHref} active`).toContain('aria-current="page"');
+      const activeAnchor =
+        html.match(
+          new RegExp(`<a[^>]*href="${activeHref.replace("/", "\\/")}"[^>]*>`),
+        )?.[0] ?? "";
+      expect(
+        activeAnchor,
+        `${pathname} should keep ${activeHref} active`,
+      ).toContain('aria-current="page"');
     }
   });
 
@@ -73,9 +97,14 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
     for (const pathname of ["/categories", "/categories/xyz"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
-      const activeAnchor = html.match(/<a[^>]*href="\/finance"[^>]*>/)?.[0] ?? "";
-      expect(activeAnchor, `${pathname} should keep /finance active`).toContain('aria-current="page"');
-      expect(html, `${pathname} should render in Finance V2 tone`).toContain("finance-scope");
+      const activeAnchor =
+        html.match(/<a[^>]*href="\/finance"[^>]*>/)?.[0] ?? "";
+      expect(activeAnchor, `${pathname} should keep /finance active`).toContain(
+        'aria-current="page"',
+      );
+      expect(html, `${pathname} should render in Finance V2 tone`).toContain(
+        "finance-scope",
+      );
     }
   });
 
@@ -96,7 +125,9 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
     for (const pathname of ["/pets", "/calendar", "/household"]) {
       mockPathname = pathname;
       const html = renderToStaticMarkup(createElement(BottomNav));
-      expect(html, `${pathname} should not carry finance-scope`).not.toContain("finance-scope");
+      expect(html, `${pathname} should not carry finance-scope`).not.toContain(
+        "finance-scope",
+      );
       // Same structural shell as Finance: fixed, inset-x-4, rounded-[2rem].
       expect(html).toContain("inset-x-4");
       expect(html).toContain("rounded-[2rem]");

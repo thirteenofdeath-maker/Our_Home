@@ -2,14 +2,23 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database, PlanNoteColor, PlanTaskPriority } from "@/types/database";
-import type { PlanNote, PlanTask, PlanTaskStep } from "./types";
+import type {
+  Database,
+  PlanNoteColor,
+  PlanReminderRecurrence,
+  PlanTaskPriority,
+} from "@/types/database";
+import type { PlanNote, PlanReminder, PlanTask, PlanTaskStep } from "./types";
 
 type Client = SupabaseClient<Database>;
 
 export async function listPlanTasks(
   supabase: Client,
-  options: { includeArchived?: boolean; completed?: boolean; query?: string } = {},
+  options: {
+    includeArchived?: boolean;
+    completed?: boolean;
+    query?: string;
+  } = {},
 ) {
   let request = supabase
     .from("plan_tasks")
@@ -98,27 +107,42 @@ export async function updatePlanTask(
     priority: PlanTaskPriority;
   },
 ) {
-  const { error } = await supabase.from("plan_tasks").update({
-    title: input.title,
-    details: input.details,
-    list_name: input.listName,
-    due_date: input.dueDate,
-    due_time: input.dueTime,
-    priority: input.priority,
-  }).eq("id", id);
+  const { error } = await supabase
+    .from("plan_tasks")
+    .update({
+      title: input.title,
+      details: input.details,
+      list_name: input.listName,
+      due_date: input.dueDate,
+      due_time: input.dueTime,
+      priority: input.priority,
+    })
+    .eq("id", id);
   if (error) throw error;
 }
 
-export async function setPlanTaskCompleted(supabase: Client, task: PlanTask, completed: boolean) {
-  const { error } = await supabase.from("plan_tasks").update({
-    is_completed: completed,
-    completed_at: completed ? new Date().toISOString() : null,
-  }).eq("id", task.id);
+export async function setPlanTaskCompleted(
+  supabase: Client,
+  task: PlanTask,
+  completed: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_tasks")
+    .update({
+      is_completed: completed,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
+    .eq("id", task.id);
   if (error) throw error;
 }
 
-export async function setPlanTaskArchived(supabase: Client, id: string, archived: boolean) {
-  const { error } = await supabase.from("plan_tasks")
+export async function setPlanTaskArchived(
+  supabase: Client,
+  id: string,
+  archived: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_tasks")
     .update({ archived_at: archived ? new Date().toISOString() : null })
     .eq("id", id);
   if (error) throw error;
@@ -126,7 +150,13 @@ export async function setPlanTaskArchived(supabase: Client, id: string, archived
 
 export async function addPlanTaskStep(
   supabase: Client,
-  input: { id: string; taskId: string; createdBy: string; title: string; position: number },
+  input: {
+    id: string;
+    taskId: string;
+    createdBy: string;
+    title: string;
+    position: number;
+  },
 ) {
   const { error } = await supabase.from("plan_task_steps").insert({
     id: input.id,
@@ -143,15 +173,21 @@ export async function setPlanTaskStepCompleted(
   step: PlanTaskStep,
   completed: boolean,
 ) {
-  const { error } = await supabase.from("plan_task_steps").update({
-    is_completed: completed,
-    completed_at: completed ? new Date().toISOString() : null,
-  }).eq("id", step.id);
+  const { error } = await supabase
+    .from("plan_task_steps")
+    .update({
+      is_completed: completed,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
+    .eq("id", step.id);
   if (error) throw error;
 }
 
 export async function deletePlanTaskStep(supabase: Client, id: string) {
-  const { error } = await supabase.from("plan_task_steps").delete().eq("id", id);
+  const { error } = await supabase
+    .from("plan_task_steps")
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -159,9 +195,7 @@ export async function listPlanNotes(
   supabase: Client,
   options: { archived?: boolean; query?: string } = {},
 ) {
-  let request = supabase
-    .from("plan_notes")
-    .select("*");
+  let request = supabase.from("plan_notes").select("*");
   request = options.archived
     ? request.not("archived_at", "is", null)
     : request.is("archived_at", null);
@@ -218,19 +252,138 @@ export async function updatePlanNote(
   id: string,
   input: { title: string | null; content: string | null; color: PlanNoteColor },
 ) {
-  const { error } = await supabase.from("plan_notes").update(input).eq("id", id);
+  const { error } = await supabase
+    .from("plan_notes")
+    .update(input)
+    .eq("id", id);
   if (error) throw error;
 }
 
-export async function setPlanNotePinned(supabase: Client, note: PlanNote, pinned: boolean) {
-  const { error } = await supabase.from("plan_notes")
+export async function setPlanNotePinned(
+  supabase: Client,
+  note: PlanNote,
+  pinned: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_notes")
     .update({ pinned_at: pinned ? new Date().toISOString() : null })
     .eq("id", note.id);
   if (error) throw error;
 }
 
-export async function setPlanNoteArchived(supabase: Client, id: string, archived: boolean) {
-  const { error } = await supabase.from("plan_notes")
+export async function setPlanNoteArchived(
+  supabase: Client,
+  id: string,
+  archived: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_notes")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function listPlanReminders(
+  supabase: Client,
+  options: { includeArchived?: boolean; completed?: boolean } = {},
+) {
+  let request = supabase
+    .from("plan_reminders")
+    .select("*")
+    .order("is_completed")
+    .order("reminds_at")
+    .order("created_at", { ascending: false });
+  request = options.includeArchived
+    ? request.not("archived_at", "is", null)
+    : request.is("archived_at", null);
+  if (typeof options.completed === "boolean") {
+    request = request.eq("is_completed", options.completed);
+  }
+  const { data, error } = await request;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getPlanReminder(supabase: Client, id: string) {
+  const { data, error } = await supabase
+    .from("plan_reminders")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function createPlanReminder(
+  supabase: Client,
+  input: {
+    id: string;
+    createdBy: string;
+    householdId: string | null;
+    scope: "PERSONAL" | "HOUSEHOLD";
+    title: string;
+    note: string | null;
+    remindsAt: string;
+    recurrence: PlanReminderRecurrence;
+  },
+) {
+  const { error } = await supabase.from("plan_reminders").insert({
+    id: input.id,
+    created_by: input.createdBy,
+    household_id: input.householdId,
+    scope: input.scope,
+    title: input.title,
+    note: input.note,
+    reminds_at: input.remindsAt,
+    recurrence: input.recurrence,
+  });
+  if (error) throw error;
+}
+
+export async function updatePlanReminder(
+  supabase: Client,
+  id: string,
+  input: {
+    title: string;
+    note: string | null;
+    remindsAt: string;
+    recurrence: PlanReminderRecurrence;
+  },
+) {
+  const { error } = await supabase
+    .from("plan_reminders")
+    .update({
+      title: input.title,
+      note: input.note,
+      reminds_at: input.remindsAt,
+      recurrence: input.recurrence,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function setPlanReminderCompleted(
+  supabase: Client,
+  reminder: PlanReminder,
+  completed: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_reminders")
+    .update({
+      is_completed: completed,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
+    .eq("id", reminder.id);
+  if (error) throw error;
+}
+
+export async function setPlanReminderArchived(
+  supabase: Client,
+  id: string,
+  archived: boolean,
+) {
+  const { error } = await supabase
+    .from("plan_reminders")
     .update({ archived_at: archived ? new Date().toISOString() : null })
     .eq("id", id);
   if (error) throw error;

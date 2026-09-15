@@ -11,20 +11,31 @@ import type { ActionState } from "@/lib/types/action-state";
 import {
   addPlanTaskStep,
   createPlanNote,
+  createPlanReminder,
   createPlanTask,
   deletePlanTaskStep,
   getPlanNote,
+  getPlanReminder,
   getPlanTask,
   listPlanTaskSteps,
   setPlanNoteArchived,
   setPlanNotePinned,
+  setPlanReminderArchived,
+  setPlanReminderCompleted,
   setPlanTaskArchived,
   setPlanTaskCompleted,
   setPlanTaskStepCompleted,
   updatePlanNote,
+  updatePlanReminder,
   updatePlanTask,
 } from "./api";
-import { planNoteFormSchema, planTaskFormSchema, planTaskStepSchema } from "./domain";
+import {
+  planNoteFormSchema,
+  planReminderFormSchema,
+  planTaskFormSchema,
+  planTaskStepSchema,
+  reminderIso,
+} from "./domain";
 
 function value(form: FormData, key: string) {
   const entry = form.get(key);
@@ -52,6 +63,17 @@ function parseNote(form: FormData) {
   });
 }
 
+function parseReminder(form: FormData) {
+  return planReminderFormSchema.safeParse({
+    title: value(form, "title"),
+    note: value(form, "note"),
+    scope: value(form, "scope"),
+    remindDate: value(form, "remindDate"),
+    remindTime: value(form, "remindTime"),
+    recurrence: value(form, "recurrence") || "NONE",
+  });
+}
+
 async function householdForScope(scope: "PERSONAL" | "HOUSEHOLD") {
   const auth = await requireUser();
   if (scope === "PERSONAL") return { ...auth, householdId: null };
@@ -65,9 +87,12 @@ export async function createPlanTaskAction(
   form: FormData,
 ): Promise<ActionState> {
   const parsed = parseTask(form);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
-    const { supabase, user, householdId } = await householdForScope(parsed.data.scope);
+    const { supabase, user, householdId } = await householdForScope(
+      parsed.data.scope,
+    );
     const id = randomUUID();
     await createPlanTask(supabase, {
       id,
@@ -91,7 +116,11 @@ export async function updatePlanTaskAction(
   const id = value(form, "taskId");
   const parsed = parseTask(form);
   if (!id || !parsed.success) {
-    return { error: parsed.success ? "ไม่พบงาน" : parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+    return {
+      error: parsed.success
+        ? "ไม่พบงาน"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
   }
   try {
     const { supabase } = await requireUser();
@@ -136,7 +165,11 @@ export async function addPlanTaskStepAction(
   const taskId = value(form, "taskId");
   const parsed = planTaskStepSchema.safeParse({ title: value(form, "title") });
   if (!taskId || !parsed.success) {
-    return { error: parsed.success ? "ไม่พบงาน" : parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+    return {
+      error: parsed.success
+        ? "ไม่พบงาน"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
   }
   try {
     const { supabase, user } = await requireUser();
@@ -163,9 +196,15 @@ export async function togglePlanTaskStepAction(form: FormData) {
   if (!taskId || !stepId) return;
   const { supabase } = await requireUser();
   if (!(await getPlanTask(supabase, taskId))) return;
-  const step = (await listPlanTaskSteps(supabase, taskId)).find((item) => item.id === stepId);
+  const step = (await listPlanTaskSteps(supabase, taskId)).find(
+    (item) => item.id === stepId,
+  );
   if (!step) return;
-  await setPlanTaskStepCompleted(supabase, step, value(form, "completed") === "true");
+  await setPlanTaskStepCompleted(
+    supabase,
+    step,
+    value(form, "completed") === "true",
+  );
   revalidatePath(`/calendar/tasks/${taskId}`);
 }
 
@@ -184,9 +223,12 @@ export async function createPlanNoteAction(
   form: FormData,
 ): Promise<ActionState> {
   const parsed = parseNote(form);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
-    const { supabase, user, householdId } = await householdForScope(parsed.data.scope);
+    const { supabase, user, householdId } = await householdForScope(
+      parsed.data.scope,
+    );
     const id = randomUUID();
     await createPlanNote(supabase, {
       id,
@@ -210,7 +252,11 @@ export async function updatePlanNoteAction(
   const id = value(form, "noteId");
   const parsed = parseNote(form);
   if (!id || !parsed.success) {
-    return { error: parsed.success ? "ไม่พบโน้ต" : parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+    return {
+      error: parsed.success
+        ? "ไม่พบโน้ต"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
   }
   try {
     const { supabase } = await requireUser();
@@ -245,4 +291,100 @@ export async function archivePlanNoteAction(form: FormData) {
   await setPlanNoteArchived(supabase, id, value(form, "archived") === "true");
   revalidatePath("/calendar");
   redirect("/calendar?view=notes");
+}
+
+export async function createPlanReminderAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const parsed = parseReminder(form);
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  try {
+    const { supabase, user, householdId } = await householdForScope(
+      parsed.data.scope,
+    );
+    const id = randomUUID();
+    await createPlanReminder(supabase, {
+      id,
+      createdBy: user.id,
+      householdId,
+      scope: parsed.data.scope,
+      title: parsed.data.title,
+      note: parsed.data.note,
+      remindsAt: reminderIso(parsed.data.remindDate, parsed.data.remindTime),
+      recurrence: parsed.data.recurrence,
+    });
+    revalidatePath("/");
+    revalidatePath("/calendar");
+    redirect(`/calendar/reminders/${id}`);
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    logDatabaseErrorInDev("createPlanReminderAction failed", error);
+    return { error: "บันทึกรายการเตือนไม่สำเร็จ" };
+  }
+}
+
+export async function updatePlanReminderAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const id = value(form, "reminderId");
+  const parsed = parseReminder(form);
+  if (!id || !parsed.success) {
+    return {
+      error: parsed.success
+        ? "ไม่พบรายการเตือน"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
+  }
+  try {
+    const { supabase } = await requireUser();
+    if (!(await getPlanReminder(supabase, id)))
+      return { error: "ไม่พบรายการเตือน" };
+    await updatePlanReminder(supabase, id, {
+      title: parsed.data.title,
+      note: parsed.data.note,
+      remindsAt: reminderIso(parsed.data.remindDate, parsed.data.remindTime),
+      recurrence: parsed.data.recurrence,
+    });
+    revalidatePath("/");
+    revalidatePath("/calendar");
+    revalidatePath(`/calendar/reminders/${id}`);
+    return {};
+  } catch (error) {
+    logDatabaseErrorInDev("updatePlanReminderAction failed", error);
+    return { error: "แก้ไขรายการเตือนไม่สำเร็จ" };
+  }
+}
+
+export async function togglePlanReminderAction(form: FormData) {
+  const id = value(form, "reminderId");
+  if (!id) return;
+  const { supabase } = await requireUser();
+  const reminder = await getPlanReminder(supabase, id);
+  if (!reminder) return;
+  await setPlanReminderCompleted(
+    supabase,
+    reminder,
+    value(form, "completed") === "true",
+  );
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath(`/calendar/reminders/${id}`);
+}
+
+export async function archivePlanReminderAction(form: FormData) {
+  const id = value(form, "reminderId");
+  if (!id) return;
+  const { supabase } = await requireUser();
+  if (!(await getPlanReminder(supabase, id))) return;
+  await setPlanReminderArchived(
+    supabase,
+    id,
+    value(form, "archived") === "true",
+  );
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  redirect("/calendar?view=reminders");
 }

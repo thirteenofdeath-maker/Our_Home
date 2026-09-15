@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { planDateLabel, planNoteFormSchema, planTaskFormSchema } from "./domain";
+import {
+  planDateLabel,
+  planNoteFormSchema,
+  planReminderFormSchema,
+  planTaskFormSchema,
+  reminderInputParts,
+  reminderIso,
+} from "./domain";
 
 describe("Plan domain", () => {
   it("requires a due date when a task has a due time", () => {
@@ -39,5 +46,26 @@ describe("Plan domain", () => {
   it("formats date-only tasks without timezone drift", () => {
     expect(planDateLabel("2026-09-15", null)).toContain("15");
     expect(planDateLabel("2026-09-15", "08:30:00")).toContain("08:30");
+  });
+
+  it("round-trips Bangkok reminder date and time", () => {
+    const iso = reminderIso("2026-09-16", "08:30");
+    expect(reminderInputParts(iso)).toEqual({
+      date: "2026-09-16",
+      time: "08:30",
+    });
+  });
+
+  it("requires both reminder date and time", () => {
+    expect(
+      planReminderFormSchema.safeParse({
+        title: "ให้ยาแมว",
+        note: "",
+        scope: "HOUSEHOLD",
+        remindDate: "2026-09-16",
+        remindTime: "",
+        recurrence: "DAILY",
+      }).success,
+    ).toBe(false);
   });
 });

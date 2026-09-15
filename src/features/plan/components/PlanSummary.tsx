@@ -4,11 +4,13 @@ export function PlanSummary({
   today,
   eventCount,
   taskCount,
+  reminderCount,
   noteCount,
 }: {
   today: string;
   eventCount: number;
   taskCount: number;
+  reminderCount: number;
   noteCount: number;
 }) {
   const date = new Intl.DateTimeFormat("th-TH", {
@@ -23,9 +25,10 @@ export function PlanSummary({
       <p className="relative text-sm font-medium text-finance-muted">
         วันนี้ · {date}
       </p>
-      <div className="relative mt-4 grid grid-cols-3 gap-2">
+      <div className="relative mt-4 grid grid-cols-4 gap-2">
         <SummaryMetric value={eventCount} label="กิจกรรม" />
         <SummaryMetric value={taskCount} label="งานค้าง" />
+        <SummaryMetric value={reminderCount} label="เตือน" />
         <SummaryMetric value={noteCount} label="โน้ต" />
       </div>
     </Card>

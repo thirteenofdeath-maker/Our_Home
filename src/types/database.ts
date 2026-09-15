@@ -28,7 +28,10 @@ export type PetSpecies = "CAT" | "DOG" | "RABBIT" | "BIRD" | "FISH" | "OTHER";
 export type PetSex = "MALE" | "FEMALE" | "UNKNOWN";
 export type CalendarEventScope = "PERSONAL" | "HOUSEHOLD";
 export type PlanTaskPriority = "LOW" | "NORMAL" | "HIGH";
-export type PlanNoteColor = "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
+export type PlanNoteColor =
+  "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
+export type PlanReminderRecurrence =
+  "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 export interface Database {
   public: {
@@ -274,6 +277,46 @@ export interface Database {
           content?: string | null;
           color?: PlanNoteColor;
           pinned_at?: string | null;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_reminders: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          note: string | null;
+          reminds_at: string;
+          recurrence: PlanReminderRecurrence;
+          is_completed: boolean;
+          completed_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          note?: string | null;
+          reminds_at: string;
+          recurrence?: PlanReminderRecurrence;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          note?: string | null;
+          reminds_at?: string;
+          recurrence?: PlanReminderRecurrence;
+          is_completed?: boolean;
+          completed_at?: string | null;
           archived_at?: string | null;
         };
         Relationships: [];

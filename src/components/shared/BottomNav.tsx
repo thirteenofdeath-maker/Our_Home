@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
-import { appSectionForPath, type AppSection } from "@/lib/navigation/app-section";
+import {
+  appSectionForPath,
+  type AppSection,
+} from "@/lib/navigation/app-section";
 
 /**
  * Pure navigation, nothing else — the "+" quick-add action lives in a
@@ -17,12 +20,22 @@ import { appSectionForPath, type AppSection } from "@/lib/navigation/app-section
  * and app-section.ts, the shared source of truth both read).
  */
 export const NAV_ITEMS = [
-  { href: "/wallets", label: "หน้าหลัก", icon: "home", section: "home" },
+  { href: "/", label: "หน้าหลัก", icon: "home", section: "home" },
   { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
   { href: "/calendar", label: "แพลน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
-  { href: "/household", label: "ครอบครัว", icon: "household", section: "household" },
-] as const satisfies ReadonlyArray<{ href: string; label: string; icon: AppIconName; section: AppSection }>;
+  {
+    href: "/household",
+    label: "ครอบครัว",
+    icon: "household",
+    section: "household",
+  },
+] as const satisfies ReadonlyArray<{
+  href: string;
+  label: string;
+  icon: AppIconName;
+  section: AppSection;
+}>;
 
 /**
  * One floating-capsule architecture for every module — fixed above the
@@ -46,7 +59,13 @@ export function BottomNav() {
           aria-current={active ? "page" : undefined}
           className={cn(
             "flex h-14 flex-col items-center justify-center gap-0.5 rounded-control text-[10px] font-medium transition-colors",
-            active ? (isFinance ? "text-finance-primary-strong" : "text-primary") : isFinance ? "text-finance-muted" : "text-foreground-muted",
+            active
+              ? isFinance
+                ? "text-finance-primary-strong"
+                : "text-primary"
+              : isFinance
+                ? "text-finance-muted"
+                : "text-foreground-muted",
           )}
         >
           <AppIcon name={item.icon as AppIconName} className="size-5" />
@@ -57,7 +76,12 @@ export function BottomNav() {
   }
 
   return (
-    <nav className={cn("fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-10", isFinance && "finance-scope")}>
+    <nav
+      className={cn(
+        "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-10",
+        isFinance && "finance-scope",
+      )}
+    >
       <ul
         className={cn(
           "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 rounded-[2rem] px-2 py-1 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
