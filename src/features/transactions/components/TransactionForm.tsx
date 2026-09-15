@@ -2,10 +2,11 @@
 
 import { useActionState, useState, useTransition } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import { FinancePocketField } from "@/features/finance/components/FinancePocketPicker";
 import { getIncomeExpenseSheetData } from "@/features/finance/quick-add-data";
 import type { Pocket } from "@/features/pockets/types";
@@ -246,21 +247,18 @@ export function TransactionForm({
 
       <input type="hidden" name="pocketId" value={activePocketId} />
       {variant === "page" || !endpoints ? (
-        <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId-select">
-          <Select
-            id="pocketId-select"
-            value={activePocketId}
-            onChange={(event) => setActivePocketId(event.target.value)}
-            required
-          >
-            {sheetData.pockets.map((pocket) => (
-              <option key={pocket.id} value={pocket.id}>
-                {pocket.name} · {pocket.currency}
-                {pocket.pocket_type === "CREDIT_CARD" ? " · บัตรเครดิต" : ""}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <FinanceOptionField
+          label="ช่องเงิน (Pocket)"
+          title="เลือก Pocket"
+          name={null}
+          options={sheetData.pockets.map((pocket) => ({
+            id: pocket.id,
+            label: pocket.name,
+            description: `${pocket.currency}${pocket.pocket_type === "CREDIT_CARD" ? " · บัตรเครดิต" : ""}`,
+          }))}
+          value={activePocketId}
+          onChange={setActivePocketId}
+        />
       ) : null}
 
       <Field label="หมวดหมู่" htmlFor="categoryId">

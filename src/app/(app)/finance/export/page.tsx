@@ -1,1 +1,69 @@
-export default function Page(){return <div className="flex flex-col gap-4"><form action="/finance/export/download" method="get" className="flex flex-col gap-3"><label>จากวันที่ <input type="date" name="from"/></label><label>ถึงวันที่ <input type="date" name="to"/></label><label>Wallet UUID <input name="walletId"/></label><label>Pocket UUID <input name="pocketId"/></label><label>Category UUID <input name="categoryId"/></label><label>Tag UUID <input name="tagId"/></label><label>ประเภท <select name="type"><option value="">ทั้งหมด</option><option>INCOME</option><option>EXPENSE</option><option>TRANSFER</option><option>DEBT_PRINCIPAL</option></select></label><button className="min-h-11 rounded-control bg-primary text-primary-foreground" type="submit">ดาวน์โหลด CSV</button></form></div>}
+import { listCategories } from "@/features/categories/api";
+import { FinanceExportForm } from "@/features/exports/FinanceExportForm";
+import { listPocketsForWallet } from "@/features/pockets/api";
+import { listTags } from "@/features/tags/api";
+import { listMyWallets } from "@/features/wallets/api";
+import { requireUser } from "@/lib/auth/require-user";
+
+export default async function ExportPage() {
+  const { supabase } = await requireUser();
+  const wallets = await listMyWallets(supabase);
+  const [pocketGroups, incomeCategories, expenseCategories, personalTags, householdTags] =
+    await Promise.all([
+      Promise.all(
+        wallets.map(async (wallet) => ({
+          wallet,
+          pockets: await listPocketsForWallet(supabase, wallet.id),
+        })),
+      ),
+      listCategories(supabase, { transactionType: "INCOME" }),
+      listCategories(supabase, { transactionType: "EXPENSE" }),
+      listTags(supabase, { scope: "PERSONAL" }),
+      listTags(supabase, { scope: "HOUSEHOLD" }),
+    ]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-xl font-semibold">ส่งออกข้อมูลการเงิน</h1>
+      <FinanceExportForm
+        wallets={wallets.map((wallet) => ({
+          id: wallet.id,
+          label: wallet.name,
+          description: wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว",
+        }))}
+        pockets={pocketGroups.flatMap(({ wallet, pockets }) =>
+          pockets.map((pocket) => ({
+            id: pocket.id,
+            walletId: wallet.id,
+            label: pocket.name,
+            description: `${wallet.name} · ${pocket.currency}`,
+          })),
+        )}
+        categories={[
+          ...incomeCategories.map((category) => ({
+            id: category.id,
+            label: category.name,
+            description: "รายรับ",
+          })),
+          ...expenseCategories.map((category) => ({
+            id: category.id,
+            label: category.name,
+            description: "รายจ่าย",
+          })),
+        ]}
+        tags={[
+          ...personalTags.map((tag) => ({
+            id: tag.id,
+            label: `#${tag.name}`,
+            description: "ส่วนตัว",
+          })),
+          ...householdTags.map((tag) => ({
+            id: tag.id,
+            label: `#${tag.name}`,
+            description: "ครอบครัว",
+          })),
+        ]}
+      />
+    </div>
+  );
+}

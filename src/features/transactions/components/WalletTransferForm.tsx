@@ -2,8 +2,9 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -31,6 +32,10 @@ export function WalletTransferForm({
 }) {
   const [state, formAction] = useActionState(createWalletTransferAction, initialActionState);
   const [toWalletId, setToWalletId] = useState(otherWallets[0]?.id ?? "");
+  const [fromPocketId, setFromPocketId] = useState(fromPockets[0]?.id ?? "");
+  const [toPocketId, setToPocketId] = useState(
+    pocketsByWallet[otherWallets[0]?.id ?? ""]?.[0]?.id ?? "",
+  );
   const toPockets = useMemo(() => pocketsByWallet[toWalletId] ?? [], [pocketsByWallet, toWalletId]);
   const today = new Date().toLocaleDateString("en-CA");
 
@@ -41,42 +46,44 @@ export function WalletTransferForm({
     >
       <input type="hidden" name="fromWalletId" value={fromWallet.id} />
 
-      <Field label="จากกระเป๋าเงิน" htmlFor="fromPocketId">
-        <p className="text-sm text-foreground-muted">{fromWallet.name}</p>
-        <Select id="fromPocketId" name="fromPocketId" required>
-          {fromPockets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="Pocket ต้นทาง"
+        title="เลือก Pocket ต้นทาง"
+        name="fromPocketId"
+        options={fromPockets.map((pocket) => ({
+          id: pocket.id,
+          label: pocket.name,
+          description: `${fromWallet.name} · ${pocket.currency}`,
+        }))}
+        value={fromPocketId}
+        onChange={setFromPocketId}
+      />
 
-      <Field label="ไปยังกระเป๋าเงิน" htmlFor="toWalletId">
-        <Select
-          id="toWalletId"
-          name="toWalletId"
-          required
-          value={toWalletId}
-          onChange={(e) => setToWalletId(e.target.value)}
-        >
-          {otherWallets.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="Wallet ปลายทาง"
+        title="เลือก Wallet ปลายทาง"
+        name="toWalletId"
+        options={otherWallets.map((wallet) => ({ id: wallet.id, label: wallet.name }))}
+        value={toWalletId}
+        onChange={(nextWalletId) => {
+          setToWalletId(nextWalletId);
+          setToPocketId(pocketsByWallet[nextWalletId]?.[0]?.id ?? "");
+        }}
+      />
 
-      <Field label="ช่องปลายทาง" htmlFor="toPocketId">
-        <Select key={toWalletId} id="toPocketId" name="toPocketId" required>
-          {toPockets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="Pocket ปลายทาง"
+        title="เลือก Pocket ปลายทาง"
+        name="toPocketId"
+        options={toPockets.map((pocket) => ({
+          id: pocket.id,
+          label: pocket.name,
+          description: pocket.currency,
+        }))}
+        value={toPocketId}
+        onChange={setToPocketId}
+        disabled={!toWalletId}
+      />
 
       <Field label="จำนวนเงิน" htmlFor="amount">
         <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />

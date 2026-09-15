@@ -2,8 +2,9 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -39,6 +40,7 @@ export function ExpenseAdjustmentForm({
   const [state, formAction] = useActionState(createExpenseAdjustmentAction, initialActionState);
   const [walletId, setWalletId] = useState(wallets[0]?.id ?? "");
   const pockets = useMemo(() => pocketsByWallet[walletId] ?? [], [pocketsByWallet, walletId]);
+  const [pocketId, setPocketId] = useState(pockets[0]?.id ?? "");
   const today = new Date().toLocaleDateString("en-CA");
 
   return (
@@ -67,25 +69,31 @@ export function ExpenseAdjustmentForm({
         <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required autoFocus />
       </Field>
 
-      <Field label="เข้ากระเป๋าเงิน" htmlFor="walletId">
-        <Select id="walletId" name="walletId" required value={walletId} onChange={(e) => setWalletId(e.target.value)}>
-          {wallets.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="เข้ากระเป๋าเงิน"
+        title="เลือก Wallet"
+        name="walletId"
+        options={wallets.map((wallet) => ({ id: wallet.id, label: wallet.name }))}
+        value={walletId}
+        onChange={(nextWalletId) => {
+          setWalletId(nextWalletId);
+          setPocketId(pocketsByWallet[nextWalletId]?.[0]?.id ?? "");
+        }}
+      />
 
-      <Field label="ช่อง (Pocket)" htmlFor="pocketId">
-        <Select key={walletId} id="pocketId" name="pocketId" required>
-          {pockets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="ช่อง (Pocket)"
+        title="เลือก Pocket"
+        name="pocketId"
+        options={pockets.map((pocket) => ({
+          id: pocket.id,
+          label: pocket.name,
+          description: pocket.currency,
+        }))}
+        value={pocketId}
+        onChange={setPocketId}
+        disabled={!walletId}
+      />
 
       <Field label="วันที่" htmlFor="occurredAt">
         <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />

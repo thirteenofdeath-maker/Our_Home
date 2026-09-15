@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -37,6 +38,7 @@ export function EditTransactionForm({
   currentTags: TagOption[];
 }) {
   const [state, formAction] = useActionState(updateIncomeExpenseAction, initialActionState);
+  const [pocketId, setPocketId] = useState(transaction.pocketId ?? pockets[0]?.id ?? "");
   const occurredAtDefault = transaction.occurredAt.slice(0, 10);
   const amountDefault = (transaction.amount ?? "0.00").replace(/^-/, "");
 
@@ -49,15 +51,18 @@ export function EditTransactionForm({
         <Input id="amount" name="amount" type="text" inputMode="decimal" defaultValue={amountDefault} required autoFocus />
       </Field>
 
-      <Field label="ช่อง (Pocket)" htmlFor="pocketId">
-        <Select id="pocketId" name="pocketId" defaultValue={transaction.pocketId ?? undefined} required>
-          {pockets.map((pocket) => (
-            <option key={pocket.id} value={pocket.id}>
-              {pocket.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="ช่อง (Pocket)"
+        title="เลือก Pocket"
+        name="pocketId"
+        options={pockets.map((pocket) => ({
+          id: pocket.id,
+          label: pocket.name,
+          description: pocket.currency,
+        }))}
+        value={pocketId}
+        onChange={setPocketId}
+      />
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
           <CategoryPicker

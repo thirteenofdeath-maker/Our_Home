@@ -2,9 +2,10 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { CategoryNode } from "@/features/categories/types";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -34,6 +35,9 @@ export function EditTemplateForm({
   );
   const [walletId, setWalletId] = useState(
     template.walletArchived ? "" : (template.walletId ?? ""),
+  );
+  const [pocketId, setPocketId] = useState(
+    template.pocketArchived ? "" : (template.pocketId ?? ""),
   );
   const pockets = useMemo(
     () => (walletId ? (pocketsByWallet[walletId] ?? []) : []),
@@ -86,39 +90,33 @@ export function EditTemplateForm({
         />
       </Field>
 
-      <Field label="Wallet (ถ้ามี)" htmlFor="walletId">
-        <Select
-          id="walletId"
-          name="walletId"
-          value={walletId}
-          onChange={(e) => setWalletId(e.target.value)}
-        >
-          <option value="">ไม่กำหนด</option>
-          {wallets.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="Wallet (ถ้ามี)"
+        title="เลือก Wallet"
+        name="walletId"
+        options={wallets.map((wallet) => ({ id: wallet.id, label: wallet.name }))}
+        value={walletId}
+        onChange={(nextWalletId) => {
+          setWalletId(nextWalletId);
+          setPocketId("");
+        }}
+        emptyChoice={{ label: "ไม่กำหนด" }}
+      />
 
       {walletId ? (
-        <Field label="Pocket (ถ้ามี)" htmlFor="pocketId">
-          <Select
-            id="pocketId"
-            name="pocketId"
-            defaultValue={
-              walletId === template.walletId ? (template.pocketId ?? "") : ""
-            }
-          >
-            <option value="">ไม่กำหนด</option>
-            {pockets.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <FinanceOptionField
+          label="Pocket (ถ้ามี)"
+          title="เลือก Pocket"
+          name="pocketId"
+          options={pockets.map((pocket) => ({
+            id: pocket.id,
+            label: pocket.name,
+            description: pocket.currency,
+          }))}
+          value={pocketId}
+          onChange={setPocketId}
+          emptyChoice={{ label: "ไม่กำหนด" }}
+        />
       ) : null}
 
       <Field label="หมวดหมู่ (ถ้ามี)" htmlFor="categoryId">
