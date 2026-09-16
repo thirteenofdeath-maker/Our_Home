@@ -74,7 +74,10 @@ export default async function FinancePage({
       ? Number(currentFinanceDate().slice(-2))
       : undefined;
 
-  await materializeBills(supabase, { scope, householdId });
+  // Materialization and the independent dashboard reads used to form a full
+  // waterfall. Start them together; occurrences alone wait for both the bill
+  // list and materialization to complete.
+  const materialization = materializeBills(supabase, { scope, householdId });
   const [allWallets, budgets, bills, report, goals, debts] = await Promise.all([
     listMyWallets(supabase),
     getBudgetSummary(supabase, {
@@ -95,6 +98,7 @@ export default async function FinancePage({
     listGoals(supabase, scope, householdId),
     listDebts(supabase, scope, householdId),
   ]);
+  await materialization;
   const billOccurrences = await listBillOccurrences(
     supabase,
     bills.filter((bill) => !bill.pausedAt).map((bill) => bill.billId),

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
  * docs/ARCHITECTURE.md §5). This just avoids null-checking `user` in every
  * feature action.
  */
-export async function requireUser() {
+export const requireUser = cache(async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,4 +23,4 @@ export async function requireUser() {
   }
 
   return { supabase, user };
-}
+});

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 let mockPathname = "/finance";
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
+  useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
 import { BottomNav, NAV_ITEMS } from "./BottomNav";

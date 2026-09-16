@@ -67,10 +67,12 @@ function weekDates(date: string) {
 export default async function HomePage() {
   const { supabase, user } = await requireUser();
 
-  const [wallets, household, profile] = await Promise.all([
-    listMyWallets(supabase),
-    getMyPrimaryHousehold(supabase, user.id),
-    getCurrentProfile(supabase, user.id),
+  const walletsPromise = listMyWallets(supabase);
+  const householdPromise = getMyPrimaryHousehold(supabase, user.id);
+  const profilePromise = getCurrentProfile(supabase, user.id);
+  const [wallets, household] = await Promise.all([
+    walletsPromise,
+    householdPromise,
   ]);
 
   if (wallets.length === 0 && !household) {
@@ -83,6 +85,7 @@ export default async function HomePage() {
   const householdId = household?.id ?? null;
 
   const [
+    profile,
     events,
     tasks,
     reminders,
@@ -92,6 +95,7 @@ export default async function HomePage() {
     pets,
     petCare,
   ] = await Promise.all([
+    profilePromise,
     listCalendarEvents(supabase, householdId, user.id),
     listPlanTasks(supabase),
     listPlanReminders(supabase, { completed: false }),

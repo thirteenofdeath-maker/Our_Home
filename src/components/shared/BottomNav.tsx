@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils/cn";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
@@ -47,16 +48,24 @@ export const NAV_ITEMS = [
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const section = appSectionForPath(pathname);
-  const isFinance = section === "finance";
+  const [pending, setPending] = useState<{
+    fromPath: string;
+    section: AppSection;
+  } | null>(null);
+  const activeSection = pending?.fromPath === pathname ? pending.section : section;
+  const isFinance = activeSection === "finance";
 
   function renderItem(item: (typeof NAV_ITEMS)[number]) {
-    const active = section === item.section;
+    const active = activeSection === item.section;
     return (
       <li key={item.href}>
         <Link
           href={item.href}
           prefetch={true}
+          onPointerDown={() => router.prefetch(item.href)}
+          onClick={() => setPending({ fromPath: pathname, section: item.section })}
           aria-current={active ? "page" : undefined}
           className={cn(
             "flex h-14 flex-col items-center justify-center gap-0.5 rounded-control text-[10px] font-medium transition-colors",
