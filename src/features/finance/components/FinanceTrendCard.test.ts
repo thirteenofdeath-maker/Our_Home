@@ -2,21 +2,29 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { buildSeriesPath, FinanceTrendCard } from "./FinanceTrendCard";
+import {
+  buildCumulativeDailyTrend,
+  buildSeriesPath,
+  FinanceTrendCard,
+} from "./FinanceTrendCard";
 
-const render = (overrides: Partial<Parameters<typeof FinanceTrendCard>[0]> = {}) =>
-  renderToStaticMarkup(createElement(FinanceTrendCard, {
-    currency: "THB",
-    showCurrencyLabel: false,
-    trend: [
-      { month: "2026-08", income: "500.00", expense: "200.00" },
-      { month: "2026-09", income: "1000.00", expense: "400.00" },
-    ],
-    income: "1000.00",
-    expense: "400.00",
-    net: "600.00",
-    ...overrides,
-  }));
+const render = (
+  overrides: Partial<Parameters<typeof FinanceTrendCard>[0]> = {},
+) =>
+  renderToStaticMarkup(
+    createElement(FinanceTrendCard, {
+      currency: "THB",
+      showCurrencyLabel: false,
+      trend: [
+        { date: "2026-09-01", income: "500.00", expense: "200.00" },
+        { date: "2026-09-02", income: "1000.00", expense: "400.00" },
+      ],
+      income: "1000.00",
+      expense: "400.00",
+      net: "600.00",
+      ...overrides,
+    }),
+  );
 
 describe("FinanceTrendCard", () => {
   it("renders an accessible two-series income and expense overview", () => {
@@ -36,12 +44,21 @@ describe("FinanceTrendCard", () => {
   });
 
   it("shows the currency label only for a multi-currency dashboard", () => {
-    expect(render({ trend: [], showCurrencyLabel: false })).not.toContain("THB");
-    expect(render({ trend: [], currency: "USD", showCurrencyLabel: true })).toContain("USD");
+    expect(render({ trend: [], showCurrencyLabel: false })).not.toContain(
+      "THB",
+    );
+    expect(
+      render({ trend: [], currency: "USD", showCurrencyLabel: true }),
+    ).toContain("USD");
   });
 
   it("keeps negative balance visible and provides an honest empty state", () => {
-    const negative = render({ trend: [], income: "100.00", expense: "500.00", net: "-400.00" });
+    const negative = render({
+      trend: [],
+      income: "100.00",
+      expense: "500.00",
+      net: "-400.00",
+    });
     expect(negative).toContain("-฿400.00");
     expect(negative).toContain("ยังไม่มีข้อมูลรายรับ–รายจ่าย");
     expect(negative).not.toContain('role="img"');
@@ -50,12 +67,60 @@ describe("FinanceTrendCard", () => {
   it("keeps the line chart visible when the six-month series contains only zeroes", () => {
     const html = render({
       trend: [
-        { month: "2026-08", income: "0.00", expense: "0.00" },
-        { month: "2026-09", income: "0.00", expense: "0.00" },
+        { date: "2026-09-01", income: "0.00", expense: "0.00" },
+        { date: "2026-09-02", income: "0.00", expense: "0.00" },
       ],
     });
     expect(html).toContain('role="img"');
     expect(html).toContain("ยังไม่มีรายการในช่วงนี้");
     expect(html).toContain('stroke-dasharray="7 4"');
+  });
+
+  it("builds a complete cumulative day-by-day series for the selected month", () => {
+    const trend = buildCumulativeDailyTrend(
+      "2026-09",
+      [
+        {
+          date: "2026-09-01",
+          currency: "THB",
+          income: "100.00",
+          expense: "0.00",
+        },
+        {
+          date: "2026-09-03",
+          currency: "THB",
+          income: "50.00",
+          expense: "20.00",
+        },
+        {
+          date: "2026-09-03",
+          currency: "USD",
+          income: "900.00",
+          expense: "900.00",
+        },
+      ],
+      "THB",
+    );
+    expect(trend).toHaveLength(30);
+    expect(trend[0]).toEqual({
+      date: "2026-09-01",
+      income: "100.00",
+      expense: "0.00",
+    });
+    expect(trend[1]).toEqual({
+      date: "2026-09-02",
+      income: "100.00",
+      expense: "0.00",
+    });
+    expect(trend[2]).toEqual({
+      date: "2026-09-03",
+      income: "150.00",
+      expense: "20.00",
+    });
+    expect(trend[29]).toEqual({
+      date: "2026-09-30",
+      income: "150.00",
+      expense: "20.00",
+    });
   });
 });

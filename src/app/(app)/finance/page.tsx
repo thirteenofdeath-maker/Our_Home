@@ -8,7 +8,10 @@ import {
   materializeBills,
 } from "@/features/bills/api";
 import { listDebts } from "@/features/debts/api";
-import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
+import {
+  buildCumulativeDailyTrend,
+  FinanceTrendCard,
+} from "@/features/finance/components/FinanceTrendCard";
 import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
 import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
@@ -61,7 +64,6 @@ export default async function FinancePage({
   }).format(new Date(`${month}-01T00:00:00+07:00`));
 
   await materializeBills(supabase, { scope, householdId });
-  const trendStart = financeMonthRange(shiftFinanceMonth(month, -5)).start;
   const [allWallets, budgets, bills, report, goals, debts] = await Promise.all([
     listMyWallets(supabase),
     getBudgetSummary(supabase, {
@@ -72,7 +74,13 @@ export default async function FinancePage({
       householdId,
     }),
     listBills(supabase, { scope, householdId }),
-    getFinanceReport(supabase, scope, householdId, trendStart, monthRange.end),
+    getFinanceReport(
+      supabase,
+      scope,
+      householdId,
+      monthRange.start,
+      monthRange.end,
+    ),
     listGoals(supabase, scope, householdId),
     listDebts(supabase, scope, householdId),
   ]);
@@ -96,9 +104,6 @@ export default async function FinancePage({
   const summaryCurrencies = reportCurrencies.length
     ? reportCurrencies
     : ["THB"];
-  const trendMonths = [-5, -4, -3, -2, -1, 0].map((offset) =>
-    shiftFinanceMonth(month, offset),
-  );
   const activeGoals = goals.filter(
     (goal) => !goal.archivedAt && !goal.isComplete,
   );
@@ -170,17 +175,7 @@ export default async function FinancePage({
               key={currency}
               currency={currency}
               showCurrencyLabel={summaryCurrencies.length > 1}
-              trend={trendMonths.map((trendMonth) => {
-                const point = report.months.find(
-                  (item) =>
-                    item.currency === currency && item.month === trendMonth,
-                );
-                return {
-                  month: trendMonth,
-                  income: point?.income ?? "0.00",
-                  expense: point?.expense ?? "0.00",
-                };
-              })}
+              trend={buildCumulativeDailyTrend(month, report.days, currency)}
               income={total.income}
               expense={total.expense}
               net={subtractMoney(total.income, total.expense)}
