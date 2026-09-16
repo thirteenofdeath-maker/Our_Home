@@ -237,8 +237,30 @@ input[type="datetime-local"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value,
 input[type="month"]::-webkit-date-and-time-value,
 input[type="week"]::-webkit-date-and-time-value {
+  display: flex;
+  align-items: center;
+  block-size: 100%;
   min-inline-size: 0;
+  min-block-size: 100%;
+  margin: 0;
   text-align: start;
+}
+
+/* Mobile Safari renders the editable date/time segments in its own inner
+   box. The outer Input is 3.25rem tall, but without sizing and centring this
+   inner box WebKit pins the value to the top edge (especially after removing
+   the native appearance to fix intrinsic-width overflow). Keep the fix global
+   so every date, time, datetime, month, and week field shares one baseline. */
+input[type="date"]::-webkit-datetime-edit,
+input[type="datetime-local"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit,
+input[type="month"]::-webkit-datetime-edit,
+input[type="week"]::-webkit-datetime-edit {
+  display: flex;
+  align-items: center;
+  block-size: 100%;
+  min-block-size: 100%;
+  padding-block: 0;
 }
 
 /* Only WebKit needs its native intrinsic-size override removed. Keeping this
@@ -251,5 +273,6 @@ input[type="week"]::-webkit-date-and-time-value {
   input[type="week"] {
     -webkit-appearance: none;
     appearance: none;
+    padding-block: 0;
   }
 }

@@ -64,6 +64,13 @@ describe("two-column form controls", () => {
     expect(css).toMatch(/input\[type="date"\][\s\S]*?inline-size:\s*100%/);
     expect(css).toMatch(/input\[type="date"\][\s\S]*?max-inline-size:\s*100%/);
     expect(css).toContain("::-webkit-date-and-time-value");
+    expect(css).toContain("::-webkit-datetime-edit");
+    expect(css).toMatch(
+      /::-webkit-date-and-time-value[\s\S]*?display:\s*flex;[\s\S]*?align-items:\s*center;[\s\S]*?block-size:\s*100%/,
+    );
+    expect(css).toMatch(
+      /::-webkit-datetime-edit[\s\S]*?align-items:\s*center;[\s\S]*?padding-block:\s*0/,
+    );
     expect(css).toContain("@supports (-webkit-touch-callout: none)");
     expect(css).toContain("-webkit-appearance: none");
   });
