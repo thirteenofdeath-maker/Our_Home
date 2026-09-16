@@ -16,6 +16,7 @@ import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSe
 import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import {
+  currentFinanceDate,
   currentFinanceMonth,
   financeMonthRange,
   financeMonthToPeriodMonth,
@@ -27,7 +28,6 @@ import { getFinanceReport } from "@/features/reports/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { AddWalletTrigger } from "@/features/wallets/components/AddWalletTrigger";
 import { requireUser } from "@/lib/auth/require-user";
-import { subtractMoney } from "@/lib/utils/money";
 
 const SHORTCUTS = [
   { href: "/categories", label: "หมวดหมู่", icon: "pocket" },
@@ -56,12 +56,25 @@ export default async function FinancePage({
       : currentFinanceMonth();
   const monthRange = financeMonthRange(month);
   const prevMonth = shiftFinanceMonth(month, -1);
+  const prevMonthRange = financeMonthRange(prevMonth);
   const nextMonth = shiftFinanceMonth(month, 1);
   const monthLabel = new Intl.DateTimeFormat("th-TH", {
     month: "long",
     year: "numeric",
     timeZone: "Asia/Bangkok",
   }).format(new Date(`${month}-01T00:00:00+07:00`));
+  const chartMonthLabel = new Intl.DateTimeFormat("th-TH", {
+    month: "long",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(`${month}-01T00:00:00+07:00`));
+  const prevMonthLabel = new Intl.DateTimeFormat("th-TH", {
+    month: "long",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(`${prevMonth}-01T00:00:00+07:00`));
+  const currentDay =
+    month === currentFinanceMonth()
+      ? Number(currentFinanceDate().slice(-2))
+      : undefined;
 
   await materializeBills(supabase, { scope, householdId });
   const [allWallets, budgets, bills, report, goals, debts] = await Promise.all([
@@ -78,7 +91,7 @@ export default async function FinancePage({
       supabase,
       scope,
       householdId,
-      monthRange.start,
+      prevMonthRange.start,
       monthRange.end,
     ),
     listGoals(supabase, scope, householdId),
@@ -96,6 +109,9 @@ export default async function FinancePage({
   );
   const currentMonthTotals = report.months.filter(
     (item) => item.month === month,
+  );
+  const previousMonthTotals = report.months.filter(
+    (item) => item.month === prevMonth,
   );
   const initialWallet = wallets[0];
   const reportCurrencies = [
@@ -170,15 +186,26 @@ export default async function FinancePage({
           const total = currentMonthTotals.find(
             (item) => item.currency === currency,
           ) ?? { income: "0.00", expense: "0.00" };
+          const previousTotal = previousMonthTotals.find(
+            (item) => item.currency === currency,
+          ) ?? { income: "0.00", expense: "0.00" };
           return (
             <FinanceTrendCard
               key={currency}
               currency={currency}
               showCurrencyLabel={summaryCurrencies.length > 1}
               trend={buildCumulativeDailyTrend(month, report.days, currency)}
+              comparisonTrend={buildCumulativeDailyTrend(
+                prevMonth,
+                report.days,
+                currency,
+              )}
+              monthLabel={chartMonthLabel}
+              comparisonMonthLabel={prevMonthLabel}
+              throughDay={currentDay}
               income={total.income}
               expense={total.expense}
-              net={subtractMoney(total.income, total.expense)}
+              previousExpense={previousTotal.expense}
             />
           );
         })}

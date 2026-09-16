@@ -1,5 +1,5 @@
 import type { ReportDay } from "@/features/reports/types";
-import { addMoney, formatCurrency } from "@/lib/utils/money";
+import { addMoney, formatCurrency, subtractMoney } from "@/lib/utils/money";
 
 export interface FinanceTrendPoint {
   date: string;
@@ -11,15 +11,18 @@ const CHART_WIDTH = 320;
 const CHART_TOP = 12;
 const CHART_BOTTOM = 112;
 
-export function buildSeriesPath(values: number[], maxValue: number) {
+export function buildSeriesPath(
+  values: number[],
+  maxValue: number,
+  totalPoints = values.length,
+) {
   if (!values.length) return "";
   const denominator = Math.max(maxValue, 1);
+  const slots = Math.max(totalPoints, values.length, 1);
   return values
     .map((value, index) => {
       const x =
-        values.length === 1
-          ? CHART_WIDTH / 2
-          : (index / (values.length - 1)) * CHART_WIDTH;
+        slots === 1 ? CHART_WIDTH / 2 : (index / (slots - 1)) * CHART_WIDTH;
       const y =
         CHART_BOTTOM -
         (Math.max(value, 0) / denominator) * (CHART_BOTTOM - CHART_TOP);
@@ -59,49 +62,91 @@ export function FinanceTrendCard({
   currency,
   showCurrencyLabel,
   trend,
+  comparisonTrend,
+  monthLabel,
+  comparisonMonthLabel,
+  throughDay,
   income,
   expense,
-  net,
+  previousExpense,
 }: {
   currency: string;
   showCurrencyLabel: boolean;
   trend: FinanceTrendPoint[];
+  comparisonTrend: FinanceTrendPoint[];
+  monthLabel: string;
+  comparisonMonthLabel: string;
+  throughDay?: number;
   income: string;
   expense: string;
-  net: string;
+  previousExpense: string;
 }) {
-  const incomeValues = trend.map((point) => Number(point.income));
-  const expenseValues = trend.map((point) => Number(point.expense));
-  const maxValue = Math.max(1, ...incomeValues, ...expenseValues);
-  const incomePath = buildSeriesPath(incomeValues, maxValue);
-  const expensePath = buildSeriesPath(expenseValues, maxValue);
-  const hasActivity = [...incomeValues, ...expenseValues].some(
+  const visibleTrend = throughDay
+    ? trend.slice(0, Math.max(1, Math.min(throughDay, trend.length)))
+    : trend;
+  const currentExpenseValues = visibleTrend.map((point) =>
+    Number(point.expense),
+  );
+  const previousExpenseValues = trend.map((_, index) =>
+    Number(
+      comparisonTrend[Math.min(index, comparisonTrend.length - 1)]?.expense ??
+        "0",
+    ),
+  );
+  const maxValue = Math.max(
+    1,
+    ...currentExpenseValues,
+    ...previousExpenseValues,
+  );
+  const currentExpensePath = buildSeriesPath(
+    currentExpenseValues,
+    maxValue,
+    trend.length,
+  );
+  const previousExpensePath = buildSeriesPath(
+    previousExpenseValues,
+    maxValue,
+    trend.length,
+  );
+  const hasActivity = [...currentExpenseValues, ...previousExpenseValues].some(
     (value) => value !== 0,
   );
-  const fillPath = incomePath
-    ? `${incomePath} L${CHART_WIDTH} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
+  const currentEndX =
+    trend.length <= 1
+      ? CHART_WIDTH / 2
+      : ((currentExpenseValues.length - 1) / (trend.length - 1)) * CHART_WIDTH;
+  const fillPath = currentExpensePath
+    ? `${currentExpensePath} L${currentEndX.toFixed(2)} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
     : "";
-  const gradientId = `income-area-${currency.replace(/[^a-z0-9]/gi, "-")}`;
+  const gradientId = `expense-area-${currency.replace(/[^a-z0-9]/gi, "-")}`;
+  const difference = subtractMoney(expense, previousExpense);
+  const isEqual = difference === "0.00" || difference === "-0.00";
+  const absoluteDifference = difference.startsWith("-")
+    ? difference.slice(1)
+    : difference;
+  const comparisonText = isEqual
+    ? "รายจ่ายเท่ากับเดือนก่อน"
+    : `รายจ่าย${difference.startsWith("-") ? "ลดลง" : "เพิ่มขึ้น"} ${formatCurrency(absoluteDifference, currency)} จากเดือนก่อน`;
 
   return (
     <div className="overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-finance-text">
-            ภาพรวมรายรับ–รายจ่าย{showCurrencyLabel ? ` · ${currency}` : ""}
+            แนวโน้มรายจ่าย{showCurrencyLabel ? ` · ${currency}` : ""}
           </h3>
           <p className="mt-0.5 text-xs text-finance-muted">
-            ยอดสะสมรายวัน · วันที่ 1–{trend.length}
+            {monthLabel} · วันที่ 1–{trend.length}
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-1 text-[11px] text-finance-muted sm:flex-row sm:gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-finance-income" />
-            รายรับ
+            <span className="size-2 rounded-full bg-finance-expense" />
+            {monthLabel}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-finance-expense" />
-            รายจ่าย
+            <span className="size-2 rounded-full bg-finance-muted/35" />
+            {comparisonMonthLabel}
           </span>
         </div>
       </div>
@@ -111,7 +156,7 @@ export function FinanceTrendCard({
           <svg
             viewBox={`0 0 ${CHART_WIDTH} 132`}
             role="img"
-            aria-label={`กราฟรายรับและรายจ่าย ${currency} รายวัน ${trend[0]?.date.slice(0, 7) ?? ""}`}
+            aria-label={`กราฟเปรียบเทียบรายจ่าย ${currency} ${monthLabel} กับ ${comparisonMonthLabel}`}
             className="h-36 w-full overflow-visible"
             preserveAspectRatio="none"
           >
@@ -119,7 +164,7 @@ export function FinanceTrendCard({
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor="var(--finance-income)"
+                  stopColor="var(--finance-expense)"
                   stopOpacity="0.18"
                 />
                 <stop
@@ -142,24 +187,24 @@ export function FinanceTrendCard({
               />
             ))}
             <path
-              d={fillPath}
-              fill={`url(#${gradientId})`}
-              className="text-finance-income"
-            />
-            <path
-              data-series="income"
-              d={incomePath}
+              data-series="previous-expense"
+              d={previousExpensePath}
               fill="none"
               stroke="currentColor"
-              className="text-finance-income"
+              className="text-finance-muted/35"
               strokeWidth="3"
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
             <path
-              data-series="expense"
-              d={expensePath}
+              d={fillPath}
+              fill={`url(#${gradientId})`}
+              className="text-finance-expense"
+            />
+            <path
+              data-series="current-expense"
+              d={currentExpensePath}
               fill="none"
               stroke="currentColor"
               className="text-finance-expense"
@@ -167,7 +212,6 @@ export function FinanceTrendCard({
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray="7 4"
             />
           </svg>
           {!hasActivity ? (
@@ -191,7 +235,7 @@ export function FinanceTrendCard({
       ) : (
         <div className="mt-4 flex h-36 items-center justify-center rounded-[1rem] bg-finance-primary-soft/55">
           <p className="text-xs text-finance-muted">
-            ยังไม่มีข้อมูลรายรับ–รายจ่าย
+            ยังไม่มีข้อมูลรายจ่ายสำหรับเปรียบเทียบ
           </p>
         </div>
       )}
@@ -208,11 +252,16 @@ export function FinanceTrendCard({
           tone="expense"
         />
         <FinanceTotal
-          label="คงเหลือ"
-          value={formatCurrency(net, currency)}
-          tone={net.startsWith("-") ? "expense" : "default"}
+          label="รายจ่ายเดือนก่อน"
+          value={formatCurrency(previousExpense, currency)}
+          tone="default"
         />
       </div>
+      <p
+        className={`mt-2 text-center text-xs font-medium ${isEqual ? "text-finance-muted" : difference.startsWith("-") ? "text-finance-income" : "text-finance-expense"}`}
+      >
+        {comparisonText}
+      </p>
     </div>
   );
 }

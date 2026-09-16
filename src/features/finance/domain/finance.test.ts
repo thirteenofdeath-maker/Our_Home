@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  currentFinanceDate,
   financeExpenseHref,
   financeIncomeHref,
   financeMonthRange,
@@ -14,6 +15,14 @@ import {
   type FinanceEntryRow,
   type FinanceTransactionRow,
 } from "./finance";
+
+describe("currentFinanceDate", () => {
+  it("uses the Bangkok calendar across the UTC date boundary", () => {
+    expect(currentFinanceDate(new Date("2026-09-15T18:30:00.000Z"))).toBe(
+      "2026-09-16",
+    );
+  });
+});
 
 describe("shiftFinanceMonth (Budget month navigation)", () => {
   it("moves forward and backward within a year", () => {
@@ -170,12 +179,23 @@ function entry(overrides: Partial<FinanceEntryRow>): FinanceEntryRow {
 describe("mapRecentFinanceTransactions", () => {
   it("passes an EXPENSE through as a single negative-amount row", () => {
     const result = mapRecentFinanceTransactions(
-      [txn({ id: "t1", transaction_type: "EXPENSE", category: { name: "Coffee" } })],
+      [
+        txn({
+          id: "t1",
+          transaction_type: "EXPENSE",
+          category: { name: "Coffee" },
+        }),
+      ],
       [entry({ transaction_id: "t1", amount: "-120.00" })],
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({ transactionId: "t1", transactionType: "EXPENSE", amount: "-120.00", categoryName: "Coffee" });
+    expect(result[0]).toMatchObject({
+      transactionId: "t1",
+      transactionType: "EXPENSE",
+      amount: "-120.00",
+      categoryName: "Coffee",
+    });
     expect(result[0].pocketTransfer).toBeUndefined();
     expect(result[0].walletTransfer).toBeUndefined();
   });
@@ -186,20 +206,38 @@ describe("mapRecentFinanceTransactions", () => {
       [entry({ transaction_id: "t2", amount: "35000.00" })],
     );
 
-    expect(result[0]).toMatchObject({ transactionId: "t2", transactionType: "INCOME", amount: "35000.00" });
+    expect(result[0]).toMatchObject({
+      transactionId: "t2",
+      transactionType: "INCOME",
+      amount: "35000.00",
+    });
   });
 
   it("groups a pocket transfer's two entries (same wallet) into ONE logical row", () => {
     const result = mapRecentFinanceTransactions(
       [txn({ id: "t3", transaction_type: "TRANSFER" })],
       [
-        entry({ transaction_id: "t3", wallet_id: "w1", amount: "-2000.00", pocket: { name: "Main" } }),
-        entry({ transaction_id: "t3", wallet_id: "w1", amount: "2000.00", pocket: { name: "Travel" } }),
+        entry({
+          transaction_id: "t3",
+          wallet_id: "w1",
+          amount: "-2000.00",
+          pocket: { name: "Main" },
+        }),
+        entry({
+          transaction_id: "t3",
+          wallet_id: "w1",
+          amount: "2000.00",
+          pocket: { name: "Travel" },
+        }),
       ],
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0].pocketTransfer).toEqual({ fromPocketName: "Main", toPocketName: "Travel", amount: "2000.00" });
+    expect(result[0].pocketTransfer).toEqual({
+      fromPocketName: "Main",
+      toPocketName: "Travel",
+      amount: "2000.00",
+    });
     expect(result[0].walletTransfer).toBeUndefined();
   });
 
@@ -207,8 +245,20 @@ describe("mapRecentFinanceTransactions", () => {
     const result = mapRecentFinanceTransactions(
       [txn({ id: "t4", transaction_type: "TRANSFER" })],
       [
-        entry({ transaction_id: "t4", wallet_id: "w1", amount: "-3000.00", wallet: { name: "KBank", currency: "THB" }, pocket: { name: "Main" } }),
-        entry({ transaction_id: "t4", wallet_id: "w2", amount: "3000.00", wallet: { name: "SCB", currency: "THB" }, pocket: { name: "Main" } }),
+        entry({
+          transaction_id: "t4",
+          wallet_id: "w1",
+          amount: "-3000.00",
+          wallet: { name: "KBank", currency: "THB" },
+          pocket: { name: "Main" },
+        }),
+        entry({
+          transaction_id: "t4",
+          wallet_id: "w2",
+          amount: "3000.00",
+          wallet: { name: "SCB", currency: "THB" },
+          pocket: { name: "Main" },
+        }),
       ],
     );
 
@@ -223,7 +273,10 @@ describe("mapRecentFinanceTransactions", () => {
   });
 
   it("never emits more rows than transactions (one row per transaction_id, not per ledger entry)", () => {
-    const transactions = [txn({ id: "t5", transaction_type: "TRANSFER" }), txn({ id: "t6", transaction_type: "EXPENSE" })];
+    const transactions = [
+      txn({ id: "t5", transaction_type: "TRANSFER" }),
+      txn({ id: "t6", transaction_type: "EXPENSE" }),
+    ];
     const entries = [
       entry({ transaction_id: "t5", wallet_id: "w1", amount: "-500.00" }),
       entry({ transaction_id: "t5", wallet_id: "w1", amount: "500.00" }),
@@ -242,11 +295,15 @@ describe("mapRecentFinanceTransactions", () => {
 
 describe("Quick-add links reach the existing, already-verified creation flows", () => {
   it("routes Income to the existing wallet income form with Finance as the return target", () => {
-    expect(financeIncomeHref("wallet-1")).toBe("/wallets/wallet-1/transactions/new?type=INCOME&returnTo=%2Ffinance");
+    expect(financeIncomeHref("wallet-1")).toBe(
+      "/wallets/wallet-1/transactions/new?type=INCOME&returnTo=%2Ffinance",
+    );
   });
 
   it("routes Expense to the existing wallet expense form with Finance as the return target", () => {
-    expect(financeExpenseHref("wallet-1")).toBe("/wallets/wallet-1/transactions/new?type=EXPENSE&returnTo=%2Ffinance");
+    expect(financeExpenseHref("wallet-1")).toBe(
+      "/wallets/wallet-1/transactions/new?type=EXPENSE&returnTo=%2Ffinance",
+    );
   });
 
   it("routes Transfer to the existing transfer chooser", () => {
