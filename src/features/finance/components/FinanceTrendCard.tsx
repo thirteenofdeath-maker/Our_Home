@@ -1,11 +1,9 @@
-import type { ReportDay } from "@/features/reports/types";
-import { addMoney, formatCurrency, subtractMoney } from "@/lib/utils/money";
+"use client";
 
-export interface FinanceTrendPoint {
-  date: string;
-  income: string;
-  expense: string;
-}
+import { useState } from "react";
+
+import type { FinanceTrendPoint } from "@/features/finance/domain/finance-trend";
+import { formatCurrency, subtractMoney } from "@/lib/utils/money";
 
 const CHART_WIDTH = 320;
 const CHART_TOP = 12;
@@ -31,29 +29,6 @@ export function buildSeriesPath(
     .join(" ");
 }
 
-export function buildCumulativeDailyTrend(
-  month: string,
-  days: ReportDay[],
-  currency: string,
-): FinanceTrendPoint[] {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  const dayTotals = new Map(
-    days
-      .filter((item) => item.currency === currency)
-      .map((item) => [item.date, item] as const),
-  );
-  let income = "0.00";
-  let expense = "0.00";
-  return Array.from({ length: daysInMonth }, (_, index) => {
-    const date = `${month}-${String(index + 1).padStart(2, "0")}`;
-    const point = dayTotals.get(date);
-    income = addMoney(income, point?.income ?? "0.00");
-    expense = addMoney(expense, point?.expense ?? "0.00");
-    return { date, income, expense };
-  });
-}
-
 function dayLabel(date: string) {
   return String(Number(date.slice(-2)));
 }
@@ -68,6 +43,7 @@ export function FinanceTrendCard({
   throughDay,
   income,
   expense,
+  previousIncome,
   previousExpense,
 }: {
   currency: string;
@@ -79,69 +55,87 @@ export function FinanceTrendCard({
   throughDay?: number;
   income: string;
   expense: string;
+  previousIncome: string;
   previousExpense: string;
 }) {
+  const [mode, setMode] = useState<"income" | "expense">("expense");
   const visibleTrend = throughDay
     ? trend.slice(0, Math.max(1, Math.min(throughDay, trend.length)))
     : trend;
-  const currentExpenseValues = visibleTrend.map((point) =>
-    Number(point.expense),
-  );
-  const previousExpenseValues = trend.map((_, index) =>
+  const currentValues = visibleTrend.map((point) => Number(point[mode]));
+  const previousValues = trend.map((_, index) =>
     Number(
-      comparisonTrend[Math.min(index, comparisonTrend.length - 1)]?.expense ??
+      comparisonTrend[Math.min(index, comparisonTrend.length - 1)]?.[mode] ??
         "0",
     ),
   );
-  const maxValue = Math.max(
-    1,
-    ...currentExpenseValues,
-    ...previousExpenseValues,
-  );
-  const currentExpensePath = buildSeriesPath(
-    currentExpenseValues,
-    maxValue,
-    trend.length,
-  );
-  const previousExpensePath = buildSeriesPath(
-    previousExpenseValues,
-    maxValue,
-    trend.length,
-  );
-  const hasActivity = [...currentExpenseValues, ...previousExpenseValues].some(
+  const maxValue = Math.max(1, ...currentValues, ...previousValues);
+  const currentPath = buildSeriesPath(currentValues, maxValue, trend.length);
+  const previousPath = buildSeriesPath(previousValues, maxValue, trend.length);
+  const hasActivity = [...currentValues, ...previousValues].some(
     (value) => value !== 0,
   );
   const currentEndX =
     trend.length <= 1
       ? CHART_WIDTH / 2
-      : ((currentExpenseValues.length - 1) / (trend.length - 1)) * CHART_WIDTH;
-  const fillPath = currentExpensePath
-    ? `${currentExpensePath} L${currentEndX.toFixed(2)} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
+      : ((currentValues.length - 1) / (trend.length - 1)) * CHART_WIDTH;
+  const fillPath = currentPath
+    ? `${currentPath} L${currentEndX.toFixed(2)} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
     : "";
-  const gradientId = `expense-area-${currency.replace(/[^a-z0-9]/gi, "-")}`;
-  const difference = subtractMoney(expense, previousExpense);
+  const gradientId = `${mode}-area-${currency.replace(/[^a-z0-9]/gi, "-")}`;
+  const currentTotal = mode === "income" ? income : expense;
+  const previousTotal = mode === "income" ? previousIncome : previousExpense;
+  const difference = subtractMoney(currentTotal, previousTotal);
   const isEqual = difference === "0.00" || difference === "-0.00";
   const absoluteDifference = difference.startsWith("-")
     ? difference.slice(1)
     : difference;
+  const modeLabel = mode === "income" ? "รายรับ" : "รายจ่าย";
   const comparisonText = isEqual
-    ? "รายจ่ายเท่ากับเดือนก่อน"
-    : `รายจ่าย${difference.startsWith("-") ? "ลดลง" : "เพิ่มขึ้น"} ${formatCurrency(absoluteDifference, currency)} จากเดือนก่อน`;
+    ? `${modeLabel}เท่ากับเดือนก่อน`
+    : `${modeLabel}${difference.startsWith("-") ? "ลดลง" : "เพิ่มขึ้น"} ${formatCurrency(absoluteDifference, currency)} จากเดือนก่อน`;
+  const differenceTone = isEqual
+    ? "default"
+    : (mode === "income") !== difference.startsWith("-")
+      ? "income"
+      : "expense";
+  const currentTone =
+    mode === "income" ? "text-finance-income" : "text-finance-expense";
+  const currentDot =
+    mode === "income" ? "bg-finance-income" : "bg-finance-expense";
 
   return (
     <div className="overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-finance-text">
-            แนวโน้มรายจ่าย{showCurrencyLabel ? ` · ${currency}` : ""}
-          </h3>
-          <p className="mt-0.5 text-xs text-finance-muted">
-            {monthLabel} · วันที่ 1–{trend.length}
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-finance-text">
+          แนวโน้ม{showCurrencyLabel ? ` · ${currency}` : ""}
+        </h3>
+        <div
+          role="tablist"
+          aria-label="เลือกประเภทแนวโน้ม"
+          className="flex rounded-full bg-finance-primary-soft/60 p-1 text-xs font-medium"
+        >
+          {(["income", "expense"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={mode === value}
+              onClick={() => setMode(value)}
+              className={`min-h-8 rounded-full px-3 transition-colors ${mode === value ? "bg-finance-surface-strong text-finance-text shadow-sm" : "text-finance-muted"}`}
+            >
+              {value === "income" ? "รายรับ" : "รายจ่าย"}
+            </button>
+          ))}
         </div>
+      </div>
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <p className="text-xs text-finance-muted">
+          {monthLabel} · วันที่ 1–{trend.length}
+        </p>
         <div className="flex shrink-0 flex-col gap-1 text-[11px] text-finance-muted sm:flex-row sm:gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-finance-expense" />
+            <span className={`size-2 rounded-full ${currentDot}`} />
             {monthLabel}
           </span>
           <span className="flex items-center gap-1.5">
@@ -156,7 +150,7 @@ export function FinanceTrendCard({
           <svg
             viewBox={`0 0 ${CHART_WIDTH} 132`}
             role="img"
-            aria-label={`กราฟเปรียบเทียบรายจ่าย ${currency} ${monthLabel} กับ ${comparisonMonthLabel}`}
+            aria-label={`กราฟเปรียบเทียบ${modeLabel} ${currency} ${monthLabel} กับ ${comparisonMonthLabel}`}
             className="h-36 w-full overflow-visible"
             preserveAspectRatio="none"
           >
@@ -164,12 +158,12 @@ export function FinanceTrendCard({
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor="var(--finance-expense)"
+                  stopColor={`var(--finance-${mode})`}
                   stopOpacity="0.18"
                 />
                 <stop
                   offset="100%"
-                  stopColor="var(--finance-income)"
+                  stopColor={`var(--finance-${mode})`}
                   stopOpacity="0"
                 />
               </linearGradient>
@@ -187,8 +181,8 @@ export function FinanceTrendCard({
               />
             ))}
             <path
-              data-series="previous-expense"
-              d={previousExpensePath}
+              data-series={`previous-${mode}`}
+              d={previousPath}
               fill="none"
               stroke="currentColor"
               className="text-finance-muted/35"
@@ -200,14 +194,14 @@ export function FinanceTrendCard({
             <path
               d={fillPath}
               fill={`url(#${gradientId})`}
-              className="text-finance-expense"
+              className={currentTone}
             />
             <path
-              data-series="current-expense"
-              d={currentExpensePath}
+              data-series={`current-${mode}`}
+              d={currentPath}
               fill="none"
               stroke="currentColor"
-              className="text-finance-expense"
+              className={currentTone}
               strokeWidth="3"
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
@@ -235,30 +229,30 @@ export function FinanceTrendCard({
       ) : (
         <div className="mt-4 flex h-36 items-center justify-center rounded-[1rem] bg-finance-primary-soft/55">
           <p className="text-xs text-finance-muted">
-            ยังไม่มีข้อมูลรายจ่ายสำหรับเปรียบเทียบ
+            ยังไม่มีข้อมูล{modeLabel}สำหรับเปรียบเทียบ
           </p>
         </div>
       )}
 
       <div className="mt-4 grid grid-cols-3 divide-x divide-finance-primary/15 rounded-[1rem] bg-finance-primary-soft/45 py-3 text-center">
         <FinanceTotal
-          label="รายรับรวม"
-          value={formatCurrency(income, currency)}
-          tone="income"
+          label={`${modeLabel}รวม`}
+          value={formatCurrency(currentTotal, currency)}
+          tone={mode}
         />
         <FinanceTotal
-          label="รายจ่ายรวม"
-          value={formatCurrency(expense, currency)}
-          tone="expense"
-        />
-        <FinanceTotal
-          label="รายจ่ายเดือนก่อน"
-          value={formatCurrency(previousExpense, currency)}
+          label={`${modeLabel}เดือนก่อน`}
+          value={formatCurrency(previousTotal, currency)}
           tone="default"
+        />
+        <FinanceTotal
+          label="ผลต่าง"
+          value={`${difference.startsWith("-") ? "−" : isEqual ? "" : "+"}${formatCurrency(absoluteDifference, currency)}`}
+          tone={differenceTone}
         />
       </div>
       <p
-        className={`mt-2 text-center text-xs font-medium ${isEqual ? "text-finance-muted" : difference.startsWith("-") ? "text-finance-income" : "text-finance-expense"}`}
+        className={`mt-2 text-center text-xs font-medium ${differenceTone === "income" ? "text-finance-income" : differenceTone === "expense" ? "text-finance-expense" : "text-finance-muted"}`}
       >
         {comparisonText}
       </p>

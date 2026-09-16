@@ -8,10 +8,7 @@ import {
   materializeBills,
 } from "@/features/bills/api";
 import { listDebts } from "@/features/debts/api";
-import {
-  buildCumulativeDailyTrend,
-  FinanceTrendCard,
-} from "@/features/finance/components/FinanceTrendCard";
+import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
 import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
@@ -22,6 +19,7 @@ import {
   financeMonthToPeriodMonth,
   shiftFinanceMonth,
 } from "@/features/finance/domain/finance";
+import { buildCumulativeDailyTrend } from "@/features/finance/domain/finance-trend";
 import { listGoals } from "@/features/goals/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getFinanceReport } from "@/features/reports/api";
@@ -205,6 +203,7 @@ export default async function FinancePage({
               throughDay={currentDay}
               income={total.income}
               expense={total.expense}
+              previousIncome={previousTotal.income}
               previousExpense={previousTotal.expense}
             />
           );

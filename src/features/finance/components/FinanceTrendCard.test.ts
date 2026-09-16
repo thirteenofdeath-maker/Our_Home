@@ -2,11 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import {
-  buildCumulativeDailyTrend,
-  buildSeriesPath,
-  FinanceTrendCard,
-} from "./FinanceTrendCard";
+import { buildSeriesPath, FinanceTrendCard } from "./FinanceTrendCard";
+import { buildCumulativeDailyTrend } from "../domain/finance-trend";
 
 const render = (
   overrides: Partial<Parameters<typeof FinanceTrendCard>[0]> = {},
@@ -27,6 +24,7 @@ const render = (
       comparisonMonthLabel: "สิงหาคม",
       income: "1000.00",
       expense: "400.00",
+      previousIncome: "600.00",
       previousExpense: "300.00",
       ...overrides,
     }),
@@ -35,13 +33,15 @@ const render = (
 describe("FinanceTrendCard", () => {
   it("renders an accessible current-versus-previous-month expense comparison", () => {
     const html = render();
-    expect(html).toContain("แนวโน้มรายจ่าย");
+    expect(html).toContain("แนวโน้ม");
+    expect(html).toContain('aria-label="เลือกประเภทแนวโน้ม"');
+    expect(html).toContain('aria-selected="true"');
     expect(html).toContain('role="img"');
     expect(html).toContain('data-series="current-expense"');
     expect(html).toContain('data-series="previous-expense"');
-    expect(html).toContain("฿1,000.00");
     expect(html).toContain("฿400.00");
     expect(html).toContain("฿300.00");
+    expect(html).toContain("+฿100.00");
     expect(html).toContain("รายจ่ายเพิ่มขึ้น ฿100.00 จากเดือนก่อน");
   });
 
