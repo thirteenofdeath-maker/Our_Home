@@ -72,7 +72,7 @@ There is no separate backend service. "Backend" is:
 3. **Postgres functions (RPC)** — used both where a single client action must
    write more than one row atomically (creating a transaction + its ledger
    entries; pocket/wallet transfers) and, after the Milestone 1 hardening
-   pass (see §9), as the *only* way to write the ledger or add a household
+   pass (see §9), as the _only_ way to write the ledger or add a household
    member at all.
 
    **This changed from the original Milestone 1 design.** The three
@@ -80,8 +80,8 @@ There is no separate backend service. "Backend" is:
    `SECURITY INVOKER`, on the reasoning that they'd run as the calling user
    and get authorization "for free" from RLS. A security/integrity audit
    found the flaw in that reasoning: RLS on `transactions`/
-   `transaction_entries`/`household_members` only ever checked *who the
-   caller was*, not *what values they were writing* — an authenticated
+   `transaction_entries`/`household_members` only ever checked _who the
+   caller was_, not _what values they were writing_ — an authenticated
    client could call PostgREST directly (bypassing the RPCs and the
    Next.js app entirely) and, e.g., insert a `transactions` row with a
    spoofed `owner_user_id`, or a `household_members` row promoting
@@ -96,7 +96,7 @@ There is no separate backend service. "Backend" is:
    RPCs and `add_household_member` were redefined as `SECURITY DEFINER` —
    they now run as the function owner (the table owner, which bypasses RLS
    on these tables by default in Postgres, since none of them use `FORCE
-   ROW LEVEL SECURITY`) and each one **re-implements its own authorization
+ROW LEVEL SECURITY`) and each one **re-implements its own authorization
    check by hand** before writing anything:
    - the three ledger RPCs call a shared `is_wallet_authorized(wallet_id)`
      helper (PERSONAL: `owner_user_id = auth.uid()`; HOUSEHOLD:
@@ -107,11 +107,11 @@ There is no separate backend service. "Backend" is:
      household, rejects assigning `'owner'` outright, and restricts
      `admin` callers to inviting `'member'` only (see
      `DOMAIN_RULES.md §Security`).
-   Every one of these functions also sets `search_path = ''` and fully
-   schema-qualifies every reference, closing the classic SECURITY DEFINER
-   search-path-hijack (an attacker-controlled `search_path` shadowing an
-   unqualified name), and has `EXECUTE` explicitly revoked from `PUBLIC`/
-   `anon` and granted only to `authenticated`.
+     Every one of these functions also sets `search_path = ''` and fully
+     schema-qualifies every reference, closing the classic SECURITY DEFINER
+     search-path-hijack (an attacker-controlled `search_path` shadowing an
+     unqualified name), and has `EXECUTE` explicitly revoked from `PUBLIC`/
+     `anon` and granted only to `authenticated`.
 
    `SECURITY DEFINER` is otherwise used only for a few narrow helper
    functions (`is_household_member`, `has_household_role`,
@@ -120,7 +120,7 @@ There is no separate backend service. "Backend" is:
    `household_members` policies would otherwise need to query
    `household_members`, and to let the ledger RPCs see a wallet row
    regardless of the caller's own RLS visibility (which is the point — it
-   *is* the authorization check).
+   _is_ the authorization check).
 
    The balance readers (`get_pocket_balance`, `get_wallet_balance`) remain
    `SECURITY INVOKER`: they only ever `SELECT`, so letting RLS govern what
@@ -136,7 +136,7 @@ jobs, kept in a strict 1:1 relationship by id:
   credentials and identity — email, password hash, provider info. The
   application never reads or writes it directly and never duplicates a
   password or auth secret into its own tables.
-- `public.profiles` holds everything the *application* needs to know about
+- `public.profiles` holds everything the _application_ needs to know about
   a person — `display_name`, `email` (a denormalized, lowercased copy used
   only for household-invite lookups, not authentication),
   `avatar_url`. Every foreign key in the app schema
@@ -192,19 +192,19 @@ depending on the caller's role" against `OLD` in a `PATCH`-style update.
 For those cases (§3, §9) the table's `GRANT` is narrowed (sometimes to
 nothing at all, forcing all writes through a `SECURITY DEFINER` RPC) and a
 trigger enforces the finer-grained rule. Both layers are database-level,
-not application code — the distinction is *which* database mechanism is
+not application code — the distinction is _which_ database mechanism is
 the right tool, not whether the frontend can be trusted (it can't).
 
 ## 6. Feature structure (Milestone 1)
 
-| Feature | Route(s) | Notes |
-|---|---|---|
-| `auth` | `/login`, `/sign-up`, `/auth/callback` | Server Actions for sign-in/up/out |
-| `household` | `/household`, `/household/new` | Create household, list members, add member by email (owner/admin only) |
-| `wallets` | `/wallets`, `/wallets/new`, `/wallets/[walletId]` | Personal + household wallets, balance from ledger |
-| `pockets` | (inside wallet detail) | First pocket created atomically with its wallet, user-named; every pocket equal, no default (§14); balance from ledger |
-| `categories` | `/categories`, inline picker in transaction form | Tree via `parent_id`, archive not delete once used |
-| `transactions` | `/wallets/[walletId]/transactions/new`, `/wallets/[walletId]` (history) | Income, expense, pocket transfer, wallet transfer — all via RPC |
+| Feature        | Route(s)                                                                | Notes                                                                                                                  |
+| -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `auth`         | `/login`, `/sign-up`, `/auth/callback`                                  | Server Actions for sign-in/up/out                                                                                      |
+| `household`    | `/household`, `/household/new`                                          | Create household, list members, add member by email (owner/admin only)                                                 |
+| `wallets`      | `/wallets`, `/wallets/new`, `/wallets/[walletId]`                       | Personal + household wallets, balance from ledger                                                                      |
+| `pockets`      | (inside wallet detail)                                                  | First pocket created atomically with its wallet, user-named; every pocket equal, no default (§14); balance from ledger |
+| `categories`   | `/categories`, inline picker in transaction form                        | Tree via `parent_id`, archive not delete once used                                                                     |
+| `transactions` | `/wallets/[walletId]/transactions/new`, `/wallets/[walletId]` (history) | Income, expense, pocket transfer, wallet transfer — all via RPC                                                        |
 
 Explicitly out of scope for Milestone 1: Calendar, Tasks, Shopping lists,
 Budgeting UI, Bills, Saving goals, Notes, receipt OCR, AI categorization,
@@ -254,10 +254,15 @@ offline sync, activity feed. The schema does not preclude adding them later.
 `src/app/manifest.ts` provides the web app manifest (Next.js file
 convention — this alone generates `/manifest.webmanifest` and the `<link>`
 tag). `public/icons/` holds placeholder SVG icons. `public/sw.js` is an
-intentionally empty pass-through service worker registered from the root
-layout purely to satisfy installability; it implements no caching strategy.
-Caching authenticated financial data in a service worker is an explicit
-future decision (see `DOMAIN_RULES.md`), not an oversight.
+offline-first service worker registered from the root layout. It pre-caches
+only public app-shell assets, uses cache-first delivery for versioned static
+assets, and uses network-first delivery for authenticated page navigations.
+Previously visited private pages live in their own versioned cache and are
+purged when the user signs out; redirects to the sign-in page are never cached
+as private-page responses. An uncached navigation falls back to
+`public/offline.html`, while `OfflineStatus` reports connection loss and
+recovery without blocking the current screen. The private cache is a local
+read fallback, never a second source of truth; Supabase remains authoritative.
 
 ## 9. Milestone 1 hardening pass
 
@@ -268,15 +273,15 @@ code (and the original version of this document) assumed. Migrations
 the standing rule that committed migration history is not edited after the
 fact. Summary, in migration order:
 
-| Migration | Closes |
-|---|---|
-| `0012_lockdown_transaction_writes.sql` | Direct `INSERT`/`UPDATE` on `transactions`/`transaction_entries` from `authenticated`; ledger RPCs redefined `SECURITY DEFINER` with explicit `is_wallet_authorized()` checks; `create_wallet_transfer` rejects cross-currency transfers; stray `PUBLIC`/`anon` `EXECUTE` grants revoked. |
-| `0013_ledger_relationship_validation.sql` | An entry's wallet must be compatible with its transaction's scope/owner/household (defense-in-depth; the RPCs above already guarantee this by construction). |
-| `0014_immutable_identity_fields.sql` | `wallets`/`pockets`/`categories` identity columns (scope, owner, household, `created_by`, `wallet_id`, `is_system`, wallet `currency`) can no longer be changed after creation. |
-| `0015_profile_email_security.sql` | `profiles.email` is no longer client-writable (column-level grant), gets a case-insensitive unique index, and is normalized to lowercase; an `auth.users` email-change trigger keeps it in sync going forward. |
-| `0016_household_invite_and_owner_integrity.sql` | `household_members` writes revoked from `authenticated` entirely; `add_household_member` redesigned `SECURITY DEFINER` with real role rules (see `DOMAIN_RULES.md §Security`); a trigger refuses to leave a household with zero owners. |
-| `0017_default_pocket_invariant.sql` | A wallet's default pocket can no longer be unset or archived by a normal client, closing the gap between "at most one" (the existing unique index) and "exactly one" (what the app actually needs). **Superseded by `0029` (§14): the default-pocket concept this hardened was later removed entirely, not merely re-hardened again.** |
-| `0018_category_hierarchy_ownership.sql` | A category and its parent must now share the same scope and owner/household (and both be system or both not). |
+| Migration                                       | Closes                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0012_lockdown_transaction_writes.sql`          | Direct `INSERT`/`UPDATE` on `transactions`/`transaction_entries` from `authenticated`; ledger RPCs redefined `SECURITY DEFINER` with explicit `is_wallet_authorized()` checks; `create_wallet_transfer` rejects cross-currency transfers; stray `PUBLIC`/`anon` `EXECUTE` grants revoked.                                              |
+| `0013_ledger_relationship_validation.sql`       | An entry's wallet must be compatible with its transaction's scope/owner/household (defense-in-depth; the RPCs above already guarantee this by construction).                                                                                                                                                                           |
+| `0014_immutable_identity_fields.sql`            | `wallets`/`pockets`/`categories` identity columns (scope, owner, household, `created_by`, `wallet_id`, `is_system`, wallet `currency`) can no longer be changed after creation.                                                                                                                                                        |
+| `0015_profile_email_security.sql`               | `profiles.email` is no longer client-writable (column-level grant), gets a case-insensitive unique index, and is normalized to lowercase; an `auth.users` email-change trigger keeps it in sync going forward.                                                                                                                         |
+| `0016_household_invite_and_owner_integrity.sql` | `household_members` writes revoked from `authenticated` entirely; `add_household_member` redesigned `SECURITY DEFINER` with real role rules (see `DOMAIN_RULES.md §Security`); a trigger refuses to leave a household with zero owners.                                                                                                |
+| `0017_default_pocket_invariant.sql`             | A wallet's default pocket can no longer be unset or archived by a normal client, closing the gap between "at most one" (the existing unique index) and "exactly one" (what the app actually needs). **Superseded by `0029` (§14): the default-pocket concept this hardened was later removed entirely, not merely re-hardened again.** |
+| `0018_category_hierarchy_ownership.sql`         | A category and its parent must now share the same scope and owner/household (and both be system or both not).                                                                                                                                                                                                                          |
 
 Two related application-layer fixes shipped alongside the migrations
 (no schema change, so no new migration):
@@ -301,11 +306,11 @@ integration tests that didn't actually isolate what they claimed to.
 Migrations `0019`–`0021` close the schema gaps; `0012`–`0018` are not
 edited, per the same standing rule.
 
-| Migration | Closes |
-|---|---|
+| Migration                                      | Closes                                                                                                                                                                                                                                    |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `0019_category_transaction_type_immutable.sql` | `categories.transaction_type` added to the existing immutability trigger — an EXPENSE category could previously be flipped to INCOME after the fact, silently corrupting the classification of every historical transaction that used it. |
-| `0020_reject_archived_wallets_and_pockets.sql` | All three ledger RPCs now reject an archived wallet or pocket, mirroring the existing archived-category check. Write-time only — archiving never touches existing `transaction_entries` or the balances derived from them. |
-| `0021_household_created_by_immutable.sql` | `households.created_by` added to the immutable-column guard (households had none before); renaming a household is untouched. |
+| `0020_reject_archived_wallets_and_pockets.sql` | All three ledger RPCs now reject an archived wallet or pocket, mirroring the existing archived-category check. Write-time only — archiving never touches existing `transaction_entries` or the balances derived from them.                |
+| `0021_household_created_by_immutable.sql`      | `households.created_by` added to the immutable-column guard (households had none before); renaming a household is untouched.                                                                                                              |
 
 Test suite fixes in `src/features/security/rls.integration.test.ts` (no
 schema change, so no migration): the wallet-immutability test previously
@@ -362,11 +367,11 @@ null-email hardening below.
   profile. The redefined function falls back to a synthetic-but-unique
   placeholder email (`<user id>@no-email.invalid`) and a `'Member'`
   display name when nothing better is available, and `on conflict (id) do
-  nothing` on the insert.
+nothing` on the insert.
 - **Backfills** one `profiles` row for every existing `auth.users` row
   with none, using the same fallback logic. Existing `profiles` rows are
   never touched (`LEFT JOIN ... WHERE profiles.id IS NULL`, plus `ON
-  CONFLICT (id) DO NOTHING` as a second guarantee) — this is a pure
+CONFLICT (id) DO NOTHING` as a second guarantee) — this is a pure
   gap-fill, re-runnable without effect once every user has a profile.
 - **Does not** loosen `wallets_owner_user_id_fkey` /
   `categories_owner_user_id_fkey`, and does not remove `profiles` or its
@@ -374,8 +379,7 @@ null-email hardening below.
   depend on actually exists, not relaxing what depends on it.
 - **No new attack surface**: `handle_new_user` is still only reachable as
   an `AFTER INSERT` trigger on `auth.users` (not a callable RPC), and
-  `profiles` still has no client-facing `INSERT` grant or policy (0002,
-  0015) — a normal authenticated client cannot create a profile for
+  `profiles` still has no client-facing `INSERT` grant or policy (0002, 0015) — a normal authenticated client cannot create a profile for
   themselves or anyone else via PostgREST regardless of this migration.
 
 Like every migration before it, `0022` was reviewed by hand but not
@@ -445,7 +449,7 @@ A domain decision, not a UI change: no Pocket is special. `is_default`
 (0006), the "exactly one default" trigger (0017, §10), and the
 auto-created "Main" pocket are all removed in
 `0029_remove_pocket_default.sql`. Every Pocket inside a Wallet is now
-equal — the app never pre-selects one as *the* default, only as a UI
+equal — the app never pre-selects one as _the_ default, only as a UI
 convenience (first in `sort_order`), and never persists that choice.
 
 - **Column dropped, not deprecated in place.** Audited every reference
@@ -500,7 +504,7 @@ Two design choices worth calling out at the architecture level:
   (0006), and Postgres fires a child table's own row-level triggers for
   cascaded deletes exactly as for a direct one. An "archived-first"
   precondition on pockets would fire during a wallet's cascade delete
-  and reject it, because an archived *wallet*'s pockets are not
+  and reject it, because an archived _wallet_'s pockets are not
   necessarily individually archived. "Zero history" alone is both what
   the product spec asked for and what avoids this trap.
 - **UI reuses the categories-management pattern.** Rename forms, and a
@@ -563,7 +567,7 @@ transaction create/edit form. Detailed rules are in `docs/FINANCE.md`
   `create_pocket_transfer`, `create_wallet_transfer`, and
   `update_income_expense_transaction` (0031) each gained a trailing
   optional `p_tag_ids` parameter via DROP + CREATE (not `CREATE OR
-  REPLACE`, since the argument list itself changes) rather than shipping
+REPLACE`, since the argument list itself changes) rather than shipping
   a separate "attach tags after create" call — a second round trip has
   no way to guarantee the create and the tag attachment succeed or fail
   together, and the product brief was explicit that a create should never
@@ -701,10 +705,10 @@ points worth calling out here:
   pocket, category, and tag.** (1) rejected at the moment a Template is
   created or a reference field is edited (`transaction_templates_validate_references`,
   firing only on INSERT or on UPDATE OF the reference columns themselves);
-  (2) left alone if the Template is edited *without* touching that field —
+  (2) left alone if the Template is edited _without_ touching that field —
   a Template that goes stale after saving stays readable, matching the
   archived-history principle used for Budget and Category; (3) surfaced
-  as an explicit warning with no silent substitution at *use* time, via
+  as an explicit warning with no silent substitution at _use_ time, via
   `staleNotices` in `TransactionForm` and the eligibility check on the
   `/[templateId]` detail page's "use" link.
 
@@ -734,7 +738,7 @@ calling out here:
   Category/Tag/Budget/Template precedent. The two edits that must touch
   `recurring_occurrences` (a schedule change rebuilding future `UPCOMING`
   rows; a resume/restore reactivating a dormant rule) do it via `AFTER
-  UPDATE` triggers that are themselves `SECURITY DEFINER`, rather than
+UPDATE` triggers that are themselves `SECURITY DEFINER`, rather than
   via a bespoke "edit" RPC — the trigger runs with elevated privilege on
   behalf of the client's ordinary, lower-privileged `UPDATE`. This is a
   new variant of this codebase's two-tier mutation-strategy pattern:
@@ -750,7 +754,7 @@ calling out here:
   client or drift out of sync with the date it's derived from. Each step
   clamps against THAT anchor, never against the previous, possibly
   already-clamped occurrence — this is what turns `31 Jan -> 28 Feb ->
-  31 Mar -> 30 Apr` into the correct sequence instead of drifting to
+31 Mar -> 30 Apr` into the correct sequence instead of drifting to
   `31 -> 28 -> 28 -> 28`.
 - **Reactivation (resume/restore) fast-forwards past a dormant gap
   instead of backfilling it.** The same generation loop used for
@@ -782,7 +786,7 @@ calling out here:
   skipping) goes through one of three vetted RPCs. The justification is
   narrower than Phase C/D's tag/adjustment lockdowns: occurrence rows
   aren't just "mediating access to something sensitive," their very
-  *existence and timing* must only ever come from the deterministic
+  _existence and timing_ must only ever come from the deterministic
   generation algorithm, never a freehand client write.
 - **A Recurring rule was deliberately never made to point at a Template
   as its data source**, even though the two share almost the same
