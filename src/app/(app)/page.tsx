@@ -95,10 +95,24 @@ const HOME_COVER_STYLES: Record<
   },
   morning: {
     src: "/art/home-morning.webp",
-    alt: "ยามเช้าที่พ่อแม่และลูกสาวดูแลบ้านพร้อมแมวสี่ตัวและกระต่าย",
+    alt: "ยามเช้าที่พ่อแม่และลูกสาวเริ่มต้นวันพร้อมแมวสี่ตัวและกระต่าย",
     text: "text-finance-text",
     muted: "text-finance-muted",
     action: "bg-white/85 text-finance-primary-strong",
+  },
+  "late-morning": {
+    src: "/art/home-late-morning.webp",
+    alt: "ช่วงสายที่พ่อแม่และลูกสาวช่วยกันทำงานบ้านพร้อมสัตว์เลี้ยง",
+    text: "text-[#4f4439]",
+    muted: "text-[#75685b]",
+    action: "bg-white/85 text-[#6f7653]",
+  },
+  midday: {
+    src: "/art/home-midday.webp",
+    alt: "ตอนเที่ยงที่พ่อแม่และลูกสาวเตรียมอาหารพร้อมสัตว์เลี้ยง",
+    text: "text-[#514238]",
+    muted: "text-[#78675c]",
+    action: "bg-white/85 text-[#7c6c4f]",
   },
   afternoon: {
     src: "/art/home-afternoon.webp",
@@ -114,9 +128,16 @@ const HOME_COVER_STYLES: Record<
     muted: "text-[#72584f]",
     action: "bg-white/75 text-[#715348] backdrop-blur-sm",
   },
+  night: {
+    src: "/art/home-night.webp",
+    alt: "ตอนค่ำที่พ่อแม่อ่านนิทานให้ลูกสาวพร้อมแมวสี่ตัวและกระต่าย",
+    text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]",
+    muted: "text-white/85 drop-shadow-[0_1px_2px_rgba(8,24,40,0.9)]",
+    action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
+  },
   "late-night": {
     src: "/art/home-late-night.webp",
-    alt: "ยามดึกที่พ่อแม่อ่านนิทานให้ลูกสาวพร้อมแมวสี่ตัวและกระต่าย",
+    alt: "ยามดึกที่พ่อแม่ ลูกสาว แมวสี่ตัว และกระต่ายนอนหลับพักผ่อน",
     text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]",
     muted: "text-white/85 drop-shadow-[0_1px_2px_rgba(8,24,40,0.9)]",
     action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
@@ -214,7 +235,7 @@ export default async function HomePage() {
           sizes="(max-width: 640px) 100vw, 576px"
           className="object-cover object-center"
         />
-        {coverMode === "late-night" ? (
+        {coverMode === "night" || coverMode === "late-night" ? (
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-gradient-to-r from-[#081c30]/65 via-[#081c30]/25 to-transparent"

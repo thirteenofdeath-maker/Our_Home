@@ -37,8 +37,11 @@ describe("Today dashboard composition", () => {
   it("uses real artwork for every time period without CSS image filters", () => {
     for (const asset of [
       "home-morning.webp",
+      "home-late-morning.webp",
+      "home-midday.webp",
       "home-afternoon.webp",
       "home-evening.webp",
+      "home-night.webp",
       "home-late-night.webp",
       "home-birthday.webp",
     ]) {
@@ -51,7 +54,9 @@ describe("Today dashboard composition", () => {
     expect(source).toContain(
       'text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]"',
     );
-    expect(source).toContain('coverMode === "late-night"');
+    expect(source).toContain(
+      'coverMode === "night" || coverMode === "late-night"',
+    );
     expect(source).toContain("from-[#081c30]/65");
   });
 });
