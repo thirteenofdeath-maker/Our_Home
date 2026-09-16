@@ -119,6 +119,61 @@ export interface Database {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          plan_enabled: boolean;
+          pets_enabled: boolean;
+          finance_enabled: boolean;
+          day_before_enabled: boolean;
+          due_day_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          plan_enabled?: boolean;
+          pets_enabled?: boolean;
+          finance_enabled?: boolean;
+          day_before_enabled?: boolean;
+          due_day_enabled?: boolean;
+        };
+        Update: {
+          plan_enabled?: boolean;
+          pets_enabled?: boolean;
+          finance_enabled?: boolean;
+          day_before_enabled?: boolean;
+          due_day_enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          user_agent: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          p256dh?: string;
+          auth_key?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [];
+      };
       pets: {
         Row: {
           id: string;
@@ -1727,6 +1782,14 @@ export interface Database {
       get_finance_hub_final: {
         Args: { p_report_start: string; p_report_end: string; p_today: string };
         Returns: unknown;
+      };
+      get_push_public_config: {
+        Args: Record<string, never>;
+        Returns: Array<{ vapid_public_key: string; vapid_subject: string }>;
+      };
+      get_push_server_secrets: {
+        Args: Record<string, never>;
+        Returns: Array<{ vapid_private_key: string; cron_secret: string }>;
       };
     };
     Enums: {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const STATIC_CACHE = `our-home-static-${CACHE_VERSION}`;
 const PRIVATE_PAGE_CACHE = `our-home-private-pages-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
@@ -178,4 +178,46 @@ self.addEventListener("fetch", (event) => {
         : networkFirstPage(request),
     );
   }
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data?.json() ?? {};
+  } catch {
+    payload = { body: event.data?.text() };
+  }
+
+  const title = payload.title || "Our Home";
+  const options = {
+    body: payload.body || "มีรายการใหม่ที่ควรดู",
+    icon: "/icons/icon.svg",
+    badge: "/icons/icon.svg",
+    tag: payload.tag || "our-home-notification",
+    renotify: false,
+    data: { url: payload.url || "/" },
+  };
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      "setAppBadge" in self.navigator ? self.navigator.setAppBadge(1) : Promise.resolve(),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+      const exact = clients.find((client) => client.url === target);
+      if (exact) return exact.focus();
+      const existing = clients.find((client) => new URL(client.url).origin === self.location.origin);
+      if (existing) {
+        await existing.navigate(target);
+        return existing.focus();
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
 });

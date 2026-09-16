@@ -137,6 +137,13 @@ export default async function HomePage() {
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
       <section className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#f4e8d9,#f7f4e9_52%,#e6efe2)] p-5 shadow-card sm:p-6">
         <div className="absolute -right-10 -top-12 size-36 rounded-full bg-white/35" />
+        <Link
+          href="/profile/notifications"
+          aria-label="ตั้งค่าการแจ้งเตือน"
+          className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-white/80 text-finance-primary-strong shadow-sm transition-transform active:scale-95"
+        >
+          <AppIcon name="bell" className="size-5" />
+        </Link>
         <p className="relative text-sm font-medium text-finance-muted">{thaiToday(today)}</p>
         <h1 className="relative mt-1 text-2xl font-semibold text-finance-text sm:text-3xl">
           {greetingForBangkok()} {displayName}
