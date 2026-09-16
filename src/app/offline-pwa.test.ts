@@ -20,6 +20,22 @@ describe("offline-first PWA foundation", () => {
     expect(worker).toContain("requestedUrl.pathname === responseUrl.pathname");
   });
 
+  it("warms and serves the five main app pages cache-first", () => {
+    const worker = read("public/sw.js");
+    const preloader = read(
+      "src/components/shared/AppRoutePreloader.tsx",
+    );
+    const shell = read("src/components/shared/AppShell.tsx");
+    const navigation = read("src/components/shared/BottomNav.tsx");
+
+    expect(worker).toContain("WARM_APP_ROUTES");
+    expect(worker).toContain("cacheFirstMainPage(event, request)");
+    expect(preloader).toContain("router.prefetch(route)");
+    expect(preloader).toContain('type: "WARM_APP_ROUTES"');
+    expect(shell).toContain("<AppRoutePreloader />");
+    expect(navigation).toContain("prefetch={true}");
+  });
+
   it("keeps private pages in a separately purgeable cache", () => {
     const worker = read("public/sw.js");
     expect(worker).toContain("our-home-private-pages-");

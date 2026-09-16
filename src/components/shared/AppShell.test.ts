@@ -11,6 +11,7 @@ const source = read("src/components/shared/AppShell.tsx");
 let mockPathname = "/finance";
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
+  useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
 import { AppShell } from "./AppShell";

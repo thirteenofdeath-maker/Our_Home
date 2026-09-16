@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AppRoutePreloader } from "./AppRoutePreloader";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
@@ -37,6 +38,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      <AppRoutePreloader />
       {/* The bottom padding must clear BOTH the floating BottomNav AND,
           on top of it, a bottom-right FAB where one exists — plus the
           real safe-area inset, not a guessed fixed value, so an iPhone's
