@@ -96,6 +96,9 @@ export default async function FinancePage({
   const summaryCurrencies = reportCurrencies.length
     ? reportCurrencies
     : ["THB"];
+  const trendMonths = [-5, -4, -3, -2, -1, 0].map((offset) =>
+    shiftFinanceMonth(month, offset),
+  );
   const activeGoals = goals.filter(
     (goal) => !goal.archivedAt && !goal.isComplete,
   );
@@ -167,9 +170,17 @@ export default async function FinancePage({
               key={currency}
               currency={currency}
               showCurrencyLabel={summaryCurrencies.length > 1}
-              trend={report.months.filter(
-                (point) => point.currency === currency,
-              )}
+              trend={trendMonths.map((trendMonth) => {
+                const point = report.months.find(
+                  (item) =>
+                    item.currency === currency && item.month === trendMonth,
+                );
+                return {
+                  month: trendMonth,
+                  income: point?.income ?? "0.00",
+                  expense: point?.expense ?? "0.00",
+                };
+              })}
               income={total.income}
               expense={total.expense}
               net={subtractMoney(total.income, total.expense)}

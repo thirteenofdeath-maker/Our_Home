@@ -46,4 +46,16 @@ describe("FinanceTrendCard", () => {
     expect(negative).toContain("ยังไม่มีข้อมูลรายรับ–รายจ่าย");
     expect(negative).not.toContain('role="img"');
   });
+
+  it("keeps the line chart visible when the six-month series contains only zeroes", () => {
+    const html = render({
+      trend: [
+        { month: "2026-08", income: "0.00", expense: "0.00" },
+        { month: "2026-09", income: "0.00", expense: "0.00" },
+      ],
+    });
+    expect(html).toContain('role="img"');
+    expect(html).toContain("ยังไม่มีรายการในช่วงนี้");
+    expect(html).toContain('stroke-dasharray="7 4"');
+  });
 });

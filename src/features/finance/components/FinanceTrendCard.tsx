@@ -48,6 +48,9 @@ export function FinanceTrendCard({
   const maxValue = Math.max(1, ...incomeValues, ...expenseValues);
   const incomePath = buildSeriesPath(incomeValues, maxValue);
   const expensePath = buildSeriesPath(expenseValues, maxValue);
+  const hasActivity = [...incomeValues, ...expenseValues].some(
+    (value) => value !== 0,
+  );
   const fillPath = incomePath
     ? `${incomePath} L${CHART_WIDTH} ${CHART_BOTTOM} L0 ${CHART_BOTTOM} Z`
     : "";
@@ -69,7 +72,7 @@ export function FinanceTrendCard({
       </div>
 
       {trend.length > 0 ? (
-        <div className="mt-4 min-w-0">
+        <div className="relative mt-4 min-w-0">
           <svg
             viewBox={`0 0 ${CHART_WIDTH} 132`}
             role="img"
@@ -88,8 +91,13 @@ export function FinanceTrendCard({
             ))}
             <path d={fillPath} fill={`url(#${gradientId})`} className="text-finance-income" />
             <path data-series="income" d={incomePath} fill="none" stroke="currentColor" className="text-finance-income" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-            <path data-series="expense" d={expensePath} fill="none" stroke="currentColor" className="text-finance-expense" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+            <path data-series="expense" d={expensePath} fill="none" stroke="currentColor" className="text-finance-expense" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="7 4" />
           </svg>
+          {!hasActivity ? (
+            <p className="pointer-events-none absolute inset-x-0 top-14 text-center text-xs text-finance-muted">
+              ยังไม่มีรายการในช่วงนี้
+            </p>
+          ) : null}
           <div className="mt-1 flex justify-between text-[10px] text-finance-muted">
             {trend.map((point, index) => (
               <span key={point.month} className={index > 0 && index < trend.length - 1 ? "hidden sm:inline" : ""}>{monthShortLabel(point.month)}</span>
