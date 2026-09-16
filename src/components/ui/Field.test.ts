@@ -26,6 +26,8 @@ describe("two-column form controls", () => {
     expect(html).toContain("[&amp;&gt;*]:min-w-0");
     expect(html).toContain("[min-inline-size:0]");
     expect(html).toContain("[inline-size:100%]");
+    expect(html).toContain("[max-inline-size:100%]");
+    expect(html).toContain("box-border");
     expect(html).not.toContain("overflow-hidden");
   });
 
@@ -39,5 +41,30 @@ describe("two-column form controls", () => {
         "grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]",
       );
     }
+  });
+
+  it("caps native iOS date, time, datetime, and file controls at their container width", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/app/globals.css"),
+      "utf8",
+    );
+
+    for (const type of [
+      "date",
+      "datetime-local",
+      "time",
+      "month",
+      "week",
+      "file",
+    ]) {
+      expect(css).toContain(`input[type="${type}"]`);
+    }
+
+    expect(css).toMatch(/form,\s*fieldset\s*\{[\s\S]*?min-inline-size:\s*0/);
+    expect(css).toMatch(/input\[type="date"\][\s\S]*?inline-size:\s*100%/);
+    expect(css).toMatch(/input\[type="date"\][\s\S]*?max-inline-size:\s*100%/);
+    expect(css).toContain("::-webkit-date-and-time-value");
+    expect(css).toContain("@supports (-webkit-touch-callout: none)");
+    expect(css).toContain("-webkit-appearance: none");
   });
 });

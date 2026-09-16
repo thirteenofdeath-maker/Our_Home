@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { SignOutForm } from "@/features/auth/components/SignOutForm";
-import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { getAvatarDisplayUrl, getCurrentProfile } from "@/features/profile/api";
 import { ProfileEditForm } from "@/features/profile/components/ProfileEditForm";
 import { requireUser } from "@/lib/auth/require-user";
@@ -21,7 +24,7 @@ export default async function EditProfilePage() {
   const avatarUrl = await getAvatarDisplayUrl(supabase, profile.avatar_url);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 max-w-full flex-col gap-4">
       {/* Reachable from the avatar link on every one of the four
           BottomNav roots — there's no single true parent route, so this
           is the rare case where the fallback is a stable, sensible app

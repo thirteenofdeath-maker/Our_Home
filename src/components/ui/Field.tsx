@@ -9,7 +9,7 @@ import type {
 import { cn } from "@/lib/utils/cn";
 
 const controlClassName =
-  "h-13 min-w-0 w-full max-w-full [inline-size:100%] [min-inline-size:0] rounded-control border border-border/70 bg-surface px-4 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-3 focus:ring-primary-soft";
+  "block h-13 min-w-0 w-full max-w-full box-border [inline-size:100%] [min-inline-size:0] [max-inline-size:100%] rounded-control border border-border/70 bg-surface px-4 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-3 focus:ring-primary-soft";
 
 /** Two equal form columns that may contain native iOS date/time/number inputs.
  * Explicit minmax tracks and shrinkable children prevent the controls' native
@@ -41,7 +41,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 max-w-full flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
         className="text-sm font-medium text-foreground-muted"
