@@ -117,8 +117,8 @@ const HOME_COVER_STYLES: Record<
   "late-night": {
     src: "/art/home-late-night.webp",
     alt: "ยามดึกที่พ่อแม่อ่านนิทานให้ลูกสาวพร้อมแมวสี่ตัวและกระต่าย",
-    text: "text-[#33404a]",
-    muted: "text-[#63717a]",
+    text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]",
+    muted: "text-white/85 drop-shadow-[0_1px_2px_rgba(8,24,40,0.9)]",
     action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
   },
 };
@@ -214,6 +214,12 @@ export default async function HomePage() {
           sizes="(max-width: 640px) 100vw, 576px"
           className="object-cover object-center"
         />
+        {coverMode === "late-night" ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-r from-[#081c30]/65 via-[#081c30]/25 to-transparent"
+          />
+        ) : null}
         <Link
           href="/profile/notifications"
           aria-label="ตั้งค่าการแจ้งเตือน"
