@@ -102,7 +102,7 @@ export default async function PetsPage({
           >
             เลือกสัตว์เลี้ยง
           </h2>
-          <div className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card sm:grid-cols-4">
+          <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {active.map((pet) => {
               const isSelected = pet.id === featured?.id;
               return (
@@ -110,7 +110,7 @@ export default async function PetsPage({
                   key={pet.id}
                   href={`/pets?pet=${pet.id}`}
                   aria-current={isSelected ? "true" : undefined}
-                  className={`flex min-w-0 flex-col items-center gap-2 rounded-[1.15rem] border p-3 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
+                  className={`flex w-24 shrink-0 flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
                     isSelected
                       ? "border-finance-primary/30 bg-finance-primary-soft/55"
                       : "border-transparent bg-transparent"
@@ -152,7 +152,7 @@ export default async function PetsPage({
           </div>
 
           <section
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-2.5"
             aria-label={`สรุปการดูแล ${featured.name}`}
           >
             <PetSummaryCard

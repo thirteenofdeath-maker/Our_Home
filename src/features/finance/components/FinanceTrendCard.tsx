@@ -146,12 +146,12 @@ export function FinanceTrendCard({
       </div>
 
       {trend.length > 0 ? (
-        <div className="relative mt-4 min-w-0">
+        <div className="relative mt-3 min-w-0">
           <svg
             viewBox={`0 0 ${CHART_WIDTH} 132`}
             role="img"
             aria-label={`กราฟเปรียบเทียบ${modeLabel} ${currency} ${monthLabel} กับ ${comparisonMonthLabel}`}
-            className="h-36 w-full overflow-visible"
+            className="h-28 w-full overflow-visible sm:h-32"
             preserveAspectRatio="none"
           >
             <defs>
@@ -227,14 +227,14 @@ export function FinanceTrendCard({
           </div>
         </div>
       ) : (
-        <div className="mt-4 flex h-36 items-center justify-center rounded-[1rem] bg-finance-primary-soft/55">
+        <div className="mt-3 flex h-28 items-center justify-center rounded-[1rem] bg-finance-primary-soft/55 sm:h-32">
           <p className="text-xs text-finance-muted">
             ยังไม่มีข้อมูล{modeLabel}สำหรับเปรียบเทียบ
           </p>
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-3 divide-x divide-finance-primary/15 rounded-[1rem] bg-finance-primary-soft/45 py-3 text-center">
+      <div className="mt-3 grid grid-cols-3 divide-x divide-finance-primary/15 rounded-[1rem] bg-finance-primary-soft/45 py-3 text-center">
         <FinanceTotal
           label={`${modeLabel}รวม`}
           value={formatCurrency(currentTotal, currency)}

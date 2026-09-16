@@ -485,26 +485,27 @@ function TodayItem({
   detail: string;
 }) {
   return (
-    <Link href={href} className="min-w-0">
-      <Card className="flex min-w-0 items-center gap-3 rounded-[1.25rem] bg-finance-surface-strong py-3">
-        <span className="shrink-0 rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-medium text-finance-primary-strong">
-          {marker}
-        </span>
-        <p className="min-w-0 flex-1 truncate font-medium text-finance-text">
-          {title}
-        </p>
-        <p className="max-w-[42%] shrink-0 truncate text-sm text-finance-muted">
-          {detail}
-        </p>
-      </Card>
+    <Link
+      href={href}
+      className="flex min-w-0 items-center gap-3 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55"
+    >
+      <span className="shrink-0 rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-medium text-finance-primary-strong">
+        {marker}
+      </span>
+      <p className="min-w-0 flex-1 truncate font-medium text-finance-text">
+        {title}
+      </p>
+      <p className="max-w-[42%] shrink-0 truncate text-sm text-finance-muted">
+        {detail}
+      </p>
     </Link>
   );
 }
 
 function EmptyToday({ text }: { text: string }) {
   return (
-    <Card className="rounded-[1.25rem] bg-finance-surface-strong">
+    <div className="rounded-[1rem] bg-finance-primary-soft/30 px-3 py-3">
       <p className="text-sm text-finance-muted">{text}</p>
-    </Card>
+    </div>
   );
 }

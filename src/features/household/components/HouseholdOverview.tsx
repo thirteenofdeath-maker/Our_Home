@@ -54,12 +54,12 @@ export function HouseholdOverview({
             {canManage ? "จัดการสมาชิก" : "ดูสมาชิกทั้งหมด"}
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {current ? (
             <div data-testid="current-user" className="contents">
               <Link
                 href="/profile/edit"
-                className="focus-visible:outline-2 focus-visible:outline-finance-primary"
+                className="shrink-0 focus-visible:outline-2 focus-visible:outline-finance-primary"
               >
                 <FamilyMemberTile member={current} isCurrent />
               </Link>
@@ -98,7 +98,7 @@ function FamilyMemberTile({
   const name =
     member.profile?.display_name || member.profile?.email || "Member";
   return (
-    <Card className="flex min-h-44 flex-col items-center justify-center rounded-[1.4rem] bg-finance-surface-strong p-3 text-center">
+    <Card className="flex w-28 shrink-0 flex-col items-center justify-center rounded-[1.15rem] bg-finance-primary-soft/25 p-3 text-center shadow-none">
       <Avatar
         displayName={name}
         url={member.profile?.avatar_url ?? null}
