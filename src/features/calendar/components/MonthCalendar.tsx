@@ -117,7 +117,7 @@ export function MonthCalendar({
             <AppIcon name="chevron" className="size-4" />
           </Link>
         </nav>
-        <div className="mt-2 flex justify-end">
+        <div className="mt-1 flex justify-end">
           <Link
             href={`/calendar?month=${today.slice(0, 7)}&date=${today}`}
             className="flex min-h-9 items-center rounded-full border border-finance-primary/35 px-4 text-xs font-medium text-finance-primary-strong"
@@ -125,7 +125,7 @@ export function MonthCalendar({
             วันนี้
           </Link>
         </div>
-        <div className="mt-4 grid grid-cols-7 gap-y-2 text-center text-xs text-finance-muted">
+        <div className="mt-2 grid grid-cols-7 gap-y-1 text-center text-xs text-finance-muted sm:mt-4 sm:gap-y-2">
           {["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].map((day) => (
             <div key={day} className="pb-1 font-medium">
               {day}
@@ -146,7 +146,7 @@ export function MonthCalendar({
                 aria-current={isToday ? "date" : undefined}
                 aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${petCareCount ? ` ดูแลสัตว์เลี้ยง ${petCareCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
                 data-selected={isSelected || undefined}
-                className={`mx-auto flex size-10 flex-col items-center justify-center rounded-full text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${isSelected ? "bg-finance-primary text-white shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-30"}`}
+                className={`mx-auto flex size-9 flex-col items-center justify-center rounded-full text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary sm:size-10 ${isSelected ? "bg-finance-primary text-white shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-30"}`}
               >
                 <span className="text-sm tabular-nums">
                   {Number(day.date.slice(-2))}
@@ -177,7 +177,7 @@ export function MonthCalendar({
             );
           })}
         </div>
-        <div className="relative -mx-4 -mb-4 mt-3 h-20 overflow-hidden border-t border-finance-primary-soft/60">
+        <div className="relative -mx-4 -mb-4 mt-2 h-16 overflow-hidden border-t border-finance-primary-soft/60 sm:mt-3 sm:h-20">
           <Image
             src="/art/plan-calendar.webp"
             alt="แมวกับปฏิทินและอุปกรณ์วางแผน"
