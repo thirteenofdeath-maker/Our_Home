@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
@@ -22,7 +23,6 @@ import {
 } from "@/features/plan/api";
 import { NoteForm } from "@/features/plan/components/NoteForm";
 import { NoteGrid } from "@/features/plan/components/NoteGrid";
-import { PlanSummary } from "@/features/plan/components/PlanSummary";
 import { PlanTabs, type PlanView } from "@/features/plan/components/PlanTabs";
 import { ReminderForm } from "@/features/plan/components/ReminderForm";
 import { ReminderList } from "@/features/plan/components/ReminderList";
@@ -139,16 +139,50 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <PlanTabs active={view} />
-      {view !== "calendar" ? (
-        <PlanSummary
-          today={today}
-          eventCount={todayEventCount}
-          taskCount={dueTaskCount}
-          reminderCount={upcomingReminderCount}
-          noteCount={activeNotes.length}
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+        <Image
+          src="/art/plan-calendar.webp"
+          alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
+          fill
+          priority
+          sizes="(max-width: 640px) 100vw, 576px"
+          className="object-cover object-center"
         />
-      ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,241,0.98)_0%,rgba(255,250,241,0.9)_44%,rgba(255,250,241,0.12)_78%)]" />
+        <div className="relative max-w-[62%]">
+          <p className="text-xs font-medium text-finance-primary-strong">
+            สรุปแผนงานวันนี้
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold leading-tight text-finance-text">
+            แผนงานของเรา
+          </h1>
+          <p className="mt-1 text-sm text-finance-muted">
+            วางแผนให้บ้านเดินหน้าไปด้วยกัน
+          </p>
+        </div>
+        <div className="absolute inset-x-4 bottom-4 grid grid-cols-4 gap-1.5">
+          {[
+            { value: todayEventCount, label: "กิจกรรม" },
+            { value: dueTaskCount, label: "งานค้าง" },
+            { value: upcomingReminderCount, label: "เตือน" },
+            { value: activeNotes.length, label: "โน้ต" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="min-w-0 rounded-[0.9rem] bg-white/80 px-1 py-1.5 text-center backdrop-blur-sm"
+            >
+              <p className="text-base font-semibold tabular-nums text-finance-text">
+                {item.value}
+              </p>
+              <p className="truncate text-[10px] text-finance-muted">
+                {item.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <PlanTabs active={view} />
 
       {view === "calendar" ? (
         <>

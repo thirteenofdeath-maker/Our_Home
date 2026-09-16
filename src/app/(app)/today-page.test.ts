@@ -10,7 +10,8 @@ const source = readFileSync(
 describe("Today dashboard composition", () => {
   it("is a read-model dashboard rather than a redirect to wallets", () => {
     expect(source).not.toContain('redirect("/wallets")');
-    expect(source).toContain("greetingForBangkok()");
+    expect(source).toContain("greetingForBangkok(now)");
+    expect(source).toContain("homeCoverMode(profile?.birthday, now)");
     expect(source).toContain("งานวันนี้");
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="การเงิน"');
@@ -31,5 +32,18 @@ describe("Today dashboard composition", () => {
       expect(source).toContain(sourceFunction);
     }
     expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
+  });
+
+  it("uses real artwork for every time period without CSS image filters", () => {
+    for (const asset of [
+      "home-morning.webp",
+      "home-afternoon.webp",
+      "home-evening.webp",
+      "home-late-night.webp",
+      "home-birthday.webp",
+    ]) {
+      expect(source).toContain(asset);
+    }
+    expect(source).not.toMatch(/brightness-|saturate-|hue-rotate|sepia-/u);
   });
 });

@@ -61,7 +61,7 @@ export function BottomNav() {
   function renderItem(item: (typeof NAV_ITEMS)[number]) {
     const active = activeSection === item.section;
     return (
-      <li key={item.href}>
+      <li key={item.href} className="min-w-0">
         <Link
           href={item.href}
           prefetch={true}
@@ -71,7 +71,7 @@ export function BottomNav() {
           }
           aria-current={active ? "page" : undefined}
           className={cn(
-            "flex h-14 flex-col items-center justify-center gap-0.5 rounded-control text-[10px] font-medium transition-colors",
+            "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-[1rem] text-[10px] font-medium transition-colors",
             active
               ? isFinance
                 ? "bg-finance-primary-soft/70 text-finance-primary-strong"
@@ -91,13 +91,13 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-10",
+        "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30",
         isFinance && "finance-scope",
       )}
     >
       <ul
         className={cn(
-          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 rounded-[2rem] px-2 py-1 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

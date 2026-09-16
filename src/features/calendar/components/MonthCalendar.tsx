@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
+import { MonthPicker } from "./MonthPicker";
 
 import {
   formatEventTime,
@@ -102,13 +103,14 @@ export function MonthCalendar({
           >
             <AppIcon name="chevron" className="size-4 rotate-180" />
           </Link>
-          <h2 className="min-w-0 truncate text-lg font-semibold text-finance-text">
-            {new Intl.DateTimeFormat("th-TH", {
+          <MonthPicker
+            month={month}
+            label={new Intl.DateTimeFormat("th-TH", {
               month: "long",
               year: "numeric",
               timeZone: "UTC",
             }).format(new Date(`${month}-01T00:00:00Z`))}
-          </h2>
+          />
           <Link
             className="flex size-10 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong"
             href={`/calendar?month=${shiftMonth(month, 1)}`}

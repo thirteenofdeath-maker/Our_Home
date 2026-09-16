@@ -71,12 +71,18 @@ export default async function HouseholdPage() {
           triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
           sheetTitle="เพิ่มสมาชิก"
           tone="finance"
-          form={<AddMemberForm householdId={household.id} canInviteAdmin={household.myRole === "owner"} variant="sheet" />}
+          form={
+            <AddMemberForm
+              householdId={household.id}
+              canInviteAdmin={household.myRole === "owner"}
+              variant="sheet"
+            />
+          }
         >
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <section className="relative min-h-80 overflow-hidden rounded-[1.75rem] bg-[#f8f1e5] p-5 shadow-card">
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e5] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/family-garden.webp"
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
@@ -86,7 +92,7 @@ export default async function HouseholdPage() {
           className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,240,0.98)_0%,rgba(255,249,240,0.84)_42%,rgba(255,249,240,0.05)_78%)]" />
-        <div className="relative flex min-h-72 max-w-[62%] flex-col">
+        <div className="relative flex h-full max-w-[62%] flex-col">
           <p className="text-xs font-medium text-finance-primary-strong">
             บ้านของเรา
           </p>
@@ -96,25 +102,17 @@ export default async function HouseholdPage() {
           <p className="mt-2 text-sm leading-relaxed text-finance-muted">
             อยู่ด้วยกัน มีความสุขเสมอ
           </p>
-          <div className="mt-auto grid grid-cols-2 gap-2">
-            <div className="rounded-[1rem] bg-white/70 p-3 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-finance-primary-strong">
-                <AppIcon name="household" className="size-4" />
-                <span className="text-xs">สมาชิก</span>
-              </div>
-              <p className="mt-1 font-semibold text-finance-text">
-                {members.length} คน
-              </p>
-            </div>
-            <div className="rounded-[1rem] bg-white/70 p-3 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-finance-primary-strong">
-                <AppIcon name="calendar" className="size-4" />
-                <span className="text-xs">เริ่มอยู่ด้วยกัน</span>
-              </div>
-              <p className="mt-1 text-sm font-semibold text-finance-text">
-                {startedLabel}
-              </p>
-            </div>
+          <div className="mt-auto rounded-[1rem] bg-white/75 px-3 py-2 text-xs backdrop-blur-sm">
+            <p className="flex items-center gap-1.5 font-semibold text-finance-text">
+              <AppIcon
+                name="household"
+                className="size-4 text-finance-primary-strong"
+              />
+              {members.length} คน
+            </p>
+            <p className="mt-0.5 truncate text-finance-muted">
+              เริ่มอยู่ด้วยกัน {startedLabel}
+            </p>
           </div>
         </div>
       </section>

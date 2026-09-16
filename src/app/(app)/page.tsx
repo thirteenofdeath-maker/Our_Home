@@ -30,7 +30,11 @@ import {
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
 import { listMyWallets } from "@/features/wallets/api";
-import { greetingForBangkok } from "@/features/today/domain";
+import {
+  greetingForBangkok,
+  homeCoverMode,
+  type HomeCoverMode,
+} from "@/features/today/domain";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -72,8 +76,56 @@ function weekDates(date: string) {
   });
 }
 
+const HOME_COVER_STYLES: Record<
+  HomeCoverMode,
+  {
+    src: string;
+    alt: string;
+    text: string;
+    muted: string;
+    action: string;
+  }
+> = {
+  birthday: {
+    src: "/art/home-birthday.webp",
+    alt: "พ่อแม่และลูกสาวฉลองวันเกิดที่บ้านกับแมวสี่ตัวและกระต่าย",
+    text: "text-[#5f3d37]",
+    muted: "text-[#8a6259]",
+    action: "bg-white/85 text-[#b65f53]",
+  },
+  morning: {
+    src: "/art/home-morning.webp",
+    alt: "ยามเช้าที่พ่อแม่และลูกสาวดูแลบ้านพร้อมแมวสี่ตัวและกระต่าย",
+    text: "text-finance-text",
+    muted: "text-finance-muted",
+    action: "bg-white/85 text-finance-primary-strong",
+  },
+  afternoon: {
+    src: "/art/home-afternoon.webp",
+    alt: "ยามบ่ายที่พ่อแม่และลูกสาวทำกิจกรรมพร้อมแมวสี่ตัวและกระต่าย",
+    text: "text-[#544238]",
+    muted: "text-[#7b685b]",
+    action: "bg-white/85 text-[#7e6b4c]",
+  },
+  evening: {
+    src: "/art/home-evening.webp",
+    alt: "ยามเย็นที่พ่อกลับบ้านและครอบครัวเตรียมอาหารพร้อมสัตว์เลี้ยง",
+    text: "text-[#513c35]",
+    muted: "text-[#72584f]",
+    action: "bg-white/75 text-[#715348] backdrop-blur-sm",
+  },
+  "late-night": {
+    src: "/art/home-late-night.webp",
+    alt: "ยามดึกที่พ่อแม่อ่านนิทานให้ลูกสาวพร้อมแมวสี่ตัวและกระต่าย",
+    text: "text-[#33404a]",
+    muted: "text-[#63717a]",
+    action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
+  },
+};
+
 export default async function HomePage() {
   const { supabase, user } = await requireUser();
+  const now = new Date();
 
   const walletsPromise = listMyWallets(supabase);
   const householdPromise = getMyPrimaryHousehold(supabase, user.id);
@@ -87,7 +139,7 @@ export default async function HomePage() {
     redirect("/onboarding");
   }
 
-  const today = bangkokDateKey();
+  const today = bangkokDateKey(now);
   const tomorrow = shiftDate(today, 1);
   const upcomingEnd = shiftDate(today, 8);
   const householdId = household?.id ?? null;
@@ -144,37 +196,49 @@ export default async function HomePage() {
     .slice(0, 3);
   const displayName =
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
+  const coverMode = homeCoverMode(profile?.birthday, now);
+  const coverStyle = HOME_COVER_STYLES[coverMode];
+  const isBirthday = coverMode === "birthday";
   const todayItemCount =
     todayEvents.length + dueTasks.length + upcomingReminders.length;
   const currentWeek = weekDates(today);
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="relative min-h-64 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:min-h-72 sm:p-6">
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
-          src="/art/home-morning.webp"
-          alt="บ้านในสวนยามเช้ากับครอบครัวและสัตว์เลี้ยง"
+          src={coverStyle.src}
+          alt={coverStyle.alt}
           fill
           priority
           sizes="(max-width: 640px) 100vw, 576px"
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,241,0.98)_0%,rgba(255,250,241,0.9)_38%,rgba(255,250,241,0.15)_72%)]" />
         <Link
           href="/profile/notifications"
           aria-label="ตั้งค่าการแจ้งเตือน"
-          className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-white/80 text-finance-primary-strong shadow-sm transition-transform active:scale-95"
+          className={`absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full shadow-sm transition-transform active:scale-95 ${coverStyle.action}`}
         >
           <AppIcon name="bell" className="size-5" />
         </Link>
-        <p className="relative max-w-[70%] text-sm font-medium text-finance-muted">
+        <p
+          className={`relative max-w-[72%] text-xs font-medium ${coverStyle.muted}`}
+        >
           {thaiToday(today)}
         </p>
-        <h1 className="relative mt-2 max-w-[70%] text-3xl font-semibold leading-tight text-finance-text">
-          {greetingForBangkok()} {displayName}
+        <h1
+          className={`relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight ${coverStyle.text}`}
+        >
+          {isBirthday
+            ? `สุขสันต์วันเกิด ${displayName} 🎉`
+            : `${greetingForBangkok(now)} ${displayName}`}
         </h1>
-        <p className="relative mt-3 max-w-[58%] text-sm leading-relaxed text-finance-muted">
-          วันนี้ก็มาดูแลบ้านของเราไปด้วยกันนะ
+        <p
+          className={`relative mt-2 max-w-[62%] text-sm leading-relaxed ${coverStyle.muted}`}
+        >
+          {isBirthday
+            ? "วันนี้ให้บ้านของเราช่วยฉลองวันพิเศษของคุณนะ"
+            : "วันนี้ก็มาดูแลบ้านของเราไปด้วยกันนะ"}
         </p>
       </section>
 

@@ -68,7 +68,7 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       // `form` is a plain element prop, never a render-prop function —
       // household/page.tsx is a Server Component, so passing a callback
       // to the Client FormSheetButton would throw at runtime.
-      expect(root).toMatch(/form=\{<AddMemberForm/);
+      expect(root).toMatch(/form=\{\s*<AddMemberForm/);
       expect(root).not.toContain("renderForm={() =>");
     });
 
