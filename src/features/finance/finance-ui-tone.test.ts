@@ -129,7 +129,7 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
     });
   }
 
-  it("DebtCreateForm (the create form) applies finance-ui-tone; DebtPaymentForm/AdditionalDebtPrincipalForm (actions on an EXISTING debt, not Create) do not — they're out of this task's scope", () => {
+  it("all debt forms apply finance-ui-tone so their shared Wallet/Pocket picker has identical tokens", () => {
     const source = read("src/features/debts/components/DebtForms.tsx");
     const createFormSrc = source.slice(
       source.indexOf("export function DebtCreateForm"),
@@ -140,11 +140,11 @@ describe("Every Finance create form sheet/route applies the finance-ui-tone scop
       source.indexOf("export function DebtPaymentForm"),
       source.indexOf("export function AdditionalDebtPrincipalForm"),
     );
-    expect(paymentFormSrc).not.toContain("finance-ui-tone");
+    expect(paymentFormSrc).toContain("finance-ui-tone");
     const principalFormSrc = source.slice(
       source.indexOf("export function AdditionalDebtPrincipalForm"),
     );
-    expect(principalFormSrc).not.toContain("finance-ui-tone");
+    expect(principalFormSrc).toContain("finance-ui-tone");
   });
 
   it('CategoryPicker and TagPicker wrap themselves in finance-ui-tone and pass tone="finance" to their own BottomSheet — the picker list, quick-create form, and selected-state chips all belong to the same Finance V2 surface', () => {
@@ -197,31 +197,40 @@ describe("Finance form submit buttons use Finance V2 accents, income/expense/tra
   });
 });
 
-describe("Non-Finance forms never receive the Finance UI tone", () => {
-  it("Pet/Calendar/Household forms contain no finance-ui-tone, no finance-* class, no finance token reference at all", () => {
+describe("Pets and Family reuse the Finance/Plan visual language", () => {
+  it("Pet and Household forms opt into the shared form tone", () => {
     const forms = [
       "src/features/pets/components/PetForm.tsx",
-      "src/features/calendar/components/CalendarEventForm.tsx",
       "src/features/household/components/CreateHouseholdForm.tsx",
       "src/features/household/components/AddMemberForm.tsx",
+      "src/features/pets/components/PetCareRecordForm.tsx",
     ];
     for (const path of forms) {
       const source = read(path);
-      expect(source, path).not.toMatch(/finance/i);
+      expect(source, path).toContain("finance-ui-tone");
     }
   });
 
-  it('AddPetFab/AddCalendarEventFab/AddHouseholdTrigger never pass tone="finance" and never reference finance-ui-tone', () => {
+  it('Pet and Household triggers pass tone="finance"', () => {
     const triggers = [
       "src/features/pets/components/AddPetFab.tsx",
-      "src/features/calendar/components/AddCalendarEventFab.tsx",
       "src/features/household/components/AddHouseholdTrigger.tsx",
     ];
     for (const path of triggers) {
       const source = stripComments(read(path));
-      expect(source, path).not.toContain('tone="finance"');
-      expect(source, path).not.toContain("finance-ui-tone");
+      expect(source, path).toContain('tone="finance"');
     }
+  });
+
+  it("Plan deliberately reuses the Finance V2 sheet tone", () => {
+    const trigger = stripComments(
+      read("src/features/calendar/components/AddCalendarEventFab.tsx"),
+    );
+    const form = stripComments(
+      read("src/features/calendar/components/CalendarEventForm.tsx"),
+    );
+    expect(trigger).toContain('tone="finance"');
+    expect(form).toContain("finance-ui-tone");
   });
 });
 

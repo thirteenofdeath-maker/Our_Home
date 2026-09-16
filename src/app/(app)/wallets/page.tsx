@@ -5,6 +5,7 @@ import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import { listPocketsWithBalances } from "@/features/pockets/api";
 import { listArchivedWallets, listMyWallets } from "@/features/wallets/api";
 import { WalletForm } from "@/features/wallets/components/WalletForm";
@@ -52,9 +53,9 @@ export default async function WalletsPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pb-8 pt-2">
+      <FinanceModuleTabs />
       <PageHeader
         title="กระเป๋าเงิน"
-        backHref="/finance"
         rightAction={
           <FormSheetButton
             ariaLabel="เพิ่มกระเป๋าเงิน"

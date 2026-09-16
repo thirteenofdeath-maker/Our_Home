@@ -19,9 +19,12 @@ describe("TransactionWalletSelect", () => {
       wallets, currentWalletId: "household-wallet", transactionType,
     }));
     expect(html).toContain("กระเป๋าเงิน (Wallet)");
-    expect(html).toContain("KBank · ส่วนตัว");
-    expect(html).toContain("เงินสดบ้าน · ครอบครัว");
-    expect(html).toContain('<option value="household-wallet" selected="">');
+    expect(html).toContain("KBank");
+    expect(html).toContain("ส่วนตัว");
+    expect(html).toContain("เงินสดบ้าน");
+    expect(html).toContain("ครอบครัว");
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).not.toContain("<select");
   });
 
   it("switches route while preserving validated context", () => {

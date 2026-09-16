@@ -52,7 +52,7 @@ describe("One shared motion system — every action/process sheet reuses BottomS
       ["src/app/(app)/finance/debts/page.tsx", "AddDebtFab"],
       ["src/app/(app)/finance/goals/page.tsx", "AddGoalFab"],
       ["src/app/(app)/pets/page.tsx", "AddPetFab"],
-      ["src/app/(app)/pets/[petId]/page.tsx", "AddPetFab"],
+      ["src/app/(app)/pets/[petId]/page.tsx", "FormSheetButton"],
       ["src/app/(app)/calendar/page.tsx", "AddCalendarEventFab"],
       ["src/app/(app)/calendar/[eventId]/page.tsx", "AddCalendarEventFab"],
       ["src/app/(app)/household/page.tsx", "FormSheetButton"],

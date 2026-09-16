@@ -2,18 +2,18 @@
 
 import { useActionState, useState, useTransition } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
+import { FinancePocketField } from "@/features/finance/components/FinancePocketPicker";
 import { getIncomeExpenseSheetData } from "@/features/finance/quick-add-data";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/money";
 import type { TransferEndpoint } from "../domain/unified-transfer";
 
 import { createIncomeExpenseAction } from "../actions";
@@ -211,10 +211,12 @@ export function TransactionForm({
       </Field>
 
       {variant === "sheet" && endpoints ? (
-        <TransactionEndpointPicker
-          endpoints={endpoints}
-          activePocketId={activePocketId}
+        <FinancePocketField
+          options={endpoints}
+          selectedPocketId={activePocketId}
           disabled={walletSwitchPending}
+          walletInputName={null}
+          pocketInputName={null}
           onSelect={(endpoint) => {
             if (endpoint.walletId === activeWalletId) {
               setActivePocketId(endpoint.pocketId);
@@ -245,21 +247,18 @@ export function TransactionForm({
 
       <input type="hidden" name="pocketId" value={activePocketId} />
       {variant === "page" || !endpoints ? (
-        <Field label="ช่องเงิน (Pocket)" htmlFor="pocketId-select">
-          <Select
-            id="pocketId-select"
-            value={activePocketId}
-            onChange={(event) => setActivePocketId(event.target.value)}
-            required
-          >
-            {sheetData.pockets.map((pocket) => (
-              <option key={pocket.id} value={pocket.id}>
-                {pocket.name} · {pocket.currency}
-                {pocket.pocket_type === "CREDIT_CARD" ? " · บัตรเครดิต" : ""}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <FinanceOptionField
+          label="ช่องเงิน (Pocket)"
+          title="เลือก Pocket"
+          name={null}
+          options={sheetData.pockets.map((pocket) => ({
+            id: pocket.id,
+            label: pocket.name,
+            description: `${pocket.currency}${pocket.pocket_type === "CREDIT_CARD" ? " · บัตรเครดิต" : ""}`,
+          }))}
+          value={activePocketId}
+          onChange={setActivePocketId}
+        />
       ) : null}
 
       <Field label="หมวดหมู่" htmlFor="categoryId">
@@ -332,107 +331,5 @@ export function TransactionForm({
             : "บันทึกรายจ่าย"}
       </SubmitButton>
     </form>
-  );
-}
-
-function TransactionEndpointPicker({
-  endpoints,
-  activePocketId,
-  disabled,
-  onSelect,
-}: {
-  endpoints: TransferEndpoint[];
-  activePocketId: string;
-  disabled: boolean;
-  onSelect: (endpoint: TransferEndpoint) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected =
-    endpoints.find((endpoint) => endpoint.pocketId === activePocketId) ?? null;
-  const walletGroups = endpoints.reduce<TransferEndpoint[][]>(
-    (groups, endpoint) => {
-      const group = groups.find(
-        (items) => items[0]?.walletId === endpoint.walletId,
-      );
-      if (group) group.push(endpoint);
-      else groups.push([endpoint]);
-      return groups;
-    },
-    [],
-  );
-
-  return (
-    <>
-      <div>
-        <p className="mb-1 text-sm font-medium text-finance-muted">
-          กระเป๋าเงิน
-        </p>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => setOpen(true)}
-          className="flex min-h-[88px] w-full flex-col justify-center rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong p-3 text-left shadow-sm disabled:opacity-50"
-        >
-          <span className="truncate text-xs text-finance-muted">
-            {selected?.walletName ?? "เลือกกระเป๋าเงิน"}
-          </span>
-          <span className="truncate text-sm font-semibold text-finance-text">
-            {selected?.pocketName ?? "เลือก Pocket"}
-          </span>
-          {selected ? (
-            <span className="mt-1 text-xs tabular-nums text-finance-muted">
-              {formatCurrency(selected.balance, selected.currency)}
-            </span>
-          ) : null}
-        </button>
-      </div>
-
-      <BottomSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title="เลือกกระเป๋าเงิน"
-        tone="finance"
-      >
-        <div className="flex flex-col gap-4">
-          {walletGroups.map((group) => (
-            <section key={group[0].walletId}>
-              <h3 className="mb-1 text-sm font-semibold text-finance-text">
-                {group[0].walletName}
-              </h3>
-              <div className="flex flex-col gap-1">
-                {group.map((endpoint) => (
-                  <button
-                    key={endpoint.pocketId}
-                    type="button"
-                    onClick={() => {
-                      onSelect(endpoint);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      "flex min-h-14 w-full items-center justify-between rounded-2xl px-3 py-2 text-left",
-                      endpoint.pocketId === activePocketId
-                        ? "bg-finance-primary-soft"
-                        : "bg-finance-surface-strong",
-                    )}
-                  >
-                    <span>
-                      <span className="block font-medium text-finance-text">
-                        {endpoint.pocketName}
-                      </span>
-                      <span className="text-xs text-finance-muted">
-                        {endpoint.walletName}
-                      </span>
-                    </span>
-                    <span className="tabular-nums text-finance-text">
-                      {formatCurrency(endpoint.balance, endpoint.currency)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </BottomSheet>
-    </>
   );
 }

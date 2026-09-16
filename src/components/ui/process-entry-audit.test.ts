@@ -198,14 +198,14 @@ describe("BOTTOM SLIDE-UP invariant — only Create/Add ever opens a sliding she
     const source = read("src/app/(app)/finance/debts/[debtId]/page.tsx");
     expect(source).not.toMatch(/ActionMenuButton|ActionSheet|BottomSheet/);
     expect(source).toMatch(
-      /<Link href=\{`\/finance\/debts\/\$\{debtId\}\/payment`\}/,
+      /<Link\s+href=\{`\/finance\/debts\/\$\{debtId\}\/payment`\}/,
     );
     expect(source).toMatch(
-      /<Link href=\{`\/finance\/debts\/\$\{debtId\}\/principal`\}/,
+      /<Link\s+href=\{`\/finance\/debts\/\$\{debtId\}\/principal`\}/,
     );
     // Archived debts still show no payment/principal actions at all —
     // same pre-existing gate, untouched.
-    expect(source).toContain("d.archivedAt?");
+    expect(source).toContain("archived ?");
   });
 });
 

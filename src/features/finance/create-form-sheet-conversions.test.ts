@@ -86,21 +86,21 @@ describe("Full-page /new (and equivalent) routes still render, unmodified in bus
   }
 });
 
-describe("Non-Finance modules (Pet, Calendar, Household) never adopt Finance V2 tone", () => {
-  it('AddPetFab and AddCalendarEventFab never pass tone="finance"', () => {
+describe("Pets and Household now share the Finance/Plan sheet theme", () => {
+  it('AddPetFab and Plan both pass tone="finance"', () => {
     expect(
       stripComments(read("src/features/pets/components/AddPetFab.tsx")),
-    ).not.toContain('tone="finance"');
+    ).toContain('tone="finance"');
     expect(
       stripComments(
         read("src/features/calendar/components/AddCalendarEventFab.tsx"),
       ),
-    ).not.toContain('tone="finance"');
+    ).toContain('tone="finance"');
   });
 
-  it('Household\'s FormSheetButton usages never pass tone="finance" either', () => {
+  it('Household\'s FormSheetButton passes tone="finance"', () => {
     const source = read("src/app/(app)/household/page.tsx");
-    expect(source).not.toContain('tone="finance"');
+    expect(source).toContain('tone="finance"');
   });
 });
 

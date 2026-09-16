@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 
 const SECTION_TITLES: Record<string, string> = {
   "quick-add": "เพิ่มรายการ",
@@ -17,7 +18,7 @@ const SECTION_TITLES: Record<string, string> = {
   goals: "เป้าหมายการออม",
   debts: "หนี้และเงินยืม",
   reports: "รายงานการเงิน",
-  "net-worth": "มูลค่าสุทธิ",
+  "net-worth": "ทรัพย์สินสุทธิ",
   insights: "ข้อมูลเชิงลึก",
   import: "นำเข้า CSV",
   export: "ส่งออก CSV",
@@ -60,6 +61,14 @@ export function financeBackHref(pathname: string): string | undefined {
 export default function FinanceLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname === "/finance") return children;
+  if (pathname === "/finance/transactions") {
+    return (
+      <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pb-8 pt-3">
+        <FinanceModuleTabs />
+        {children}
+      </div>
+    );
+  }
   const section = pathname.split("/")[2] ?? "";
 
   return (

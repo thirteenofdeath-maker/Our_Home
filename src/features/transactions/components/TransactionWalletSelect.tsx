@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { Field, Select } from "@/components/ui/Field";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 
 export interface TransactionWalletOption {
   id: string;
@@ -56,13 +56,18 @@ export function TransactionWalletSelect({
   const router = useRouter();
 
   return (
-    <Field label="กระเป๋าเงิน (Wallet)" htmlFor="transaction-wallet-select">
-      <Select
-        id="transaction-wallet-select"
-        value={currentWalletId}
-        disabled={disabled}
-        onChange={(event) => {
-          const nextWalletId = event.currentTarget.value;
+    <FinanceOptionField
+      label="กระเป๋าเงิน (Wallet)"
+      title="เลือก Wallet"
+      name={null}
+      options={wallets.map((wallet) => ({
+        id: wallet.id,
+        label: wallet.name,
+        description: wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว",
+      }))}
+      value={currentWalletId}
+      disabled={disabled}
+      onChange={(nextWalletId) => {
           if (onWalletChange) {
             onWalletChange(nextWalletId);
             return;
@@ -75,15 +80,7 @@ export function TransactionWalletSelect({
               occurrenceId,
             }),
           );
-        }}
-      >
-        {wallets.map((wallet) => (
-          <option key={wallet.id} value={wallet.id}>
-            {wallet.name} ·{" "}
-            {wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
-          </option>
-        ))}
-      </Select>
-    </Field>
+      }}
+    />
   );
 }

@@ -13,7 +13,7 @@ export function CreateHouseholdForm({ variant = "page" }: { variant?: "page" | "
   const [state, formAction] = useActionState(createHouseholdAction, initialActionState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="finance-ui-tone flex flex-col gap-4">
       <Field label="ชื่อครอบครัว" htmlFor="name">
         <Input id="name" name="name" type="text" placeholder="เช่น บ้านของเรา" required autoFocus />
       </Field>

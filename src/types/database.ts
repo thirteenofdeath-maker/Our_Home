@@ -26,7 +26,20 @@ export type ExpenseAdjustmentKind = "REFUND" | "REIMBURSEMENT";
 export type ProfileGender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
 export type PetSpecies = "CAT" | "DOG" | "RABBIT" | "BIRD" | "FISH" | "OTHER";
 export type PetSex = "MALE" | "FEMALE" | "UNKNOWN";
+export type PetCareRecordType =
+  | "HEALTH"
+  | "VACCINE"
+  | "MEDICATION"
+  | "VET"
+  | "WEIGHT"
+  | "EXPENSE"
+  | "DOCUMENT";
 export type CalendarEventScope = "PERSONAL" | "HOUSEHOLD";
+export type PlanTaskPriority = "LOW" | "NORMAL" | "HIGH";
+export type PlanNoteColor =
+  "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
+export type PlanReminderRecurrence =
+  "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 export interface Database {
   public: {
@@ -106,6 +119,61 @@ export interface Database {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          plan_enabled: boolean;
+          pets_enabled: boolean;
+          finance_enabled: boolean;
+          day_before_enabled: boolean;
+          due_day_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          plan_enabled?: boolean;
+          pets_enabled?: boolean;
+          finance_enabled?: boolean;
+          day_before_enabled?: boolean;
+          due_day_enabled?: boolean;
+        };
+        Update: {
+          plan_enabled?: boolean;
+          pets_enabled?: boolean;
+          finance_enabled?: boolean;
+          day_before_enabled?: boolean;
+          due_day_enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          user_agent: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth_key: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          p256dh?: string;
+          auth_key?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [];
+      };
       pets: {
         Row: {
           id: string;
@@ -134,6 +202,58 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      pet_care_records: {
+        Row: {
+          id: string;
+          pet_id: string;
+          household_id: string;
+          created_by: string;
+          record_type: PetCareRecordType;
+          title: string;
+          note: string | null;
+          recorded_at: string;
+          scheduled_at: string | null;
+          value: string | number | null;
+          unit: string | null;
+          provider: string | null;
+          transaction_id: string | null;
+          document_path: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          pet_id: string;
+          household_id: string;
+          created_by: string;
+          record_type: PetCareRecordType;
+          title: string;
+          note?: string | null;
+          recorded_at?: string;
+          scheduled_at?: string | null;
+          value?: string | number | null;
+          unit?: string | null;
+          provider?: string | null;
+          transaction_id?: string | null;
+          document_path?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          record_type?: PetCareRecordType;
+          title?: string;
+          note?: string | null;
+          recorded_at?: string;
+          scheduled_at?: string | null;
+          value?: string | number | null;
+          unit?: string | null;
+          provider?: string | null;
+          transaction_id?: string | null;
+          document_path?: string | null;
+          archived_at?: string | null;
+        };
         Relationships: [];
       };
       calendar_events: {
@@ -165,6 +285,155 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      plan_tasks: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          details: string | null;
+          list_name: string;
+          due_date: string | null;
+          due_time: string | null;
+          priority: PlanTaskPriority;
+          is_completed: boolean;
+          completed_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          details?: string | null;
+          list_name?: string;
+          due_date?: string | null;
+          due_time?: string | null;
+          priority?: PlanTaskPriority;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          details?: string | null;
+          list_name?: string;
+          due_date?: string | null;
+          due_time?: string | null;
+          priority?: PlanTaskPriority;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_task_steps: {
+        Row: {
+          id: string;
+          task_id: string;
+          created_by: string;
+          title: string;
+          position: number;
+          is_completed: boolean;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          created_by: string;
+          title: string;
+          position?: number;
+          is_completed?: boolean;
+          completed_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          position?: number;
+          is_completed?: boolean;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_notes: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string | null;
+          content: string | null;
+          color: PlanNoteColor;
+          pinned_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title?: string | null;
+          content?: string | null;
+          color?: PlanNoteColor;
+          pinned_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string | null;
+          content?: string | null;
+          color?: PlanNoteColor;
+          pinned_at?: string | null;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_reminders: {
+        Row: {
+          id: string;
+          household_id: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          note: string | null;
+          reminds_at: string;
+          recurrence: PlanReminderRecurrence;
+          is_completed: boolean;
+          completed_at: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          household_id?: string | null;
+          created_by: string;
+          scope: CalendarEventScope;
+          title: string;
+          note?: string | null;
+          reminds_at: string;
+          recurrence?: PlanReminderRecurrence;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          title?: string;
+          note?: string | null;
+          reminds_at?: string;
+          recurrence?: PlanReminderRecurrence;
+          is_completed?: boolean;
+          completed_at?: string | null;
+          archived_at?: string | null;
+        };
         Relationships: [];
       };
       wallets: {
@@ -1513,6 +1782,14 @@ export interface Database {
       get_finance_hub_final: {
         Args: { p_report_start: string; p_report_end: string; p_today: string };
         Returns: unknown;
+      };
+      get_push_public_config: {
+        Args: Record<string, never>;
+        Returns: Array<{ vapid_public_key: string; vapid_subject: string }>;
+      };
+      get_push_server_secrets: {
+        Args: Record<string, never>;
+        Returns: Array<{ vapid_private_key: string; cron_secret: string }>;
       };
     };
     Enums: {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -27,6 +28,13 @@ export function PocketTransferForm({
   const [state, formAction] = useActionState(createPocketTransferAction, initialActionState);
   const today = new Date().toLocaleDateString("en-CA");
   const defaults = getPocketTransferDefaults(pockets);
+  const [fromPocketId, setFromPocketId] = useState(defaults?.fromPocketId ?? "");
+  const [toPocketId, setToPocketId] = useState(defaults?.toPocketId ?? "");
+  const pocketOptions = pockets.map((pocket) => ({
+    id: pocket.id,
+    label: pocket.name,
+    description: pocket.currency,
+  }));
 
   return (
     <form
@@ -35,25 +43,29 @@ export function PocketTransferForm({
     >
       <input type="hidden" name="walletId" value={walletId} />
 
-      <Field label="จากช่อง" htmlFor="fromPocketId">
-        <Select id="fromPocketId" name="fromPocketId" required defaultValue={defaults?.fromPocketId}>
-          {pockets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="จากช่อง"
+        title="เลือก Pocket ต้นทาง"
+        name="fromPocketId"
+        options={pocketOptions.map((option) => ({
+          ...option,
+          disabled: option.id === toPocketId,
+        }))}
+        value={fromPocketId}
+        onChange={setFromPocketId}
+      />
 
-      <Field label="ไปยังช่อง" htmlFor="toPocketId">
-        <Select id="toPocketId" name="toPocketId" required defaultValue={defaults?.toPocketId}>
-          {pockets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <FinanceOptionField
+        label="ไปยังช่อง"
+        title="เลือก Pocket ปลายทาง"
+        name="toPocketId"
+        options={pocketOptions.map((option) => ({
+          ...option,
+          disabled: option.id === fromPocketId,
+        }))}
+        value={toPocketId}
+        onChange={setToPocketId}
+      />
 
       <Field label="จำนวนเงิน" htmlFor="amount">
         <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />
@@ -75,8 +87,8 @@ export function PocketTransferForm({
 
 /**
  * UI convenience only — pre-selects the first two distinct pockets (by
- * the stable, sort_order-based list order) so the two <select>s aren't
- * both blank. No pocket is a domain default; nothing here is persisted.
+ * the stable, sort_order-based list order) so the two pickers aren't both
+ * blank. No pocket is a domain default; nothing here is persisted.
  * The Server Action independently re-validates source != destination.
  */
 export function getPocketTransferDefaults(pockets: Pocket[]): { fromPocketId: string; toPocketId: string } | null {

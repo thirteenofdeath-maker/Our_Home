@@ -5,6 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Our Home",
     short_name: "Our Home",
     description: "จัดการเงินและงานบ้านของครอบครัวในที่เดียว",
+    id: "/",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

@@ -112,6 +112,7 @@ export async function createPocketAction(
   }
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);
+  if (formData.get("formMode") === "sheet") return { success: true };
   redirect(`/wallets/${parsed.data.walletId}`);
 }
 

@@ -7,15 +7,20 @@ export const FINANCE_TIME_ZONE = "Asia/Bangkok";
 /** Only internal path this app ever redirects a transaction save back to. */
 export const FINANCE_RETURN_TO = "/finance";
 
-export function currentFinanceMonth(now = new Date()): string {
+export function currentFinanceDate(now = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: FINANCE_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
+    day: "2-digit",
   }).formatToParts(now);
   const get = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((part) => part.type === type)?.value;
-  return `${get("year")}-${get("month")}`;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+export function currentFinanceMonth(now = new Date()): string {
+  return currentFinanceDate(now).slice(0, 7);
 }
 
 export function financeMonthRange(month: string): {

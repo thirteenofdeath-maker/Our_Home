@@ -1,10 +1,14 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { CategoryNode } from "@/features/categories/types";
 
 import { ExpenseCategorySelect } from "./ExpenseCategorySelect";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 function category(id: string, name: string): CategoryNode {
   return {
@@ -28,7 +32,7 @@ function category(id: string, name: string): CategoryNode {
 }
 
 describe("ExpenseCategorySelect", () => {
-  it("renders two selectable UUID options and submits the selected UUID", () => {
+  it("uses the grouped category sheet and submits the selected UUID", () => {
     const foodId = "11111111-1111-4111-8111-111111111111";
     const travelId = "22222222-2222-4222-8222-222222222222";
     const food = category(foodId, "Food");
@@ -37,14 +41,16 @@ describe("ExpenseCategorySelect", () => {
     const html = renderToStaticMarkup(
       createElement(ExpenseCategorySelect, {
         categories: [food],
+        defaultValue: travelId,
       }),
     );
 
-    expect(html).toContain('select id="categoryId" name="categoryId" required=""');
-    expect(html).toContain(`<option value="${foodId}">Food</option>`);
-    expect(html).toContain(`<option value="${travelId}">Food &gt; Travel</option>`);
-    expect(html).not.toContain(`<option value="${foodId}" disabled="">`);
-    expect(html).not.toContain(`<option value="${travelId}" disabled="">`);
+    expect(html).toContain(
+      `type="hidden" name="categoryId" value="${travelId}"`,
+    );
+    expect(html).toContain("Food &gt; Travel");
+    expect(html).toContain("ค้นหาหมวดหมู่...");
+    expect(html).not.toContain('<select id="categoryId"');
 
     const submitted = new FormData();
     submitted.set("categoryId", travelId);

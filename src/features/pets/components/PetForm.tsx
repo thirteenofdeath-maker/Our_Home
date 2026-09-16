@@ -21,7 +21,7 @@ export function PetForm({
   void variant;
   const [state, action] = useActionState(pet ? updatePetAction : createPetAction, initialActionState);
   const selected = new Set(pet?.caregivers.map((item) => item.id));
-  return <form action={action} className="flex flex-col gap-4">
+  return <form action={action} className="finance-ui-tone flex flex-col gap-4">
     {pet ? <input type="hidden" name="petId" value={pet.id} /> : null}
     <Field label="รูป" htmlFor="photo"><Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="text-xs text-foreground-muted">JPEG, PNG หรือ WebP ไม่เกิน 15 MB</span></Field>
     <Field label="ชื่อ" htmlFor="name"><Input id="name" name="name" defaultValue={pet?.name} required maxLength={80} /></Field>

@@ -39,6 +39,10 @@ export function CategoryPicker({
   transactionType,
   walletId,
   defaultSelected = null,
+  allowEmpty = false,
+  emptyLabel = "ไม่กำหนด",
+  allowCreate = true,
+  placeholder = "เลือกหมวดหมู่",
 }: {
   name: string;
   categories: CategoryNode[];
@@ -47,22 +51,39 @@ export function CategoryPicker({
    * to this wallet's owner/household — never to the client's own idea of
    * "current scope", since that can't be trusted and doesn't account for
    * a user belonging to more than one household. */
-  walletId: string;
+  walletId?: string;
   /** Pre-selects an existing category — used when editing a transaction. */
   defaultSelected?: { id: string; label: string } | null;
+  /** Optional category fields and filters can expose an explicit clear row. */
+  allowEmpty?: boolean;
+  emptyLabel?: string;
+  /** Filters use the picker UI without exposing category creation. */
+  allowCreate?: boolean;
+  placeholder?: string;
 }) {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("pick");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [selected, setSelected] = useState<{ id: string; label: string } | null>(() =>
-    defaultSelected?.label ? defaultSelected : findCategory(categories, defaultSelected?.id ?? null),
+  const [selected, setSelected] = useState<{
+    id: string;
+    label: string;
+  } | null>(() =>
+    defaultSelected?.label
+      ? defaultSelected
+      : findCategory(categories, defaultSelected?.id ?? null),
   );
   const [query, setQuery] = useState("");
-  const [addingUnder, setAddingUnder] = useState<{ parentId: string | null } | null>(null);
+  const [addingUnder, setAddingUnder] = useState<{
+    parentId: string | null;
+  } | null>(null);
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const visibleCategories = useMemo(() => filterCategories(categories, query), [categories, query]);
+  const visibleCategories = useMemo(
+    () => filterCategories(categories, query),
+    [categories, query],
+  );
+  const canCreate = allowCreate && Boolean(walletId);
 
   function transitionTo(next: () => void) {
     setSheetOpen(false);
@@ -102,7 +123,7 @@ export function CategoryPicker({
   }
 
   function submitNewCategory() {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !walletId) return;
     const formData = new FormData();
     formData.set("name", newName.trim());
     formData.set("transactionType", transactionType);
@@ -121,7 +142,12 @@ export function CategoryPicker({
     });
   }
 
-  const title = stage === "add" ? (addingUnder?.parentId ? "เพิ่มหมวดหมู่ย่อยใหม่" : "เพิ่มหมวดหมู่ใหม่") : "เลือกหมวดหมู่";
+  const title =
+    stage === "add"
+      ? addingUnder?.parentId
+        ? "เพิ่มหมวดหมู่ย่อยใหม่"
+        : "เพิ่มหมวดหมู่ใหม่"
+      : "เลือกหมวดหมู่";
 
   return (
     <div className="finance-ui-tone">
@@ -134,11 +160,21 @@ export function CategoryPicker({
         aria-expanded={sheetOpen}
         className="flex h-13 w-full items-center rounded-control border border-border/70 bg-surface px-4 text-left text-base shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <span className={`min-w-0 flex-1 truncate ${selected ? "text-foreground" : "text-foreground-muted"}`}>{selected?.label ?? "เลือกหมวดหมู่"}</span>
+        <span
+          className={`min-w-0 flex-1 truncate ${selected ? "text-foreground" : "text-foreground-muted"}`}
+        >
+          {selected?.label ?? placeholder}
+        </span>
         <AppIcon name="chevron" className="size-4 text-foreground-muted" />
       </button>
 
-      <BottomSheet open={sheetOpen} onClose={closeSheet} title={title} size={stage === "add" ? "content" : "large"} tone="finance">
+      <BottomSheet
+        open={sheetOpen}
+        onClose={closeSheet}
+        title={title}
+        size={stage === "add" ? "content" : "large"}
+        tone="finance"
+      >
         {stage === "add" ? (
           <button
             type="button"
@@ -152,13 +188,40 @@ export function CategoryPicker({
 
         {stage === "pick" ? (
           <>
-            <Input aria-label="ค้นหาหมวดหมู่" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาหมวดหมู่..." autoFocus />
+            <Input
+              aria-label="ค้นหาหมวดหมู่"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="ค้นหาหมวดหมู่..."
+              autoFocus
+            />
             <div className="mt-3 flex flex-col gap-2">
+              {allowEmpty && !query ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected(null);
+                    closeSheet();
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-control px-3 text-left font-medium hover:bg-surface-muted"
+                >
+                  {emptyLabel}
+                </button>
+              ) : null}
               {visibleCategories.length === 0 ? (
-                <p className="py-4 text-center text-sm text-foreground-muted">{query ? "ไม่พบหมวดหมู่ที่ค้นหา" : "ยังไม่มีหมวดหมู่ เพิ่มหมวดหมู่แรกด้านล่าง"}</p>
+                <p className="py-4 text-center text-sm text-foreground-muted">
+                  {query
+                    ? "ไม่พบหมวดหมู่ที่ค้นหา"
+                    : canCreate
+                      ? "ยังไม่มีหมวดหมู่ เพิ่มหมวดหมู่แรกด้านล่าง"
+                      : "ยังไม่มีหมวดหมู่"}
+                </p>
               ) : null}
               {visibleCategories.map((category) => (
-                <section key={category.id} className="border-b border-border pb-2 last:border-0">
+                <section
+                  key={category.id}
+                  className="border-b border-border pb-2 last:border-0"
+                >
                   <button
                     type="button"
                     onClick={() => selectCategory(category.id, category.name)}
@@ -171,14 +234,23 @@ export function CategoryPicker({
                       <button
                         key={child.id}
                         type="button"
-                        onClick={() => selectCategory(child.id, `${category.name} > ${child.name}`)}
+                        onClick={() =>
+                          selectCategory(
+                            child.id,
+                            `${category.name} > ${child.name}`,
+                          )
+                        }
                         className="flex min-h-11 w-full items-center rounded-control px-3 text-left text-sm hover:bg-surface-muted"
                       >
                         {child.name}
                       </button>
                     ))}
-                    {!category.is_system && !query ? (
-                      <button type="button" onClick={() => openAddForm(category.id)} className="px-3 py-1 text-left text-sm text-primary">
+                    {canCreate && !category.is_system && !query ? (
+                      <button
+                        type="button"
+                        onClick={() => openAddForm(category.id)}
+                        className="px-3 py-1 text-left text-sm text-primary"
+                      >
                         + เพิ่มหมวดหมู่ย่อยใน {category.name}
                       </button>
                     ) : null}
@@ -187,15 +259,26 @@ export function CategoryPicker({
               ))}
             </div>
 
-            <div className="mt-4 border-t border-border pt-4">
-              <button type="button" onClick={() => openAddForm(null)} className="text-sm font-medium text-primary">
-                + เพิ่มหมวดหมู่ใหม่
-              </button>
-            </div>
+            {canCreate ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => openAddForm(null)}
+                  className="text-sm font-medium text-primary"
+                >
+                  + เพิ่มหมวดหมู่ใหม่
+                </button>
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="flex flex-col gap-2">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="ชื่อหมวดหมู่" autoFocus />
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="ชื่อหมวดหมู่"
+              autoFocus
+            />
             {error ? <p className="text-sm text-danger">{error}</p> : null}
             <button
               type="button"
@@ -212,24 +295,34 @@ export function CategoryPicker({
   );
 }
 
-function findCategory(categories: CategoryNode[], selectedId: string | null): { id: string; label: string } | null {
+function findCategory(
+  categories: CategoryNode[],
+  selectedId: string | null,
+): { id: string; label: string } | null {
   if (!selectedId) return null;
   for (const category of categories) {
-    if (category.id === selectedId) return { id: category.id, label: category.name };
+    if (category.id === selectedId)
+      return { id: category.id, label: category.name };
     const child = category.children.find((item) => item.id === selectedId);
-    if (child) return { id: child.id, label: `${category.name} > ${child.name}` };
+    if (child)
+      return { id: child.id, label: `${category.name} > ${child.name}` };
   }
   return null;
 }
 
-export function filterCategories(categories: CategoryNode[], query: string): CategoryNode[] {
+export function filterCategories(
+  categories: CategoryNode[],
+  query: string,
+): CategoryNode[] {
   const needle = query.trim().toLocaleLowerCase("th");
   if (!needle) return categories;
   return categories.flatMap((category) => {
     const rootMatches = category.name.toLocaleLowerCase("th").includes(needle);
     const children = rootMatches
       ? category.children
-      : category.children.filter((child) => child.name.toLocaleLowerCase("th").includes(needle));
+      : category.children.filter((child) =>
+          child.name.toLocaleLowerCase("th").includes(needle),
+        );
     return rootMatches || children.length ? [{ ...category, children }] : [];
   });
 }

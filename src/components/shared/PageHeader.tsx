@@ -4,8 +4,8 @@ import { BackButton } from "./BackButton";
 
 /**
  * Back is an explicit per-page opt-in (`backHref`), not a global default —
- * the four BottomNav root destinations (/finance, /pets, /calendar,
- * /household) never pass it, every deep/secondary page does. Superseded
+ * the five BottomNav root destinations (/wallets, /finance, /calendar,
+ * /pets, /household) never pass it, every deep/secondary page does. Superseded
  * decision: an earlier pass removed a Back arrow entirely in favor of
  * BottomNav + the system gesture alone; persistent BottomNav across deep
  * routes reintroduced the need for an explicit in-app Back — hierarchy

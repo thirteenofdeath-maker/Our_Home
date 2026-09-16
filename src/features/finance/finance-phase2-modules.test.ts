@@ -11,6 +11,7 @@ const installments = read("src/app/(app)/finance/installments/page.tsx");
 const debts = read("src/app/(app)/finance/debts/page.tsx");
 const goals = read("src/app/(app)/finance/goals/page.tsx");
 const netWorth = read("src/app/(app)/finance/net-worth/page.tsx");
+const netWorthDomain = read("src/features/net-worth/domain.ts");
 const allPages = { reports, budgets, installments, debts, goals, netWorth };
 
 describe("Finance V2 Phase 2 module pages", () => {
@@ -33,8 +34,9 @@ describe("Finance V2 Phase 2 module pages", () => {
   it("never combines unlike currencies — every page groups/renders per currency", () => {
     expect(reports).toContain("byCurrency");
     expect(reports).toMatch(/currency\)\s*=>/); // grouped map keyed by currency
-    expect(netWorth).toContain("row.currency");
-    expect(netWorth).not.toMatch(/reduce\s*\([\s\S]{0,200}netWorth/);
+    expect(netWorth).toContain("summary.currency");
+    expect(netWorthDomain).toContain("rowsByCurrency");
+    expect(netWorthDomain).not.toMatch(/reduce\s*\([\s\S]{0,200}netWorth/);
     expect(debts).toContain("totalsByCurrency");
     expect(installments).toMatch(/plan\.currency/);
   });
@@ -42,7 +44,12 @@ describe("Finance V2 Phase 2 module pages", () => {
   it("uses exact decimal-string arithmetic (subtractMoney/addMoney/sumMoney), never Number()/parseFloat for an authoritative displayed amount", () => {
     expect(reports).toContain("subtractMoney(m.income, m.expense)");
     expect(debts).toMatch(/sumMoney\(\s*outstanding/);
-    expect(netWorth).toContain("addMoney(row.walletAssets, row.receivables)");
+    expect(netWorthDomain).toContain(
+      "netWorth: subtractMoney(assetTotal, liabilityTotal)",
+    );
+    expect(netWorthDomain).toContain(
+      "const assetTotal = sumMoney(assets.map((row) => row.amount))",
+    );
     // Number()/parseFloat may still appear, but only for chart/progress
     // RATIOS (0-100% sizing), never assigned straight into a
     // formatCurrency(...) call — spot-check a few known-safe usages.
@@ -50,6 +57,7 @@ describe("Finance V2 Phase 2 module pages", () => {
       expect(source).not.toMatch(/formatCurrency\(\s*Number\(/);
       expect(source).not.toMatch(/formatCurrency\(\s*parseFloat/);
     }
+    expect(netWorthDomain).not.toMatch(/Number\(|parseFloat\(/);
   });
 
   describe("Reports category percentages — exact decimal-string aggregation", () => {

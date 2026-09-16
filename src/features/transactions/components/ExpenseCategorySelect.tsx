@@ -1,22 +1,23 @@
-import { Select } from "@/components/ui/Field";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 
-export function ExpenseCategorySelect({ categories, defaultValue = "" }: { categories: CategoryNode[]; defaultValue?: string }) {
+export function ExpenseCategorySelect({
+  categories,
+  walletId,
+  defaultValue = "",
+}: {
+  categories: CategoryNode[];
+  walletId?: string;
+  defaultValue?: string;
+}) {
   return (
-    <Select id="categoryId" name="categoryId" defaultValue={defaultValue} required>
-      <option value="" disabled>
-        เลือกหมวดหมู่
-      </option>
-      {categories.flatMap((category) => [
-        <option key={category.id} value={category.id}>
-          {category.name}
-        </option>,
-        ...category.children.map((child) => (
-          <option key={child.id} value={child.id}>
-            {category.name} &gt; {child.name}
-          </option>
-        )),
-      ])}
-    </Select>
+    <CategoryPicker
+      name="categoryId"
+      categories={categories}
+      transactionType="EXPENSE"
+      walletId={walletId}
+      defaultSelected={defaultValue ? { id: defaultValue, label: "" } : null}
+      allowCreate={Boolean(walletId)}
+    />
   );
 }

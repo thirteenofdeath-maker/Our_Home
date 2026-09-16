@@ -71,7 +71,7 @@ describe("global quick add", () => {
       "src/features/finance/components/FinanceCreateFlow.tsx",
     );
     expect(source).toMatch(
-      /stage === "income" \|\| stage === "expense"\) && ieData/,
+      /stage === "income" \|\| stage === "expense"\) &&\s*activeIncomeExpenseData/,
     );
     expect(source).toContain('stage === "transfer" && transferData');
     expect(source).toContain("<UnifiedTransferForm");

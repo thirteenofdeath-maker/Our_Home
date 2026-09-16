@@ -1,9 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
+
+const FormSheetCloseContext = createContext<(() => void) | null>(null);
+
+/** Lets a form rendered inside FormSheetButton close its owning sheet only
+ * after its Server Action reports success. The callback stays entirely in
+ * the client tree, so no function crosses the Server Component boundary. */
+export function useCloseFormSheet() {
+  return useContext(FormSheetCloseContext);
+}
+
+/** Close only after the owning Server Action explicitly confirms success.
+ * Validation/database failures keep the sheet open because `success` stays
+ * false and the form continues rendering its inline error. Safe on ordinary
+ * page forms too: without a provider the close callback is simply null. */
+export function useCloseFormSheetOnSuccess(success?: boolean) {
+  const closeSheet = useCloseFormSheet();
+  useEffect(() => {
+    if (success) closeSheet?.();
+  }, [closeSheet, success]);
+}
+
+export function FormSheetCloseProvider({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <FormSheetCloseContext.Provider value={onClose}>
+      {children}
+    </FormSheetCloseContext.Provider>
+  );
+}
 
 /**
  * The single-create counterpart to a navigation menu trigger: for a trigger
@@ -50,13 +84,22 @@ export function FormSheetButton({
   tone?: "default" | "finance";
 }) {
   const [open, setOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+
+  function handleClose() {
+    setOpen(false);
+    setFormKey((current) => current + 1);
+  }
+
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label={ariaLabel} className={triggerClassName}>
         {children}
       </button>
-      <BottomSheet open={open} onClose={() => setOpen(false)} title={sheetTitle} size="large" tone={tone}>
-        {form}
+      <BottomSheet open={open} onClose={handleClose} title={sheetTitle} size="large" tone={tone}>
+        <FormSheetCloseProvider key={formKey} onClose={handleClose}>
+          {form}
+        </FormSheetCloseProvider>
       </BottomSheet>
     </>
   );

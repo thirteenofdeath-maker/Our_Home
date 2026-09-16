@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/ui/AppIcon";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { FinancePocketPickerSheet } from "@/features/finance/components/FinancePocketPicker";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
@@ -49,18 +50,6 @@ export function CreditCardTransactionForm({
   );
   const endpoint =
     compatibleEndpoints.find((item) => item.pocketId === endpointId) ?? null;
-  const endpointGroups = useMemo(
-    () =>
-      compatibleEndpoints.reduce<CreditCardEndpoint[][]>((groups, item) => {
-        const group = groups.find(
-          (items) => items[0]?.walletId === item.walletId,
-        );
-        if (group) group.push(item);
-        else groups.push([item]);
-        return groups;
-      }, []),
-    [compatibleEndpoints],
-  );
   const today = new Date().toLocaleDateString("en-CA");
 
   function changeCard(nextCard: CreditCardAccountOption) {
@@ -148,7 +137,7 @@ export function CreditCardTransactionForm({
             onClick={() => setPicker("card")}
           />
         ) : (
-          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 [&>*]:min-w-0">
             {mode === "PAYMENT" ? (
               <RouteButton
                 label="จาก"
@@ -201,7 +190,7 @@ export function CreditCardTransactionForm({
           <p>{info}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
             วันที่
             <Input
@@ -271,53 +260,14 @@ export function CreditCardTransactionForm({
         </div>
       </BottomSheet>
 
-      <BottomSheet
+      <FinancePocketPickerSheet
         open={picker === "endpoint"}
         onClose={() => setPicker(null)}
         title={mode === "PAYMENT" ? "เลือกต้นทาง" : "เลือกปลายทาง"}
-        tone="finance"
-        closeLabel="ย้อนกลับ"
-      >
-        <div className="flex flex-col gap-4">
-          {endpointGroups.map((group) => (
-            <section key={group[0].walletId}>
-              <h3 className="mb-1 text-sm font-semibold text-finance-text">
-                {group[0].walletName}
-              </h3>
-              <div className="flex flex-col gap-1">
-                {group.map((item) => (
-                  <button
-                    key={item.pocketId}
-                    type="button"
-                    onClick={() => {
-                      setEndpointId(item.pocketId);
-                      setPicker(null);
-                    }}
-                    className={cn(
-                      "flex min-h-16 w-full items-center justify-between rounded-2xl px-3 py-2 text-left",
-                      item.pocketId === endpoint?.pocketId
-                        ? "bg-finance-primary-soft"
-                        : "bg-finance-surface-strong",
-                    )}
-                  >
-                    <span>
-                      <span className="block font-medium text-finance-text">
-                        {item.pocketName}
-                      </span>
-                      <span className="text-xs text-finance-muted">
-                        {item.walletName}
-                      </span>
-                    </span>
-                    <span className="tabular-nums text-finance-text">
-                      {formatCurrency(item.balance, item.currency)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      </BottomSheet>
+        options={compatibleEndpoints}
+        selectedPocketId={endpoint?.pocketId ?? null}
+        onSelect={(item) => setEndpointId(item.pocketId)}
+      />
     </>
   );
 }

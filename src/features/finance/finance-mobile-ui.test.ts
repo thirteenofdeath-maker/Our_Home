@@ -15,10 +15,13 @@ const createFlow = read(
 );
 
 describe("approved mobile Finance UI", () => {
-  it("replaces the three dashboard shortcuts with one visible เพิ่มรายการ entry point", () => {
+  it("uses the shared floating add entry point instead of a dashboard banner", () => {
     expect(createFlow).toContain("เพิ่มรายการ");
     expect(hub).toContain("<FinanceCreateFlow");
-    expect(hub).toContain('triggerVariant="dashboard"');
+    expect(hub).not.toContain("triggerVariant");
+    expect(createFlow).not.toContain("triggerVariant");
+    expect(createFlow).toContain("fixed z-20 flex size-14");
+    expect(createFlow).not.toContain("min-h-16 w-full");
     expect(createFlow).toContain("<BottomSheet");
     expect(hub).not.toContain(
       "/finance/quick-add?walletId=${initialWallet.id}",
@@ -33,7 +36,7 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toMatch(
       /defaultWallet|mainWallet|default_wallet|main_wallet/,
     );
-    expect(hub.indexOf("balanceCards.map")).toBeLessThan(
+    expect(hub.indexOf('title="สรุปรายรับรายจ่าย"')).toBeLessThan(
       hub.indexOf("{initialWallet ? ("),
     );
   });
@@ -54,19 +57,18 @@ describe("approved mobile Finance UI", () => {
     expect(addWorkspace).not.toContain("min-w-max");
   });
 
-  it("renders currency totals independently without combining them", () => {
-    expect(hub).toContain("balanceCards.map");
-    expect(hub).toContain("key={balance.currency}");
-    expect(hub).toContain("formatCurrency(balance.amount, balance.currency)");
-    expect(hub).not.toContain("summary.currencyTotals.slice(1)");
-    expect(hub).not.toMatch(/reduce\s*\([\s\S]{0,100}currencyTotals/);
+  it("renders report currencies independently without combining them", () => {
+    expect(hub).toContain("summaryCurrencies.map");
+    expect(hub).toContain("key={currency}");
+    expect(hub).toContain("showCurrencyLabel={summaryCurrencies.length > 1}");
+    expect(hub).not.toMatch(/reduce\s*\([\s\S]{0,100}reportCurrencies/);
   });
 
   it("switches the whole dashboard between personal and household data", () => {
     expect(hub).toContain('ariaLabel="ขอบเขตข้อมูลการเงิน"');
     expect(hub).toContain('rawScope === "HOUSEHOLD"');
     expect(hub).toContain("wallet.scope === scope");
-    expect(hub).toContain("listRecentFinanceTransactions(supabase, {");
+    expect(hub).toContain("getFinanceReport(");
     expect(hub).toContain("listGoals(supabase, scope, householdId)");
     expect(hub).toContain("listDebts(supabase, scope, householdId)");
     expect(hub).toContain("listBills(supabase, { scope, householdId })");
@@ -81,17 +83,35 @@ describe("approved mobile Finance UI", () => {
     expect(wallets).toContain("<WalletVisualCard");
     expect(wallets).toContain("grid-cols-2");
     expect(wallets).toContain("PageHeader");
-    expect(wallets).not.toContain("FinanceModuleTabs");
+    expect(wallets).toContain("FinanceModuleTabs");
   });
 
-  it("places the selected month directly with the trend summary instead of at the page top", () => {
+  it("uses the three shared Finance tabs and keeps transaction creation on the FAB", () => {
+    const tabs = read("src/features/finance/components/FinanceModuleTabs.tsx");
+    expect(hub).toContain("<FinanceModuleTabs");
+    expect(tabs).toContain('label: "ภาพรวม"');
+    expect(tabs).toContain('label: "ธุรกรรม"');
+    expect(tabs).toContain('label: "กระเป๋า"');
+    expect(tabs).toContain("grid-cols-3");
+    expect(tabs).not.toMatch(/label: "(รายรับ|รายจ่าย|โอนเงิน)"/);
+    expect(hub).toContain("<FinanceCreateFlow");
+  });
+
+  it("starts the overview content with the income-expense summary", () => {
     const monthSwitcher = hub.indexOf('aria-label="เดือนก่อนหน้า"');
     const trendHeading = hub.indexOf('title="สรุปรายรับรายจ่าย"');
     const addEntry = hub.indexOf("{initialWallet ? (");
+    const planning = hub.indexOf("วางแผนการเงิน");
 
     expect(monthSwitcher).toBeGreaterThan(trendHeading);
-    expect(monthSwitcher).toBeGreaterThan(addEntry);
     expect(monthSwitcher).toBeLessThan(hub.indexOf("<FinanceTrendCard"));
+    expect(trendHeading).toBeLessThan(addEntry);
+    expect(trendHeading).toBeLessThan(planning);
+    expect(hub).not.toContain("TransactionHistoryList");
+    expect(hub).not.toContain("WalletVisualCard");
+    expect(hub).not.toContain('title="รายการล่าสุด"');
+    expect(hub).not.toContain('title="กระเป๋าเงิน"');
+    expect(hub).not.toContain("ยอดเงินส่วนตัว");
   });
 
   it("keeps the compact Pocket row within its requested height/icon budget", () => {

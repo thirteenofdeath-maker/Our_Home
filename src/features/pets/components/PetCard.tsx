@@ -9,12 +9,12 @@ export const SEX_LABEL = { MALE:"ผู้", FEMALE:"เมีย", UNKNOWN:"ไ
 
 export function PetCard({ pet }: { pet: PetWithCaregivers }) {
   const age = ageFromBirthday(pet.birthday);
-  return <Link href={`/pets/${pet.id}`} className="block focus-visible:outline-2 focus-visible:outline-primary">
-    <Card className="flex gap-3">
+  return <Link href={`/pets/${pet.id}`} className="block focus-visible:outline-2 focus-visible:outline-finance-primary">
+    <Card className="flex gap-3 rounded-[1.25rem] bg-finance-surface-strong">
       <PetPhoto name={pet.name} url={pet.photoUrl} />
-      <div className="min-w-0"><h2 className="font-semibold">{pet.name}</h2><p className="text-sm text-foreground-muted">{SPECIES_LABEL[pet.species]}{pet.breed ? ` · ${pet.breed}` : ""}{pet.sex ? ` · ${SEX_LABEL[pet.sex]}` : ""}</p>
-      {age !== null ? <p className="text-sm text-foreground-muted">อายุ {age} ปี</p> : null}
-      <p className="truncate text-sm text-foreground-muted">ผู้ดูแล: {pet.caregivers.length ? pet.caregivers.map((item) => item.profile?.display_name || item.profile?.email).join(", ") : "ยังไม่ระบุ"}</p></div>
+      <div className="min-w-0"><h2 className="font-semibold text-finance-text">{pet.name}</h2><p className="text-sm text-finance-muted">{SPECIES_LABEL[pet.species]}{pet.breed ? ` · ${pet.breed}` : ""}{pet.sex ? ` · ${SEX_LABEL[pet.sex]}` : ""}</p>
+      {age !== null ? <p className="text-sm text-finance-muted">อายุ {age} ปี</p> : null}
+      <p className="truncate text-sm text-finance-muted">ผู้ดูแล: {pet.caregivers.length ? pet.caregivers.map((item) => item.profile?.display_name || item.profile?.email).join(", ") : "ยังไม่ระบุ"}</p></div>
     </Card>
   </Link>;
 }

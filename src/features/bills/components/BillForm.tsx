@@ -1,7 +1,194 @@
 "use client";
-import { useActionState,useState } from "react";import { Field,Input,Select } from "@/components/ui/Field";import { SubmitButton } from "@/components/ui/SubmitButton";import type { CategoryNode } from "@/features/categories/types";import type { Pocket } from "@/features/pockets/types";import type { TagOption } from "@/features/tags/types";import type { Wallet } from "@/features/wallets/types";import { initialActionState } from "@/lib/types/action-state";import { createBillAction,updateBillAction } from "../actions";import type { BillSummary } from "../types";
-const flat=(xs:CategoryNode[])=>xs.flatMap(x=>[x,...x.children]);
-export function BillForm({bill,wallets,pocketsByWallet,categories,tags,hasHousehold,variant="page"}:{bill?:BillSummary;wallets:Wallet[];pocketsByWallet:Record<string,Pocket[]>;categories:{PERSONAL:CategoryNode[];HOUSEHOLD:CategoryNode[]};tags:{PERSONAL:TagOption[];HOUSEHOLD:TagOption[]};hasHousehold:boolean;/** Presentation only — no card chrome to strip either way; kept for API-consistency. */variant?:"page"|"sheet"}){void variant;
- const [state,action]=useActionState(bill?updateBillAction:createBillAction,initialActionState);const [scope,setScope]=useState<"PERSONAL"|"HOUSEHOLD">(bill?.scope??"PERSONAL");const scopedWallets=wallets.filter(w=>w.scope===scope);const [walletId,setWalletId]=useState(bill?.walletId??"");const pockets=walletId?pocketsByWallet[walletId]??[]:[];const recurring=bill?.recurrenceType??"MONTHLY";
- return <form action={action} className="finance-ui-tone flex flex-col gap-4">{bill?<input type="hidden" name="id" value={bill.billId}/>:null}<Field label="ขอบเขต" htmlFor="scope"><Select id="scope" name="scope" value={scope} onChange={e=>{setScope(e.target.value as typeof scope);setWalletId("")}}><option value="PERSONAL">ส่วนตัว</option>{hasHousehold?<option value="HOUSEHOLD">ครอบครัว</option>:null}</Select></Field><Field label="ชื่อบิล" htmlFor="name"><Input id="name" name="name" defaultValue={bill?.name??""} required/></Field><div className="grid grid-cols-2 gap-3"><Field label="ยอดคาดไว้" htmlFor="amount"><Input id="amount" name="amount" inputMode="decimal" defaultValue={bill?.amount??""} required/></Field><Field label="สกุลเงิน" htmlFor="currency"><Input id="currency" name="currency" defaultValue={bill?.currency??"THB"} readOnly={Boolean(bill)} required/></Field></div><Field label="หมวดหมู่รายจ่าย" htmlFor="categoryId"><Select id="categoryId" name="categoryId" defaultValue={bill?.categoryId??""} required><option value="" disabled>เลือกหมวดหมู่</option>{flat(categories[scope]).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field><Field label="Wallet เริ่มต้น (ไม่บังคับ)" htmlFor="walletId"><Select id="walletId" name="walletId" value={walletId} onChange={e=>setWalletId(e.target.value)}><option value="">เลือกตอนจ่าย</option>{scopedWallets.map(w=><option key={w.id} value={w.id}>{w.name} · {w.currency}</option>)}</Select></Field><Field label="Pocket เริ่มต้น (ไม่บังคับ)" htmlFor="pocketId"><Select id="pocketId" name="pocketId" defaultValue={bill?.pocketId??""}><option value="">เลือกตอนจ่าย</option>{pockets.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field><Field label="รอบ" htmlFor="recurrenceType"><Select id="recurrenceType" name="recurrenceType" defaultValue={recurring}><option value="ONE_TIME">ครั้งเดียว</option><option value="WEEKLY">รายสัปดาห์</option><option value="MONTHLY">รายเดือน</option><option value="YEARLY">รายปี</option></Select></Field><Field label="ทุกกี่รอบ" htmlFor="intervalCount"><Input id="intervalCount" name="intervalCount" type="number" min="1" defaultValue={bill?.intervalCount??1} required/></Field><div className="grid grid-cols-2 gap-3"><Field label="วันเริ่ม/ครบกำหนด" htmlFor="startDate"><Input id="startDate" name="startDate" type="date" defaultValue={bill?.startDate??""} required/></Field><Field label="วันสิ้นสุด" htmlFor="endDate"><Input id="endDate" name="endDate" type="date" defaultValue={bill?.endDate??""}/></Field></div><Field label="ชื่อในรายการ" htmlFor="title"><Input id="title" name="title" defaultValue={bill?.title??""}/></Field><Field label="โน้ต" htmlFor="note"><Input id="note" name="note" defaultValue={bill?.note??""}/></Field><Field label="แท็ก" htmlFor="tagIds"><div className="grid grid-cols-2 gap-2">{tags[scope].map(t=><label key={t.id} className="flex gap-2"><input type="checkbox" name="tagIds" value={t.id} defaultChecked={bill?.tags.some(x=>x.id===t.id)}/>{t.name}</label>)}</div></Field>{state.error?<p className="text-sm text-danger">{state.error}</p>:null}<SubmitButton size="lg">{bill?"บันทึกการแก้ไข":"สร้างบิล"}</SubmitButton></form>
+
+import { useActionState, useState } from "react";
+
+import {
+  Field,
+  Input,
+  Select,
+  TwoColumnFieldGrid,
+} from "@/components/ui/Field";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
+import type { CategoryNode } from "@/features/categories/types";
+import {
+  buildFinancePocketOptions,
+  FinancePocketField,
+} from "@/features/finance/components/FinancePocketPicker";
+import type { PocketWithBalance } from "@/features/pockets/types";
+import type { TagOption } from "@/features/tags/types";
+import type { Wallet } from "@/features/wallets/types";
+import { initialActionState } from "@/lib/types/action-state";
+
+import { createBillAction, updateBillAction } from "../actions";
+import type { BillSummary } from "../types";
+
+export function BillForm({
+  bill,
+  wallets,
+  pocketsByWallet,
+  categories,
+  tags,
+  hasHousehold,
+  variant = "page",
+}: {
+  bill?: BillSummary;
+  wallets: Wallet[];
+  pocketsByWallet: Record<string, PocketWithBalance[]>;
+  categories: { PERSONAL: CategoryNode[]; HOUSEHOLD: CategoryNode[] };
+  tags: { PERSONAL: TagOption[]; HOUSEHOLD: TagOption[] };
+  hasHousehold: boolean;
+  variant?: "page" | "sheet";
+}) {
+  void variant;
+  const [state, action] = useActionState(
+    bill ? updateBillAction : createBillAction,
+    initialActionState,
+  );
+  const [scope, setScope] = useState<"PERSONAL" | "HOUSEHOLD">(
+    bill?.scope ?? "PERSONAL",
+  );
+  const [pocketId, setPocketId] = useState(bill?.pocketId ?? "");
+  const scopedWallets = wallets.filter((wallet) => wallet.scope === scope);
+  const options = buildFinancePocketOptions(scopedWallets, pocketsByWallet);
+  const selectedWalletId = options.find(
+    (option) => option.pocketId === pocketId,
+  )?.walletId;
+  const recurring = bill?.recurrenceType ?? "MONTHLY";
+
+  return (
+    <form action={action} className="finance-ui-tone flex flex-col gap-4">
+      {bill ? <input type="hidden" name="id" value={bill.billId} /> : null}
+      <Field label="ขอบเขต" htmlFor="scope">
+        <Select
+          id="scope"
+          name="scope"
+          value={scope}
+          onChange={(event) => {
+            setScope(event.target.value as typeof scope);
+            setPocketId("");
+          }}
+        >
+          <option value="PERSONAL">ส่วนตัว</option>
+          {hasHousehold ? <option value="HOUSEHOLD">ครอบครัว</option> : null}
+        </Select>
+      </Field>
+      <Field label="ชื่อบิล" htmlFor="name">
+        <Input id="name" name="name" defaultValue={bill?.name ?? ""} required />
+      </Field>
+      <TwoColumnFieldGrid>
+        <Field label="ยอดคาดไว้" htmlFor="amount">
+          <Input
+            id="amount"
+            name="amount"
+            inputMode="decimal"
+            defaultValue={bill?.amount ?? ""}
+            required
+          />
+        </Field>
+        <Field label="สกุลเงิน" htmlFor="currency">
+          <Input
+            id="currency"
+            name="currency"
+            defaultValue={bill?.currency ?? "THB"}
+            readOnly={Boolean(bill)}
+            required
+          />
+        </Field>
+      </TwoColumnFieldGrid>
+      <Field label="หมวดหมู่รายจ่าย" htmlFor="categoryId">
+        <CategoryPicker
+          key={scope}
+          name="categoryId"
+          categories={categories[scope]}
+          transactionType="EXPENSE"
+          walletId={selectedWalletId}
+          defaultSelected={
+            bill?.scope === scope && bill.categoryId
+              ? { id: bill.categoryId, label: "" }
+              : null
+          }
+        />
+      </Field>
+      <FinancePocketField
+        label="กระเป๋าเงินเริ่มต้น (ไม่บังคับ)"
+        options={options}
+        selectedPocketId={pocketId}
+        onSelect={(option) => setPocketId(option.pocketId)}
+        onSelectEmpty={() => setPocketId("")}
+        emptyChoice={{
+          label: "เลือกตอนจ่าย",
+          description: "ยังไม่กำหนดกระเป๋าเงิน",
+        }}
+      />
+      <Field label="รอบ" htmlFor="recurrenceType">
+        <Select
+          id="recurrenceType"
+          name="recurrenceType"
+          defaultValue={recurring}
+        >
+          <option value="ONE_TIME">ครั้งเดียว</option>
+          <option value="WEEKLY">รายสัปดาห์</option>
+          <option value="MONTHLY">รายเดือน</option>
+          <option value="YEARLY">รายปี</option>
+        </Select>
+      </Field>
+      <Field label="ทุกกี่รอบ" htmlFor="intervalCount">
+        <Input
+          id="intervalCount"
+          name="intervalCount"
+          type="number"
+          min="1"
+          defaultValue={bill?.intervalCount ?? 1}
+          required
+        />
+      </Field>
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
+        <Field label="วันเริ่ม/ครบกำหนด" htmlFor="startDate">
+          <Input
+            id="startDate"
+            name="startDate"
+            type="date"
+            defaultValue={bill?.startDate ?? ""}
+            required
+          />
+        </Field>
+        <Field label="วันสิ้นสุด" htmlFor="endDate">
+          <Input
+            id="endDate"
+            name="endDate"
+            type="date"
+            defaultValue={bill?.endDate ?? ""}
+          />
+        </Field>
+      </div>
+      <Field label="ชื่อในรายการ" htmlFor="title">
+        <Input id="title" name="title" defaultValue={bill?.title ?? ""} />
+      </Field>
+      <Field label="โน้ต" htmlFor="note">
+        <Input id="note" name="note" defaultValue={bill?.note ?? ""} />
+      </Field>
+      <Field label="แท็ก" htmlFor="tagIds">
+        <div className="grid grid-cols-2 gap-2">
+          {tags[scope].map((tag) => (
+            <label key={tag.id} className="flex gap-2">
+              <input
+                type="checkbox"
+                name="tagIds"
+                value={tag.id}
+                defaultChecked={bill?.tags.some((item) => item.id === tag.id)}
+              />
+              {tag.name}
+            </label>
+          ))}
+        </div>
+      </Field>
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
+      <SubmitButton size="lg">
+        {bill ? "บันทึกการแก้ไข" : "สร้างบิล"}
+      </SubmitButton>
+    </form>
+  );
 }
