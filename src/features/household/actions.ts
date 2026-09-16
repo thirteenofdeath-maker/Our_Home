@@ -59,7 +59,7 @@ export async function addHouseholdMemberAction(_prevState: ActionState, formData
 
   revalidatePath("/household");
   revalidatePath("/household/members");
-  return {};
+  return { success: true };
 }
 
 const presentationSchema = z.object({

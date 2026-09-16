@@ -351,7 +351,7 @@ export async function updatePlanReminderAction(
     revalidatePath("/");
     revalidatePath("/calendar");
     revalidatePath(`/calendar/reminders/${id}`);
-    return {};
+    return { success: true };
   } catch (error) {
     logDatabaseErrorInDev("updatePlanReminderAction failed", error);
     return { error: "แก้ไขรายการเตือนไม่สำเร็จ" };

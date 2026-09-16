@@ -15,8 +15,7 @@ describe("pet care record sheet success lifecycle", () => {
 
   it("closes the owning sheet on success but keeps errors visible", () => {
     const form = read("src/features/pets/components/PetCareRecordForm.tsx");
-    expect(form).toContain("useCloseFormSheet()");
-    expect(form).toMatch(/if \(state\.success\) closeSheet\?\.\(\)/);
+    expect(form).toContain("useCloseFormSheetOnSuccess(state.success)");
     expect(form).toContain("state.error ?");
   });
 

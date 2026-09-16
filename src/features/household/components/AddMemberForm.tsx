@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
 
@@ -20,6 +21,7 @@ export function AddMemberForm({
 }) {
   void variant;
   const [state, formAction] = useActionState(addHouseholdMemberAction, initialActionState);
+  useCloseFormSheetOnSuccess(state.success);
 
   return (
     <form action={formAction} className="finance-ui-tone flex flex-col gap-3">

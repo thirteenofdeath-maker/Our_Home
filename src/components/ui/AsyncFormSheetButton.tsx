@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import type { ReactNode } from "react";
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { FormSheetCloseProvider } from "@/components/ui/FormSheetButton";
 
 /**
  * The single-create counterpart to FormSheetButton for a form whose
@@ -82,7 +83,11 @@ export function AsyncFormSheetButton<T>({
       <BottomSheet open={open} onClose={handleClose} title={sheetTitle} size="large" tone={tone}>
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {!error && !data ? <p className="text-sm text-foreground-muted">{isPending ? "กำลังโหลด..." : null}</p> : null}
-        {data ? renderForm(data) : null}
+        {data ? (
+          <FormSheetCloseProvider onClose={handleClose}>
+            {renderForm(data)}
+          </FormSheetCloseProvider>
+        ) : null}
       </BottomSheet>
     </>
   );

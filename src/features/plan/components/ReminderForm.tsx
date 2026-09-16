@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
 import { createPlanReminderAction, updatePlanReminderAction } from "../actions";
@@ -20,6 +21,7 @@ export function ReminderForm({
     reminder ? updatePlanReminderAction : createPlanReminderAction,
     initialActionState,
   );
+  useCloseFormSheetOnSuccess(state.success);
   const [scope, setScope] = useState(reminder?.scope ?? "PERSONAL");
   const initial = reminder ? reminderInputParts(reminder.reminds_at) : null;
 

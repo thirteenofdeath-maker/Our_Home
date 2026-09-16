@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
-import { useCloseFormSheet } from "@/components/ui/FormSheetButton";
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { FinanceRecentTransaction } from "@/features/finance/types";
 import { initialActionState } from "@/lib/types/action-state";
@@ -21,11 +21,7 @@ export function PetCareRecordForm({
 }) {
   const [state, action] = useActionState(createPetCareRecordAction, initialActionState);
   const [type, setType] = useState<(typeof PET_CARE_RECORD_TYPES)[number]>("HEALTH");
-  const closeSheet = useCloseFormSheet();
-
-  useEffect(() => {
-    if (state.success) closeSheet?.();
-  }, [closeSheet, state.success]);
+  useCloseFormSheetOnSuccess(state.success);
 
   return (
     <form action={action} className="finance-ui-tone flex min-w-0 flex-col gap-4">

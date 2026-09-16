@@ -27,6 +27,11 @@ describe("AsyncFormSheetButton — the single-create-with-JIT-data-fetch primiti
     );
   });
 
+  it("provides the same success-close context as the synchronous form-sheet primitive", () => {
+    expect(source).toContain("FormSheetCloseProvider");
+    expect(source).toContain("onClose={handleClose}");
+  });
+
   it("surfaces a real error without crashing when the JIT fetch fails, and never silently swallows it", () => {
     expect(source).toMatch(/catch\s*\{\s*setError\(/);
     expect(source).toContain("{error ?");

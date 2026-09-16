@@ -8,6 +8,7 @@ import {
   Select,
   TwoColumnFieldGrid,
 } from "@/components/ui/Field";
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
@@ -25,6 +26,7 @@ export function AddPocketForm({
     createPocketAction,
     initialActionState,
   );
+  useCloseFormSheetOnSuccess(state.success);
   const [pocketType, setPocketType] = useState("CASH");
 
   return (
@@ -38,6 +40,7 @@ export function AddPocketForm({
       )}
     >
       <input type="hidden" name="walletId" value={walletId} />
+      {variant === "sheet" ? <input type="hidden" name="formMode" value="sheet" /> : null}
       <Field label="ชื่อ Pocket" htmlFor="name">
         <Input
           id="name"

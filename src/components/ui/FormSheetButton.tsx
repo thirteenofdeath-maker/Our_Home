@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -12,6 +12,31 @@ const FormSheetCloseContext = createContext<(() => void) | null>(null);
  * the client tree, so no function crosses the Server Component boundary. */
 export function useCloseFormSheet() {
   return useContext(FormSheetCloseContext);
+}
+
+/** Close only after the owning Server Action explicitly confirms success.
+ * Validation/database failures keep the sheet open because `success` stays
+ * false and the form continues rendering its inline error. Safe on ordinary
+ * page forms too: without a provider the close callback is simply null. */
+export function useCloseFormSheetOnSuccess(success?: boolean) {
+  const closeSheet = useCloseFormSheet();
+  useEffect(() => {
+    if (success) closeSheet?.();
+  }, [closeSheet, success]);
+}
+
+export function FormSheetCloseProvider({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <FormSheetCloseContext.Provider value={onClose}>
+      {children}
+    </FormSheetCloseContext.Provider>
+  );
 }
 
 /**
@@ -72,9 +97,9 @@ export function FormSheetButton({
         {children}
       </button>
       <BottomSheet open={open} onClose={handleClose} title={sheetTitle} size="large" tone={tone}>
-        <FormSheetCloseContext.Provider key={formKey} value={handleClose}>
+        <FormSheetCloseProvider key={formKey} onClose={handleClose}>
           {form}
-        </FormSheetCloseContext.Provider>
+        </FormSheetCloseProvider>
       </BottomSheet>
     </>
   );
