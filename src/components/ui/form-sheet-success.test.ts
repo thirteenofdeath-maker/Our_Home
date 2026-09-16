@@ -11,7 +11,9 @@ describe("bottom-sheet success lifecycle audit", () => {
     expect(sync).toContain("useCloseFormSheetOnSuccess");
     expect(sync).toMatch(/if \(success\) closeSheet\?\.\(\)/);
     expect(sync).toContain("<FormSheetCloseProvider");
-    expect(asyncSheet).toContain("<FormSheetCloseProvider onClose={handleClose}>");
+    expect(asyncSheet).toMatch(
+      /<FormSheetCloseProvider key=\{formKey\} onClose=\{handleClose\}>/,
+    );
   });
 
   it.each([

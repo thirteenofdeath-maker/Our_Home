@@ -17,14 +17,19 @@ describe("AsyncFormSheetButton — the single-create-with-JIT-data-fetch primiti
     );
   });
 
-  it("fetches data only when the trigger is pressed (JIT), not on mount/every render", () => {
-    expect(source).toMatch(/function handleOpen\(\)\s*\{[\s\S]*?loadData\(\)/);
+  it("warms its selector payload after hydration and opens without waiting for it", () => {
+    expect(source).toContain("window.setTimeout");
+    expect(source).toMatch(
+      /function handleOpen\(\)\s*\{\s*setOpen\(true\)[\s\S]*?ensureData\(\)/,
+    );
   });
 
-  it("discards fetched data on close, so the next open re-fetches fresh rather than showing stale wallets/categories", () => {
-    expect(source).toMatch(
+  it("keeps warmed data for instant reopen but resets form-local state", () => {
+    expect(source).not.toMatch(
       /function handleClose\(\)\s*\{[\s\S]*?setData\(null\)/,
     );
+    expect(source).toContain("setFormKey((current) => current + 1)");
+    expect(source).toContain("key={formKey}");
   });
 
   it("provides the same success-close context as the synchronous form-sheet primitive", () => {

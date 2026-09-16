@@ -70,7 +70,9 @@ interface InstallmentData {
 export function FinanceCreateFlow({ walletId }: { walletId: string }) {
   const [stage, setStage] = useState<Stage>("closed");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [ieData, setIeData] = useState<IncomeExpenseData | null>(null);
+  const [ieData, setIeData] = useState<
+    Partial<Record<"INCOME" | "EXPENSE", IncomeExpenseData>>
+  >({});
   const [transferData, setTransferData] = useState<UnifiedTransferData | null>(
     null,
   );
@@ -103,60 +105,52 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
   }
 
   function selectIncomeExpense(type: "INCOME" | "EXPENSE") {
-    transitionTo(async () => {
-      try {
-        const data = await getIncomeExpenseSheetData(walletId, type);
-        setIeData(data);
-        setStage(type === "INCOME" ? "income" : "expense");
-        setSheetOpen(true);
-      } catch {
-        setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-        setStage("choosing");
-        setSheetOpen(true);
-      }
+    transitionTo(() => {
+      setLoadError(null);
+      setStage(type === "INCOME" ? "income" : "expense");
+      setSheetOpen(true);
+      if (ieData[type]) return;
+      void getIncomeExpenseSheetData(walletId, type)
+        .then((data) =>
+          setIeData((current) => ({ ...current, [type]: data })),
+        )
+        .catch(() => setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่"));
     });
   }
 
   function selectTransfer() {
-    transitionTo(async () => {
-      try {
-        const data = await getUnifiedTransferSheetData(walletId);
-        setTransferData(data);
-        setStage("transfer");
-        setSheetOpen(true);
-      } catch {
-        setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-        setStage("choosing");
-        setSheetOpen(true);
-      }
+    transitionTo(() => {
+      setLoadError(null);
+      setStage("transfer");
+      setSheetOpen(true);
+      if (transferData) return;
+      void getUnifiedTransferSheetData(walletId)
+        .then(setTransferData)
+        .catch(() => setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่"));
     });
   }
 
   function selectCard() {
-    transitionTo(async () => {
-      try {
-        setCardData(await getCreditCardSheetData(walletId));
-        setStage("card");
-        setSheetOpen(true);
-      } catch {
-        setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-        setStage("choosing");
-        setSheetOpen(true);
-      }
+    transitionTo(() => {
+      setLoadError(null);
+      setStage("card");
+      setSheetOpen(true);
+      if (cardData) return;
+      void getCreditCardSheetData(walletId)
+        .then(setCardData)
+        .catch(() => setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่"));
     });
   }
 
   function selectInstallment() {
-    transitionTo(async () => {
-      try {
-        setInstallmentData(await getInstallmentSheetData());
-        setStage("installment");
-        setSheetOpen(true);
-      } catch {
-        setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-        setStage("choosing");
-        setSheetOpen(true);
-      }
+    transitionTo(() => {
+      setLoadError(null);
+      setStage("installment");
+      setSheetOpen(true);
+      if (installmentData) return;
+      void getInstallmentSheetData()
+        .then(setInstallmentData)
+        .catch(() => setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่"));
     });
   }
 
@@ -174,6 +168,12 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
               : "เพิ่มรายการ";
 
   const showBack = !["closed", "choosing"].includes(stage);
+  const activeIncomeExpenseData =
+    stage === "income"
+      ? ieData.INCOME
+      : stage === "expense"
+        ? ieData.EXPENSE
+        : null;
 
   return (
     <div className="finance-scope contents">
@@ -242,15 +242,16 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
             </div>
           ) : null}
 
-          {(stage === "income" || stage === "expense") && ieData ? (
+          {(stage === "income" || stage === "expense") &&
+          activeIncomeExpenseData ? (
             <TransactionForm
               walletId={walletId}
-              wallets={ieData.wallets}
+              wallets={activeIncomeExpenseData.wallets}
               transactionType={stage === "income" ? "INCOME" : "EXPENSE"}
-              pockets={ieData.pockets}
-              endpoints={ieData.endpoints}
-              categories={ieData.categories}
-              tags={ieData.tags}
+              pockets={activeIncomeExpenseData.pockets}
+              endpoints={activeIncomeExpenseData.endpoints}
+              categories={activeIncomeExpenseData.categories}
+              tags={activeIncomeExpenseData.tags}
               returnTo={FINANCE_RETURN_TO}
               variant="sheet"
             />
@@ -267,8 +268,32 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
           {stage === "installment" && installmentData ? (
             <CreateInstallmentForm {...installmentData} variant="sheet" />
           ) : null}
+
+          {stage !== "choosing" &&
+          !loadError &&
+          ((stage === "income" && !ieData.INCOME) ||
+            (stage === "expense" && !ieData.EXPENSE) ||
+            (stage === "transfer" && !transferData) ||
+            (stage === "card" && !cardData) ||
+            (stage === "installment" && !installmentData)) ? (
+            <SheetLoadingState />
+          ) : null}
         </>
       </BottomSheet>
+    </div>
+  );
+}
+
+function SheetLoadingState() {
+  return (
+    <div
+      role="status"
+      aria-label="กำลังเตรียมแบบฟอร์ม"
+      className="animate-pulse space-y-4"
+    >
+      <div className="h-20 rounded-[1.25rem] bg-finance-primary-soft/60" />
+      <div className="h-20 rounded-[1.25rem] bg-finance-primary-soft/60" />
+      <div className="h-32 rounded-[1.25rem] bg-finance-primary-soft/60" />
     </div>
   );
 }

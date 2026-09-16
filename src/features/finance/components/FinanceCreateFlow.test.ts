@@ -25,7 +25,7 @@ describe("FinanceCreateFlow — sheet state architecture", () => {
       /handleOwnDialogLifecycle\(event, onClose, false, controlledClose\)/,
     );
     expect(flow).toMatch(
-      /function selectTransfer\(\) \{\s*transitionTo\(async \(\) => \{[\s\S]*?setStage\("transfer"\);\s*setSheetOpen\(true\);/,
+      /function selectTransfer\(\) \{\s*transitionTo\(\(\) => \{[\s\S]*?setStage\("transfer"\);\s*setSheetOpen\(true\);/,
     );
     expect(flow).toMatch(
       /<BottomSheet[\s\S]*?onClose=\{showBack \? goBack : closeFlow\}/,
@@ -60,7 +60,18 @@ describe("FinanceCreateFlow — sheet state architecture", () => {
   });
 
   it("a load error keeps the user on the same (or previous) stage inside the sheet rather than crashing or silently closing", () => {
-    expect(flow).toMatch(/catch \{\s*setLoadError\(/);
+    expect(flow).toMatch(/\.catch\(\(\) => setLoadError\(/);
+  });
+
+  it("opens every form stage before its async selector resolves and renders an immediate loading shell", () => {
+    expect(flow).toMatch(
+      /setStage\("transfer"\);\s*setSheetOpen\(true\);[\s\S]*?getUnifiedTransferSheetData/,
+    );
+    expect(flow).toMatch(
+      /setStage\("card"\);\s*setSheetOpen\(true\);[\s\S]*?getCreditCardSheetData/,
+    );
+    expect(flow).toContain("<SheetLoadingState />");
+    expect(flow).toContain('aria-label="กำลังเตรียมแบบฟอร์ม"');
   });
 });
 

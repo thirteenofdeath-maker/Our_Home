@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -9,17 +9,18 @@ import { FormSheetCloseProvider } from "@/components/ui/FormSheetButton";
 /**
  * The single-create counterpart to FormSheetButton for a form whose
  * supporting data (wallets/pockets/categories/tags, etc.) isn't already
- * on hand at the trigger's call site and must be fetched JIT — the same
- * "fetch only when the sheet actually opens, not on every page load"
- * principle FinanceCreateFlow/quick-add-data.ts already established.
+ * on hand at the trigger's call site. Its small selector payload is warmed
+ * shortly after hydration, without blocking the page, then reused for the
+ * lifetime of this trigger. If the user taps before warming has completed,
+ * the sheet still paints immediately with a loading state.
  * `loadData` is a `"use server"` function (called directly from this
  * Client Component, no full-page navigation), mirroring the exact
  * selectors the equivalent full-page `/new` route already uses — never a
  * new/duplicated query.
  *
  * Composes the same BottomSheet as FormSheetButton (never a second sheet/
- * motion implementation). Data is discarded on close so the next open
- * re-fetches fresh (wallets/categories can change between opens).
+ * motion implementation). Data remains cached after close so subsequent
+ * opens are instant; the form subtree still remounts to clear local inputs.
  *
  * `renderForm: (data: T) => ReactNode` is a genuine callback here — data
  * only exists after the client-side JIT fetch resolves, so unlike
@@ -56,13 +57,55 @@ export function AsyncFormSheetButton<T>({
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [formKey, setFormKey] = useState(0);
+  const dataRef = useRef<T | null>(null);
+  const requestRef = useRef<Promise<T> | null>(null);
+  const loadDataRef = useRef(loadData);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    loadDataRef.current = loadData;
+  }, [loadData]);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
+
+  const ensureData = useCallback(async () => {
+    if (dataRef.current) return dataRef.current;
+    requestRef.current ??= loadDataRef.current();
+    try {
+      const loaded = await requestRef.current;
+      dataRef.current = loaded;
+      if (mountedRef.current) setData(loaded);
+      return loaded;
+    } finally {
+      requestRef.current = null;
+    }
+  }, []);
+
+  // Each async create trigger is the only FAB for its page. Warm its small
+  // selector payload just after hydration so the first tap can paint the real
+  // form immediately, while leaving the main page's initial render unblocked.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void ensureData().catch(() => {
+        // A background warm-up failure is intentionally silent. Opening the
+        // sheet retries and surfaces the actionable error there.
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [ensureData]);
 
   function handleOpen() {
     setOpen(true);
     setError(null);
     startTransition(async () => {
       try {
-        setData(await loadData());
+        await ensureData();
       } catch {
         setError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
       }
@@ -71,8 +114,8 @@ export function AsyncFormSheetButton<T>({
 
   function handleClose() {
     setOpen(false);
-    setData(null);
     setError(null);
+    setFormKey((current) => current + 1);
   }
 
   return (
@@ -84,7 +127,7 @@ export function AsyncFormSheetButton<T>({
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {!error && !data ? <p className="text-sm text-foreground-muted">{isPending ? "กำลังโหลด..." : null}</p> : null}
         {data ? (
-          <FormSheetCloseProvider onClose={handleClose}>
+          <FormSheetCloseProvider key={formKey} onClose={handleClose}>
             {renderForm(data)}
           </FormSheetCloseProvider>
         ) : null}
