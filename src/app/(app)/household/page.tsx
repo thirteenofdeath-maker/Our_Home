@@ -1,7 +1,11 @@
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
+import { TopLevelCover } from "@/components/shared/TopLevelCover";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { AddHouseholdTrigger } from "@/features/household/components/AddHouseholdTrigger";
 import { AddMemberForm } from "@/features/household/components/AddMemberForm";
 import { HouseholdOverview } from "@/features/household/components/HouseholdOverview";
@@ -14,15 +18,24 @@ export default async function HouseholdPage() {
 
   if (!household) {
     return (
-      <EmptyState
-        title="ยังไม่มีครอบครัว"
-        description="สร้างครอบครัวเพื่อแชร์กระเป๋าเงินและหมวดหมู่ร่วมกัน"
-        action={
-          <AddHouseholdTrigger triggerClassName="flex h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground">
-            สร้างครอบครัว
-          </AddHouseholdTrigger>
-        }
-      />
+      <div className="flex flex-col gap-5">
+        <TopLevelCover
+          eyebrow="Our Home"
+          title="ครอบครัว"
+          description="พื้นที่กลางสำหรับคนสำคัญในบ้าน"
+          icon="household"
+          tone="family"
+        />
+        <EmptyState
+          title="ยังไม่มีครอบครัว"
+          description="สร้างครอบครัวเพื่อแชร์กระเป๋าเงินและหมวดหมู่ร่วมกัน"
+          action={
+            <AddHouseholdTrigger triggerClassName="flex h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground">
+              สร้างครอบครัว
+            </AddHouseholdTrigger>
+          }
+        />
+      </div>
     );
   }
 
@@ -42,16 +55,29 @@ export default async function HouseholdPage() {
           ariaLabel="เพิ่มสมาชิก"
           triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
           sheetTitle="เพิ่มสมาชิก"
-          form={<AddMemberForm householdId={household.id} canInviteAdmin={household.myRole === "owner"} variant="sheet" />}
+          form={
+            <AddMemberForm
+              householdId={household.id}
+              canInviteAdmin={household.myRole === "owner"}
+              variant="sheet"
+            />
+          }
         >
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <header>
-        <p className="text-sm text-foreground-muted">ครอบครัว</p>
-        <h1 className="text-xl font-semibold">{household.name}</h1>
-      </header>
-      <HouseholdOverview members={members} userId={user.id} role={household.myRole} />
+      <TopLevelCover
+        eyebrow="ครอบครัว"
+        title={household.name}
+        description={`${members.length} สมาชิกที่ดูแลบ้านหลังนี้ร่วมกัน`}
+        icon="household"
+        tone="family"
+      />
+      <HouseholdOverview
+        members={members}
+        userId={user.id}
+        role={household.myRole}
+      />
     </div>
   );
 }

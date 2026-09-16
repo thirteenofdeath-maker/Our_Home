@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Our Home",
   description: "จัดการเงินและงานบ้านของครอบครัวในที่เดียว",
+  icons: {
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon-maskable.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -33,7 +37,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="th" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="th"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         {children}
         <ServiceWorkerRegister />

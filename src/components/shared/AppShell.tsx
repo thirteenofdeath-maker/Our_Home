@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
-const TOP_LEVEL_ROUTES = new Set(["/pets", "/calendar", "/household"]);
+const TOP_LEVEL_ROUTES = new Set(["/"]);
 
 /**
  * The Finance routes with no module-specific creation action of their
@@ -37,10 +37,9 @@ export function AppShell({
   // exception: Onboarding, which has nothing yet to navigate between.
   // `appSectionForPath` is the single shared classifier BottomNav itself
   // also reads (for active-tab/tone), so the two can never disagree about
-  // which routes count as "in the app". The top app header ("Our Home" +
-  // avatar) stays exact-top-level-only, a deliberately separate concern
-  // from BottomNav persistence. Finance deliberately omits it because its
-  // overview already provides the complete module entry surface.
+  // which routes count as "in the app". The slim "Our Home" + avatar bar
+  // belongs only to Today. Every other primary destination owns its title
+  // inside the shared compact cover, avoiding a duplicated header stack.
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (

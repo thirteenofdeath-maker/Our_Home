@@ -1,4 +1,11 @@
-export type AppSection = "finance" | "pets" | "calendar" | "household" | "neutral" | "onboarding";
+export type AppSection =
+  | "home"
+  | "finance"
+  | "pets"
+  | "calendar"
+  | "household"
+  | "neutral"
+  | "onboarding";
 
 /**
  * The single source of truth for "which app section does this route
@@ -24,11 +31,19 @@ const SECTION_PREFIXES: ReadonlyArray<readonly [string, AppSection]> = [
 ];
 
 export function appSectionForPath(pathname: string): AppSection {
+  if (pathname === "/") return "home";
   for (const [prefix, section] of SECTION_PREFIXES) {
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return section;
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`))
+      return section;
   }
   return "neutral";
 }
 
-/** The four real BottomNav destinations — the only sections that ever get an active tab. */
-export const BOTTOM_NAV_SECTIONS: readonly AppSection[] = ["finance", "pets", "calendar", "household"];
+/** The five primary destinations — the only sections that get an active tab. */
+export const BOTTOM_NAV_SECTIONS: readonly AppSection[] = [
+  "home",
+  "finance",
+  "calendar",
+  "pets",
+  "household",
+];

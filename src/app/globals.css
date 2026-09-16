@@ -206,3 +206,109 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* Compact, same-scale covers for the five primary destinations. */
+.top-level-cover {
+  background-color: var(--color-primary-soft);
+}
+
+.cover-morning {
+  background:
+    radial-gradient(
+      circle at 82% 24%,
+      rgb(255 255 255 / 0.78) 0 12%,
+      transparent 13%
+    ),
+    linear-gradient(140deg, #f8e8c8 0%, #f5d8b3 52%, #dbe8d8 100%);
+}
+
+.cover-day {
+  background: linear-gradient(140deg, #dcebf0 0%, #cae0e8 54%, #e7eddb 100%);
+}
+
+.cover-evening {
+  background: linear-gradient(140deg, #f5dccd 0%, #efc8bd 50%, #d8d4e9 100%);
+}
+
+.cover-night {
+  background: linear-gradient(140deg, #344650 0%, #4f5f68 54%, #667466 100%);
+}
+
+.cover-birthday {
+  background:
+    radial-gradient(
+      circle at 18% 20%,
+      rgb(255 255 255 / 0.72) 0 2%,
+      transparent 2.5%
+    ),
+    radial-gradient(
+      circle at 72% 28%,
+      rgb(255 255 255 / 0.7) 0 1.7%,
+      transparent 2.2%
+    ),
+    linear-gradient(140deg, #f8dfc7 0%, #f1c9bf 46%, #e5dfac 100%);
+}
+
+.cover-finance {
+  background: linear-gradient(145deg, #49675a 0%, #668271 58%, #81977f 100%);
+}
+
+.cover-plan {
+  background: linear-gradient(145deg, #dce8e8 0%, #c8dedb 55%, #e8e1c8 100%);
+}
+
+.cover-pets {
+  background: linear-gradient(145deg, #f5e1d8 0%, #efd0c8 55%, #e6dcc7 100%);
+}
+
+.cover-family {
+  background: linear-gradient(145deg, #dce9dc 0%, #c9decf 55%, #e7e2c8 100%);
+}
+
+.cover-orb {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.2);
+  pointer-events: none;
+}
+
+.cover-orb-one {
+  width: 9rem;
+  height: 9rem;
+  right: -3rem;
+  top: -4.25rem;
+}
+
+.cover-orb-two {
+  width: 5.5rem;
+  height: 5.5rem;
+  right: 4.25rem;
+  bottom: -3.5rem;
+}
+
+.cover-finance .cover-icon {
+  position: relative;
+  border-radius: 1.15rem;
+  transform: rotate(-4deg);
+}
+
+.cover-finance .cover-icon::before {
+  position: absolute;
+  inset: 0.45rem -0.35rem -0.45rem 0.35rem;
+  z-index: -1;
+  border: 1px solid rgb(255 255 255 / 0.32);
+  border-radius: 1.15rem;
+  content: "";
+}
+
+@media (max-width: 360px) {
+  .top-level-cover {
+    min-height: 8.25rem;
+    padding: 1rem;
+  }
+
+  .top-level-cover .cover-icon {
+    width: 4rem;
+    height: 4rem;
+  }
+}

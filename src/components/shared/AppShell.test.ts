@@ -33,11 +33,10 @@ function renderShell(pathname: string): string {
 }
 
 describe("AppShell visibility", () => {
-  it("omits the redundant top header on Finance while keeping it on the other top-level roots", () => {
-    expect(source).toMatch(
-      /new Set\(\[\s*"\/pets",\s*"\/calendar",\s*"\/household",?\s*\]\)/,
-    );
+  it("keeps the global Our Home/avatar bar only on Today; every other root owns its heading inside its cover", () => {
+    expect(source).toMatch(/new Set\(\[\s*"\/",?\s*\]\)/);
     expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/finance"/);
+    expect(source).not.toMatch(/TOP_LEVEL_ROUTES[\s\S]{0,100}"\/pets"/);
     expect(source).toContain("TOP_LEVEL_ROUTES.has(pathname)");
     expect(source).toContain("isTopLevel ? globalHeader : null");
   });

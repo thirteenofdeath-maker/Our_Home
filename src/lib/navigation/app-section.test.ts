@@ -28,8 +28,8 @@ describe("appSectionForPath", () => {
     expect(appSectionForPath("/onboarding")).toBe("onboarding");
   });
 
-  it("falls back to neutral for anything unrecognized, never throwing", () => {
-    expect(appSectionForPath("/")).toBe("neutral");
+  it("maps the Today root explicitly and falls back to neutral for anything unrecognized", () => {
+    expect(appSectionForPath("/")).toBe("home");
     expect(appSectionForPath("/something-unknown")).toBe("neutral");
   });
 

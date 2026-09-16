@@ -2,6 +2,7 @@ import type { ReactNode, SVGProps } from "react";
 
 export type AppIconName =
   | "back"
+  | "home"
   | "plus"
   | "income"
   | "expense"
@@ -20,6 +21,12 @@ export type AppIconName =
 
 const paths: Record<AppIconName, ReactNode> = {
   back: <path d="m15 18-6-6 6-6" />,
+  home: (
+    <>
+      <path d="m3 11 9-7 9 7" />
+      <path d="M5 10v10h14V10m-7 10v-6" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   income: <path d="M12 19V5m0 0-5 5m5-5 5 5" />,
   expense: <path d="M12 5v14m0 0-5-5m5 5 5-5" />,

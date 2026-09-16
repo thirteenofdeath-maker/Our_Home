@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { TopLevelCover } from "@/components/shared/TopLevelCover";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
 import {
@@ -144,6 +145,14 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-5 px-4 pb-8 pt-3">
+      <TopLevelCover
+        eyebrow="Our Home"
+        title="การเงิน"
+        description="ดูภาพรวมทุกกระเป๋า แล้วจัดการเงินของบ้านในที่เดียว"
+        icon="wallet"
+        tone="finance"
+      />
+
       {household ? (
         <FinanceSegmentedControl
           ariaLabel="ขอบเขตข้อมูลการเงิน"
@@ -164,9 +173,9 @@ export default async function FinancePage({
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h1 className="text-lg font-semibold text-finance-text">
+        <h2 className="text-lg font-semibold text-finance-text">
           ยอดเงิน{scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
-        </h1>
+        </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {balanceCards.map((balance) => {
             const monthTotal = currentMonthTotals.find(
