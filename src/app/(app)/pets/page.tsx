@@ -62,17 +62,9 @@ export default async function PetsPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <header>
-        <h1 className="text-2xl font-semibold text-finance-text">
-          สัตว์เลี้ยงของเรา
-        </h1>
-        <p className="mt-1 text-sm text-finance-muted">
-          ดูแลสุขภาพและตารางสำคัญในที่เดียว
-        </p>
-      </header>
       {canManage ? <AddPetFab /> : null}
 
-      <section className="relative h-52 overflow-hidden rounded-[1.75rem] bg-[#f8f1e7] shadow-card sm:h-60">
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e7] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/pets-garden.webp"
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"
@@ -81,14 +73,18 @@ export default async function PetsPage({
           sizes="(max-width: 640px) 100vw, 576px"
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,240,0.94),rgba(255,249,240,0.08)_55%)]" />
-        <p className="absolute left-5 top-5 max-w-32 text-lg font-semibold leading-snug text-finance-text">
-          บ้านเดียวกัน
-          <br />
-          เราก็สำคัญ
-          <br />
-          เท่ากันทุกตัว
-        </p>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,240,0.97)_0%,rgba(255,249,240,0.84)_42%,rgba(255,249,240,0.06)_76%)]" />
+        <header className="relative max-w-[58%]">
+          <p className="text-xs font-medium text-finance-primary-strong">
+            สมาชิกตัวน้อยของบ้าน
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold leading-tight text-finance-text">
+            สัตว์เลี้ยงของเรา
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-finance-muted">
+            ดูแลสุขภาพและตารางสำคัญในที่เดียว
+          </p>
+        </header>
       </section>
 
       {active.length ? (

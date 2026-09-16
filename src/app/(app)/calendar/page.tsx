@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
@@ -31,6 +32,8 @@ import { TaskList } from "@/features/plan/components/TaskList";
 import { requireUser } from "@/lib/auth/require-user";
 import { cn } from "@/lib/utils/cn";
 import { listScheduledPetCareRecords } from "@/features/pets/api";
+
+const PLAN_AREAS = ["ปฏิทิน", "งาน", "รายการเตือน", "โน้ต"] as const;
 
 function activeView(value: unknown): PlanView {
   return value === "tasks" || value === "reminders" || value === "notes"
@@ -139,6 +142,39 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+        <Image
+          src="/art/plan-calendar.webp"
+          alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
+          fill
+          priority
+          sizes="(max-width: 640px) 100vw, 576px"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,241,0.98)_0%,rgba(255,250,241,0.9)_44%,rgba(255,250,241,0.12)_78%)]" />
+        <div className="relative flex h-full max-w-[62%] flex-col">
+          <p className="text-xs font-medium text-finance-primary-strong">
+            ทุกเรื่องที่ต้องจำ
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold leading-tight text-finance-text">
+            แผนงานของเรา
+          </h1>
+          <p className="mt-1 text-sm text-finance-muted">
+            วางแผนให้บ้านเดินหน้าไปด้วยกัน
+          </p>
+          <div className="mt-auto grid grid-cols-2 gap-1.5 text-[11px] font-medium text-finance-text">
+            {PLAN_AREAS.map((label) => (
+              <span
+                key={label}
+                className="rounded-full bg-white/75 px-2.5 py-1 text-center backdrop-blur-sm"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <PlanTabs active={view} />
       {view !== "calendar" ? (
         <PlanSummary

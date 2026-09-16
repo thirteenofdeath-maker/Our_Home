@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Our Home",
   description: "จัดการเงินและงานบ้านของครอบครัวในที่เดียว",
+  icons: {
+    icon: "/icons/icon.svg",
+    shortcut: "/icons/icon.svg",
+    apple: "/icons/icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -29,7 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#2f6f4f",
+  themeColor: "#789579",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

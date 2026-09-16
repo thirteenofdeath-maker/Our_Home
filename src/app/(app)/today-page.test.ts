@@ -10,7 +10,8 @@ const source = readFileSync(
 describe("Today dashboard composition", () => {
   it("is a read-model dashboard rather than a redirect to wallets", () => {
     expect(source).not.toContain('redirect("/wallets")');
-    expect(source).toContain("greetingForBangkok()");
+    expect(source).toContain("greetingForBangkok(now)");
+    expect(source).toContain("homeCoverMode(profile?.birthday, now)");
     expect(source).toContain("งานวันนี้");
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="การเงิน"');
