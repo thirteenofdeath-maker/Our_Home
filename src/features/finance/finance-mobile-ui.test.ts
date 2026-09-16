@@ -84,7 +84,18 @@ describe("approved mobile Finance UI", () => {
     expect(wallets).toContain("<WalletVisualCard");
     expect(wallets).toContain("grid-cols-2");
     expect(wallets).toContain("PageHeader");
-    expect(wallets).not.toContain("FinanceModuleTabs");
+    expect(wallets).toContain("FinanceModuleTabs");
+  });
+
+  it("uses the three shared Finance tabs and keeps transaction creation on the FAB", () => {
+    const tabs = read("src/features/finance/components/FinanceModuleTabs.tsx");
+    expect(hub).toContain("<FinanceModuleTabs");
+    expect(tabs).toContain('label: "ภาพรวม"');
+    expect(tabs).toContain('label: "ธุรกรรม"');
+    expect(tabs).toContain('label: "กระเป๋า"');
+    expect(tabs).toContain("grid-cols-3");
+    expect(tabs).not.toMatch(/label: "(รายรับ|รายจ่าย|โอนเงิน)"/);
+    expect(hub).toContain("<FinanceCreateFlow");
   });
 
   it("places the selected month directly with the trend summary instead of at the page top", () => {

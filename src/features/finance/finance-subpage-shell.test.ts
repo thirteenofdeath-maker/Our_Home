@@ -185,9 +185,10 @@ describe("Finance subpage shell", () => {
     const layout = read("src/app/(app)/finance/layout.tsx");
     const hub = read("src/app/(app)/finance/page.tsx");
 
-    it("does not repeat the module rail because the overview already links every primary destination", () => {
-      expect(layout).not.toContain("FinanceModuleTabs");
-      expect(hub).not.toContain("FinanceModuleTabs");
+    it("shows the three primary tabs on the overview and transaction root", () => {
+      expect(layout).toContain("FinanceModuleTabs");
+      expect(layout).toContain('pathname === "/finance/transactions"');
+      expect(hub).toContain("FinanceModuleTabs");
       expect(layout).not.toContain("MODULE_SECTIONS");
     });
   });

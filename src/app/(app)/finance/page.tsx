@@ -15,6 +15,7 @@ import {
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
 import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
+import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import {
   currentFinanceMonth,
   financeMonthRange,
@@ -144,6 +145,8 @@ export default async function FinancePage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-5 px-4 pb-8 pt-3">
+      <FinanceModuleTabs />
+
       {household ? (
         <FinanceSegmentedControl
           ariaLabel="ขอบเขตข้อมูลการเงิน"
