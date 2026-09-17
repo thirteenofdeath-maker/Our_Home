@@ -88,7 +88,7 @@ describe("persistent private page cache", () => {
     );
     expect(await w.caches.match("https://home.test/wallets")).toBeDefined();
   });
-  it("serves a cached detail page immediately and revalidates in background", async () => {
+  it("keeps a cached detail page available offline", async () => {
     const w = worker();
     const request = new Request("https://home.test/pets/123");
     await w.api.fetchAndCachePrivatePage(request);
@@ -148,4 +148,32 @@ describe("persistent private page cache", () => {
       "https://home.test/pets/123",
     ]);
   });
+});
+
+it("checks the server before returning an online private document", async () => {
+  const w = worker();
+  const request = new Request("https://home.test/finance");
+  await w.api.fetchAndCachePrivatePage(request);
+  w.fetch.mockImplementation(async () => {
+    const denied = new Response("Please sign in", { status: 401 });
+    Object.defineProperty(denied, "url", { value: request.url });
+    return denied;
+  });
+  const response = await w.api.cacheFirstMainPage(
+    { waitUntil: () => undefined },
+    request,
+  );
+  expect(response.status).toBe(401);
+  expect(await w.caches.match(request)).toBeUndefined();
+});
+
+it("returns the network response when persistent storage is unavailable", async () => {
+  const w = worker();
+  w.caches.open = async () => {
+    throw new Error("QuotaExceededError");
+  };
+  const response = await w.api.fetchAndCachePrivatePage(
+    new Request("https://home.test/finance"),
+  );
+  expect(await response.text()).toBe("fresh");
 });

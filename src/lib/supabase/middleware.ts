@@ -56,18 +56,28 @@ export async function updateSession(request: NextRequest) {
     path === "/offline.html" ||
     path === "/favicon.ico";
 
+  const redirectWithCookies = (url: URL) => {
+    const response = NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll())
+      response.cookies.set(cookie);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  };
+
   if (!user && !isAuthRoute && !isPublicAsset) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   if (user && (path === "/login" || path === "/sign-up")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
+  if (!isPublicAsset)
+    supabaseResponse.headers.set("Cache-Control", "private, no-store");
   if (user && !isPublicAsset && !isAuthRoute)
     supabaseResponse.headers.set("X-Our-Home-User", user.id);
   return supabaseResponse;

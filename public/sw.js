@@ -83,13 +83,18 @@ function isPrivateAppPage(url) {
 }
 
 async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-
+  try {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+  } catch {
+    /* Cache availability must never block the network. */
+  }
   const response = await fetch(request);
-  if (response.ok) {
-    const cache = await caches.open(STATIC_CACHE);
-    await cache.put(request, response.clone());
+  try {
+    if (response.ok)
+      await (await caches.open(STATIC_CACHE)).put(request, response.clone());
+  } catch {
+    /* Storage may be full or unavailable. */
   }
   return response;
 }
@@ -104,9 +109,16 @@ async function getRevision(cache) {
 
 async function fetchAndCachePrivatePage(request) {
   const generation = cacheGeneration;
-  const cache = await caches.open(PRIVATE_PAGE_CACHE);
-  const revision = await getRevision(cache);
+  let cache;
+  let revision = "initial";
+  try {
+    cache = await caches.open(PRIVATE_PAGE_CACHE);
+    revision = await getRevision(cache);
+  } catch {
+    /* Continue without persistence. */
+  }
   const response = await fetch(request);
+  if (!cache) return response;
   const requestedUrl = new URL(request.url);
   const responseUrl = new URL(response.url);
   const isSamePage = requestedUrl.pathname === responseUrl.pathname;
@@ -116,68 +128,80 @@ async function fetchAndCachePrivatePage(request) {
   if (generation !== cacheGeneration) return response;
   const owner = response.headers.get("X-Our-Home-User");
   const contentType = response.headers.get("content-type") || "";
-  if (
-    response.ok &&
-    !response.redirected &&
-    isSamePage &&
-    owner &&
-    contentType.includes("text/html")
-  ) {
-    const headers = new Headers(response.headers);
-    headers.set("X-Our-Home-Cache-Revision", revision);
-    const stored = new Response(await response.clone().arrayBuffer(), {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-    const identityKey = new URL("/__cache_owner__", self.location.origin).href;
-    const previousOwner = await cache.match(identityKey);
-    if (previousOwner && (await previousOwner.text()) !== owner) {
+  try {
+    if (
+      response.ok &&
+      !response.redirected &&
+      isSamePage &&
+      owner &&
+      contentType.includes("text/html")
+    ) {
+      const headers = new Headers(response.headers);
+      headers.set("X-Our-Home-Cache-Revision", revision);
+      const stored = new Response(await response.clone().arrayBuffer(), {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+      const identityKey = new URL("/__cache_owner__", self.location.origin)
+        .href;
+      const previousOwner = await cache.match(identityKey);
+      const previousIdentity = previousOwner
+        ? await previousOwner.text()
+        : null;
+      if (generation !== cacheGeneration) return response;
+      if (previousIdentity && previousIdentity !== owner) {
+        await clearPrivateCaches();
+        const fresh = await caches.open(PRIVATE_PAGE_CACHE);
+        await fresh.put(identityKey, new Response(owner));
+        await fresh.put(request, stored);
+      } else if (generation === cacheGeneration) {
+        await cache.put(identityKey, new Response(owner));
+        await cache.put(request, stored);
+      }
+    } else if (
+      response.status === 401 ||
+      response.status === 403 ||
+      (response.redirected && new URL(response.url).pathname === "/login")
+    ) {
       await clearPrivateCaches();
-      const fresh = await caches.open(PRIVATE_PAGE_CACHE);
-      await fresh.put(identityKey, new Response(owner));
-      await fresh.put(request, stored);
-    } else if (generation === cacheGeneration) {
-      await cache.put(identityKey, new Response(owner));
-      await cache.put(request, stored);
     }
-  } else if (
-    response.status === 401 ||
-    response.status === 403 ||
-    (response.redirected && new URL(response.url).pathname === "/login")
-  ) {
-    await clearPrivateCaches();
+  } catch {
+    /* A cache write failure must not discard a successful response. */
   }
   return response;
 }
 
 async function networkFirstPage(request) {
-  const cache = await caches.open(PRIVATE_PAGE_CACHE);
-
+  const generation = cacheGeneration;
   try {
     return await fetchAndCachePrivatePage(request);
   } catch {
-    const cached = await cache.match(request);
-    return cached ?? caches.match(OFFLINE_URL);
+    // A concurrent logout must also invalidate an offline fallback.
+    if (generation !== cacheGeneration)
+      return Response.redirect(new URL("/login", self.location.origin));
+    try {
+      const cached = await (
+        await caches.open(PRIVATE_PAGE_CACHE)
+      ).match(request);
+      if (cached) return cached;
+      const offline = await caches.match(OFFLINE_URL);
+      if (offline) return offline;
+    } catch {
+      /* Fall back to an explicit offline response. */
+    }
+    return new Response("ออฟไลน์ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
   }
 }
 
+// Client-router prefetch supplies fast online transitions. A full document
+// navigation checks the server first so expired sessions and role revocations
+// cannot expose a stale private document before authentication.
 async function cacheFirstMainPage(event, request) {
-  const cache = await caches.open(PRIVATE_PAGE_CACHE);
-  const cached = await cache.match(request);
-
-  if (
-    !cached ||
-    cached.headers.get("X-Our-Home-Cache-Revision") !==
-      (await getRevision(cache))
-  ) {
-    return networkFirstPage(request);
-  }
-
-  // Paint the already-known page immediately, then refresh its copy without
-  // holding up navigation. The next visit receives the newest successful page.
-  event.waitUntil(fetchAndCachePrivatePage(request).catch(() => undefined));
-  return cached;
+  return networkFirstPage(request);
 }
 
 async function warmMainAppRoutes(routes) {
@@ -188,6 +212,8 @@ async function warmMainAppRoutes(routes) {
       typeof route === "string" &&
       route.startsWith("/") &&
       !route.startsWith("//") &&
+      !route.includes("\\") &&
+      new URL(route, self.location.origin).origin === self.location.origin &&
       isPrivateAppPage(new URL(route, self.location.origin)),
   );
 
@@ -219,11 +245,15 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         // Mark old snapshots stale after a write, retaining them as offline fallback.
-        const cache = await caches.open(PRIVATE_PAGE_CACHE);
-        await cache.put(
-          new URL(REVISION_KEY, self.location.origin),
-          new Response(crypto.randomUUID()),
-        );
+        try {
+          const cache = await caches.open(PRIVATE_PAGE_CACHE);
+          await cache.put(
+            new URL(REVISION_KEY, self.location.origin),
+            new Response(crypto.randomUUID()),
+          );
+        } catch {
+          /* Storage failure must not block writes or logout. */
+        }
         return fetch(request);
       })(),
     );
@@ -235,7 +265,11 @@ self.addEventListener("fetch", (event) => {
     request.mode === "navigate" &&
     ["/login", "/sign-up"].includes(url.pathname)
   ) {
-    event.respondWith(clearPrivateCaches().then(() => fetch(request)));
+    event.respondWith(
+      clearPrivateCaches()
+        .catch(() => undefined)
+        .then(() => fetch(request)),
+    );
     return;
   }
 

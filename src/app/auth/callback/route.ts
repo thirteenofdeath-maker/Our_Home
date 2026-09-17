@@ -22,5 +22,7 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/forgot-password?expired=1`);
+  return NextResponse.redirect(
+    `${origin}${next === "/reset-password" ? "/forgot-password?expired=1" : "/login?authError=1"}`,
+  );
 }
