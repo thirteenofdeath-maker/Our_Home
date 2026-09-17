@@ -18,38 +18,42 @@ import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/config";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabasePublishableKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          for (const { name, value } of cookiesToSet) {
-            request.cookies.set(name, value);
-          }
-          supabaseResponse = NextResponse.next({ request });
-          for (const { name, value, options } of cookiesToSet) {
-            supabaseResponse.cookies.set(name, value, options);
-          }
-        },
+  const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+        supabaseResponse = NextResponse.next({ request });
+        for (const { name, value, options } of cookiesToSet) {
+          supabaseResponse.cookies.set(name, value, options);
+        }
       },
     },
-  );
+  });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAuthRoute = path.startsWith("/login") || path.startsWith("/sign-up") || path.startsWith("/auth");
+  const isAuthRoute =
+    path.startsWith("/login") ||
+    path.startsWith("/sign-up") ||
+    path.startsWith("/auth") ||
+    path === "/forgot-password" ||
+    path === "/reset-password";
   const isPublicAsset =
     path.startsWith("/_next") ||
     path.startsWith("/manifest") ||
     path.startsWith("/sw.js") ||
     path.startsWith("/icons") ||
+    path.startsWith("/art/") ||
+    path === "/icon.svg" ||
+    path === "/offline.html" ||
     path === "/favicon.ico";
 
   if (!user && !isAuthRoute && !isPublicAsset) {
@@ -58,11 +62,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  if (user && (path === "/login" || path === "/sign-up")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
+  if (user && !isPublicAsset && !isAuthRoute)
+    supabaseResponse.headers.set("X-Our-Home-User", user.id);
   return supabaseResponse;
 }

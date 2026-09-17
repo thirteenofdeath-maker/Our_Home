@@ -11,7 +11,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next =
+    searchParams.get("next") === "/reset-password" ? "/reset-password" : "/";
 
   if (code) {
     const supabase = await createClient();
@@ -21,5 +22,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  return NextResponse.redirect(`${origin}/forgot-password?expired=1`);
 }

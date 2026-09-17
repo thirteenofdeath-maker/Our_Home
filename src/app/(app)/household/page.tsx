@@ -114,7 +114,7 @@ export default async function HouseholdPage() {
               {countFamilyMembers(members)} คน
             </p>
             <p className="mt-0.5 truncate text-finance-muted">
-              เริ่มอยู่ด้วยกัน {startedLabel}
+              สร้างครอบครัวในแอป {startedLabel}
             </p>
           </div>
         </div>

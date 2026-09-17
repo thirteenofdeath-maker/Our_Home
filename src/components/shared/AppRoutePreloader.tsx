@@ -1,12 +1,11 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { NAV_ITEMS } from "./BottomNav";
 
 import { FINANCE_MODULES } from "@/features/finance/components/FinanceModuleTabs";
-import { appSectionForPath } from "@/lib/navigation/app-section";
 
 const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
 
@@ -18,7 +17,6 @@ const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
  */
 export function AppRoutePreloader() {
   const router = useRouter();
-  const inFinance = appSectionForPath(usePathname()) === "finance";
 
   useEffect(() => {
     let disposed = false;
@@ -44,12 +42,13 @@ export function AppRoutePreloader() {
     };
 
     const warmRouter = () => {
-      const routes = inFinance
-        ? new Set([
-            ...MAIN_APP_ROUTES,
-            ...FINANCE_MODULES.map((module) => module.href),
-          ])
-        : MAIN_APP_ROUTES;
+      const routes = new Set([
+        ...MAIN_APP_ROUTES,
+        ...FINANCE_MODULES.map((module) => module.href),
+        "/household/members",
+        "/profile/edit",
+        "/profile/notifications",
+      ]);
       for (const route of routes) prefetchRoute(route);
     };
 
@@ -61,12 +60,19 @@ export function AppRoutePreloader() {
           navigator.serviceWorker.controller ?? registration.active;
         worker?.postMessage({
           type: "WARM_APP_ROUTES",
-          routes: MAIN_APP_ROUTES,
+          routes: [
+            ...MAIN_APP_ROUTES,
+            ...FINANCE_MODULES.map((module) => module.href),
+            "/household/members",
+            "/profile/edit",
+            "/profile/notifications",
+          ],
         });
       });
     };
 
     const warmAll = () => {
+      if (navigator.onLine) router.refresh();
       warmRouter();
       warmDocuments();
     };
@@ -75,19 +81,56 @@ export function AppRoutePreloader() {
       if (document.visibilityState === "visible") warmAll();
     };
 
+    if (navigator.storage?.persist)
+      void navigator.storage.persist().catch(() => false);
     warmAll();
+    const seen = new Set<string>();
+    const warmLinkedPages = () => {
+      const routes: string[] = [];
+      document
+        .querySelectorAll<HTMLAnchorElement>('a[href^="/"]')
+        .forEach((link) => {
+          const url = new URL(link.href);
+          if (
+            url.origin !== window.location.origin ||
+            !/^\/(finance|wallets|categories|calendar|pets|household|profile)(\/|$)/.test(
+              url.pathname,
+            )
+          )
+            return;
+          const route = url.pathname + url.search;
+          if (seen.has(route)) return;
+          seen.add(route);
+          prefetchRoute(route);
+          routes.push(route);
+        });
+      if (routes.length)
+        navigator.serviceWorker?.controller?.postMessage({
+          type: "WARM_APP_ROUTES",
+          routes,
+        });
+    };
+    let linkTimer: number | undefined;
+    const observer = new MutationObserver(() => {
+      window.clearTimeout(linkTimer);
+      linkTimer = window.setTimeout(warmLinkedPages, 300);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    warmLinkedPages();
     window.addEventListener("online", warmAll);
     window.addEventListener("focus", warmAll);
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       disposed = true;
+      observer.disconnect();
+      window.clearTimeout(linkTimer);
       for (const timer of rewarmTimers.values()) window.clearTimeout(timer);
       window.removeEventListener("online", warmAll);
       window.removeEventListener("focus", warmAll);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [router, inFinance]);
+  }, [router]);
 
   return null;
 }

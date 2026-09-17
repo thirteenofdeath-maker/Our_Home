@@ -15,12 +15,32 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <Field label="อีเมล" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+        />
       </Field>
       <Field label="รหัสผ่าน" htmlFor="password">
-        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
       </Field>
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
+      <Link
+        href="/forgot-password"
+        className="self-end text-sm font-medium text-primary"
+      >
+        ลืมรหัสผ่าน?
+      </Link>
       <SubmitButton size="lg">เข้าสู่ระบบ</SubmitButton>
       <p className="text-center text-sm text-foreground-muted">
         ยังไม่มีบัญชี?{" "}

@@ -22,9 +22,7 @@ describe("offline-first PWA foundation", () => {
 
   it("warms and serves the five main app pages cache-first", () => {
     const worker = read("public/sw.js");
-    const preloader = read(
-      "src/components/shared/AppRoutePreloader.tsx",
-    );
+    const preloader = read("src/components/shared/AppRoutePreloader.tsx");
     const shell = read("src/components/shared/AppShell.tsx");
     const navigation = read("src/components/shared/BottomNav.tsx");
 
@@ -43,7 +41,8 @@ describe("offline-first PWA foundation", () => {
     const worker = read("public/sw.js");
     expect(worker).toContain("our-home-private-pages-");
     expect(worker).toContain("CLEAR_PRIVATE_CACHES");
-    expect(worker).toContain("caches.delete(PRIVATE_PAGE_CACHE)");
+    expect(worker).toContain("clearPrivateCaches()");
+    expect(worker).not.toContain("key !== PRIVATE_PAGE_CACHE");
   });
 
   it("shows connectivity state globally", () => {
