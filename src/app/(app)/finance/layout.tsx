@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { FinanceHeader } from "@/features/finance/components/FinanceHeader";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 
 const SECTION_TITLES: Record<string, string> = {
@@ -60,23 +61,24 @@ export function financeBackHref(pathname: string): string | undefined {
 
 export default function FinanceLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (pathname === "/finance") return children;
-  if (pathname === "/finance/transactions") {
-    return (
-      <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pb-8 pt-3">
-        <FinanceModuleTabs />
-        {children}
-      </div>
-    );
-  }
   const section = pathname.split("/")[2] ?? "";
 
+  const isModuleRoot = pathname.split("/").filter(Boolean).length <= 2;
+
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-h-full flex-col gap-4 px-4 pt-2">
-      <PageHeader
-        title={SECTION_TITLES[section] ?? "การเงิน"}
-        backHref={financeBackHref(pathname)}
-      />
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 min-h-full flex-col gap-4 px-4 pb-8 pt-3">
+      {isModuleRoot ? (
+        <>
+          <FinanceHeader />
+          <FinanceModuleTabs />
+        </>
+      ) : null}
+      {pathname !== "/finance" && pathname !== "/finance/transactions" ? (
+        <PageHeader
+          title={SECTION_TITLES[section] ?? "การเงิน"}
+          backHref={financeBackHref(pathname)}
+        />
+      ) : null}
       {children}
     </div>
   );

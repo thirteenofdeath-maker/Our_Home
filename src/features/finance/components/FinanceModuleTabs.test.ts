@@ -10,18 +10,32 @@ vi.mock("next/navigation", () => ({
 import { FINANCE_MODULES, FinanceModuleTabs } from "./FinanceModuleTabs";
 
 describe("FinanceModuleTabs", () => {
-  it("has exactly the three primary modules, each pointing at its existing route", () => {
-    expect(FINANCE_MODULES).toHaveLength(3);
-    expect(FINANCE_MODULES.map((m) => m.label)).toEqual([
-      "ภาพรวม",
-      "ธุรกรรม",
-      "กระเป๋า",
-    ]);
-    expect(FINANCE_MODULES.map((m) => m.href)).toEqual([
+  it("keeps overview, transactions and wallets first and exposes every finance module", () => {
+    expect(FINANCE_MODULES.slice(0, 3).map((m) => m.href)).toEqual([
       "/finance",
       "/finance/transactions",
       "/wallets",
     ]);
+    for (const route of [
+      "budgets",
+      "goals",
+      "bills",
+      "debts",
+      "installments",
+      "recurring",
+      "templates",
+      "reports",
+      "insights",
+      "net-worth",
+      "tags",
+      "import",
+      "export",
+    ]) {
+      expect(FINANCE_MODULES.some((m) => m.href === `/finance/${route}`)).toBe(
+        true,
+      );
+    }
+    expect(FINANCE_MODULES.some((m) => m.href === "/categories")).toBe(true);
   });
 
   it("renders every module as a real, accessible link with a 44px touch target", () => {
@@ -30,8 +44,8 @@ describe("FinanceModuleTabs", () => {
     for (const financeModule of FINANCE_MODULES) {
       expect(html).toContain(`href="${financeModule.href}"`);
     }
-    expect((html.match(/<a /g) ?? []).length).toBe(3);
-    expect(html).toContain("h-10");
+    expect((html.match(/<a /g) ?? []).length).toBe(FINANCE_MODULES.length);
+    expect(html).toContain("h-11");
   });
 
   it("marks exactly the current module as active via aria-current", () => {
@@ -46,10 +60,9 @@ describe("FinanceModuleTabs", () => {
     expect(activeAnchor).toContain('href="/finance/transactions"');
   });
 
-  it("renders as one non-scrolling three-column row", () => {
+  it("contains overflow in a scrollable module row", () => {
     const html = renderToStaticMarkup(createElement(FinanceModuleTabs));
-    expect(html).toContain("grid-cols-3");
-    expect(html).not.toContain("overflow-x-auto");
+    expect(html).toContain("overflow-x-auto");
   });
 
   it("uses a shared rounded surface with a soft active segment", () => {
@@ -61,4 +74,22 @@ describe("FinanceModuleTabs", () => {
       html.match(/<a[^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
     expect(activeAnchor).toContain("bg-finance-primary-soft");
   });
+});
+
+it.each([
+  "/wallets/abc/manage",
+  "/finance/budgets/abc/edit",
+  "/finance/bills/occurrences/abc",
+  "/categories",
+])("selects only the owning module at %s", (path) => {
+  mockPathname = path;
+  const html = renderToStaticMarkup(createElement(FinanceModuleTabs));
+  const links = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
+  expect(links).toHaveLength(1);
+  const expected = path.startsWith("/wallets")
+    ? "/wallets"
+    : path.startsWith("/categories")
+      ? "/categories"
+      : path.split("/").slice(0, 3).join("/");
+  expect(links[0]).toContain(`href="${expected}"`);
 });

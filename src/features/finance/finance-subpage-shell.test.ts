@@ -1,12 +1,15 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/finance" }));
-import { financeBackHref } from "@/app/(app)/finance/layout";
+let currentPath = "/finance";
+vi.mock("next/navigation", () => ({ usePathname: () => currentPath }));
+import FinanceLayout, { financeBackHref } from "@/app/(app)/finance/layout";
 
 describe("financeBackHref — semantic Back target for every /finance/** subpage shape", () => {
   it("sends every module root one level up, to the Finance Hub", () => {
@@ -185,11 +188,47 @@ describe("Finance subpage shell", () => {
     const layout = read("src/app/(app)/finance/layout.tsx");
     const hub = read("src/app/(app)/finance/page.tsx");
 
-    it("shows the three primary tabs on the overview and transaction root", () => {
+    it("shows the shared cover and navigation at every module root", () => {
       expect(layout).toContain("FinanceModuleTabs");
-      expect(layout).toContain('pathname === "/finance/transactions"');
-      expect(hub).toContain("FinanceModuleTabs");
+      expect(layout).toContain("isModuleRoot");
+      expect(layout).toContain("<FinanceHeader />");
+      expect(hub).not.toContain("<FinanceModuleTabs");
       expect(layout).not.toContain("MODULE_SECTIONS");
     });
   });
+});
+
+describe("Finance cover across modules", () => {
+  it.each([
+    "",
+    "/transactions",
+    "/budgets",
+    "/goals",
+    "/bills",
+    "/debts",
+    "/installments",
+    "/recurring",
+    "/templates",
+    "/reports",
+    "/insights",
+    "/net-worth",
+    "/tags",
+    "/import",
+    "/export",
+  ])(
+    "renders one shared cover and the correct selected module at /finance%s",
+    (suffix) => {
+      currentPath = `/finance${suffix}`;
+      const html = renderToStaticMarkup(
+        createElement(FinanceLayout, {
+          children: createElement("div", null, "module-content"),
+        }),
+      );
+      expect(html.match(/>การเงินของบ้าน<\/h1>/g)).toHaveLength(1);
+      expect(html).toContain("module-content");
+      const active = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
+      expect(active).toHaveLength(1);
+      expect(active[0]).toContain(`href="${currentPath}"`);
+    },
+  );
 });

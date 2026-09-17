@@ -1,3 +1,5 @@
+import { FinanceHeader } from "@/features/finance/components/FinanceHeader";
+import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -19,7 +21,8 @@ export default async function CategoriesPage({
   const { type, scope } = await searchParams;
   const transactionType = type === "INCOME" ? "INCOME" : "EXPENSE";
   const household = await getMyPrimaryHousehold(supabase, user.id);
-  const activeScope = scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
+  const activeScope =
+    scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
 
   const categories = await listCategories(supabase, {
     transactionType,
@@ -30,23 +33,37 @@ export default async function CategoriesPage({
   const topLevelActive = tree.filter((c) => !c.is_system && !c.archived_at);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
+      <FinanceHeader />
+      <FinanceModuleTabs />
       <PageHeader title="หมวดหมู่" backHref="/finance" />
 
       <div className="flex gap-2">
-        <TabLink href={`/categories?type=EXPENSE&scope=${activeScope}`} active={transactionType === "EXPENSE"}>
+        <TabLink
+          href={`/categories?type=EXPENSE&scope=${activeScope}`}
+          active={transactionType === "EXPENSE"}
+        >
           รายจ่าย
         </TabLink>
-        <TabLink href={`/categories?type=INCOME&scope=${activeScope}`} active={transactionType === "INCOME"}>
+        <TabLink
+          href={`/categories?type=INCOME&scope=${activeScope}`}
+          active={transactionType === "INCOME"}
+        >
           รายรับ
         </TabLink>
         {household ? (
           <>
             <span className="mx-1 self-center text-foreground-muted">|</span>
-            <TabLink href={`/categories?type=${transactionType}&scope=PERSONAL`} active={activeScope === "PERSONAL"}>
+            <TabLink
+              href={`/categories?type=${transactionType}&scope=PERSONAL`}
+              active={activeScope === "PERSONAL"}
+            >
               ส่วนตัว
             </TabLink>
-            <TabLink href={`/categories?type=${transactionType}&scope=HOUSEHOLD`} active={activeScope === "HOUSEHOLD"}>
+            <TabLink
+              href={`/categories?type=${transactionType}&scope=HOUSEHOLD`}
+              active={activeScope === "HOUSEHOLD"}
+            >
               ครอบครัว
             </TabLink>
           </>
@@ -55,18 +72,32 @@ export default async function CategoriesPage({
 
       <CategoryManagerList tree={tree} />
 
-      <AddCategoryForm transactionType={transactionType} scope={activeScope} topLevelCategories={topLevelActive} />
+      <AddCategoryForm
+        transactionType={transactionType}
+        scope={activeScope}
+        topLevelCategories={topLevelActive}
+      />
     </div>
   );
 }
 
-function TabLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}) {
   return (
     <Link
       href={href}
       className={cn(
         "rounded-control px-3 py-1.5 text-sm font-medium",
-        active ? "bg-primary text-primary-foreground" : "bg-surface-muted text-foreground-muted",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-surface-muted text-foreground-muted",
       )}
     >
       {children}

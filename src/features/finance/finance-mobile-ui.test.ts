@@ -86,13 +86,15 @@ describe("approved mobile Finance UI", () => {
     expect(wallets).toContain("FinanceModuleTabs");
   });
 
-  it("uses the three shared Finance tabs and keeps transaction creation on the FAB", () => {
+  it("uses shared Finance module navigation and keeps transaction creation on the FAB", () => {
     const tabs = read("src/features/finance/components/FinanceModuleTabs.tsx");
-    expect(hub).toContain("<FinanceModuleTabs");
+    expect(read("src/app/(app)/finance/layout.tsx")).toContain(
+      "<FinanceModuleTabs",
+    );
     expect(tabs).toContain('label: "ภาพรวม"');
     expect(tabs).toContain('label: "ธุรกรรม"');
     expect(tabs).toContain('label: "กระเป๋า"');
-    expect(tabs).toContain("grid-cols-3");
+    expect(tabs).toContain("overflow-x-auto");
     expect(tabs).not.toMatch(/label: "(รายรับ|รายจ่าย|โอนเงิน)"/);
     expect(hub).toContain("<FinanceCreateFlow");
   });
