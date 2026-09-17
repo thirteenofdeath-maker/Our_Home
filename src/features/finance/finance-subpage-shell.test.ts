@@ -219,6 +219,8 @@ describe("Finance cover across modules", () => {
     (suffix) => {
       currentPath = `/finance${suffix}`;
       const html = renderToStaticMarkup(
+        // React.createElement types require this named prop for FinanceLayout.
+        // eslint-disable-next-line react/no-children-prop
         createElement(FinanceLayout, {
           children: createElement("div", null, "module-content"),
         }),
