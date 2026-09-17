@@ -12,7 +12,7 @@
  */
 
 export type MoneyScope = "PERSONAL" | "HOUSEHOLD";
-export type HouseholdRole = "owner" | "admin" | "member";
+export type HouseholdRole = "owner" | "admin" | "member" | "observer";
 export type WalletType = "BANK" | "CASH" | "CREDIT_CARD" | "E_WALLET" | "OTHER";
 export type TransactionType =
   | "INCOME"
@@ -1260,11 +1260,15 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["household_members"]["Row"];
       };
+      remove_household_member: {
+        Args: { p_household_id: string; p_member_id: string };
+        Returns: undefined;
+      };
       change_household_member_role: {
         Args: {
           p_household_id: string;
           p_member_id: string;
-          p_role: "admin" | "member";
+          p_role: "admin" | "member" | "observer";
         };
         Returns: Database["public"]["Tables"]["household_members"]["Row"];
       };

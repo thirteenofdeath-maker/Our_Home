@@ -38,6 +38,7 @@ export async function getMyPrimaryHousehold(
 export async function listHouseholdMembers(
   supabase: SupabaseClient<Database>,
   householdId: string,
+  options: { includeObservers?: boolean } = {},
 ): Promise<HouseholdMemberWithProfile[]> {
   const { data, error } = await supabase
     .from("household_members")
@@ -47,13 +48,24 @@ export async function listHouseholdMembers(
 
   if (error) logDatabaseErrorInDev("listHouseholdMembers failed", error);
   const members = (data ?? []) as unknown as HouseholdMemberWithProfile[];
-  return Promise.all(members.map(async (member) => ({
-    ...member,
-    profile: member.profile ? {
-      ...member.profile,
-      avatar_url: await getAvatarDisplayUrl(supabase, member.profile.avatar_url),
-    } : null,
-  })));
+  return Promise.all(
+    members
+      .filter(
+        (member) => options.includeObservers || member.role !== "observer",
+      )
+      .map(async (member) => ({
+        ...member,
+        profile: member.profile
+          ? {
+              ...member.profile,
+              avatar_url: await getAvatarDisplayUrl(
+                supabase,
+                member.profile.avatar_url,
+              ),
+            }
+          : null,
+      })),
+  );
 }
 
 export async function updateOwnMemberPresentation(
@@ -71,7 +83,11 @@ export async function updateOwnMemberPresentation(
 
 export async function changeMemberRole(
   supabase: SupabaseClient<Database>,
-  params: { householdId: string; memberId: string; role: "admin" | "member" },
+  params: {
+    householdId: string;
+    memberId: string;
+    role: "admin" | "member" | "observer";
+  },
 ) {
   const { data, error } = await supabase.rpc("change_household_member_role", {
     p_household_id: params.householdId,
@@ -107,7 +123,11 @@ export async function createHousehold(
 
 export async function addHouseholdMemberByEmail(
   supabase: SupabaseClient<Database>,
-  params: { householdId: string; email: string; role?: "admin" | "member" },
+  params: {
+    householdId: string;
+    email: string;
+    role?: "admin" | "member" | "observer";
+  },
 ) {
   const { data, error } = await supabase.rpc("add_household_member", {
     p_household_id: params.householdId,
@@ -117,4 +137,15 @@ export async function addHouseholdMemberByEmail(
 
   if (error) throw error;
   return data;
+}
+
+export async function removeHouseholdMember(
+  supabase: SupabaseClient<Database>,
+  params: { householdId: string; memberId: string },
+) {
+  const { error } = await supabase.rpc("remove_household_member", {
+    p_household_id: params.householdId,
+    p_member_id: params.memberId,
+  });
+  if (error) throw error;
 }

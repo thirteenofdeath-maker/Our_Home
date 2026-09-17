@@ -8,7 +8,10 @@ import {
 import { AddHouseholdTrigger } from "@/features/household/components/AddHouseholdTrigger";
 import { AddMemberForm } from "@/features/household/components/AddMemberForm";
 import { HouseholdOverview } from "@/features/household/components/HouseholdOverview";
-import { canInviteRole } from "@/features/household/domain/member";
+import {
+  canInviteRole,
+  countFamilyMembers,
+} from "@/features/household/domain/member";
 import { requireUser } from "@/lib/auth/require-user";
 import { listRecentFinanceTransactions } from "@/features/finance/api";
 import { listPetCareRecords, listPets } from "@/features/pets/api";
@@ -35,7 +38,7 @@ export default async function HouseholdPage() {
   }
 
   const [members, pets, recentTransactions] = await Promise.all([
-    listHouseholdMembers(supabase, household.id),
+    listHouseholdMembers(supabase, household.id, { includeObservers: true }),
     listPets(supabase, household.id),
     listRecentFinanceTransactions(supabase, {
       limit: 5,
@@ -108,7 +111,7 @@ export default async function HouseholdPage() {
                 name="household"
                 className="size-4 text-finance-primary-strong"
               />
-              {members.length} คน
+              {countFamilyMembers(members)} คน
             </p>
             <p className="mt-0.5 truncate text-finance-muted">
               เริ่มอยู่ด้วยกัน {startedLabel}

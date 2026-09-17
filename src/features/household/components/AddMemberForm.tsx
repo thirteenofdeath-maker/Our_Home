@@ -20,22 +20,34 @@ export function AddMemberForm({
   variant?: "page" | "sheet";
 }) {
   void variant;
-  const [state, formAction] = useActionState(addHouseholdMemberAction, initialActionState);
+  const [state, formAction] = useActionState(
+    addHouseholdMemberAction,
+    initialActionState,
+  );
   useCloseFormSheetOnSuccess(state.success);
 
   return (
     <form action={formAction} className="finance-ui-tone flex flex-col gap-3">
       <input type="hidden" name="householdId" value={householdId} />
       <Field label="อีเมลของสมาชิก" htmlFor="email">
-        <Input id="email" name="email" type="email" placeholder="ต้องเป็นอีเมลที่สมัครสมาชิกไว้แล้ว" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="ต้องเป็นอีเมลที่สมัครสมาชิกไว้แล้ว"
+          required
+        />
       </Field>
       <Field label="บทบาท" htmlFor="role">
         <Select id="role" name="role" defaultValue="member">
           <option value="member">สมาชิก</option>
+          <option value="observer">ผู้สังเกตการณ์</option>
           {canInviteAdmin ? <option value="admin">ผู้ดูแล</option> : null}
         </Select>
       </Field>
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
       <SubmitButton size="md">เพิ่มสมาชิก</SubmitButton>
     </form>
   );

@@ -238,9 +238,14 @@ export default async function HomePage() {
         {coverMode === "night" || coverMode === "late-night" ? (
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#081c30]/65 via-[#081c30]/25 to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-[#081c30]/90 via-[#081c30]/60 to-transparent"
           />
-        ) : null}
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,239,0.97)_0%,rgba(255,249,239,0.9)_40%,rgba(255,249,239,0.65)_65%,rgba(255,249,239,0.06)_100%)]"
+          />
+        )}
         <Link
           href="/profile/notifications"
           aria-label="ตั้งค่าการแจ้งเตือน"

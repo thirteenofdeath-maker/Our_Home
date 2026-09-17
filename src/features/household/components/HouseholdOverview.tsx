@@ -12,14 +12,21 @@ export function partitionHouseholdMembers(
   members: HouseholdMemberWithProfile[],
   userId: string,
 ) {
-  const current = members.find((member) => member.user_id === userId) ?? null;
+  const current =
+    members.find(
+      (member) => member.user_id === userId && member.role !== "observer",
+    ) ?? null;
   const others = members
-    .filter((member) => member.user_id !== userId)
+    .filter((member) => member.user_id !== userId && member.role !== "observer")
     .toSorted(
       (a, b) =>
         a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
     );
-  return { current, others };
+  return {
+    current,
+    others,
+    observers: members.filter((member) => member.role === "observer"),
+  };
 }
 
 export function HouseholdOverview({
@@ -31,7 +38,10 @@ export function HouseholdOverview({
   userId: string;
   role: HouseholdRole;
 }) {
-  const { current, others } = partitionHouseholdMembers(members, userId);
+  const { current, others, observers } = partitionHouseholdMembers(
+    members,
+    userId,
+  );
   const canManage = canInviteRole(role, "member");
 
   return (
@@ -84,6 +94,25 @@ export function HouseholdOverview({
             : "ดูรายชื่อสมาชิกและบทบาทในครอบครัว"}
         </p>
       </section>
+      {observers.length > 0 ? (
+        <section aria-label="ผู้สังเกตการณ์" className="flex flex-col gap-3">
+          <h2 className="font-semibold text-finance-text">
+            ผู้สังเกตการณ์ · {observers.length} คน
+          </h2>
+          <p className="text-xs text-finance-muted">
+            ไม่นับรวมเป็นสมาชิกในครอบครัว
+          </p>
+          <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card">
+            {observers.map((member) => (
+              <FamilyMemberTile
+                key={member.id}
+                member={member}
+                isCurrent={member.user_id === userId}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

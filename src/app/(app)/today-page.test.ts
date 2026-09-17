@@ -57,6 +57,7 @@ describe("Today dashboard composition", () => {
     expect(source).toContain(
       'coverMode === "night" || coverMode === "late-night"',
     );
-    expect(source).toContain("from-[#081c30]/65");
+    expect(source).toContain("from-[#081c30]/90");
+    expect(source).toContain("rgba(255,249,239,0.97)");
   });
 });

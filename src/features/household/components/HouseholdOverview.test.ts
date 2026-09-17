@@ -3,9 +3,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import type { HouseholdMemberWithProfile } from "../types";
-import { HouseholdOverview, partitionHouseholdMembers } from "./HouseholdOverview";
+import {
+  HouseholdOverview,
+  partitionHouseholdMembers,
+} from "./HouseholdOverview";
 
-function member(id: string, userId: string, name: string, createdAt: string): HouseholdMemberWithProfile {
+function member(
+  id: string,
+  userId: string,
+  name: string,
+  createdAt: string,
+): HouseholdMemberWithProfile {
   return {
     id,
     household_id: "household-1",
@@ -13,29 +21,48 @@ function member(id: string, userId: string, name: string, createdAt: string): Ho
     role: userId === "current-user" ? "owner" : "member",
     member_color: "#7A9E7E",
     created_at: createdAt,
-    profile: { display_name: name, email: `${name}@example.test`, avatar_url: null },
+    profile: {
+      display_name: name,
+      email: `${name}@example.test`,
+      avatar_url: null,
+    },
   };
 }
 
-const current = member("m-current", "current-user", "Current Person", "2026-01-01T00:00:00Z");
+const current = member(
+  "m-current",
+  "current-user",
+  "Current Person",
+  "2026-01-01T00:00:00Z",
+);
 const otherA = member("m-a", "user-a", "Other Alpha", "2026-01-03T00:00:00Z");
 const otherB = member("m-b", "user-b", "Other Beta", "2026-01-02T00:00:00Z");
 
-function render(role: "owner" | "admin" | "member", members = [otherA, current, otherB]) {
-  return renderToStaticMarkup(createElement(HouseholdOverview, { members, userId: "current-user", role }));
+function render(
+  role: "owner" | "admin" | "member",
+  members = [otherA, current, otherB],
+) {
+  return renderToStaticMarkup(
+    createElement(HouseholdOverview, { members, userId: "current-user", role }),
+  );
 }
 
 describe("HouseholdOverview", () => {
   it("renders the current user separately first without duplicating them", () => {
     const html = render("owner");
-    expect(html.indexOf('data-testid="current-user"')).toBeLessThan(html.indexOf('data-testid="other-members"'));
+    expect(html.indexOf('data-testid="current-user"')).toBeLessThan(
+      html.indexOf('data-testid="other-members"'),
+    );
     expect(html.match(/Current Person/g)).toHaveLength(1);
     expect(html).toContain("คุณ");
     expect(html).toContain('href="/profile/edit"');
   });
 
   it("renders other members in explicit stable order", () => {
-    const { current: selected, others } = partitionHouseholdMembers([otherA, current, otherB], "current-user");
+    const { current: selected, others } = partitionHouseholdMembers(
+      [otherA, current, otherB],
+      "current-user",
+    );
     expect(selected?.id).toBe("m-current");
     expect(others.map((item) => item.id)).toEqual(["m-b", "m-a"]);
     const html = render("owner");
@@ -58,4 +85,25 @@ describe("HouseholdOverview", () => {
     expect(html).toContain("ยังไม่มีสมาชิกคนอื่นในครอบครัว");
     expect(html).toContain("จัดการสมาชิก");
   });
+});
+
+it("separates observers from family tiles, including the current user", () => {
+  const observer = { ...current, role: "observer" as const };
+  const partition = partitionHouseholdMembers(
+    [observer, otherA],
+    "current-user",
+  );
+  expect(partition.current).toBeNull();
+  expect(partition.others).toEqual([otherA]);
+  expect(partition.observers).toEqual([observer]);
+  const html = renderToStaticMarkup(
+    createElement(HouseholdOverview, {
+      members: [observer, otherA],
+      userId: "current-user",
+      role: "observer",
+    }),
+  );
+  expect(html).toContain("ไม่นับรวมเป็นสมาชิกในครอบครัว");
+  expect(html.match(/Current Person/g)).toHaveLength(1);
+  expect(html).not.toContain("จัดการสมาชิก");
 });

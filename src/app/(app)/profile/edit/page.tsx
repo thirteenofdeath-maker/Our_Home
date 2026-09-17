@@ -18,7 +18,9 @@ export default async function EditProfilePage() {
     getMyPrimaryHousehold(supabase, user.id),
   ]);
   if (!profile || !household) redirect("/household");
-  const members = await listHouseholdMembers(supabase, household.id);
+  const members = await listHouseholdMembers(supabase, household.id, {
+    includeObservers: true,
+  });
   const membership = members.find((member) => member.user_id === user.id);
   if (!membership) redirect("/household");
   const avatarUrl = await getAvatarDisplayUrl(supabase, profile.avatar_url);
