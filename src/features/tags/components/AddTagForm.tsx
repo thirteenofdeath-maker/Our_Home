@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
@@ -10,6 +11,7 @@ import { createTagAction } from "../actions";
 
 export function AddTagForm({ scope }: { scope: "PERSONAL" | "HOUSEHOLD" }) {
   const [state, formAction] = useActionState(createTagAction, initialActionState);
+  useCloseFormSheetOnSuccess(state.success);
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">

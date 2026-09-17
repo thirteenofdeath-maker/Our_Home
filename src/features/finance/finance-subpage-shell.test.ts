@@ -101,14 +101,13 @@ describe("Finance subpage shell", () => {
     ]) {
       expect(layout).toContain(section);
     }
-    expect(layout).toMatch(
-      /<PageHeader\s+title=\{SECTION_TITLES\[section\] \?\? "การเงิน"\}\s+backHref=\{financeBackHref\(pathname\)\}\s*\/>/,
-    );
+    expect(layout).toContain('title={SECTION_TITLES[section] ?? "การเงิน"}');
+    expect(layout).toContain('isModuleRoot && section !== "quick-add"');
   });
 
-  it("gives categories the same shared PageHeader, with Back to the Finance Hub", () => {
+  it("gives categories the same shared PageHeader, without a root Back button", () => {
     expect(read("src/app/(app)/categories/page.tsx")).toContain(
-      '<PageHeader title="หมวดหมู่" backHref="/finance" />',
+      '<PageHeader title="หมวดหมู่" />',
     );
   });
 
@@ -226,6 +225,7 @@ describe("Finance cover across modules", () => {
       );
       expect(html.match(/>การเงินของบ้าน<\/h1>/g)).toHaveLength(1);
       expect(html).toContain("module-content");
+      expect(html).not.toContain('aria-label="ย้อนกลับ"');
       const active = html.match(/<a[^>]*aria-current="page"[^>]*>/g) ?? [];
       expect(active).toHaveLength(1);
       expect(active[0]).toContain(`href="${currentPath}"`);

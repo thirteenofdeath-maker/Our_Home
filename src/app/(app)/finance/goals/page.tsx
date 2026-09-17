@@ -79,7 +79,7 @@ export default async function GoalsPage({
           ever renders its own CTA on the "active" tab (see `action`
           below) — hide this FAB in exactly that case rather than
           offering the same action twice. */}
-      {!(status === "active" && visible.length === 0) ? <AddGoalFab /> : null}
+      <AddGoalFab />
 
       <FinanceSegmentedControl
         ariaLabel="สถานะเป้าหมาย"

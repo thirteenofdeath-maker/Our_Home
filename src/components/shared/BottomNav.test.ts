@@ -74,7 +74,7 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
   it("keeps a nested route's parent destination active (startsWith, not just exact match)", () => {
     const cases: Array<[string, string]> = [
       ["/finance/reports", "/finance"],
-      ["/wallets/abc/manage", "/"],
+      ["/wallets/abc/manage", "/finance"],
       ["/pets/new", "/pets"],
       ["/calendar/2026-01-01", "/calendar"],
       ["/household/members", "/household"],

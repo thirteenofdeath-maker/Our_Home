@@ -7,18 +7,16 @@ import { AppRoutePreloader } from "./AppRoutePreloader";
 import { BottomNav } from "./BottomNav";
 import { appSectionForPath } from "@/lib/navigation/app-section";
 
-/**
- * The Finance routes with no module-specific creation action of their
- * own (currently net-worth only) — these get the generic
- * quick-add-a-transaction FAB (GlobalQuickAdd). Budgets/installments/
- * debts/goals each render their OWN contextual FAB directly inside their
- * page (they're the only ones that know whether their own list is
- * empty, which decides whether that FAB would duplicate their
- * FinanceEmptyState CTA — see each page's own FloatingActionButton
- * usage), so they're deliberately excluded here. Deep task pages
- * (new/edit/detail/quick-add itself) get no FAB at all.
- */
-const FINANCE_GENERIC_FAB_ROUTES = new Set(["/finance/net-worth"]);
+// Modules with their own create form render their own FAB. The remaining
+// module roots share transaction quick-add; detail and edit routes do not.
+const FINANCE_GENERIC_FAB_ROUTES = new Set([
+  "/finance/transactions",
+  "/finance/reports",
+  "/finance/insights",
+  "/finance/net-worth",
+  "/finance/import",
+  "/finance/export",
+]);
 
 export function AppShell({
   children,

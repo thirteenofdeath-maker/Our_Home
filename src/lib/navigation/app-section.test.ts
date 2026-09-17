@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { appSectionForPath } from "./app-section";
 
 describe("appSectionForPath", () => {
-  it("classifies the wallet family as Home and the remaining Finance-owned routes as Finance", () => {
+  it("classifies the wallet family as Finance and the remaining Finance-owned routes as Finance", () => {
     expect(appSectionForPath("/")).toBe("home");
-    expect(appSectionForPath("/wallets")).toBe("home");
-    expect(appSectionForPath("/wallets/abc/manage")).toBe("home");
+    expect(appSectionForPath("/wallets")).toBe("finance");
+    expect(appSectionForPath("/wallets/abc/manage")).toBe("finance");
     expect(appSectionForPath("/finance")).toBe("finance");
     expect(appSectionForPath("/finance/transactions/abc")).toBe("finance");
     expect(appSectionForPath("/categories")).toBe("finance");

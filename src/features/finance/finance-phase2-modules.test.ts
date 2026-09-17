@@ -135,7 +135,7 @@ describe("Finance V2 Phase 2 module pages", () => {
     });
   });
 
-  describe("one creation affordance at a time — no duplicate FAB / empty-state CTA", () => {
+  describe("module creation buttons", () => {
     it("each module's own creation action opens its real form directly in a sheet, not an inline header + Link and not a one-item choice sheet that navigates", () => {
       const fabByModule = {
         budgets: [
@@ -176,13 +176,14 @@ describe("Finance V2 Phase 2 module pages", () => {
       expect(budgetFab).toContain("<CreateBudgetForm");
     });
 
-    it("hides the FAB exactly when the empty state's own CTA would show", () => {
-      expect(budgets).toContain("{active.length > 0 ? <AddBudgetFab");
-      expect(installments).toContain("{active.length > 0 ? <AddInstallmentFab");
-      expect(debts).toContain("{visible.length > 0 ? <AddDebtFab");
-      expect(goals).toContain(
-        '{!(status === "active" && visible.length === 0) ? <AddGoalFab',
-      );
+    it("keeps each module FAB available even when its list is empty", () => {
+      expect(budgets).toContain("<AddBudgetFab periodMonth={periodMonth} />");
+      expect(installments).toContain("<AddInstallmentFab />");
+      expect(debts).toContain("<AddDebtFab />");
+      expect(goals).toContain("<AddGoalFab />");
+      for (const source of [budgets, installments, debts, goals]) {
+        expect(source).not.toMatch(/length > 0 \? <Add\w+Fab/);
+      }
     });
   });
 

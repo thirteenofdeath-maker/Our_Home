@@ -73,16 +73,27 @@ describe("AppShell visibility", () => {
   });
 
   it("renders the generic Finance quick-add FAB only on Finance routes with no module-specific creation action of their own", () => {
-    expect(source).toMatch(
-      /FINANCE_GENERIC_FAB_ROUTES\s*=\s*new Set\(\[\s*"\/finance\/net-worth",?\s*\]\)/,
-    );
-    expect(source).not.toContain('"/finance/reports"');
-    expect(source).not.toMatch(
-      /FINANCE_GENERIC_FAB_ROUTES[\s\S]{0,120}"\/finance",/,
-    );
-    expect(source).toContain("FINANCE_GENERIC_FAB_ROUTES.has(pathname)");
-    expect(source).not.toContain("/finance/budgets");
-    expect(source).not.toContain("/finance/goals");
+    for (const route of [
+      "/finance/transactions",
+      "/finance/reports",
+      "/finance/insights",
+      "/finance/net-worth",
+      "/finance/import",
+      "/finance/export",
+    ]) {
+      expect(renderShell(route)).toContain(">fab<");
+    }
+    for (const route of [
+      "/finance",
+      "/wallets",
+      "/categories",
+      "/finance/tags",
+      "/finance/budgets",
+      "/finance/goals",
+      "/finance/transactions/new",
+    ]) {
+      expect(renderShell(route)).not.toContain(">fab<");
+    }
   });
 
   it("gives every in-module route enough bottom padding to clear BottomNav + a FAB + the real safe-area inset — never a plain fixed guess", () => {

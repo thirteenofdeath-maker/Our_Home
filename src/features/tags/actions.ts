@@ -77,7 +77,7 @@ export async function createTagAction(_prevState: ActionState, formData: FormDat
 
   revalidatePath("/finance/tags");
   revalidatePath(FINANCE_RETURN_TO);
-  return {};
+  return { success: true };
 }
 
 const idSchema = z.string().uuid();

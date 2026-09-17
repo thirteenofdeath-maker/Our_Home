@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 
+import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
@@ -20,6 +21,7 @@ export function AddCategoryForm({
   topLevelCategories: CategoryNode[];
 }) {
   const [state, formAction] = useActionState(createCategoryAction, initialActionState);
+  useCloseFormSheetOnSuccess(state.success);
   const [parentId, setParentId] = useState("");
 
   return (

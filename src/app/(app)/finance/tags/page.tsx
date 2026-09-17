@@ -1,3 +1,5 @@
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
+import { AppIcon } from "@/components/ui/AppIcon";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -16,19 +18,29 @@ export default async function TagsPage({
   const { supabase, user } = await requireUser();
   const { scope } = await searchParams;
   const household = await getMyPrimaryHousehold(supabase, user.id);
-  const activeScope = scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
+  const activeScope =
+    scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
 
-  const tags = await listTags(supabase, { scope: activeScope, householdId: household?.id ?? null, includeArchived: true });
+  const tags = await listTags(supabase, {
+    scope: activeScope,
+    householdId: household?.id ?? null,
+    includeArchived: true,
+  });
 
   return (
     <div className="flex flex-col gap-4">
-
       {household ? (
         <div className="flex gap-2">
-          <TabLink href="/finance/tags?scope=PERSONAL" active={activeScope === "PERSONAL"}>
+          <TabLink
+            href="/finance/tags?scope=PERSONAL"
+            active={activeScope === "PERSONAL"}
+          >
             ส่วนตัว
           </TabLink>
-          <TabLink href="/finance/tags?scope=HOUSEHOLD" active={activeScope === "HOUSEHOLD"}>
+          <TabLink
+            href="/finance/tags?scope=HOUSEHOLD"
+            active={activeScope === "HOUSEHOLD"}
+          >
             ครอบครัว
           </TabLink>
         </div>
@@ -36,18 +48,36 @@ export default async function TagsPage({
 
       <TagManagerList tags={tags} />
 
-      <AddTagForm scope={activeScope} />
+      <FormSheetButton
+        ariaLabel="เพิ่มแท็ก"
+        sheetTitle="เพิ่มแท็ก"
+        tone="finance"
+        triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        form={<AddTagForm scope={activeScope} />}
+      >
+        <AppIcon name="plus" />
+      </FormSheetButton>
     </div>
   );
 }
 
-function TabLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}) {
   return (
     <Link
       href={href}
       className={cn(
         "rounded-control px-3 py-1.5 text-sm font-medium",
-        active ? "bg-primary text-primary-foreground" : "bg-surface-muted text-foreground-muted",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-surface-muted text-foreground-muted",
       )}
     >
       {children}

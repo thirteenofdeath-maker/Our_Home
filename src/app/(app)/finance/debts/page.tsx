@@ -84,10 +84,7 @@ export default async function DebtsPage({
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      {/* One creation affordance at a time: when the visible list is
-          empty, FinanceEmptyState below renders its own CTA, so this FAB
-          is hidden rather than offering it twice. */}
-      {visible.length > 0 ? <AddDebtFab /> : null}
+      <AddDebtFab />
 
       <FinanceSegmentedControl
         ariaLabel="ทิศทาง"

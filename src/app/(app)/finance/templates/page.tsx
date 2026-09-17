@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/ui/AppIcon";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -16,28 +17,40 @@ export default async function TemplatesPage({
   const { supabase, user } = await requireUser();
   const { scope } = await searchParams;
   const household = await getMyPrimaryHousehold(supabase, user.id);
-  const activeScope = scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
+  const activeScope =
+    scope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
 
-  const templates = await listTemplates(supabase, { scope: activeScope, householdId: household?.id ?? null, includeArchived: true });
+  const templates = await listTemplates(supabase, {
+    scope: activeScope,
+    householdId: household?.id ?? null,
+    includeArchived: true,
+  });
   const active = templates.filter((t) => !t.archivedAt);
   const archived = templates.filter((t) => t.archivedAt);
 
   return (
     <div className="finance-scope flex flex-col gap-4">
-
       {household ? (
         <div className="flex gap-2">
-          <TabLink href="/finance/templates?scope=PERSONAL" active={activeScope === "PERSONAL"}>
+          <TabLink
+            href="/finance/templates?scope=PERSONAL"
+            active={activeScope === "PERSONAL"}
+          >
             ส่วนตัว
           </TabLink>
-          <TabLink href="/finance/templates?scope=HOUSEHOLD" active={activeScope === "HOUSEHOLD"}>
+          <TabLink
+            href="/finance/templates?scope=HOUSEHOLD"
+            active={activeScope === "HOUSEHOLD"}
+          >
             ครอบครัว
           </TabLink>
         </div>
       ) : null}
 
       {active.length === 0 ? (
-        <p className="py-6 text-center text-sm text-foreground-muted">ยังไม่มี Template</p>
+        <p className="py-6 text-center text-sm text-foreground-muted">
+          ยังไม่มี Template
+        </p>
       ) : (
         <div className="flex flex-col gap-2">
           {active.map((item) => (
@@ -46,11 +59,16 @@ export default async function TemplatesPage({
         </div>
       )}
 
-      <CreateTemplateTrigger />
+      <CreateTemplateTrigger triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]">
+        <AppIcon name="plus" />
+        <span className="sr-only">สร้างรายการต้นแบบ</span>
+      </CreateTemplateTrigger>
 
       {archived.length > 0 ? (
         <details className="rounded-card border border-border bg-surface p-3">
-          <summary className="cursor-pointer text-sm font-medium text-foreground-muted">Template ที่เก็บถาวร ({archived.length})</summary>
+          <summary className="cursor-pointer text-sm font-medium text-foreground-muted">
+            Template ที่เก็บถาวร ({archived.length})
+          </summary>
           <div className="mt-2 flex flex-col gap-2">
             {archived.map((item) => (
               <TemplateCard key={item.templateId} item={item} />
@@ -62,13 +80,23 @@ export default async function TemplatesPage({
   );
 }
 
-function TabLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}) {
   return (
     <Link
       href={href}
       className={cn(
         "rounded-control px-3 py-1.5 text-sm font-medium",
-        active ? "bg-primary text-primary-foreground" : "bg-surface-muted text-foreground-muted",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-surface-muted text-foreground-muted",
       )}
     >
       {children}

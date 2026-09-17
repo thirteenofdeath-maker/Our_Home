@@ -76,7 +76,11 @@ export default function FinanceLayout({ children }: { children: ReactNode }) {
       {pathname !== "/finance" && pathname !== "/finance/transactions" ? (
         <PageHeader
           title={SECTION_TITLES[section] ?? "การเงิน"}
-          backHref={financeBackHref(pathname)}
+          backHref={
+            isModuleRoot && section !== "quick-add"
+              ? undefined
+              : financeBackHref(pathname)
+          }
         />
       ) : null}
       {children}

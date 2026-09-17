@@ -57,6 +57,7 @@ export function FinanceModuleTabs() {
             <li key={financeModule.href} className="shrink-0">
               <Link
                 href={financeModule.href}
+                prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 min-w-0 items-center justify-center whitespace-nowrap rounded-[0.9rem] px-4 text-sm font-semibold transition-colors",

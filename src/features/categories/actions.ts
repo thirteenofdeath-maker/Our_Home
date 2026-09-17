@@ -105,7 +105,7 @@ export async function createCategoryAction(_prevState: ActionState, formData: Fo
   }
 
   revalidatePath("/categories");
-  return {};
+  return { success: true };
 }
 
 const idSchema = z.string().uuid();

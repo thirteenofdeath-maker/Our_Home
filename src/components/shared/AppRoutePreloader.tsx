@@ -1,9 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { NAV_ITEMS } from "./BottomNav";
+
+import { FINANCE_MODULES } from "@/features/finance/components/FinanceModuleTabs";
+import { appSectionForPath } from "@/lib/navigation/app-section";
 
 const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
 
@@ -15,6 +18,7 @@ const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
  */
 export function AppRoutePreloader() {
   const router = useRouter();
+  const inFinance = appSectionForPath(usePathname()) === "finance";
 
   useEffect(() => {
     let disposed = false;
@@ -40,7 +44,13 @@ export function AppRoutePreloader() {
     };
 
     const warmRouter = () => {
-      for (const route of MAIN_APP_ROUTES) prefetchRoute(route);
+      const routes = inFinance
+        ? new Set([
+            ...MAIN_APP_ROUTES,
+            ...FINANCE_MODULES.map((module) => module.href),
+          ])
+        : MAIN_APP_ROUTES;
+      for (const route of routes) prefetchRoute(route);
     };
 
     const warmDocuments = () => {
@@ -77,7 +87,7 @@ export function AppRoutePreloader() {
       window.removeEventListener("focus", warmAll);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [router]);
+  }, [router, inFinance]);
 
   return null;
 }

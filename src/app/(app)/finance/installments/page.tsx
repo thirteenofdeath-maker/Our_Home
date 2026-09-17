@@ -28,10 +28,7 @@ export default async function InstallmentsPage() {
     <div className="flex flex-col gap-4">
       <h1 className="font-semibold text-finance-text">แผนผ่อนชำระ</h1>
 
-      {/* One creation affordance at a time: when the list is empty,
-          FinanceEmptyState below renders its own CTA, so this FAB is
-          hidden rather than offering the same action twice. */}
-      {active.length > 0 ? <AddInstallmentFab /> : null}
+      <AddInstallmentFab />
 
       {active.length === 0 ? (
         <FinanceEmptyState
@@ -50,7 +47,9 @@ export default async function InstallmentsPage() {
 
       {archived.length > 0 ? (
         <details className="rounded-[1.25rem] bg-finance-surface-strong px-4 py-2 shadow-sm">
-          <summary className="cursor-pointer text-sm font-medium text-finance-muted">แผนที่เก็บถาวร ({archived.length})</summary>
+          <summary className="cursor-pointer text-sm font-medium text-finance-muted">
+            แผนที่เก็บถาวร ({archived.length})
+          </summary>
           <div className="mt-2 flex flex-col gap-2">
             {archived.map((plan) => (
               <InstallmentPlanRow key={plan.id} plan={plan} />
@@ -69,10 +68,15 @@ function InstallmentPlanRow({ plan }: { plan: InstallmentPlanSummary }) {
       className={`flex items-center justify-between gap-3 rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-sm ${plan.archivedAt ? "opacity-60" : ""}`}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate font-medium text-finance-text">{plan.name}</span>
+        <span className="truncate font-medium text-finance-text">
+          {plan.name}
+        </span>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs text-finance-muted">
           <span>
-            ยอดรวม <span className="font-medium tabular-nums text-finance-text">{formatCurrency(plan.totalAmount, plan.currency)}</span>
+            ยอดรวม{" "}
+            <span className="font-medium tabular-nums text-finance-text">
+              {formatCurrency(plan.totalAmount, plan.currency)}
+            </span>
           </span>
           <span>จำนวนงวด {plan.installmentCount} งวด</span>
           <span>เริ่ม {plan.startDate}</span>
