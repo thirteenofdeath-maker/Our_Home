@@ -16,6 +16,7 @@ import {
   sendInventoryToShoppingAction,
 } from "@/features/inventory/actions";
 import { InventoryDocumentForm } from "@/features/inventory/components/InventoryDocumentForm";
+import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
 import {
   INVENTORY_CATEGORY_LABEL,
   INVENTORY_DOCUMENT_LABEL,
@@ -109,6 +110,15 @@ export default async function InventoryDetailPage({
       </Card>
       {canEdit ? (
         <div className="flex flex-wrap gap-2">
+          <FormSheetButton
+            triggerClassName="rounded-full border border-finance-primary/30 px-4 py-2.5 text-sm font-medium text-finance-primary-strong"
+            ariaLabel={`แก้ไข ${item.name}`}
+            sheetTitle="แก้ไขของในคลัง"
+            form={<InventoryItemForm householdId={household.id} item={item} />}
+            tone="finance"
+          >
+            แก้ไข
+          </FormSheetButton>
           <form action={sendInventoryToShoppingAction}>
             <input type="hidden" name="itemId" value={item.id} />
             <button className="rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-white">

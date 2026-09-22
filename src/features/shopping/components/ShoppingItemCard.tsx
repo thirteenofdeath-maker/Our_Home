@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import type { HouseholdMemberWithProfile } from "@/features/household/types";
 import { formatCurrency } from "@/lib/utils/money";
 import {
@@ -8,6 +9,7 @@ import {
   toggleShoppingItemAction,
 } from "../actions";
 import type { ShoppingItem } from "../types";
+import { ShoppingItemForm } from "./ShoppingItemForm";
 
 function quantityLabel(item: ShoppingItem) {
   const quantity = Number(item.quantity);
@@ -23,13 +25,19 @@ export function ShoppingItemCard({
   members: HouseholdMemberWithProfile[];
   canEdit: boolean;
 }) {
-  const assignee = members.find((member) => member.id === item.assigned_member_id);
-  const purchaser = members.find((member) => member.user_id === item.purchased_by);
+  const assignee = members.find(
+    (member) => member.id === item.assigned_member_id,
+  );
+  const purchaser = members.find(
+    (member) => member.user_id === item.purchased_by,
+  );
   const purchased = Boolean(item.purchased_at);
   const cannotUncheck = purchased && Boolean(item.expense_transaction_id);
 
   return (
-    <Card className={`rounded-[1.35rem] bg-finance-surface-strong ${purchased ? "opacity-80" : ""}`}>
+    <Card
+      className={`rounded-[1.35rem] bg-finance-surface-strong ${purchased ? "opacity-80" : ""}`}
+    >
       <div className="flex items-start gap-3">
         {canEdit ? (
           <form action={toggleShoppingItemAction}>
@@ -38,21 +46,29 @@ export function ShoppingItemCard({
             <button
               type="submit"
               disabled={cannotUncheck}
-              aria-label={purchased ? "นำกลับเข้ารายการที่ต้องซื้อ" : "ทำเครื่องหมายว่าซื้อแล้ว"}
+              aria-label={
+                purchased
+                  ? "นำกลับเข้ารายการที่ต้องซื้อ"
+                  : "ทำเครื่องหมายว่าซื้อแล้ว"
+              }
               className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-white" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {purchased ? "✓" : ""}
             </button>
           </form>
         ) : (
-          <span className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-white" : "border-border"}`}>
+          <span
+            className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-white" : "border-border"}`}
+          >
             {purchased ? "✓" : ""}
           </span>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className={`font-semibold text-finance-text ${purchased ? "line-through" : ""}`}>
+              <h3
+                className={`font-semibold text-finance-text ${purchased ? "line-through" : ""}`}
+              >
                 {item.name}
               </h3>
               <p className="mt-0.5 text-sm text-finance-muted">
@@ -77,7 +93,10 @@ export function ShoppingItemCard({
             </span>
             {purchased ? (
               <span>
-                ซื้อแล้ว{purchaser ? `โดย ${purchaser.profile?.display_name ?? "สมาชิก"}` : ""}
+                ซื้อแล้ว
+                {purchaser
+                  ? `โดย ${purchaser.profile?.display_name ?? "สมาชิก"}`
+                  : ""}
               </span>
             ) : null}
           </div>
@@ -91,10 +110,34 @@ export function ShoppingItemCard({
                   ดูรายจ่าย
                 </Link>
               ) : (
-                <Link href={`/shopping/${item.id}/expense`} className="text-finance-primary-strong">
+                <Link
+                  href={`/shopping/${item.id}/expense`}
+                  className="text-finance-primary-strong"
+                >
                   สร้างรายจ่าย
                 </Link>
               )}
+              <FormSheetButton
+                triggerClassName="text-finance-primary-strong"
+                ariaLabel={`แก้ไข ${item.name}`}
+                sheetTitle="แก้ไขรายการซื้อ"
+                form={
+                  <ShoppingItemForm
+                    householdId={item.household_id}
+                    members={members.map((member) => ({
+                      id: member.id,
+                      label:
+                        member.profile?.display_name ??
+                        member.profile?.email ??
+                        "สมาชิก",
+                    }))}
+                    item={item}
+                  />
+                }
+                tone="finance"
+              >
+                แก้ไข
+              </FormSheetButton>
               <form action={archiveShoppingItemAction}>
                 <input type="hidden" name="itemId" value={item.id} />
                 <button type="submit" className="text-finance-muted">

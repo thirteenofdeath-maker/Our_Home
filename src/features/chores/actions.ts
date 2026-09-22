@@ -11,6 +11,7 @@ import {
   completeChore,
   createChoreTemplate,
   setChoreTemplateActive,
+  updateChoreTemplate,
 } from "./api";
 
 const choreSchema = z.object({
@@ -20,7 +21,9 @@ const choreSchema = z.object({
   cadence: z.enum(["DAILY", "WEEKLY"]),
   startsOn: z.iso.date(),
   dueTime: z.union([z.literal(""), z.string().regex(/^\d{2}:\d{2}$/)]),
-  memberIds: z.array(z.string().uuid()).min(1, "เลือกผู้รับผิดชอบอย่างน้อย 1 คน"),
+  memberIds: z
+    .array(z.string().uuid())
+    .min(1, "เลือกผู้รับผิดชอบอย่างน้อย 1 คน"),
 });
 
 function stringValue(form: FormData, key: string) {
@@ -33,11 +36,8 @@ function refresh() {
   revalidatePath("/");
 }
 
-export async function createChoreAction(
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const parsed = choreSchema.safeParse({
+function parseChoreForm(form: FormData) {
+  return choreSchema.safeParse({
     householdId: stringValue(form, "householdId"),
     title: stringValue(form, "title"),
     details: stringValue(form, "details"),
@@ -48,6 +48,13 @@ export async function createChoreAction(
       .getAll("memberIds")
       .filter((value): value is string => typeof value === "string"),
   });
+}
+
+export async function createChoreAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const parsed = parseChoreForm(form);
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
@@ -61,6 +68,37 @@ export async function createChoreAction(
   } catch (error) {
     logDatabaseErrorInDev("createChoreAction failed", error);
     return { error: "สร้างตารางงานบ้านไม่สำเร็จ" };
+  }
+}
+
+export async function updateChoreAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const templateId = stringValue(form, "templateId");
+  if (!z.string().uuid().safeParse(templateId).success) {
+    return { error: "ไม่พบตารางงานบ้าน" };
+  }
+  const parsed = parseChoreForm(form);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  }
+  try {
+    const { supabase } = await requireUser();
+    await updateChoreTemplate(supabase, {
+      templateId,
+      title: parsed.data.title,
+      details: parsed.data.details,
+      cadence: parsed.data.cadence,
+      startsOn: parsed.data.startsOn,
+      dueTime: parsed.data.dueTime || null,
+      memberIds: parsed.data.memberIds,
+    });
+    refresh();
+    return { success: true };
+  } catch (error) {
+    logDatabaseErrorInDev("updateChoreAction failed", error);
+    return { error: "แก้ไขตารางงานบ้านไม่สำเร็จ" };
   }
 }
 
@@ -100,4 +138,3 @@ export async function toggleChoreTemplateAction(form: FormData) {
     logDatabaseErrorInDev("toggleChoreTemplateAction failed", error);
   }
 }
-

@@ -71,11 +71,8 @@ const itemSchema = z.object({
     .regex(/^[A-Z]{3}$/),
 });
 
-export async function createInventoryItemAction(
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const parsed = itemSchema.safeParse({
+function parseInventoryItemForm(form: FormData) {
+  return itemSchema.safeParse({
     householdId: value(form, "householdId"),
     name: value(form, "name"),
     category: value(form, "category"),
@@ -90,6 +87,13 @@ export async function createInventoryItemAction(
     estimatedRestockAmount: value(form, "estimatedRestockAmount"),
     currency: value(form, "currency") || "THB",
   });
+}
+
+export async function createInventoryItemAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const parsed = parseInventoryItemForm(form);
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
@@ -116,6 +120,46 @@ export async function createInventoryItemAction(
   } catch (error) {
     logDatabaseErrorInDev("createInventoryItemAction failed", error);
     return { error: "เพิ่มของในคลังไม่สำเร็จ" };
+  }
+}
+
+export async function updateInventoryItemAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const itemId = value(form, "itemId");
+  const parsed = parseInventoryItemForm(form);
+  if (!z.string().uuid().safeParse(itemId).success || !parsed.success)
+    return {
+      error: parsed.success
+        ? "ไม่พบรายการที่ต้องการแก้ไข"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
+  try {
+    const { supabase } = await requireUser();
+    const { error } = await supabase.rpc("update_inventory_item", {
+      p_item_id: itemId,
+      p_name: parsed.data.name,
+      p_category: parsed.data.category,
+      p_note: parsed.data.note,
+      p_quantity: parsed.data.quantity,
+      p_unit: parsed.data.unit,
+      p_restock_threshold: parsed.data.restockThreshold,
+      p_expiry_date: parsed.data.expiryDate,
+      p_warranty_expires_on: parsed.data.warrantyExpiresOn,
+      p_purchase_date: parsed.data.purchaseDate,
+      p_location: parsed.data.location,
+      p_estimated_restock_amount: parsed.data.estimatedRestockAmount,
+      p_currency: parsed.data.currency,
+    });
+    if (error) throw error;
+    revalidatePath("/inventory");
+    revalidatePath(`/inventory/${itemId}`);
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    logDatabaseErrorInDev("updateInventoryItemAction failed", error);
+    return { error: "แก้ไขของในคลังไม่สำเร็จ" };
   }
 }
 

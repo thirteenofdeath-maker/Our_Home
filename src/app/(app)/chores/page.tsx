@@ -8,7 +8,10 @@ import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
 import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
-import { getMyPrimaryHousehold, listHouseholdMembers } from "@/features/household/api";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { bangkokDateKey, shiftDate } from "@/lib/date/bangkok";
 
@@ -21,7 +24,12 @@ export default async function ChoresPage() {
         <PageHeader title="งานบ้าน" />
         <Card className="rounded-[1.5rem] text-center">
           <p className="font-medium">สร้างบ้านก่อนจัดตารางงานบ้าน</p>
-          <Link className="mt-3 inline-block text-primary" href="/household/new">สร้างบ้าน</Link>
+          <Link
+            className="mt-3 inline-block text-primary"
+            href="/household/new"
+          >
+            สร้างบ้าน
+          </Link>
         </Card>
       </div>
     );
@@ -29,7 +37,8 @@ export default async function ChoresPage() {
 
   const today = bangkokDateKey();
   const canParticipate = household.myRole !== "observer";
-  const canManage = household.myRole === "owner" || household.myRole === "admin";
+  const canManage =
+    household.myRole === "owner" || household.myRole === "admin";
   if (canParticipate) {
     await materializeChores(supabase, household.id, shiftDate(today, 14));
   }
@@ -37,15 +46,20 @@ export default async function ChoresPage() {
     listChoreWorkspace(supabase, household.id),
     listHouseholdMembers(supabase, household.id),
   ]);
-  const currentMemberId = members.find((member) => member.user_id === user.id)?.id ?? null;
-  const templates = new Map(workspace.templates.map((template) => [template.id, template]));
+  const currentMemberId =
+    members.find((member) => member.user_id === user.id)?.id ?? null;
+  const templates = new Map(
+    workspace.templates.map((template) => [template.id, template]),
+  );
   const upcoming = workspace.occurrences
     .filter((item) => !item.completed_at && item.due_date >= today)
     .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
   const overdue = workspace.occurrences
     .filter((item) => !item.completed_at && item.due_date < today)
     .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
-  const history = workspace.occurrences.filter((item) => item.completed_at).slice(0, 12);
+  const history = workspace.occurrences
+    .filter((item) => item.completed_at)
+    .slice(0, 12);
 
   return (
     <div className="-mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -56,9 +70,13 @@ export default async function ChoresPage() {
             <AppIcon name="chores" className="size-7" />
           </span>
           <div>
-            <p className="text-xs font-medium text-primary">แบ่งกันทำ บ้านเบาขึ้น</p>
+            <p className="text-xs font-medium text-primary">
+              แบ่งกันทำ บ้านเบาขึ้น
+            </p>
             <h1 className="mt-1 text-2xl font-semibold">งานบ้านหมุนเวียน</h1>
-            <p className="mt-1 text-sm text-foreground-muted">ค้าง {overdue.length} · กำลังจะถึง {upcoming.length} งาน</p>
+            <p className="mt-1 text-sm text-foreground-muted">
+              ค้าง {overdue.length} · กำลังจะถึง {upcoming.length} งาน
+            </p>
           </div>
         </div>
       </section>
@@ -74,7 +92,10 @@ export default async function ChoresPage() {
               today={today}
               members={members.map((member) => ({
                 id: member.id,
-                label: member.profile?.display_name ?? member.profile?.email ?? "สมาชิก",
+                label:
+                  member.profile?.display_name ??
+                  member.profile?.email ??
+                  "สมาชิก",
               }))}
             />
           }
@@ -92,7 +113,16 @@ export default async function ChoresPage() {
           <h2 className="font-semibold text-danger">เลยกำหนด</h2>
           {overdue.map((occurrence) => {
             const template = templates.get(occurrence.template_id);
-            return template ? <ChoreOccurrenceCard key={occurrence.id} occurrence={occurrence} template={template} members={members} currentMemberId={currentMemberId} canParticipate={canParticipate} /> : null;
+            return template ? (
+              <ChoreOccurrenceCard
+                key={occurrence.id}
+                occurrence={occurrence}
+                template={template}
+                members={members}
+                currentMemberId={currentMemberId}
+                canParticipate={canParticipate}
+              />
+            ) : null;
           })}
         </section>
       ) : null}
@@ -102,11 +132,24 @@ export default async function ChoresPage() {
           <h2 className="font-semibold">งานถัดไป</h2>
           <span className="text-sm text-foreground-muted">14 วัน</span>
         </div>
-        {upcoming.length ? upcoming.map((occurrence) => {
-          const template = templates.get(occurrence.template_id);
-          return template ? <ChoreOccurrenceCard key={occurrence.id} occurrence={occurrence} template={template} members={members} currentMemberId={currentMemberId} canParticipate={canParticipate} /> : null;
-        }) : (
-          <Card className="rounded-[1.35rem] text-center text-sm text-foreground-muted">ยังไม่มีตารางงานบ้าน</Card>
+        {upcoming.length ? (
+          upcoming.map((occurrence) => {
+            const template = templates.get(occurrence.template_id);
+            return template ? (
+              <ChoreOccurrenceCard
+                key={occurrence.id}
+                occurrence={occurrence}
+                template={template}
+                members={members}
+                currentMemberId={currentMemberId}
+                canParticipate={canParticipate}
+              />
+            ) : null;
+          })
+        ) : (
+          <Card className="rounded-[1.35rem] text-center text-sm text-foreground-muted">
+            ยังไม่มีตารางงานบ้าน
+          </Card>
         )}
       </section>
 
@@ -114,20 +157,66 @@ export default async function ChoresPage() {
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">ตารางหมุนเวียน</h2>
           {workspace.templates.map((template) => {
-            const assigneeCount = workspace.assignees.filter((item) => item.template_id === template.id).length;
+            const templateAssignees = workspace.assignees.filter(
+              (item) => item.template_id === template.id,
+            );
+            const assigneeCount = templateAssignees.length;
             return (
-              <Card key={template.id} className="flex items-center justify-between gap-3 rounded-[1.35rem]">
+              <Card
+                key={template.id}
+                className="flex items-center justify-between gap-3 rounded-[1.35rem]"
+              >
                 <div>
                   <h3 className="font-semibold">{template.title}</h3>
-                  <p className="mt-0.5 text-sm text-foreground-muted">{template.cadence === "DAILY" ? "ทุกวัน" : "ทุกสัปดาห์"} · {assigneeCount} คน</p>
+                  <p className="mt-0.5 text-sm text-foreground-muted">
+                    {template.cadence === "DAILY" ? "ทุกวัน" : "ทุกสัปดาห์"} ·{" "}
+                    {assigneeCount} คน
+                  </p>
                 </div>
-                <form action={toggleChoreTemplateAction}>
-                  <input type="hidden" name="templateId" value={template.id} />
-                  <input type="hidden" name="active" value={String(!template.is_active)} />
-                  <button type="submit" className="rounded-full bg-primary-soft px-3 py-2 text-sm font-medium text-primary">
-                    {template.is_active ? "พักตาราง" : "เปิดตาราง"}
-                  </button>
-                </form>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <FormSheetButton
+                    ariaLabel={`แก้ไข ${template.title}`}
+                    triggerClassName="rounded-full border border-border bg-surface px-3 py-2 text-sm font-medium text-primary"
+                    sheetTitle="แก้ไขตารางงานบ้าน"
+                    form={
+                      <ChoreForm
+                        householdId={household.id}
+                        today={today}
+                        members={members.map((member) => ({
+                          id: member.id,
+                          label:
+                            member.profile?.display_name ??
+                            member.profile?.email ??
+                            "สมาชิก",
+                        }))}
+                        template={template}
+                        selectedMemberIds={templateAssignees.map(
+                          (item) => item.member_id,
+                        )}
+                      />
+                    }
+                  >
+                    แก้ไข
+                  </FormSheetButton>
+                  <form action={toggleChoreTemplateAction}>
+                    <input
+                      type="hidden"
+                      name="templateId"
+                      value={template.id}
+                    />
+                    <input
+                      type="hidden"
+                      name="active"
+                      value={String(!template.is_active)}
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-full bg-primary-soft px-3 py-2 text-sm font-medium text-primary"
+                    >
+                      {template.is_active ? "พักตาราง" : "เปิดตาราง"}
+                    </button>
+                  </form>
+                </div>
               </Card>
             );
           })}
@@ -139,11 +228,19 @@ export default async function ChoresPage() {
           <h2 className="font-semibold">ประวัติล่าสุด</h2>
           {history.map((occurrence) => {
             const template = templates.get(occurrence.template_id);
-            return template ? <ChoreOccurrenceCard key={occurrence.id} occurrence={occurrence} template={template} members={members} currentMemberId={currentMemberId} canParticipate={canParticipate} /> : null;
+            return template ? (
+              <ChoreOccurrenceCard
+                key={occurrence.id}
+                occurrence={occurrence}
+                template={template}
+                members={members}
+                currentMemberId={currentMemberId}
+                canParticipate={canParticipate}
+              />
+            ) : null;
           })}
         </section>
       ) : null}
     </div>
   );
 }
-

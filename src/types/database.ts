@@ -373,6 +373,7 @@ export interface Database {
           transaction_id: string | null;
           document_path: string | null;
           archived_at: string | null;
+          updated_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -392,6 +393,7 @@ export interface Database {
           transaction_id?: string | null;
           document_path?: string | null;
           archived_at?: string | null;
+          updated_by?: string | null;
         };
         Update: {
           record_type?: PetCareRecordType;
@@ -405,6 +407,7 @@ export interface Database {
           transaction_id?: string | null;
           document_path?: string | null;
           archived_at?: string | null;
+          updated_by?: string | null;
         };
         Relationships: [];
       };
@@ -1454,6 +1457,20 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
       };
+      update_shopping_item: {
+        Args: {
+          p_item_id: string;
+          p_name: string;
+          p_note: string | null;
+          p_store: string | null;
+          p_quantity: string;
+          p_unit: string | null;
+          p_estimated_amount: string | null;
+          p_currency: string;
+          p_assigned_member_id: string | null;
+        };
+        Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
+      };
       set_shopping_item_purchased: {
         Args: { p_item_id: string; p_purchased: boolean };
         Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
@@ -1479,6 +1496,24 @@ export interface Database {
       create_inventory_item: {
         Args: {
           p_household_id: string;
+          p_name: string;
+          p_category: string;
+          p_note: string | null;
+          p_quantity: string;
+          p_unit: string | null;
+          p_restock_threshold: string | null;
+          p_expiry_date: string | null;
+          p_warranty_expires_on: string | null;
+          p_purchase_date: string | null;
+          p_location: string | null;
+          p_estimated_restock_amount: string | null;
+          p_currency: string;
+        };
+        Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
+      };
+      update_inventory_item: {
+        Args: {
+          p_item_id: string;
           p_name: string;
           p_category: string;
           p_note: string | null;
@@ -1535,6 +1570,18 @@ export interface Database {
         };
         Returns: string;
       };
+      update_chore_template: {
+        Args: {
+          p_template_id: string;
+          p_title: string;
+          p_details: string;
+          p_cadence: ChoreCadence;
+          p_starts_on: string;
+          p_due_time: string | null;
+          p_member_ids: string[];
+        };
+        Returns: Database["public"]["Tables"]["chore_templates"]["Row"];
+      };
       claim_chore_occurrence: {
         Args: { p_occurrence_id: string };
         Returns: undefined;
@@ -1577,6 +1624,21 @@ export interface Database {
       set_pet_archived: {
         Args: { p_pet_id: string; p_archived: boolean };
         Returns: Database["public"]["Tables"]["pets"]["Row"];
+      };
+      update_pet_care_record: {
+        Args: {
+          p_record_id: string;
+          p_record_type: PetCareRecordType;
+          p_title: string;
+          p_note: string | null;
+          p_recorded_at: string;
+          p_scheduled_at: string | null;
+          p_value: number | null;
+          p_unit: string | null;
+          p_provider: string | null;
+          p_transaction_id: string | null;
+        };
+        Returns: Database["public"]["Tables"]["pet_care_records"]["Row"];
       };
       create_calendar_event: {
         Args: {

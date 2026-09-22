@@ -23,7 +23,7 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       // reuses it, never renders unconditionally.
       expect(list).toMatch(/canManage\s*\?\s*<AddPetFab/);
       expect(detail).toMatch(
-        /!pet\.archived_at\s*&&\s*role\s*!==\s*"observer"\s*\?\s*<FormSheetButton/,
+        /!pet\.archived_at\s*&&\s*role\s*!==\s*"observer"\s*\?\s*\(?\s*<FormSheetButton/,
       );
       expect(detail).toContain("<PetCareRecordForm");
       expect(list).toContain("canInviteRole(household.myRole");

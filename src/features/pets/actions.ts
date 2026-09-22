@@ -9,14 +9,40 @@ import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 
-import { archivePetCareRecord, createPet, createPetCareRecord, deletePetDocument, deletePetPhoto, getPet, setPetArchived, updatePet, uploadPetDocument, uploadPetPhoto } from "./api";
-import { PET_DOCUMENT_MIME_EXTENSIONS, petCareRecordSchema, petDocumentPath, validatePetDocument } from "./domain/care-record";
-import { petFormSchema, PET_PHOTO_MIME_EXTENSIONS, petPhotoPath, validatePetPhoto } from "./domain/pet";
+import {
+  archivePetCareRecord,
+  createPet,
+  createPetCareRecord,
+  deletePetDocument,
+  deletePetPhoto,
+  getPet,
+  setPetArchived,
+  updatePet,
+  updatePetCareRecord,
+  uploadPetDocument,
+  uploadPetPhoto,
+} from "./api";
+import {
+  PET_DOCUMENT_MIME_EXTENSIONS,
+  petCareRecordSchema,
+  petDocumentPath,
+  validatePetDocument,
+} from "./domain/care-record";
+import {
+  petFormSchema,
+  PET_PHOTO_MIME_EXTENSIONS,
+  petPhotoPath,
+  validatePetPhoto,
+} from "./domain/pet";
 
 function parse(formData: FormData) {
   return petFormSchema.safeParse({
-    name: formData.get("name"), species: formData.get("species"), breed: formData.get("breed"),
-    sex: formData.get("sex"), birthday: formData.get("birthday"), caregiverIds: formData.getAll("caregiverIds"),
+    name: formData.get("name"),
+    species: formData.get("species"),
+    breed: formData.get("breed"),
+    sex: formData.get("sex"),
+    birthday: formData.get("birthday"),
+    caregiverIds: formData.getAll("caregiverIds"),
   });
 }
 function photo(formData: FormData) {
@@ -24,19 +50,37 @@ function photo(formData: FormData) {
   return value instanceof File && value.size > 0 ? value : null;
 }
 
-export async function createPetAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+export async function createPetAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase, user } = await requireUser();
   const values = parse(formData);
-  if (!values.success) return { error: values.error.issues[0]?.message ?? "Invalid input" };
+  if (!values.success)
+    return { error: values.error.issues[0]?.message ?? "Invalid input" };
   const household = await getMyPrimaryHousehold(supabase, user.id);
   if (!household) return { error: "Household not found" };
   const file = photo(formData);
-  if (file) { const error = validatePetPhoto(file); if (error) return { error }; }
+  if (file) {
+    const error = validatePetPhoto(file);
+    if (error) return { error };
+  }
   const id = randomUUID();
-  const path = file ? petPhotoPath(household.id, id, file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS) : null;
+  const path = file
+    ? petPhotoPath(
+        household.id,
+        id,
+        file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS,
+      )
+    : null;
   try {
     if (file && path) await uploadPetPhoto(supabase, path, file);
-    await createPet(supabase, { id, householdId: household.id, ...values.data, photoPath: path });
+    await createPet(supabase, {
+      id,
+      householdId: household.id,
+      ...values.data,
+      photoPath: path,
+    });
   } catch (error) {
     logDatabaseErrorInDev("createPetAction failed", error);
     if (path) await deletePetPhoto(supabase, path);
@@ -46,26 +90,41 @@ export async function createPetAction(_state: ActionState, formData: FormData): 
   redirect(`/pets/${id}`);
 }
 
-export async function updatePetAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+export async function updatePetAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
   const petId = formData.get("petId");
   if (typeof petId !== "string") return { error: "Invalid pet" };
   const values = parse(formData);
-  if (!values.success) return { error: values.error.issues[0]?.message ?? "Invalid input" };
+  if (!values.success)
+    return { error: values.error.issues[0]?.message ?? "Invalid input" };
   const current = await getPet(supabase, petId);
   if (!current) return { error: "Pet not found" };
   const file = photo(formData);
-  if (file) { const error = validatePetPhoto(file); if (error) return { error }; }
-  const path = file ? petPhotoPath(current.household_id, petId, file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS) : current.photo_path;
+  if (file) {
+    const error = validatePetPhoto(file);
+    if (error) return { error };
+  }
+  const path = file
+    ? petPhotoPath(
+        current.household_id,
+        petId,
+        file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS,
+      )
+    : current.photo_path;
   try {
     if (file) await uploadPetPhoto(supabase, path!, file);
     await updatePet(supabase, petId, { ...values.data, photoPath: path });
-    if (file && current.photo_path && current.photo_path !== path) await deletePetPhoto(supabase, current.photo_path);
+    if (file && current.photo_path && current.photo_path !== path)
+      await deletePetPhoto(supabase, current.photo_path);
   } catch (error) {
     logDatabaseErrorInDev("updatePetAction failed", error);
     return { error: "Could not update pet" };
   }
-  revalidatePath("/pets"); revalidatePath(`/pets/${petId}`);
+  revalidatePath("/pets");
+  revalidatePath(`/pets/${petId}`);
   redirect(`/pets/${petId}`);
 }
 
@@ -74,9 +133,14 @@ export async function archivePetAction(formData: FormData) {
   const petId = formData.get("petId");
   const archived = formData.get("archived") === "true";
   if (typeof petId !== "string") return;
-  try { await setPetArchived(supabase, petId, archived); }
-  catch (error) { logDatabaseErrorInDev("archivePetAction failed", error); return; }
-  revalidatePath("/pets"); revalidatePath(`/pets/${petId}`);
+  try {
+    await setPetArchived(supabase, petId, archived);
+  } catch (error) {
+    logDatabaseErrorInDev("archivePetAction failed", error);
+    return;
+  }
+  revalidatePath("/pets");
+  revalidatePath(`/pets/${petId}`);
   redirect(`/pets/${petId}`);
 }
 
@@ -85,12 +149,8 @@ function careDocument(formData: FormData) {
   return value instanceof File && value.size > 0 ? value : null;
 }
 
-export async function createPetCareRecordAction(
-  _state: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
-  const parsed = petCareRecordSchema.safeParse({
+function parsePetCareRecord(formData: FormData) {
+  return petCareRecordSchema.safeParse({
     petId: formData.get("petId"),
     recordType: formData.get("recordType"),
     title: formData.get("title"),
@@ -103,7 +163,16 @@ export async function createPetCareRecordAction(
     provider: formData.get("provider") ?? "",
     transactionId: formData.get("transactionId") ?? "",
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+}
+
+export async function createPetCareRecordAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = parsePetCareRecord(formData);
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
 
   const pet = await getPet(supabase, parsed.data.petId);
   if (!pet) return { error: "ไม่พบสัตว์เลี้ยง" };
@@ -122,7 +191,8 @@ export async function createPetCareRecordAction(
       )
     : null;
   try {
-    if (file && documentPath) await uploadPetDocument(supabase, documentPath, file);
+    if (file && documentPath)
+      await uploadPetDocument(supabase, documentPath, file);
     await createPetCareRecord(supabase, {
       id: recordId,
       pet_id: pet.id,
@@ -147,6 +217,38 @@ export async function createPetCareRecordAction(
   revalidatePath("/");
   revalidatePath("/calendar");
   revalidatePath(`/pets/${pet.id}`);
+  return { success: true };
+}
+
+export async function updatePetCareRecordAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const recordId = formData.get("recordId");
+  if (typeof recordId !== "string") return { error: "ไม่พบบันทึก" };
+  const parsed = parsePetCareRecord(formData);
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  try {
+    const { supabase } = await requireUser();
+    await updatePetCareRecord(supabase, recordId, {
+      recordType: parsed.data.recordType,
+      title: parsed.data.title,
+      note: parsed.data.note,
+      recordedAt: parsed.data.recordedAt,
+      scheduledAt: parsed.data.scheduledAt,
+      value: parsed.data.value,
+      unit: parsed.data.unit,
+      provider: parsed.data.provider,
+      transactionId: parsed.data.transactionId,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("updatePetCareRecordAction failed", error);
+    return { error: "แก้ไขบันทึกไม่สำเร็จ" };
+  }
+  revalidatePath("/");
+  revalidatePath("/calendar");
+  revalidatePath(`/pets/${parsed.data.petId}`);
   return { success: true };
 }
 

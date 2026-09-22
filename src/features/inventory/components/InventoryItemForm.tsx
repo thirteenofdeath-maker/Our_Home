@@ -12,32 +12,45 @@ import {
 import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/lib/types/action-state";
-import { createInventoryItemAction } from "../actions";
+import {
+  createInventoryItemAction,
+  updateInventoryItemAction,
+} from "../actions";
+import type { InventoryItem } from "../types";
 
-export function InventoryItemForm({ householdId }: { householdId: string }) {
+export function InventoryItemForm({
+  householdId,
+  item,
+}: {
+  householdId: string;
+  item?: InventoryItem;
+}) {
   const [state, action] = useActionState(
-    createInventoryItemAction,
+    item ? updateInventoryItemAction : createInventoryItemAction,
     initialActionState,
   );
+  const suffix = item?.id ?? "new";
   useCloseFormSheetOnSuccess(state.success);
   return (
     <form action={action} className="flex min-w-0 flex-col gap-4">
       <input type="hidden" name="householdId" value={householdId} />
-      <Field label="ชื่อของ" htmlFor="inventory-name">
+      {item ? <input type="hidden" name="itemId" value={item.id} /> : null}
+      <Field label="ชื่อของ" htmlFor={`inventory-name-${suffix}`}>
         <Input
-          id="inventory-name"
+          id={`inventory-name-${suffix}`}
           name="name"
           required
           maxLength={120}
           autoFocus
           placeholder="เช่น อาหารแมว ยาประจำบ้าน"
+          defaultValue={item?.name}
         />
       </Field>
-      <Field label="หมวด" htmlFor="inventory-category">
+      <Field label="หมวด" htmlFor={`inventory-category-${suffix}`}>
         <Select
-          id="inventory-category"
+          id={`inventory-category-${suffix}`}
           name="category"
-          defaultValue="HOUSEHOLD"
+          defaultValue={item?.category ?? "HOUSEHOLD"}
         >
           <option value="MEDICINE">ยา</option>
           <option value="PET_SUPPLY">ของสัตว์เลี้ยง</option>
@@ -48,68 +61,103 @@ export function InventoryItemForm({ householdId }: { householdId: string }) {
         </Select>
       </Field>
       <TwoColumnFieldGrid>
-        <Field label="จำนวนคงเหลือ" htmlFor="inventory-quantity">
+        <Field label="จำนวนคงเหลือ" htmlFor={`inventory-quantity-${suffix}`}>
           <Input
-            id="inventory-quantity"
+            id={`inventory-quantity-${suffix}`}
             name="quantity"
             type="number"
             min="0"
             step="0.001"
-            defaultValue="1"
+            defaultValue={item ? String(item.quantity) : "1"}
             required
           />
         </Field>
-        <Field label="หน่วย" htmlFor="inventory-unit">
+        <Field label="หน่วย" htmlFor={`inventory-unit-${suffix}`}>
           <Input
-            id="inventory-unit"
+            id={`inventory-unit-${suffix}`}
             name="unit"
             maxLength={40}
             placeholder="ชิ้น / ถุง / กล่อง"
+            defaultValue={item?.unit ?? ""}
           />
         </Field>
       </TwoColumnFieldGrid>
-      <Field label="เตือนให้ซื้อเมื่อเหลือ" htmlFor="inventory-threshold">
+      <Field
+        label="เตือนให้ซื้อเมื่อเหลือ"
+        htmlFor={`inventory-threshold-${suffix}`}
+      >
         <Input
-          id="inventory-threshold"
+          id={`inventory-threshold-${suffix}`}
           name="restockThreshold"
           type="number"
           min="0"
           step="0.001"
           placeholder="เว้นว่างหากไม่ต้องเตือน"
+          defaultValue={
+            item?.restock_threshold === null ||
+            item?.restock_threshold === undefined
+              ? ""
+              : String(item.restock_threshold)
+          }
         />
       </Field>
       <TwoColumnFieldGrid>
-        <Field label="วันหมดอายุ" htmlFor="inventory-expiry">
-          <Input id="inventory-expiry" name="expiryDate" type="date" />
+        <Field label="วันหมดอายุ" htmlFor={`inventory-expiry-${suffix}`}>
+          <Input
+            id={`inventory-expiry-${suffix}`}
+            name="expiryDate"
+            type="date"
+            defaultValue={item?.expiry_date ?? ""}
+          />
         </Field>
-        <Field label="ประกันถึงวันที่" htmlFor="inventory-warranty">
-          <Input id="inventory-warranty" name="warrantyExpiresOn" type="date" />
+        <Field label="ประกันถึงวันที่" htmlFor={`inventory-warranty-${suffix}`}>
+          <Input
+            id={`inventory-warranty-${suffix}`}
+            name="warrantyExpiresOn"
+            type="date"
+            defaultValue={item?.warranty_expires_on ?? ""}
+          />
         </Field>
       </TwoColumnFieldGrid>
       <TwoColumnFieldGrid>
-        <Field label="วันที่ซื้อ" htmlFor="inventory-purchase">
-          <Input id="inventory-purchase" name="purchaseDate" type="date" />
-        </Field>
-        <Field label="เก็บไว้ที่" htmlFor="inventory-location">
+        <Field label="วันที่ซื้อ" htmlFor={`inventory-purchase-${suffix}`}>
           <Input
-            id="inventory-location"
+            id={`inventory-purchase-${suffix}`}
+            name="purchaseDate"
+            type="date"
+            defaultValue={item?.purchase_date ?? ""}
+          />
+        </Field>
+        <Field label="เก็บไว้ที่" htmlFor={`inventory-location-${suffix}`}>
+          <Input
+            id={`inventory-location-${suffix}`}
             name="location"
             maxLength={120}
             placeholder="เช่น ตู้ครัว"
+            defaultValue={item?.location ?? ""}
           />
         </Field>
       </TwoColumnFieldGrid>
       <TwoColumnFieldGrid>
-        <Field label="งบเติมของ" htmlFor="inventory-amount">
+        <Field label="งบเติมของ" htmlFor={`inventory-amount-${suffix}`}>
           <Input
-            id="inventory-amount"
+            id={`inventory-amount-${suffix}`}
             name="estimatedRestockAmount"
             inputMode="decimal"
             placeholder="0.00"
+            defaultValue={
+              item?.estimated_restock_amount
+                ? String(item.estimated_restock_amount)
+                : ""
+            }
           />
         </Field>
-        <Field label="สกุลเงิน" htmlFor="inventory-currency">
-          <Select id="inventory-currency" name="currency" defaultValue="THB">
+        <Field label="สกุลเงิน" htmlFor={`inventory-currency-${suffix}`}>
+          <Select
+            id={`inventory-currency-${suffix}`}
+            name="currency"
+            defaultValue={item?.currency ?? "THB"}
+          >
             <option>THB</option>
             <option>USD</option>
             <option>EUR</option>
@@ -118,12 +166,13 @@ export function InventoryItemForm({ householdId }: { householdId: string }) {
           </Select>
         </Field>
       </TwoColumnFieldGrid>
-      <Field label="หมายเหตุ" htmlFor="inventory-note">
+      <Field label="หมายเหตุ" htmlFor={`inventory-note-${suffix}`}>
         <Textarea
-          id="inventory-note"
+          id={`inventory-note-${suffix}`}
           name="note"
           maxLength={1000}
           placeholder="ยี่ห้อ รุ่น วิธีใช้ หรือรายละเอียดอื่น"
+          defaultValue={item?.note ?? ""}
         />
       </Field>
       {state.error ? (
@@ -131,7 +180,9 @@ export function InventoryItemForm({ householdId }: { householdId: string }) {
           {state.error}
         </p>
       ) : null}
-      <SubmitButton size="lg">เพิ่มเข้าคลัง</SubmitButton>
+      <SubmitButton size="lg">
+        {item ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลัง"}
+      </SubmitButton>
     </form>
   );
 }

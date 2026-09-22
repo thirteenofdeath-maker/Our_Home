@@ -35,7 +35,11 @@ const shoppingItemSchema = z.object({
   estimatedAmount: z
     .union([z.literal(""), positiveAmountSchema])
     .transform((value) => (value ? normalizeAmount(value) : null)),
-  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/),
   assignedMemberId: z
     .union([z.literal(""), z.string().uuid()])
     .transform((value) => value || null),
@@ -46,11 +50,8 @@ function stringValue(form: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-export async function createShoppingItemAction(
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const parsed = shoppingItemSchema.safeParse({
+function parseShoppingItemForm(form: FormData) {
+  return shoppingItemSchema.safeParse({
     householdId: stringValue(form, "householdId"),
     name: stringValue(form, "name"),
     note: stringValue(form, "note"),
@@ -61,6 +62,13 @@ export async function createShoppingItemAction(
     currency: stringValue(form, "currency") || "THB",
     assignedMemberId: stringValue(form, "assignedMemberId"),
   });
+}
+
+export async function createShoppingItemAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const parsed = parseShoppingItemForm(form);
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
@@ -72,6 +80,41 @@ export async function createShoppingItemAction(
   } catch (error) {
     logDatabaseErrorInDev("createShoppingItemAction failed", error);
     return { error: "เพิ่มรายการไม่สำเร็จ" };
+  }
+}
+
+export async function updateShoppingItemAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const itemId = stringValue(form, "itemId");
+  const parsed = parseShoppingItemForm(form);
+  if (!z.string().uuid().safeParse(itemId).success || !parsed.success)
+    return {
+      error: parsed.success
+        ? "ไม่พบรายการที่ต้องการแก้ไข"
+        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
+    };
+  try {
+    const { supabase } = await requireUser();
+    const { error } = await supabase.rpc("update_shopping_item", {
+      p_item_id: itemId,
+      p_name: parsed.data.name,
+      p_note: parsed.data.note,
+      p_store: parsed.data.store,
+      p_quantity: parsed.data.quantity,
+      p_unit: parsed.data.unit,
+      p_estimated_amount: parsed.data.estimatedAmount,
+      p_currency: parsed.data.currency,
+      p_assigned_member_id: parsed.data.assignedMemberId,
+    });
+    if (error) throw error;
+    revalidatePath("/shopping");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    logDatabaseErrorInDev("updateShoppingItemAction failed", error);
+    return { error: "แก้ไขรายการไม่สำเร็จ" };
   }
 }
 
@@ -134,7 +177,9 @@ export async function createShoppingExpenseAction(
     title: stringValue(form, "title"),
     note: stringValue(form, "note"),
     occurredAt: stringValue(form, "occurredAt"),
-    tagIds: form.getAll("tagIds").filter((value): value is string => typeof value === "string"),
+    tagIds: form
+      .getAll("tagIds")
+      .filter((value): value is string => typeof value === "string"),
   });
   if (!parsed.success)
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };

@@ -18,7 +18,10 @@ export async function materializeChores(
   if (error) throw error;
 }
 
-export async function listChoreWorkspace(supabase: Client, householdId: string) {
+export async function listChoreWorkspace(
+  supabase: Client,
+  householdId: string,
+) {
   const [templates, assignees, occurrences] = await Promise.all([
     supabase
       .from("chore_templates")
@@ -71,6 +74,30 @@ export async function createChoreTemplate(
   if (error) throw error;
 }
 
+export async function updateChoreTemplate(
+  supabase: Client,
+  input: {
+    templateId: string;
+    title: string;
+    details: string;
+    cadence: ChoreCadence;
+    startsOn: string;
+    dueTime: string | null;
+    memberIds: string[];
+  },
+) {
+  const { error } = await supabase.rpc("update_chore_template", {
+    p_template_id: input.templateId,
+    p_title: input.title,
+    p_details: input.details,
+    p_cadence: input.cadence,
+    p_starts_on: input.startsOn,
+    p_due_time: input.dueTime,
+    p_member_ids: input.memberIds,
+  });
+  if (error) throw error;
+}
+
 export async function claimChore(supabase: Client, occurrenceId: string) {
   const { error } = await supabase.rpc("claim_chore_occurrence", {
     p_occurrence_id: occurrenceId,
@@ -96,4 +123,3 @@ export async function setChoreTemplateActive(
   });
   if (error) throw error;
 }
-
