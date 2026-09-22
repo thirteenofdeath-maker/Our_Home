@@ -19,7 +19,8 @@ export type AppIconName =
   | "filter"
   | "info"
   | "bell"
-  | "shopping";
+  | "shopping"
+  | "chores";
 
 const paths: Record<AppIconName, ReactNode> = {
   back: <path d="m15 18-6-6 6-6" />,
@@ -98,6 +99,15 @@ const paths: Record<AppIconName, ReactNode> = {
       <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" />
       <circle cx="10" cy="20" r="1" />
       <circle cx="18" cy="20" r="1" />
+    </>
+  ),
+  chores: (
+    <>
+      <path d="M4 7h10M4 12h10M4 17h7" />
+      <path d="m17 15 2 2 3-4" />
+      <circle cx="2.5" cy="7" r=".5" />
+      <circle cx="2.5" cy="12" r=".5" />
+      <circle cx="2.5" cy="17" r=".5" />
     </>
   ),
 };

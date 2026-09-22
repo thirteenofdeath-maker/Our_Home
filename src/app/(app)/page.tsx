@@ -443,11 +443,7 @@ export default async function HomePage() {
         aria-label="ทางลัด"
         className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card sm:grid-cols-4"
       >
-        <QuickLink
-          href="/calendar?view=tasks"
-          icon="calendar"
-          label="งานของฉัน"
-        />
+        <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
         <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
         <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
         <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />

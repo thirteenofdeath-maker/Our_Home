@@ -75,6 +75,7 @@ function isPrivateAppPage(url) {
       "/pets",
       "/profile",
       "/shopping",
+      "/chores",
       "/wallets",
     ].some(
       (prefix) =>

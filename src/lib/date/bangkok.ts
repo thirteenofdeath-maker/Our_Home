@@ -12,6 +12,12 @@ export function bangkokDateKey(now = new Date()): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
+export function shiftDate(dateKey: string, days: number): string {
+  const date = new Date(`${dateKey}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 export function ageOnBangkokDate(
   birthday: string | null,
   now = new Date(),

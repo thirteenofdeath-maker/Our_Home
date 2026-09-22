@@ -40,6 +40,7 @@ export type PlanNoteColor =
   "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
 export type PlanReminderRecurrence =
   "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+export type ChoreCadence = "DAILY" | "WEEKLY";
 
 export interface Database {
   public: {
@@ -221,6 +222,54 @@ export interface Database {
           purchased_by: string | null;
           expense_transaction_id: string | null;
           archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      chore_templates: {
+        Row: {
+          id: string;
+          household_id: string;
+          title: string;
+          details: string | null;
+          cadence: ChoreCadence;
+          starts_on: string;
+          due_time: string | null;
+          is_active: boolean;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      chore_template_assignees: {
+        Row: {
+          template_id: string;
+          household_id: string;
+          member_id: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      chore_occurrences: {
+        Row: {
+          id: string;
+          template_id: string;
+          household_id: string;
+          due_date: string;
+          assigned_member_id: string;
+          original_assigned_member_id: string;
+          taken_over_by: string | null;
+          completed_by: string | null;
+          completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1358,6 +1407,34 @@ export interface Database {
           p_tag_ids: string[] | null;
         };
         Returns: string;
+      };
+      materialize_chore_occurrences: {
+        Args: { p_household_id: string; p_through_date?: string };
+        Returns: number;
+      };
+      create_chore_template: {
+        Args: {
+          p_household_id: string;
+          p_title: string;
+          p_details: string;
+          p_cadence: ChoreCadence;
+          p_starts_on: string;
+          p_due_time: string | null;
+          p_member_ids: string[];
+        };
+        Returns: string;
+      };
+      claim_chore_occurrence: {
+        Args: { p_occurrence_id: string };
+        Returns: undefined;
+      };
+      complete_chore_occurrence: {
+        Args: { p_occurrence_id: string };
+        Returns: undefined;
+      };
+      set_chore_template_active: {
+        Args: { p_template_id: string; p_active: boolean };
+        Returns: undefined;
       };
       create_pet: {
         Args: {

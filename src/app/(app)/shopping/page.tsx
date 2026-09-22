@@ -17,7 +17,7 @@ export default async function ShoppingPage() {
   if (!household) {
     return (
       <div className="flex flex-col gap-4 pb-8">
-        <PageHeader title="รายการซื้อของ" backHref="/" />
+        <PageHeader title="รายการซื้อของ" />
         <Card className="rounded-[1.5rem] text-center">
           <p className="font-medium">สร้างบ้านก่อนเริ่มรายการซื้อของร่วมกัน</p>
           <Link className="mt-3 inline-block text-primary" href="/household/new">
@@ -38,7 +38,7 @@ export default async function ShoppingPage() {
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <PageHeader title="รายการซื้อของ" backHref="/" />
+      <PageHeader title="รายการซื้อของ" />
 
       <section className="rounded-[1.65rem] bg-[linear-gradient(145deg,#eef4e9,#fffaf1_56%,#f8e5da)] p-5 shadow-card">
         <div className="flex items-center gap-4">

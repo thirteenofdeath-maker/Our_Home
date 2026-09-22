@@ -49,6 +49,7 @@ export function AppRoutePreloader() {
         "/profile/edit",
         "/profile/notifications",
         "/shopping",
+        "/chores",
       ]);
       for (const route of routes) prefetchRoute(route);
     };
@@ -68,6 +69,7 @@ export function AppRoutePreloader() {
             "/profile/edit",
             "/profile/notifications",
             "/shopping",
+            "/chores",
           ],
         });
       });
@@ -95,7 +97,7 @@ export function AppRoutePreloader() {
           const url = new URL(link.href);
           if (
             url.origin !== window.location.origin ||
-            !/^\/(finance|wallets|categories|calendar|pets|household|profile|shopping)(\/|$)/.test(
+            !/^\/(finance|wallets|categories|calendar|pets|household|profile|shopping|chores)(\/|$)/.test(
               url.pathname,
             )
           )
