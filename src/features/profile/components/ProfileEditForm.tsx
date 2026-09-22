@@ -6,6 +6,7 @@ import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { MEMBER_COLORS } from "@/features/household/domain/member";
 import { initialActionState } from "@/lib/types/action-state";
+import { bangkokDateKey } from "@/lib/date/bangkok";
 import type { ProfileGender } from "@/types/database";
 
 import { updateProfileAction } from "../actions";
@@ -23,7 +24,7 @@ export function ProfileEditForm(props: {
     updateProfileAction,
     initialActionState,
   );
-  const today = new Date().toISOString().slice(0, 10);
+  const today = bangkokDateKey();
   return (
     <form action={action} className="flex min-w-0 max-w-full flex-col gap-4">
       <input type="hidden" name="householdId" value={props.householdId} />

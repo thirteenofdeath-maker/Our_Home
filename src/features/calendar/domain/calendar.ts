@@ -1,7 +1,12 @@
 import { z } from "zod";
 import type { CalendarEventScope } from "@/types/database";
+import {
+  BANGKOK_TIME_ZONE,
+  bangkokDateKey,
+} from "@/lib/date/bangkok";
 
-export const CALENDAR_TIME_ZONE = "Asia/Bangkok";
+export const CALENDAR_TIME_ZONE = BANGKOK_TIME_ZONE;
+export { bangkokDateKey };
 export const EVENT_SCOPES = [
   "PERSONAL",
   "HOUSEHOLD",
@@ -95,17 +100,6 @@ export function monthKey(value: string | undefined, now = new Date()): string {
         year: "numeric",
         month: "2-digit",
       }).format(now);
-}
-export function bangkokDateKey(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: CALENDAR_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value;
-  return `${get("year")}-${get("month")}-${get("day")}`;
 }
 export function selectedDateForMonth(
   month: string,

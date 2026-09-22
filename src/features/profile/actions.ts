@@ -8,6 +8,7 @@ import { MEMBER_COLORS } from "@/features/household/domain/member";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
+import { bangkokDateKey } from "@/lib/date/bangkok";
 
 import { deleteAvatar, getCurrentProfile, updateProfileDetails, uploadAvatar } from "./api";
 import { avatarPath, AVATAR_MIME_EXTENSIONS, PROFILE_GENDERS, validateAvatarFile } from "./domain/profile";
@@ -17,7 +18,7 @@ const schema = z.object({
   displayName: z.string().trim().min(1, "Display name is required").max(80),
   gender: z.union([z.enum(PROFILE_GENDERS), z.literal("")]).transform((value) => value || null),
   birthday: z.string().refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Invalid birthday")
-    .refine((value) => value === "" || value <= new Date().toISOString().slice(0, 10), "Birthday cannot be in the future")
+    .refine((value) => value === "" || value <= bangkokDateKey(), "Birthday cannot be in the future")
     .transform((value) => value || null),
   memberColor: z.enum(MEMBER_COLORS),
 });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { PetSex, PetSpecies } from "@/types/database";
+import { ageOnBangkokDate, bangkokDateKey } from "@/lib/date/bangkok";
 
 export const PET_SPECIES = ["CAT", "DOG", "RABBIT", "BIRD", "FISH", "OTHER"] as const satisfies readonly PetSpecies[];
 export const PET_SEXES = ["MALE", "FEMALE", "UNKNOWN"] as const satisfies readonly PetSex[];
@@ -8,7 +9,7 @@ export const PET_PHOTO_MIME_EXTENSIONS = { "image/jpeg": "jpg", "image/png": "pn
 export const MAX_PET_PHOTO_BYTES = 15 * 1024 * 1024;
 
 const optionalDate = z.string().refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Invalid birthday")
-  .refine((value) => value === "" || value <= new Date().toISOString().slice(0, 10), "Birthday cannot be in the future")
+  .refine((value) => value === "" || value <= bangkokDateKey(), "Birthday cannot be in the future")
   .transform((value) => value || null);
 
 export const petFormSchema = z.object({
@@ -33,9 +34,5 @@ export function petPhotoPath(householdId: string, petId: string, mime: keyof typ
 export function petInitials(name: string) { return name.trim().slice(0, 2).toUpperCase() || "?"; }
 
 export function ageFromBirthday(birthday: string | null, today = new Date()): number | null {
-  if (!birthday) return null;
-  const [year, month, day] = birthday.split("-").map(Number);
-  let age = today.getFullYear() - year;
-  if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
-  return age;
+  return ageOnBangkokDate(birthday, today);
 }
