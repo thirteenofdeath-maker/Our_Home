@@ -6,6 +6,7 @@ const settings = readFileSync("src/features/notifications/components/Notificatio
 const migration = readFileSync("supabase/migrations/20260916110000_push_notifications.sql", "utf8");
 const scheduler = readFileSync("supabase/migrations/20260916111500_schedule_push_notifications.sql", "utf8");
 const birthdayMigration = readFileSync("supabase/migrations/20260922080120_birthday_notifications.sql", "utf8");
+const digestMigration = readFileSync("supabase/migrations/20260922133136_notification_digests.sql", "utf8");
 const dispatcher = readFileSync("supabase/functions/dispatch-notifications/index.ts", "utf8");
 const birthdayDispatcher = readFileSync("supabase/functions/dispatch-notifications/birthday.ts", "utf8");
 
@@ -43,5 +44,12 @@ describe("push notification system", () => {
     expect(birthdayDispatcher).toContain('member.role !== "observer"');
     expect(dispatcher).toContain('preferenceKey: "member_birthdays_enabled"');
     expect(dispatcher).toContain('preferenceKey: "pet_birthdays_enabled"');
+  });
+
+  it("combines scheduled items into daily and weekly summaries", () => {
+    expect(digestMigration).toContain("digest_mode_enabled boolean not null default true");
+    expect(digestMigration).toContain("'DAILY_DIGEST','WEEKLY_DIGEST'");
+    expect(dispatcher).toContain('candidate.sourceType === "DAILY_DIGEST"');
+    expect(dispatcher).toContain("preference.digest_mode_enabled ? !isDigest : isDigest");
   });
 });

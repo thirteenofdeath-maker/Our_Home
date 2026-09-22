@@ -133,6 +133,9 @@ export interface Database {
           member_birthdays_enabled: boolean;
           pet_birthdays_enabled: boolean;
           birthday_week_before_enabled: boolean;
+          digest_mode_enabled: boolean;
+          daily_digest_enabled: boolean;
+          weekly_digest_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -146,6 +149,9 @@ export interface Database {
           member_birthdays_enabled?: boolean;
           pet_birthdays_enabled?: boolean;
           birthday_week_before_enabled?: boolean;
+          digest_mode_enabled?: boolean;
+          daily_digest_enabled?: boolean;
+          weekly_digest_enabled?: boolean;
         };
         Update: {
           plan_enabled?: boolean;
@@ -156,6 +162,9 @@ export interface Database {
           member_birthdays_enabled?: boolean;
           pet_birthdays_enabled?: boolean;
           birthday_week_before_enabled?: boolean;
+          digest_mode_enabled?: boolean;
+          daily_digest_enabled?: boolean;
+          weekly_digest_enabled?: boolean;
         };
         Relationships: [];
       };

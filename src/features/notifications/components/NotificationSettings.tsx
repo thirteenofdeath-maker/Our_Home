@@ -14,6 +14,9 @@ type Preferences = {
   member_birthdays_enabled: boolean;
   pet_birthdays_enabled: boolean;
   birthday_week_before_enabled: boolean;
+  digest_mode_enabled: boolean;
+  daily_digest_enabled: boolean;
+  weekly_digest_enabled: boolean;
 };
 
 function urlBase64ToUint8Array(value: string) {
@@ -120,6 +123,9 @@ export function NotificationSettings({
   }
 
   const rows: Array<[keyof Preferences, string, string]> = [
+    ["digest_mode_enabled", "รวมเป็นสรุป", "งดแจ้งเตือนย่อยและรวมเรื่องสำคัญไว้ใน Push เดียว"],
+    ["daily_digest_enabled", "สรุปประจำวัน", "แจ้งเวลา 07:00 น. พร้อมสิ่งที่ต้องดูแลในวันนี้"],
+    ["weekly_digest_enabled", "สรุปประจำสัปดาห์", "แจ้งเย็นวันอาทิตย์สำหรับรายการสำคัญในสัปดาห์ถัดไป"],
     ["plan_enabled", "แผนงาน", "งาน นัดหมาย และรายการเตือนตามเวลาที่กำหนด"],
     ["pets_enabled", "สัตว์เลี้ยง", "วัคซีน ยา และนัดดูแล ก่อนหนึ่งวันและวันครบกำหนด"],
     ["finance_enabled", "การเงิน", "บิลและยอดบัตร ก่อนหนึ่งวันและวันครบกำหนด"],

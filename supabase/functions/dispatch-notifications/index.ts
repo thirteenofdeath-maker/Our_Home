@@ -10,14 +10,20 @@ import {
   petBirthdayRecipients,
   petCareRecipients,
 } from "./birthday.ts";
+import {
+  addDigestCount,
+  birthdayFallsInWindow,
+  digestBody,
+  type DigestCounts,
+} from "./digest.ts";
 
 type Candidate = {
-  sourceType: "REMINDER" | "TASK" | "EVENT" | "PET" | "BILL" | "CARD" | "MEMBER_BIRTHDAY" | "PET_BIRTHDAY" | "TEST";
+  sourceType: "REMINDER" | "TASK" | "EVENT" | "PET" | "BILL" | "CARD" | "MEMBER_BIRTHDAY" | "PET_BIRTHDAY" | "DAILY_DIGEST" | "WEEKLY_DIGEST" | "TEST";
   sourceId: string;
   occurrenceKey: string;
-  kind: "AT_TIME" | "WEEK_BEFORE" | "DAY_BEFORE" | "DUE_DAY" | "TEST";
+  kind: "AT_TIME" | "WEEK_BEFORE" | "DAY_BEFORE" | "DUE_DAY" | "DIGEST" | "TEST";
   category: "plan" | "pets" | "finance";
-  preferenceKey?: "member_birthdays_enabled" | "pet_birthdays_enabled";
+  preferenceKey?: "member_birthdays_enabled" | "pet_birthdays_enabled" | "daily_digest_enabled" | "weekly_digest_enabled";
   title: string;
   body: string;
   url: string;
@@ -52,6 +58,117 @@ function householdUsers(map: Map<string, string[]>, householdId: string | null) 
 
 function recipients(scope: string, creator: string, householdId: string | null, members: Map<string, string[]>) {
   return scope === "PERSONAL" ? [creator] : householdUsers(members, householdId);
+}
+
+async function digestCandidates(
+  admin: any,
+  now: Date,
+  memberRows: any[],
+): Promise<Candidate[]> {
+  const local = localParts(now);
+  const weekday = new Date(`${local.date}T12:00:00Z`).getUTCDay();
+  const daily = local.hour === 7 && local.minute <= 9;
+  const weekly = weekday === 0 && local.hour === 18 && local.minute <= 9;
+  if (!daily && !weekly) return [];
+
+  const period = daily ? "DAILY" : "WEEKLY";
+  const startDate = daily ? local.date : shiftDate(local.date, 1);
+  const endDate = daily ? local.date : shiftDate(startDate, 6);
+  const startIso = new Date(`${startDate}T00:00:00+07:00`).toISOString();
+  const endIso = new Date(`${shiftDate(endDate, 1)}T00:00:00+07:00`).toISOString();
+  const [
+    tasksResult,
+    remindersResult,
+    allDayEventsResult,
+    timedEventsResult,
+    choresResult,
+    petCareResult,
+    billsResult,
+    statementsResult,
+    profilesResult,
+    petsResult,
+  ] = await Promise.all([
+    admin.from("plan_tasks").select("created_by,scope,household_id").is("archived_at", null).eq("is_completed", false).gte("due_date", startDate).lte("due_date", endDate),
+    admin.from("plan_reminders").select("created_by,scope,household_id").is("archived_at", null).eq("is_completed", false).gte("reminds_at", startIso).lt("reminds_at", endIso),
+    admin.from("calendar_events").select("created_by,scope,household_id").is("archived_at", null).eq("is_all_day", true).gte("all_day_date", startDate).lte("all_day_date", endDate),
+    admin.from("calendar_events").select("created_by,scope,household_id").is("archived_at", null).eq("is_all_day", false).gte("starts_at", startIso).lt("starts_at", endIso),
+    admin.from("chore_occurrences").select("assigned_member_id").is("completed_at", null).gte("due_date", startDate).lte("due_date", endDate),
+    admin.from("pet_care_records").select("household_id,pets(pet_caregivers(household_member_id))").is("archived_at", null).gte("scheduled_at", startIso).lt("scheduled_at", endIso),
+    admin.from("bill_occurrences").select("bills(scope,owner_user_id,household_id)").eq("status", "OPEN").gte("due_date", startDate).lte("due_date", endDate),
+    admin.from("credit_card_statements").select("credit_card_accounts(wallets(scope,owner_user_id,household_id))").gt("statement_balance", 0).gte("due_date", startDate).lte("due_date", endDate),
+    admin.from("profiles").select("id,birthday,share_birthday_with_household").eq("share_birthday_with_household", true).not("birthday", "is", null),
+    admin.from("pets").select("id,household_id,birthday,pet_caregivers(household_member_id)").is("archived_at", null).not("birthday", "is", null),
+  ]);
+  const results = [tasksResult, remindersResult, allDayEventsResult, timedEventsResult, choresResult, petCareResult, billsResult, statementsResult, profilesResult, petsResult];
+  const firstError = results.find((result) => result.error)?.error;
+  if (firstError) throw firstError;
+
+  const usersByHousehold = new Map<string, string[]>();
+  const userByMember = new Map<string, string>();
+  for (const member of memberRows) {
+    usersByHousehold.set(member.household_id, [
+      ...(usersByHousehold.get(member.household_id) ?? []),
+      member.user_id,
+    ]);
+    userByMember.set(member.id, member.user_id);
+  }
+  const itemUsers = (row: any) =>
+    row.scope === "PERSONAL"
+      ? [row.created_by]
+      : usersByHousehold.get(row.household_id) ?? [];
+  const counts = new Map<string, DigestCounts>();
+  for (const row of tasksResult.data ?? []) addDigestCount(counts, itemUsers(row), "tasks");
+  for (const row of remindersResult.data ?? []) addDigestCount(counts, itemUsers(row), "tasks");
+  for (const row of [...(allDayEventsResult.data ?? []), ...(timedEventsResult.data ?? [])])
+    addDigestCount(counts, itemUsers(row), "appointments");
+  for (const row of choresResult.data ?? []) {
+    const userId = userByMember.get(row.assigned_member_id);
+    if (userId) addDigestCount(counts, [userId], "tasks");
+  }
+  for (const row of petCareResult.data ?? []) {
+    const pet = Array.isArray(row.pets) ? row.pets[0] : row.pets;
+    const caregivers = (pet?.pet_caregivers ?? []).map((caregiver: any) => caregiver.household_member_id);
+    addDigestCount(counts, petCareRecipients(memberRows, row.household_id, caregivers), "pets");
+  }
+  for (const row of billsResult.data ?? []) {
+    const bill = Array.isArray(row.bills) ? row.bills[0] : row.bills;
+    if (bill) addDigestCount(counts, bill.scope === "PERSONAL" ? [bill.owner_user_id] : usersByHousehold.get(bill.household_id) ?? [], "bills");
+  }
+  for (const row of statementsResult.data ?? []) {
+    const card = Array.isArray(row.credit_card_accounts) ? row.credit_card_accounts[0] : row.credit_card_accounts;
+    const wallet = Array.isArray(card?.wallets) ? card.wallets[0] : card?.wallets;
+    if (wallet) addDigestCount(counts, wallet.scope === "PERSONAL" ? [wallet.owner_user_id] : usersByHousehold.get(wallet.household_id) ?? [], "bills");
+  }
+  for (const row of profilesResult.data ?? []) {
+    if (!birthdayFallsInWindow(row.birthday, startDate, endDate)) continue;
+    addDigestCount(counts, memberBirthdayRecipients(memberRows, row.id), "birthdays");
+  }
+  for (const row of petsResult.data ?? []) {
+    if (!birthdayFallsInWindow(row.birthday, startDate, endDate)) continue;
+    addDigestCount(
+      counts,
+      petBirthdayRecipients(
+        memberRows,
+        row.household_id,
+        (row.pet_caregivers ?? []).map((caregiver: any) => caregiver.household_member_id),
+      ),
+      "birthdays",
+    );
+  }
+
+  return [...counts.entries()].map(([userId, userCounts]) => ({
+    sourceType: daily ? "DAILY_DIGEST" : "WEEKLY_DIGEST",
+    sourceId: userId,
+    occurrenceKey: `${startDate}:${endDate}`,
+    kind: "DIGEST",
+    category: "plan",
+    preferenceKey: daily ? "daily_digest_enabled" : "weekly_digest_enabled",
+    title: daily ? "สรุปบ้านวันนี้" : "สรุปบ้านสัปดาห์หน้า",
+    body: digestBody(userCounts, period),
+    url: "/",
+    scheduledFor: now.toISOString(),
+    users: [userId],
+  }));
 }
 
 function reminderOccursNow(reminder: any, now: Date) {
@@ -197,6 +314,7 @@ async function scheduledCandidates(admin: any, now: Date): Promise<Candidate[]> 
       title: kind === "DAY_BEFORE" ? "ยอดบัตรครบกำหนดพรุ่งนี้" : "ยอดบัตรครบกำหนดวันนี้",
       body: wallet.name, url: `/wallets/${card.wallet_id}`, scheduledFor: now.toISOString(), users: wallet.scope === "PERSONAL" ? [wallet.owner_user_id] : householdUsers(members, wallet.household_id) });
   }
+  candidates.push(...await digestCandidates(admin, now, memberRows));
   return candidates;
 }
 
@@ -232,7 +350,9 @@ Deno.serve(async (request: Request) => {
   let sent = 0;
   for (const candidate of candidates) for (const subscription of subscriptions ?? []) {
     if (!candidate.users.includes(subscription.user_id)) continue;
-    const preference: any = prefs.get(subscription.user_id) ?? { plan_enabled: true, pets_enabled: true, finance_enabled: true, member_birthdays_enabled: true, pet_birthdays_enabled: true, birthday_week_before_enabled: true, day_before_enabled: true, due_day_enabled: true };
+    const preference: any = prefs.get(subscription.user_id) ?? { plan_enabled: true, pets_enabled: true, finance_enabled: true, member_birthdays_enabled: true, pet_birthdays_enabled: true, birthday_week_before_enabled: true, day_before_enabled: true, due_day_enabled: true, digest_mode_enabled: true, daily_digest_enabled: true, weekly_digest_enabled: true };
+    const isDigest = candidate.sourceType === "DAILY_DIGEST" || candidate.sourceType === "WEEKLY_DIGEST";
+    if (candidate.sourceType !== "TEST" && (preference.digest_mode_enabled ? !isDigest : isDigest)) continue;
     const categoryEnabled = candidate.preferenceKey ? preference[candidate.preferenceKey] : preference[`${candidate.category}_enabled`];
     if (!categoryEnabled || (candidate.kind === "WEEK_BEFORE" && !preference.birthday_week_before_enabled) || (candidate.kind === "DAY_BEFORE" && !preference.day_before_enabled) || (candidate.kind === "DUE_DAY" && !preference.due_day_enabled)) continue;
     const { data: deliveryId } = await admin.rpc("claim_notification_delivery", { p_user_id: subscription.user_id, p_subscription_id: subscription.id, p_source_type: candidate.sourceType, p_source_id: candidate.sourceId, p_occurrence_key: candidate.occurrenceKey, p_notification_kind: candidate.kind, p_scheduled_for: candidate.scheduledFor });
