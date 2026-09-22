@@ -4,12 +4,23 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const sql = readFileSync(resolve(process.cwd(), "supabase/migrations/0024_profile_enhancement.sql"), "utf8");
+const privilegeSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260922080411_lock_down_profile_privileges.sql",
+  ),
+  "utf8",
+);
 
 describe("profile enhancement security contract", () => {
   it("keeps birthday private while granting only household display columns", () => {
     expect(sql).toMatch(/grant select \(id, display_name, email, avatar_url, gender, created_at, updated_at\)/);
     expect(sql).not.toMatch(/grant select \([^)]*birthday[^)]*\)/);
     expect(sql).toContain("create function public.get_own_profile()");
+    expect(privilegeSql).toContain(
+      "revoke all privileges on table public.profiles from anon, authenticated",
+    );
+    expect(privilegeSql).not.toMatch(/grant select \([^)]*birthday[^)]*\)/);
   });
 
   it("updates identity and household presentation at their proper boundaries", () => {

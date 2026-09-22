@@ -40,6 +40,9 @@ export default async function EditProfilePage() {
           displayName={profile.display_name}
           gender={profile.gender}
           birthday={profile.birthday}
+          shareBirthdayWithHousehold={
+            profile.share_birthday_with_household
+          }
           memberColor={membership.member_color}
           avatarUrl={avatarUrl}
         />

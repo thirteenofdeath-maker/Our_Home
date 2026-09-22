@@ -4,13 +4,19 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
    the Next.js app's generated Database type. */
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import {
+  birthdayOccurrence,
+  memberBirthdayRecipients,
+  petBirthdayRecipients,
+} from "./birthday.ts";
 
 type Candidate = {
-  sourceType: "REMINDER" | "TASK" | "EVENT" | "PET" | "BILL" | "CARD" | "TEST";
+  sourceType: "REMINDER" | "TASK" | "EVENT" | "PET" | "BILL" | "CARD" | "MEMBER_BIRTHDAY" | "PET_BIRTHDAY" | "TEST";
   sourceId: string;
   occurrenceKey: string;
-  kind: "AT_TIME" | "DAY_BEFORE" | "DUE_DAY" | "TEST";
+  kind: "AT_TIME" | "WEEK_BEFORE" | "DAY_BEFORE" | "DUE_DAY" | "TEST";
   category: "plan" | "pets" | "finance";
+  preferenceKey?: "member_birthdays_enabled" | "pet_birthdays_enabled";
   title: string;
   body: string;
   url: string;
@@ -69,21 +75,62 @@ async function scheduledCandidates(admin: any, now: Date): Promise<Candidate[]> 
   const tomorrow = shiftDate(local.date, 1);
   const yesterday = shiftDate(local.date, -1);
   const atMorning = local.hour === 9 && local.minute <= 9;
-  const [membersResult, remindersResult, tasksResult, eventsResult, petResult, billsResult, statementsResult] = await Promise.all([
-    admin.from("household_members").select("household_id,user_id"),
+  const [membersResult, remindersResult, tasksResult, eventsResult, petResult, billsResult, statementsResult, birthdayProfilesResult, birthdayPetsResult] = await Promise.all([
+    admin.from("household_members").select("id,household_id,user_id,role"),
     admin.from("plan_reminders").select("id,household_id,created_by,scope,title,reminds_at,recurrence").is("archived_at", null).eq("is_completed", false),
     admin.from("plan_tasks").select("id,household_id,created_by,scope,title,due_date,due_time").is("archived_at", null).eq("is_completed", false).eq("due_date", local.date),
     admin.from("calendar_events").select("id,household_id,created_by,scope,title,starts_at,is_all_day,all_day_date").is("archived_at", null).or(`and(is_all_day.eq.true,all_day_date.eq.${local.date}),and(is_all_day.eq.false,starts_at.gte.${new Date(now.getTime()-6*60_000).toISOString()},starts_at.lte.${new Date(now.getTime()+6*60_000).toISOString()})`),
     atMorning ? admin.from("pet_care_records").select("id,pet_id,household_id,title,scheduled_at,pets(name)").is("archived_at", null).gte("scheduled_at", `${yesterday}T17:00:00Z`).lt("scheduled_at", `${tomorrow}T17:00:00Z`) : Promise.resolve({ data: [], error: null }),
     atMorning ? admin.from("bill_occurrences").select("id,due_date,expected_amount,bill_id,bills(name,scope,owner_user_id,household_id)").eq("status", "OPEN").in("due_date", [local.date, tomorrow]) : Promise.resolve({ data: [], error: null }),
     atMorning ? admin.from("credit_card_statements").select("id,card_account_id,due_date,statement_balance,credit_card_accounts(wallet_id,issuer,last_four,wallets(name,scope,owner_user_id,household_id))").in("due_date", [local.date, tomorrow]).gt("statement_balance", 0) : Promise.resolve({ data: [], error: null }),
+    atMorning ? admin.from("profiles").select("id,display_name,birthday,share_birthday_with_household").eq("share_birthday_with_household", true).not("birthday", "is", null) : Promise.resolve({ data: [], error: null }),
+    atMorning ? admin.from("pets").select("id,household_id,name,birthday,pet_caregivers(household_member_id)").is("archived_at", null).not("birthday", "is", null) : Promise.resolve({ data: [], error: null }),
   ]);
-  const firstError = [membersResult, remindersResult, tasksResult, eventsResult, petResult, billsResult, statementsResult].find((result) => result.error)?.error;
+  const firstError = [membersResult, remindersResult, tasksResult, eventsResult, petResult, billsResult, statementsResult, birthdayProfilesResult, birthdayPetsResult].find((result) => result.error)?.error;
   if (firstError) throw firstError;
 
   const members = new Map<string, string[]>();
-  for (const row of membersResult.data ?? []) members.set(row.household_id, [...(members.get(row.household_id) ?? []), row.user_id]);
+  const memberRows = membersResult.data ?? [];
+  for (const row of memberRows) members.set(row.household_id, [...(members.get(row.household_id) ?? []), row.user_id]);
   const candidates: Candidate[] = [];
+
+  // Birthday data stays behind service-role access. Recipients receive only a
+  // display name and the upcoming month/day, never the birth year.
+  for (const row of birthdayProfilesResult.data ?? []) {
+    const occurrence = birthdayOccurrence(row.birthday, local.date);
+    if (!occurrence) continue;
+    const users = memberBirthdayRecipients(memberRows, row.id);
+    if (!users.length) continue;
+    candidates.push({
+      sourceType: "MEMBER_BIRTHDAY", sourceId: row.id,
+      occurrenceKey: occurrence.occurrenceDate, kind: occurrence.kind,
+      category: "plan", preferenceKey: "member_birthdays_enabled",
+      title: occurrence.kind === "DUE_DAY" ? `วันนี้วันเกิด ${row.display_name} 🎉` : occurrence.kind === "DAY_BEFORE" ? `พรุ่งนี้วันเกิด ${row.display_name}` : `อีก 7 วัน วันเกิด ${row.display_name}`,
+      body: "เตรียมคำอวยพรหรือกิจกรรมเล็ก ๆ ให้คนในบ้าน",
+      url: "/household", scheduledFor: now.toISOString(), users,
+    });
+  }
+
+  for (const row of birthdayPetsResult.data ?? []) {
+    const occurrence = birthdayOccurrence(row.birthday, local.date);
+    if (!occurrence) continue;
+    const users = petBirthdayRecipients(
+      memberRows,
+      row.household_id,
+      (row.pet_caregivers ?? []).map(
+        (caregiver: any) => caregiver.household_member_id,
+      ),
+    );
+    if (!users.length) continue;
+    candidates.push({
+      sourceType: "PET_BIRTHDAY", sourceId: row.id,
+      occurrenceKey: occurrence.occurrenceDate, kind: occurrence.kind,
+      category: "pets", preferenceKey: "pet_birthdays_enabled",
+      title: occurrence.kind === "DUE_DAY" ? `วันนี้วันเกิด ${row.name} 🐾` : occurrence.kind === "DAY_BEFORE" ? `พรุ่งนี้วันเกิด ${row.name}` : `อีก 7 วัน วันเกิด ${row.name}`,
+      body: "เตรียมฉลองให้สมาชิกตัวน้อยของบ้าน",
+      url: `/pets/${row.id}`, scheduledFor: now.toISOString(), users,
+    });
+  }
 
   for (const row of remindersResult.data ?? []) if (reminderOccursNow(row, now)) candidates.push({
     sourceType: "REMINDER", sourceId: row.id, occurrenceKey: local.date, kind: "AT_TIME", category: "plan",
@@ -179,8 +226,9 @@ Deno.serve(async (request: Request) => {
   let sent = 0;
   for (const candidate of candidates) for (const subscription of subscriptions ?? []) {
     if (!candidate.users.includes(subscription.user_id)) continue;
-    const preference: any = prefs.get(subscription.user_id) ?? { plan_enabled: true, pets_enabled: true, finance_enabled: true, day_before_enabled: true, due_day_enabled: true };
-    if (!preference[`${candidate.category}_enabled`] || (candidate.kind === "DAY_BEFORE" && !preference.day_before_enabled) || (candidate.kind === "DUE_DAY" && !preference.due_day_enabled)) continue;
+    const preference: any = prefs.get(subscription.user_id) ?? { plan_enabled: true, pets_enabled: true, finance_enabled: true, member_birthdays_enabled: true, pet_birthdays_enabled: true, birthday_week_before_enabled: true, day_before_enabled: true, due_day_enabled: true };
+    const categoryEnabled = candidate.preferenceKey ? preference[candidate.preferenceKey] : preference[`${candidate.category}_enabled`];
+    if (!categoryEnabled || (candidate.kind === "WEEK_BEFORE" && !preference.birthday_week_before_enabled) || (candidate.kind === "DAY_BEFORE" && !preference.day_before_enabled) || (candidate.kind === "DUE_DAY" && !preference.due_day_enabled)) continue;
     const { data: deliveryId } = await admin.rpc("claim_notification_delivery", { p_user_id: subscription.user_id, p_subscription_id: subscription.id, p_source_type: candidate.sourceType, p_source_id: candidate.sourceId, p_occurrence_key: candidate.occurrenceKey, p_notification_kind: candidate.kind, p_scheduled_for: candidate.scheduledFor });
     if (!deliveryId) continue;
     try {

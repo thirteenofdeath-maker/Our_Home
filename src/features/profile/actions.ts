@@ -20,6 +20,7 @@ const schema = z.object({
   birthday: z.string().refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Invalid birthday")
     .refine((value) => value === "" || value <= bangkokDateKey(), "Birthday cannot be in the future")
     .transform((value) => value || null),
+  shareBirthdayWithHousehold: z.boolean(),
   memberColor: z.enum(MEMBER_COLORS),
 });
 
@@ -30,9 +31,13 @@ export async function updateProfileAction(_state: ActionState, formData: FormDat
     displayName: formData.get("displayName"),
     gender: formData.get("gender"),
     birthday: formData.get("birthday"),
+    shareBirthdayWithHousehold:
+      formData.get("shareBirthdayWithHousehold") === "on",
     memberColor: formData.get("memberColor"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (parsed.data.shareBirthdayWithHousehold && !parsed.data.birthday)
+    return { error: "กรุณาระบุวันเกิดก่อนเปิดแชร์กับครอบครัว" };
 
   const file = formData.get("avatar");
   const hasAvatar = file instanceof File && file.size > 0;

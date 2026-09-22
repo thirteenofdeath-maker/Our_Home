@@ -11,6 +11,9 @@ type Preferences = {
   finance_enabled: boolean;
   day_before_enabled: boolean;
   due_day_enabled: boolean;
+  member_birthdays_enabled: boolean;
+  pet_birthdays_enabled: boolean;
+  birthday_week_before_enabled: boolean;
 };
 
 function urlBase64ToUint8Array(value: string) {
@@ -120,6 +123,9 @@ export function NotificationSettings({
     ["plan_enabled", "แผนงาน", "งาน นัดหมาย และรายการเตือนตามเวลาที่กำหนด"],
     ["pets_enabled", "สัตว์เลี้ยง", "วัคซีน ยา และนัดดูแล ก่อนหนึ่งวันและวันครบกำหนด"],
     ["finance_enabled", "การเงิน", "บิลและยอดบัตร ก่อนหนึ่งวันและวันครบกำหนด"],
+    ["member_birthdays_enabled", "วันเกิดสมาชิก", "รับเฉพาะวันเกิดที่เจ้าตัวยินยอมแชร์"],
+    ["pet_birthdays_enabled", "วันเกิดสัตว์เลี้ยง", "แจ้งเจ้าของ ผู้ดูแล และผู้รับผิดชอบสัตว์ตัวนั้น"],
+    ["birthday_week_before_enabled", "เตือนวันเกิดล่วงหน้า 7 วัน", "ช่วยให้มีเวลาเตรียมของขวัญหรือกิจกรรม"],
     ["day_before_enabled", "เตือนล่วงหน้า 1 วัน", "แจ้งเวลา 09:00 น. ก่อนวันครบกำหนด"],
     ["due_day_enabled", "เตือนในวันครบกำหนด", "แจ้งเวลา 09:00 น. ของวันครบกำหนด"],
   ];

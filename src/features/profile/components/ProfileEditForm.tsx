@@ -17,6 +17,7 @@ export function ProfileEditForm(props: {
   displayName: string;
   gender: ProfileGender | null;
   birthday: string | null;
+  shareBirthdayWithHousehold: boolean;
   memberColor: string;
   avatarUrl: string | null;
 }) {
@@ -74,6 +75,20 @@ export function ProfileEditForm(props: {
           max={today}
         />
       </Field>
+      <label className="flex min-h-14 items-start gap-3 rounded-control border border-border p-3">
+        <input
+          className="mt-1 size-5 accent-[var(--primary)]"
+          type="checkbox"
+          name="shareBirthdayWithHousehold"
+          defaultChecked={props.shareBirthdayWithHousehold}
+        />
+        <span>
+          <span className="block font-medium">แชร์วันเกิดกับครอบครัว</span>
+          <span className="mt-1 block text-sm text-foreground-muted">
+            ใช้ส่งคำเตือนวันเกิดให้สมาชิก โดยไม่เปิดเผยปีเกิด
+          </span>
+        </span>
+      </label>
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-foreground-muted">
           สีประจำสมาชิก

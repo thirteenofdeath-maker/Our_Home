@@ -885,6 +885,7 @@ describe.skipIf(!hasLiveProject)("Profile enhancement RPC and Storage security",
         p_display_name: "  Profile Integration  ",
         p_gender: "PREFER_NOT_TO_SAY",
         p_birthday: "2000-01-02",
+        p_share_birthday_with_household: true,
         p_member_color: "#D49A89",
         p_avatar_url: own.data!.avatar_url,
       });
@@ -894,6 +895,7 @@ describe.skipIf(!hasLiveProject)("Profile enhancement RPC and Storage security",
         display_name: "Profile Integration",
         gender: "PREFER_NOT_TO_SAY",
         birthday: "2000-01-02",
+        share_birthday_with_household: true,
       });
       const changedMembership = await member.from("household_members").select("member_color")
         .eq("household_id", env.SUPABASE_TEST_HOUSEHOLD_ID!).eq("user_id", auth.data.user!.id).single();
@@ -904,6 +906,7 @@ describe.skipIf(!hasLiveProject)("Profile enhancement RPC and Storage security",
         p_display_name: own.data!.display_name,
         p_gender: own.data!.gender,
         p_birthday: own.data!.birthday,
+        p_share_birthday_with_household: own.data!.share_birthday_with_household,
         p_member_color: membership.data!.member_color,
         p_avatar_url: own.data!.avatar_url,
       });
@@ -918,6 +921,7 @@ describe.skipIf(!hasLiveProject)("Profile enhancement RPC and Storage security",
     const base = {
       p_household_id: env.SUPABASE_TEST_HOUSEHOLD_ID!, p_display_name: own.data!.display_name,
       p_member_color: membership.data!.member_color, p_avatar_url: own.data!.avatar_url,
+      p_share_birthday_with_household: false,
     };
     const future = await member.rpc("update_profile_details", { ...base, p_gender: null, p_birthday: "2999-01-01" });
     expect(future.error).not.toBeNull();

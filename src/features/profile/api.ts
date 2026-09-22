@@ -41,13 +41,14 @@ export async function deleteAvatar(supabase: SupabaseClient<Database>, path: str
 
 export async function updateProfileDetails(
   supabase: SupabaseClient<Database>,
-  params: { householdId: string; displayName: string; gender: Profile["gender"]; birthday: string | null; memberColor: string; avatarUrl: string | null },
+  params: { householdId: string; displayName: string; gender: Profile["gender"]; birthday: string | null; shareBirthdayWithHousehold: boolean; memberColor: string; avatarUrl: string | null },
 ): Promise<void> {
   const { error } = await supabase.rpc("update_profile_details", {
     p_household_id: params.householdId,
     p_display_name: params.displayName,
     p_gender: params.gender,
     p_birthday: params.birthday,
+    p_share_birthday_with_household: params.shareBirthdayWithHousehold,
     p_member_color: params.memberColor,
     p_avatar_url: params.avatarUrl,
   });

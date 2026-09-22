@@ -52,6 +52,7 @@ export interface Database {
           avatar_url: string | null;
           gender: ProfileGender | null;
           birthday: string | null;
+          share_birthday_with_household: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export interface Database {
           avatar_url?: string | null;
           gender?: ProfileGender | null;
           birthday?: string | null;
+          share_birthday_with_household?: boolean;
         };
         Relationships: [];
       };
@@ -127,6 +129,9 @@ export interface Database {
           finance_enabled: boolean;
           day_before_enabled: boolean;
           due_day_enabled: boolean;
+          member_birthdays_enabled: boolean;
+          pet_birthdays_enabled: boolean;
+          birthday_week_before_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -137,6 +142,9 @@ export interface Database {
           finance_enabled?: boolean;
           day_before_enabled?: boolean;
           due_day_enabled?: boolean;
+          member_birthdays_enabled?: boolean;
+          pet_birthdays_enabled?: boolean;
+          birthday_week_before_enabled?: boolean;
         };
         Update: {
           plan_enabled?: boolean;
@@ -144,6 +152,9 @@ export interface Database {
           finance_enabled?: boolean;
           day_before_enabled?: boolean;
           due_day_enabled?: boolean;
+          member_birthdays_enabled?: boolean;
+          pet_birthdays_enabled?: boolean;
+          birthday_week_before_enabled?: boolean;
         };
         Relationships: [];
       };
@@ -1282,6 +1293,7 @@ export interface Database {
           p_display_name: string;
           p_gender: ProfileGender | null;
           p_birthday: string | null;
+          p_share_birthday_with_household: boolean;
           p_member_color: string;
           p_avatar_url: string | null;
         };

@@ -5,6 +5,9 @@ const sw = readFileSync("public/sw.js", "utf8");
 const settings = readFileSync("src/features/notifications/components/NotificationSettings.tsx", "utf8");
 const migration = readFileSync("supabase/migrations/20260916110000_push_notifications.sql", "utf8");
 const scheduler = readFileSync("supabase/migrations/20260916111500_schedule_push_notifications.sql", "utf8");
+const birthdayMigration = readFileSync("supabase/migrations/20260922080120_birthday_notifications.sql", "utf8");
+const dispatcher = readFileSync("supabase/functions/dispatch-notifications/index.ts", "utf8");
+const birthdayDispatcher = readFileSync("supabase/functions/dispatch-notifications/birthday.ts", "utf8");
 
 describe("push notification system", () => {
   it("handles Push delivery and deep-link clicks in the service worker", () => {
@@ -31,5 +34,14 @@ describe("push notification system", () => {
     expect(scheduler).toContain("'* * * * *'");
     expect(scheduler).toContain("vault.decrypted_secrets");
     expect(scheduler).toContain("x-cron-secret");
+  });
+
+  it("keeps shared birthdays private and excludes observers from delivery", () => {
+    expect(birthdayMigration).toContain("share_birthday_with_household boolean not null default false");
+    expect(birthdayMigration).toContain("MEMBER_BIRTHDAY");
+    expect(birthdayMigration).toContain("PET_BIRTHDAY");
+    expect(birthdayDispatcher).toContain('member.role !== "observer"');
+    expect(dispatcher).toContain('preferenceKey: "member_birthdays_enabled"');
+    expect(dispatcher).toContain('preferenceKey: "pet_birthdays_enabled"');
   });
 });
