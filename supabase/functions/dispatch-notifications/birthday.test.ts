@@ -4,6 +4,7 @@ import {
   birthdayOccurrence,
   memberBirthdayRecipients,
   petBirthdayRecipients,
+  petCareRecipients,
   type BirthdayMember,
 } from "./birthday";
 
@@ -64,5 +65,11 @@ describe("birthday notification occurrence", () => {
     expect(
       petBirthdayRecipients(members, "home-a", ["m-caregiver", "m-observer"]),
     ).toEqual(["owner", "admin", "caregiver"]);
+  });
+
+  it("sends pet-care reminders only to assigned caregivers", () => {
+    expect(
+      petCareRecipients(members, "home-a", ["m-caregiver", "m-observer"]),
+    ).toEqual(["caregiver"]);
   });
 });

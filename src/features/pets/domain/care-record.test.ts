@@ -37,6 +37,15 @@ describe("pet care record validation", () => {
     expect(petCareRecordSchema.safeParse({ ...base, recordType: "EXPENSE" }).success).toBe(false);
     expect(petCareRecordSchema.safeParse({ ...base, recordType: "EXPENSE", transactionId: "00000000-0000-4000-8000-000000000002" }).success).toBe(true);
   });
+
+  it("calculates the next care date when an interval is selected", () => {
+    const result = petCareRecordSchema.parse({
+      ...base,
+      recordType: "VACCINE",
+      nextIntervalDays: "365",
+    });
+    expect(result.scheduledAt).toBe("2027-09-15T03:30:00.000Z");
+  });
 });
 
 describe("pet care document rules", () => {

@@ -8,6 +8,7 @@ import {
   birthdayOccurrence,
   memberBirthdayRecipients,
   petBirthdayRecipients,
+  petCareRecipients,
 } from "./birthday.ts";
 
 type Candidate = {
@@ -80,7 +81,7 @@ async function scheduledCandidates(admin: any, now: Date): Promise<Candidate[]> 
     admin.from("plan_reminders").select("id,household_id,created_by,scope,title,reminds_at,recurrence").is("archived_at", null).eq("is_completed", false),
     admin.from("plan_tasks").select("id,household_id,created_by,scope,title,due_date,due_time").is("archived_at", null).eq("is_completed", false).eq("due_date", local.date),
     admin.from("calendar_events").select("id,household_id,created_by,scope,title,starts_at,is_all_day,all_day_date").is("archived_at", null).or(`and(is_all_day.eq.true,all_day_date.eq.${local.date}),and(is_all_day.eq.false,starts_at.gte.${new Date(now.getTime()-6*60_000).toISOString()},starts_at.lte.${new Date(now.getTime()+6*60_000).toISOString()})`),
-    atMorning ? admin.from("pet_care_records").select("id,pet_id,household_id,title,scheduled_at,pets(name)").is("archived_at", null).gte("scheduled_at", `${yesterday}T17:00:00Z`).lt("scheduled_at", `${tomorrow}T17:00:00Z`) : Promise.resolve({ data: [], error: null }),
+    atMorning ? admin.from("pet_care_records").select("id,pet_id,household_id,title,scheduled_at,pets(name,pet_caregivers(household_member_id))").is("archived_at", null).gte("scheduled_at", `${yesterday}T17:00:00Z`).lt("scheduled_at", `${tomorrow}T17:00:00Z`) : Promise.resolve({ data: [], error: null }),
     atMorning ? admin.from("bill_occurrences").select("id,due_date,expected_amount,bill_id,bills(name,scope,owner_user_id,household_id)").eq("status", "OPEN").in("due_date", [local.date, tomorrow]) : Promise.resolve({ data: [], error: null }),
     atMorning ? admin.from("credit_card_statements").select("id,card_account_id,due_date,statement_balance,credit_card_accounts(wallet_id,issuer,last_four,wallets(name,scope,owner_user_id,household_id))").in("due_date", [local.date, tomorrow]).gt("statement_balance", 0) : Promise.resolve({ data: [], error: null }),
     atMorning ? admin.from("profiles").select("id,display_name,birthday,share_birthday_with_household").eq("share_birthday_with_household", true).not("birthday", "is", null) : Promise.resolve({ data: [], error: null }),
@@ -155,9 +156,14 @@ async function scheduledCandidates(admin: any, now: Date): Promise<Candidate[]> 
     const kind = due === local.date ? "DUE_DAY" : due === tomorrow ? "DAY_BEFORE" : null;
     if (!kind) continue;
     const pet = Array.isArray(row.pets) ? row.pets[0] : row.pets;
+    const caregiverMemberIds = (pet?.pet_caregivers ?? []).map(
+      (caregiver: any) => caregiver.household_member_id,
+    );
+    const users = petCareRecipients(memberRows, row.household_id, caregiverMemberIds);
+    if (!users.length) continue;
     candidates.push({ sourceType: "PET", sourceId: row.id, occurrenceKey: due, kind, category: "pets",
       title: kind === "DAY_BEFORE" ? "พรุ่งนี้มีตารางดูแลสัตว์เลี้ยง" : "ตารางดูแลสัตว์เลี้ยงวันนี้",
-      body: `${pet?.name ?? "สัตว์เลี้ยง"} · ${row.title}`, url: `/pets/${row.pet_id}`, scheduledFor: now.toISOString(), users: householdUsers(members, row.household_id) });
+      body: `${pet?.name ?? "สัตว์เลี้ยง"} · ${row.title}`, url: `/pets/${row.pet_id}`, scheduledFor: now.toISOString(), users });
   }
   for (const row of billsResult.data ?? []) {
     const bill = Array.isArray(row.bills) ? row.bills[0] : row.bills;

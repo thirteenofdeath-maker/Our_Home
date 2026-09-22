@@ -92,3 +92,21 @@ export function petBirthdayRecipients(
       .map((member) => member.user_id),
   )];
 }
+
+export function petCareRecipients(
+  members: BirthdayMember[],
+  householdId: string,
+  caregiverMemberIds: Iterable<string>,
+) {
+  const caregivers = new Set(caregiverMemberIds);
+  return [...new Set(
+    members
+      .filter(
+        (member) =>
+          member.household_id === householdId &&
+          member.role !== "observer" &&
+          caregivers.has(member.id),
+      )
+      .map((member) => member.user_id),
+  )];
+}

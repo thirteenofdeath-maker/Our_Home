@@ -41,6 +41,10 @@ export const petCareRecordSchema = z
     note: optionalText(5000),
     recordedAt: optionalDateTime,
     scheduledAt: optionalDateTime,
+    nextIntervalDays: z.union([
+      z.literal(""),
+      z.enum(["7", "30", "90", "180", "365"]),
+    ]).default(""),
     value: z.string().trim(),
     unit: optionalText(24),
     provider: optionalText(160),
@@ -60,6 +64,14 @@ export const petCareRecordSchema = z
   .transform((value) => ({
     ...value,
     recordedAt: value.recordedAt ?? new Date().toISOString(),
+    scheduledAt:
+      value.scheduledAt ??
+      (value.nextIntervalDays
+        ? new Date(
+            new Date(value.recordedAt ?? new Date().toISOString()).getTime() +
+              Number(value.nextIntervalDays) * 86_400_000,
+          ).toISOString()
+        : null),
     value: value.recordType === "WEIGHT" ? Number(value.value) : null,
     unit: value.recordType === "WEIGHT" ? value.unit ?? "kg" : null,
     transactionId: value.recordType === "EXPENSE" ? value.transactionId : null,

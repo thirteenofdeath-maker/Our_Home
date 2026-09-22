@@ -48,10 +48,22 @@ export function PetCareRecordForm({
         <Input id="pet-care-recorded-at" name="recordedAt" type="datetime-local" defaultValue={bangkokDateTimeInput(new Date().toISOString())} />
       </Field>
       {(type === "VACCINE" || type === "MEDICATION" || type === "VET") ? (
-        <Field label="วันและเวลาที่ต้องทำครั้งถัดไป" htmlFor="pet-care-scheduled-at">
-          <Input id="pet-care-scheduled-at" name="scheduledAt" type="datetime-local" />
-        </Field>
-      ) : <input type="hidden" name="scheduledAt" value="" />}
+        <>
+          <Field label="สร้างกำหนดครั้งถัดไปอัตโนมัติ" htmlFor="pet-care-next-interval">
+            <Select id="pet-care-next-interval" name="nextIntervalDays" defaultValue="">
+              <option value="">ไม่สร้างอัตโนมัติ</option>
+              <option value="7">อีก 7 วัน</option>
+              <option value="30">อีก 30 วัน</option>
+              <option value="90">อีก 3 เดือน</option>
+              <option value="180">อีก 6 เดือน</option>
+              <option value="365">อีก 1 ปี</option>
+            </Select>
+          </Field>
+          <Field label="หรือกำหนดวันและเวลาเอง" htmlFor="pet-care-scheduled-at">
+            <Input id="pet-care-scheduled-at" name="scheduledAt" type="datetime-local" />
+          </Field>
+        </>
+      ) : <><input type="hidden" name="scheduledAt" value="" /><input type="hidden" name="nextIntervalDays" value="" /></>}
       {type === "WEIGHT" ? (
         <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(5.5rem,1fr)] gap-3 [&>*]:min-w-0">
           <Field label="น้ำหนัก" htmlFor="pet-care-value">

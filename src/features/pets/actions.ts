@@ -97,6 +97,7 @@ export async function createPetCareRecordAction(
     note: formData.get("note"),
     recordedAt: formData.get("recordedAt"),
     scheduledAt: formData.get("scheduledAt"),
+    nextIntervalDays: formData.get("nextIntervalDays") ?? "",
     value: formData.get("value") ?? "",
     unit: formData.get("unit") ?? "",
     provider: formData.get("provider") ?? "",

@@ -30,7 +30,7 @@ export default async function PetDetailPage({ params }: PageProps<"/pets/[petId]
   const expenseTransactions = recentTransactions.filter((transaction) => transaction.transactionType === "EXPENSE");
   return <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
     <PageHeader title={pet.name} backHref="/pets" />
-    {!pet.archived_at ? <FormSheetButton
+    {!pet.archived_at && role !== "observer" ? <FormSheetButton
       ariaLabel="เพิ่มบันทึกการดูแล"
       triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
       sheetTitle="เพิ่มบันทึกการดูแล"
