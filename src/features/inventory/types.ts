@@ -61,3 +61,7 @@ export function isDateWithinDays(
   const target = new Date(`${value}T00:00:00+07:00`).getTime();
   return target <= start + days * 86_400_000;
 }
+
+export function isPastInventoryDate(value: string, today: string) {
+  return value < today;
+}

@@ -9,6 +9,13 @@ const sql = readFileSync(
   ),
   "utf8",
 );
+const atomicQuantitySql = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260922152154_atomic_inventory_quantity.sql",
+  ),
+  "utf8",
+);
 
 describe("household inventory schema", () => {
   it("keeps observers read-only and mutations behind role-aware RPCs", () => {
@@ -33,6 +40,20 @@ describe("household inventory schema", () => {
     expect(sql).toContain("send_inventory_item_to_shopping");
     expect(sql).toMatch(
       /shopping_item_id is not null[\s\S]*purchased_at is null/,
+    );
+  });
+
+  it("adjusts quantities atomically with the same role guard", () => {
+    expect(atomicQuantitySql).toContain("for update");
+    expect(atomicQuantitySql).toContain(
+      "set quantity = greatest(quantity + p_delta, 0)",
+    );
+    expect(atomicQuantitySql).toContain("if auth.uid() is null");
+    expect(atomicQuantitySql).toMatch(
+      /array\['owner','admin','member'\]::public\.household_role\[\]/,
+    );
+    expect(atomicQuantitySql).toContain(
+      "revoke execute on function public.adjust_inventory_quantity(uuid,numeric) from public, anon",
     );
   });
 });

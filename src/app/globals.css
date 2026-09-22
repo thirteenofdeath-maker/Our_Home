@@ -26,9 +26,9 @@
   --color-surface-muted: #f6f7f8;
   --color-border: #e7e9ec;
   --color-foreground: #39413d;
-  --color-foreground-muted: #88918c;
+  --color-foreground-muted: #66706a;
 
-  --color-primary: #718d7a;
+  --color-primary: #58745e;
   --color-primary-foreground: #ffffff;
   --color-primary-soft: #dde8df;
   --color-secondary: #dce6ee;
@@ -90,12 +90,12 @@
   --finance-surface: #fffaf3;
   --finance-surface-strong: #ffffff;
 
-  --finance-primary: #789579;
+  --finance-primary: #607a65;
   --finance-primary-strong: #4f7058;
   --finance-primary-soft: #e4eee0;
 
   --finance-text: #352e2c;
-  --finance-muted: #807973;
+  --finance-muted: #706963;
 
   --finance-income: #5e9467;
   --finance-expense: #e87862;

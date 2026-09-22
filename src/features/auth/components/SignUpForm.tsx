@@ -15,15 +15,38 @@ export function SignUpForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <Field label="ชื่อที่แสดง" htmlFor="displayName">
-        <Input id="displayName" name="displayName" type="text" autoComplete="name" required />
+        <Input
+          id="displayName"
+          name="displayName"
+          type="text"
+          autoComplete="name"
+          required
+        />
       </Field>
       <Field label="อีเมล" htmlFor="email">
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+        />
       </Field>
       <Field label="รหัสผ่าน" htmlFor="password">
-        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
       </Field>
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p role="alert" aria-live="polite" className="text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
       <SubmitButton size="lg">สมัครสมาชิก</SubmitButton>
       <p className="text-center text-sm text-foreground-muted">
         มีบัญชีอยู่แล้ว?{" "}

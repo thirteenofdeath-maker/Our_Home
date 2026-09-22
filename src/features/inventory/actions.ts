@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
@@ -118,28 +119,32 @@ export async function createInventoryItemAction(
   }
 }
 
-export async function setInventoryQuantityAction(form: FormData) {
+export async function adjustInventoryQuantityAction(form: FormData) {
   const parsed = z
     .object({
       itemId: z.string().uuid(),
-      quantity: z.coerce.number().min(0).max(999_999_999),
+      delta: z.coerce
+        .number()
+        .min(-1)
+        .max(1)
+        .refine((delta) => delta !== 0),
     })
     .safeParse({
       itemId: value(form, "itemId"),
-      quantity: value(form, "quantity"),
+      delta: value(form, "delta"),
     });
   if (!parsed.success) return;
   try {
     const { supabase } = await requireUser();
-    const { error } = await supabase.rpc("set_inventory_quantity", {
+    const { error } = await supabase.rpc("adjust_inventory_quantity", {
       p_item_id: parsed.data.itemId,
-      p_quantity: String(parsed.data.quantity),
+      p_delta: String(parsed.data.delta),
     });
     if (error) throw error;
     revalidatePath("/inventory");
     revalidatePath(`/inventory/${parsed.data.itemId}`);
   } catch (error) {
-    logDatabaseErrorInDev("setInventoryQuantityAction failed", error);
+    logDatabaseErrorInDev("adjustInventoryQuantityAction failed", error);
   }
 }
 
@@ -174,7 +179,9 @@ export async function archiveInventoryItemAction(form: FormData) {
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveInventoryItemAction failed", error);
+    return;
   }
+  redirect("/inventory");
 }
 
 const documentType = z.enum(["RECEIPT", "MANUAL", "WARRANTY", "OTHER"]);

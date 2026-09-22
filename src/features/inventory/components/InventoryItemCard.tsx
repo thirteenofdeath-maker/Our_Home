@@ -3,12 +3,13 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import {
   sendInventoryToShoppingAction,
-  setInventoryQuantityAction,
+  adjustInventoryQuantityAction,
 } from "../actions";
 import {
   INVENTORY_CATEGORY_LABEL,
   inventoryDateLabel,
   inventoryQuantityLabel,
+  isPastInventoryDate,
   isLowStock,
   type InventoryItem,
 } from "../types";
@@ -16,9 +17,11 @@ import {
 export function InventoryItemCard({
   item,
   canEdit,
+  today,
 }: {
   item: InventoryItem;
   canEdit: boolean;
+  today: string;
 }) {
   const low = isLowStock(item);
   const quantity = Number(item.quantity);
@@ -40,8 +43,17 @@ export function InventoryItemCard({
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-finance-muted">
             {item.expiry_date ? (
-              <span className="rounded-full bg-finance-primary-soft/60 px-2.5 py-1">
-                หมดอายุ {inventoryDateLabel(item.expiry_date)}
+              <span
+                className={`rounded-full px-2.5 py-1 ${
+                  isPastInventoryDate(item.expiry_date, today)
+                    ? "bg-[#fce5db] font-medium text-[#8f402f]"
+                    : "bg-finance-primary-soft/60"
+                }`}
+              >
+                {isPastInventoryDate(item.expiry_date, today)
+                  ? "หมดอายุแล้ว"
+                  : "หมดอายุ"}{" "}
+                {inventoryDateLabel(item.expiry_date)}
               </span>
             ) : null}
             {item.warranty_expires_on ? (
@@ -57,24 +69,23 @@ export function InventoryItemCard({
       </div>
       {canEdit ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/70 pt-3">
-          <form action={setInventoryQuantityAction}>
+          <form action={adjustInventoryQuantityAction}>
             <input type="hidden" name="itemId" value={item.id} />
-            <input
-              type="hidden"
-              name="quantity"
-              value={Math.max(0, quantity - 1)}
-            />
+            <input type="hidden" name="delta" value="-1" />
             <button
-              className="flex size-9 items-center justify-center rounded-full border border-finance-primary/30 text-lg text-finance-primary-strong"
+              type="submit"
+              disabled={quantity <= 0}
+              className="flex size-9 items-center justify-center rounded-full border border-finance-primary/30 text-lg text-finance-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={`ลดจำนวน ${item.name}`}
             >
               −
             </button>
           </form>
-          <form action={setInventoryQuantityAction}>
+          <form action={adjustInventoryQuantityAction}>
             <input type="hidden" name="itemId" value={item.id} />
-            <input type="hidden" name="quantity" value={quantity + 1} />
+            <input type="hidden" name="delta" value="1" />
             <button
+              type="submit"
               className="flex size-9 items-center justify-center rounded-full border border-finance-primary/30 text-lg text-finance-primary-strong"
               aria-label={`เพิ่มจำนวน ${item.name}`}
             >
@@ -83,10 +94,11 @@ export function InventoryItemCard({
           </form>
           <form action={sendInventoryToShoppingAction} className="ml-auto">
             <input type="hidden" name="itemId" value={item.id} />
-            <button className="rounded-full bg-finance-primary-soft px-3 py-2 text-xs font-medium text-finance-primary-strong">
-              {item.shopping_item_id
-                ? "อยู่ในรายการซื้อแล้ว"
-                : "ส่งไปรายการซื้อ"}
+            <button
+              type="submit"
+              className="rounded-full bg-finance-primary-soft px-3 py-2 text-xs font-medium text-finance-primary-strong"
+            >
+              ส่งไปรายการซื้อ
             </button>
           </form>
         </div>

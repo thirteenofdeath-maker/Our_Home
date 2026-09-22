@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { ActionState } from "@/lib/types/action-state";
 
 const credentialsSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().trim().email("กรุณากรอกอีเมลให้ถูกต้อง"),
+  password: z.string().min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"),
 });
 
 export async function signInAction(
@@ -20,13 +20,13 @@ export async function signInAction(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    return { error: "Incorrect email or password" };
+    return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
   }
 
   redirect("/");
@@ -36,8 +36,8 @@ const signUpSchema = credentialsSchema.extend({
   displayName: z
     .string()
     .trim()
-    .min(1, "Name is required")
-    .max(60, "Keep it under 60 characters"),
+    .min(1, "กรุณากรอกชื่อที่แสดง")
+    .max(60, "ชื่อที่แสดงต้องไม่เกิน 60 ตัวอักษร"),
 });
 
 export async function signUpAction(
@@ -50,7 +50,7 @@ export async function signUpAction(
     displayName: formData.get("displayName"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   }
 
   const supabase = await createClient();
@@ -60,7 +60,7 @@ export async function signUpAction(
     options: { data: { display_name: parsed.data.displayName } },
   });
   if (error) {
-    return { error: error.message };
+    return { error: "สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองใหม่" };
   }
 
   redirect("/login?checkEmail=1");

@@ -27,6 +27,9 @@ const SECTION_PREFIXES: ReadonlyArray<readonly [string, AppSection]> = [
   ["/pets", "pets"],
   ["/calendar", "calendar"],
   ["/household", "household"],
+  ["/shopping", "home"],
+  ["/chores", "home"],
+  ["/inventory", "home"],
   ["/profile", "neutral"],
 ];
 

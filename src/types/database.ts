@@ -1498,6 +1498,10 @@ export interface Database {
         Args: { p_item_id: string; p_quantity: string };
         Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
       };
+      adjust_inventory_quantity: {
+        Args: { p_item_id: string; p_delta: string };
+        Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
+      };
       set_inventory_item_archived: {
         Args: { p_item_id: string; p_archived: boolean };
         Returns: Database["public"]["Tables"]["inventory_items"]["Row"];

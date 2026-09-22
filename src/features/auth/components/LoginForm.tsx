@@ -33,7 +33,9 @@ export function LoginForm() {
         />
       </Field>
       {state.error ? (
-        <p className="text-sm text-danger">{state.error}</p>
+        <p role="alert" aria-live="polite" className="text-sm text-danger">
+          {state.error}
+        </p>
       ) : null}
       <Link
         href="/forgot-password"

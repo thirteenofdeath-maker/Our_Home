@@ -25,6 +25,13 @@ describe("appSectionForPath", () => {
     expect(appSectionForPath("/profile/edit")).toBe("neutral");
   });
 
+  it("keeps Home modules on the Home BottomNav tab", () => {
+    expect(appSectionForPath("/shopping")).toBe("home");
+    expect(appSectionForPath("/shopping/item-1")).toBe("home");
+    expect(appSectionForPath("/chores")).toBe("home");
+    expect(appSectionForPath("/inventory/item-1")).toBe("home");
+  });
+
   it("classifies Onboarding distinctly from every other section", () => {
     expect(appSectionForPath("/onboarding")).toBe("onboarding");
   });

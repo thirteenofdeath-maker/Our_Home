@@ -10,11 +10,11 @@ describe("mobile visual foundation", () => {
     const css = read("src/app/globals.css").toLowerCase();
     for (const value of [
       "#ffffff",
-      "#718d7a",
+      "#58745e",
       "#dde8df",
       "#dce6ee",
       "#39413d",
-      "#88918c",
+      "#66706a",
       "#789b63",
       "#e96c55",
     ])

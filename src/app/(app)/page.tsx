@@ -441,7 +441,7 @@ export default async function HomePage() {
 
       <section
         aria-label="ทางลัด"
-        className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card sm:grid-cols-5"
+        className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
       >
         <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
         <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />

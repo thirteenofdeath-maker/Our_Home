@@ -16,6 +16,7 @@ import {
   digestBody,
   type DigestCounts,
 } from "./digest.ts";
+import { notificationPreferenceAllows } from "./preferences.ts";
 
 type Candidate = {
   sourceType:
@@ -893,17 +894,7 @@ Deno.serve(async (request: Request) => {
         (preference.digest_mode_enabled ? !isDigest : isDigest)
       )
         continue;
-      const categoryEnabled = candidate.preferenceKey
-        ? preference[candidate.preferenceKey]
-        : preference[`${candidate.category}_enabled`];
-      if (
-        !categoryEnabled ||
-        (candidate.kind === "WEEK_BEFORE" &&
-          !preference.birthday_week_before_enabled) ||
-        (candidate.kind === "DAY_BEFORE" && !preference.day_before_enabled) ||
-        (candidate.kind === "DUE_DAY" && !preference.due_day_enabled)
-      )
-        continue;
+      if (!notificationPreferenceAllows(candidate, preference)) continue;
       const { data: deliveryId } = await admin.rpc(
         "claim_notification_delivery",
         {

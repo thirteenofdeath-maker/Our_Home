@@ -55,7 +55,8 @@ export default async function InventoryPage() {
               รู้ก่อนหมด ไม่ซื้อซ้ำ
             </h1>
             <p className="mt-1 text-sm text-finance-muted">
-              ทั้งหมด {items.length} · ควรเติม {low} · ใกล้ถึงกำหนด {expiring}
+              ทั้งหมด {items.length} · ควรเติม {low} · หมดอายุ/ใกล้กำหนด{" "}
+              {expiring}
             </p>
           </div>
         </div>
@@ -84,7 +85,12 @@ export default async function InventoryPage() {
         </div>
         {items.length ? (
           items.map((item) => (
-            <InventoryItemCard key={item.id} item={item} canEdit={canEdit} />
+            <InventoryItemCard
+              key={item.id}
+              item={item}
+              canEdit={canEdit}
+              today={today}
+            />
           ))
         ) : (
           <Card className="rounded-[1.35rem] text-center text-sm text-finance-muted">
