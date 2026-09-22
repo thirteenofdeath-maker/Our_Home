@@ -1,9 +1,5 @@
 export type DigestCountKey =
-  | "tasks"
-  | "appointments"
-  | "birthdays"
-  | "bills"
-  | "pets";
+  "tasks" | "appointments" | "birthdays" | "bills" | "pets" | "inventory";
 
 export type DigestCounts = Record<DigestCountKey, number>;
 
@@ -20,6 +16,7 @@ export function addDigestCount(
       birthdays: 0,
       bills: 0,
       pets: 0,
+      inventory: 0,
     };
     counts[key] += 1;
     countsByUser.set(userId, counts);
@@ -33,6 +30,7 @@ export function digestBody(counts: DigestCounts, period: "DAILY" | "WEEKLY") {
     ["birthdays", "วันเกิด"],
     ["bills", "บิล"],
     ["pets", "รายการสัตว์เลี้ยง"],
+    ["inventory", "รายการคลังของ"],
   ];
   const parts = labels
     .filter(([key]) => counts[key] > 0)
@@ -58,4 +56,3 @@ export function birthdayFallsInWindow(
   }
   return false;
 }
-

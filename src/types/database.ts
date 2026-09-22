@@ -41,6 +41,9 @@ export type PlanNoteColor =
 export type PlanReminderRecurrence =
   "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 export type ChoreCadence = "DAILY" | "WEEKLY";
+export type InventoryCategory =
+  "MEDICINE" | "PET_SUPPLY" | "HOUSEHOLD" | "FOOD" | "WARRANTY" | "OTHER";
+export type InventoryDocumentType = "RECEIPT" | "MANUAL" | "WARRANTY" | "OTHER";
 
 export interface Database {
   public: {
@@ -128,6 +131,7 @@ export interface Database {
           plan_enabled: boolean;
           pets_enabled: boolean;
           finance_enabled: boolean;
+          inventory_enabled: boolean;
           day_before_enabled: boolean;
           due_day_enabled: boolean;
           member_birthdays_enabled: boolean;
@@ -144,6 +148,7 @@ export interface Database {
           plan_enabled?: boolean;
           pets_enabled?: boolean;
           finance_enabled?: boolean;
+          inventory_enabled?: boolean;
           day_before_enabled?: boolean;
           due_day_enabled?: boolean;
           member_birthdays_enabled?: boolean;
@@ -157,6 +162,7 @@ export interface Database {
           plan_enabled?: boolean;
           pets_enabled?: boolean;
           finance_enabled?: boolean;
+          inventory_enabled?: boolean;
           day_before_enabled?: boolean;
           due_day_enabled?: boolean;
           member_birthdays_enabled?: boolean;
@@ -235,6 +241,59 @@ export interface Database {
           updated_at: string;
         };
         Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      inventory_items: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          category: InventoryCategory;
+          note: string | null;
+          quantity: string | number;
+          unit: string | null;
+          restock_threshold: string | number | null;
+          expiry_date: string | null;
+          warranty_expires_on: string | null;
+          purchase_date: string | null;
+          location: string | null;
+          estimated_restock_amount: string | number | null;
+          currency: string;
+          shopping_item_id: string | null;
+          created_by: string;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      inventory_documents: {
+        Row: {
+          id: string;
+          item_id: string;
+          household_id: string;
+          document_type: InventoryDocumentType;
+          title: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          household_id: string;
+          document_type?: InventoryDocumentType;
+          title: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_by: string;
+        };
         Update: never;
         Relationships: [];
       };
@@ -1416,6 +1475,45 @@ export interface Database {
           p_tag_ids: string[] | null;
         };
         Returns: string;
+      };
+      create_inventory_item: {
+        Args: {
+          p_household_id: string;
+          p_name: string;
+          p_category: string;
+          p_note: string | null;
+          p_quantity: string;
+          p_unit: string | null;
+          p_restock_threshold: string | null;
+          p_expiry_date: string | null;
+          p_warranty_expires_on: string | null;
+          p_purchase_date: string | null;
+          p_location: string | null;
+          p_estimated_restock_amount: string | null;
+          p_currency: string;
+        };
+        Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
+      };
+      set_inventory_quantity: {
+        Args: { p_item_id: string; p_quantity: string };
+        Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
+      };
+      set_inventory_item_archived: {
+        Args: { p_item_id: string; p_archived: boolean };
+        Returns: Database["public"]["Tables"]["inventory_items"]["Row"];
+      };
+      send_inventory_item_to_shopping: {
+        Args: { p_item_id: string };
+        Returns: string;
+      };
+      get_calendar_export_birthdays: {
+        Args: { p_household_id: string };
+        Returns: Array<{
+          subject_type: "MEMBER" | "PET";
+          subject_id: string;
+          display_name: string;
+          month_day: string;
+        }>;
       };
       materialize_chore_occurrences: {
         Args: { p_household_id: string; p_through_date?: string };

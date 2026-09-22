@@ -20,7 +20,8 @@ export type AppIconName =
   | "info"
   | "bell"
   | "shopping"
-  | "chores";
+  | "chores"
+  | "inventory";
 
 const paths: Record<AppIconName, ReactNode> = {
   back: <path d="m15 18-6-6 6-6" />,
@@ -108,6 +109,12 @@ const paths: Record<AppIconName, ReactNode> = {
       <circle cx="2.5" cy="7" r=".5" />
       <circle cx="2.5" cy="12" r=".5" />
       <circle cx="2.5" cy="17" r=".5" />
+    </>
+  ),
+  inventory: (
+    <>
+      <path d="M4 7h16v13H4zM3 4h18v3H3z" />
+      <path d="M9 11h6M12 11v5" />
     </>
   ),
 };

@@ -160,6 +160,13 @@ export default async function CalendarPage({
             วางแผนให้บ้านเดินหน้าไปด้วยกัน
           </p>
         </div>
+        <Link
+          href="/calendar/export"
+          className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm"
+          aria-label="ส่งออกปฏิทิน"
+        >
+          <AppIcon name="transfer" className="size-5 rotate-90" />
+        </Link>
         <div className="absolute inset-x-4 bottom-4 grid grid-cols-4 gap-1.5">
           {[
             { value: todayEventCount, label: "กิจกรรม" },

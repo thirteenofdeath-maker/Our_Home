@@ -71,6 +71,7 @@ function isPrivateAppPage(url) {
       "/categories",
       "/finance",
       "/household",
+      "/inventory",
       "/onboarding",
       "/pets",
       "/profile",
