@@ -112,7 +112,9 @@ export default async function InventoryDetailPage({
           <form action={sendInventoryToShoppingAction}>
             <input type="hidden" name="itemId" value={item.id} />
             <button className="rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-white">
-              {item.shopping_item_id ? "เปิดรายการซื้อของ" : "ส่งไปรายการซื้อ"}
+              {item.shopping_item_id
+                ? "ส่งอีกครั้งเมื่อซื้อหมด"
+                : "ส่งไปรายการซื้อ"}
             </button>
           </form>
           {item.shopping_item_id ? (
