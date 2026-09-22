@@ -22,6 +22,7 @@ import {
   type TransactionWalletOption,
 } from "./TransactionWalletSelect";
 import { postRecurringOccurrenceAction } from "@/features/recurring/actions";
+import { createShoppingExpenseAction } from "@/features/shopping/actions";
 
 export function TransactionForm({
   walletId,
@@ -43,6 +44,7 @@ export function TransactionForm({
   postOccurrence,
   templateId,
   occurrenceId,
+  shoppingItemId,
   variant = "page",
 }: {
   walletId: string;
@@ -86,6 +88,7 @@ export function TransactionForm({
   postOccurrence?: { occurrenceId: string; dueDate: string };
   templateId?: string;
   occurrenceId?: string;
+  shoppingItemId?: string;
   /** Presentation only — the writer/action/fields/validation are
    * identical either way. "page": unchanged, a self-contained card
    * (rounded, surfaced, shadowed) for the existing full-page routes.
@@ -96,7 +99,11 @@ export function TransactionForm({
   variant?: "page" | "sheet";
 }) {
   const [state, formAction] = useActionState(
-    postOccurrence ? postRecurringOccurrenceAction : createIncomeExpenseAction,
+    shoppingItemId
+      ? createShoppingExpenseAction
+      : postOccurrence
+        ? postRecurringOccurrenceAction
+        : createIncomeExpenseAction,
     initialActionState,
   );
 
@@ -170,6 +177,9 @@ export function TransactionForm({
     >
       <input type="hidden" name="walletId" value={activeWalletId} />
       <input type="hidden" name="transactionType" value={transactionType} />
+      {shoppingItemId ? (
+        <input type="hidden" name="shoppingItemId" value={shoppingItemId} />
+      ) : null}
       {returnTo ? (
         <input type="hidden" name="returnTo" value={returnTo} />
       ) : null}

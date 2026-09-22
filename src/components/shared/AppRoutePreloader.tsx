@@ -12,8 +12,8 @@ const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
 /**
  * Warms both navigation layers after the authenticated shell mounts:
  * Next's in-memory router cache makes bottom-nav taps immediate, while the
- * service worker keeps the same five page documents ready for a cold launch
- * or an unreliable connection.
+ * service worker keeps the core and high-frequency page documents ready for
+ * a cold launch or an unreliable connection.
  */
 export function AppRoutePreloader() {
   const router = useRouter();
@@ -48,6 +48,7 @@ export function AppRoutePreloader() {
         "/household/members",
         "/profile/edit",
         "/profile/notifications",
+        "/shopping",
       ]);
       for (const route of routes) prefetchRoute(route);
     };
@@ -66,6 +67,7 @@ export function AppRoutePreloader() {
             "/household/members",
             "/profile/edit",
             "/profile/notifications",
+            "/shopping",
           ],
         });
       });
@@ -93,7 +95,7 @@ export function AppRoutePreloader() {
           const url = new URL(link.href);
           if (
             url.origin !== window.location.origin ||
-            !/^\/(finance|wallets|categories|calendar|pets|household|profile)(\/|$)/.test(
+            !/^\/(finance|wallets|categories|calendar|pets|household|profile|shopping)(\/|$)/.test(
               url.pathname,
             )
           )

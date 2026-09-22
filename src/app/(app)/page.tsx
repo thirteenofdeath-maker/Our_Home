@@ -449,7 +449,7 @@ export default async function HomePage() {
           label="งานของฉัน"
         />
         <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
-        <QuickLink href="/calendar" icon="calendar" label="วางแผนครอบครัว" />
+        <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
         <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />
       </section>
 

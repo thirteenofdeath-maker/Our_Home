@@ -204,6 +204,30 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      shopping_items: {
+        Row: {
+          id: string;
+          household_id: string;
+          name: string;
+          note: string | null;
+          store: string | null;
+          quantity: string | number;
+          unit: string | null;
+          estimated_amount: string | number | null;
+          currency: string;
+          assigned_member_id: string | null;
+          created_by: string;
+          purchased_at: string | null;
+          purchased_by: string | null;
+          expense_transaction_id: string | null;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       pet_caregivers: {
         Row: {
           pet_id: string;
@@ -1298,6 +1322,42 @@ export interface Database {
           p_avatar_url: string | null;
         };
         Returns: Database["public"]["Tables"]["profiles"]["Row"];
+      };
+      create_shopping_item: {
+        Args: {
+          p_household_id: string;
+          p_name: string;
+          p_note: string | null;
+          p_store: string | null;
+          p_quantity: string;
+          p_unit: string | null;
+          p_estimated_amount: string | null;
+          p_currency: string;
+          p_assigned_member_id: string | null;
+        };
+        Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
+      };
+      set_shopping_item_purchased: {
+        Args: { p_item_id: string; p_purchased: boolean };
+        Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
+      };
+      set_shopping_item_archived: {
+        Args: { p_item_id: string; p_archived: boolean };
+        Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
+      };
+      create_shopping_item_expense: {
+        Args: {
+          p_item_id: string;
+          p_wallet_id: string;
+          p_pocket_id: string;
+          p_category_id: string;
+          p_amount: string;
+          p_title: string | null;
+          p_note: string | null;
+          p_occurred_at: string;
+          p_tag_ids: string[] | null;
+        };
+        Returns: string;
       };
       create_pet: {
         Args: {
