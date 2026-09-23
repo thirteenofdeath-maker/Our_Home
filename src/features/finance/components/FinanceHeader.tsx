@@ -3,7 +3,7 @@ import Image from "next/image";
 /** Shared cover for the Finance overview and every module. */
 export function FinanceHeader() {
   return (
-    <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f7f1e6] p-5 shadow-card sm:h-52 sm:p-6">
+    <section className="light-cover-copy relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f7f1e6] p-5 shadow-card sm:h-52 sm:p-6">
       <Image
         src="/art/finance-corner.webp"
         alt="กระเป๋าเงิน เหรียญ และแผนการเงินของบ้าน"

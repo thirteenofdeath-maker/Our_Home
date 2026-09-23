@@ -64,7 +64,7 @@ export default async function ChoresPage() {
   return (
     <div className="-mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       <PageHeader title="งานบ้าน" />
-      <section className="rounded-[1.65rem] bg-[linear-gradient(145deg,#e9f3e7,#fffaf1_58%,#f3e1d8)] p-5 shadow-card">
+      <section className="rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
         <div className="flex items-center gap-4">
           <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-white/85 text-primary shadow-sm">
             <AppIcon name="chores" className="size-7" />
@@ -84,7 +84,7 @@ export default async function ChoresPage() {
       {canManage ? (
         <FormSheetButton
           ariaLabel="เพิ่มตารางงานบ้าน"
-          triggerClassName="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-[max(1.25rem,env(safe-area-inset-right))] z-20 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95"
+          triggerClassName="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-[max(1.25rem,env(safe-area-inset-right))] z-20 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95"
           sheetTitle="เพิ่มตารางงานบ้าน"
           form={
             <ChoreForm

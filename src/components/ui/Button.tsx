@@ -16,9 +16,12 @@ const variantClasses: Record<Variant, string> = {
   // ones FinanceCreateFlow's choice-row icons already use), never a new
   // hex value. Inert everywhere else — nothing outside a Finance form
   // ever passes these variants.
-  financeIncome: "bg-finance-income text-white hover:opacity-90",
-  financeExpense: "bg-finance-expense text-white hover:opacity-90",
-  financeTransfer: "bg-finance-transfer text-white hover:opacity-90",
+  financeIncome:
+    "bg-finance-income text-finance-semantic-foreground hover:opacity-90",
+  financeExpense:
+    "bg-finance-expense text-finance-semantic-foreground hover:opacity-90",
+  financeTransfer:
+    "bg-finance-transfer text-finance-semantic-foreground hover:opacity-90",
 };
 
 const sizeClasses: Record<Size, string> = {

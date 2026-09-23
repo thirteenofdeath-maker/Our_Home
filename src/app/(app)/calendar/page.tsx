@@ -139,7 +139,7 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/plan-calendar.webp"
           alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
@@ -245,7 +245,7 @@ export default async function CalendarPage({
                 className={cn(
                   "flex min-h-10 flex-1 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium",
                   taskStatus === item.value
-                    ? "bg-finance-primary text-white shadow-sm"
+                    ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
                     : "text-finance-muted",
                 )}
               >
@@ -320,7 +320,7 @@ function SearchBar({
         placeholder={view === "tasks" ? "ค้นหางาน…" : "ค้นหาโน้ต…"}
         className="h-12 min-w-0 flex-1 rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-4 text-finance-text shadow-sm outline-none placeholder:text-finance-muted focus:border-finance-primary"
       />
-      <button className="min-h-11 rounded-[1rem] bg-finance-primary px-4 text-sm font-medium text-white shadow-sm">
+      <button className="min-h-11 rounded-[1rem] bg-finance-primary px-4 text-sm font-medium text-finance-primary-foreground shadow-sm">
         ค้นหา
       </button>
     </form>
@@ -331,7 +331,7 @@ function PlanCreateButton({ title, form }: { title: string; form: ReactNode }) {
   return (
     <FormSheetButton
       ariaLabel={title}
-      triggerClassName="fixed right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
+      triggerClassName="fixed right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
       sheetTitle={title}
       form={form}
       tone="finance"

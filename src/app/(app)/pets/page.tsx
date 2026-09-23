@@ -64,7 +64,7 @@ export default async function PetsPage({
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       {canManage ? <AddPetFab /> : null}
 
-      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e7] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e7] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/pets-garden.webp"
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"

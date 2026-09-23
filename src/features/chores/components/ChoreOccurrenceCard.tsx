@@ -28,7 +28,7 @@ export function ChoreOccurrenceCard({
   return (
     <Card className={`rounded-[1.35rem] ${completed ? "bg-primary-soft/35" : "bg-surface"}`}>
       <div className="flex items-start gap-3">
-        <span className={`flex size-10 shrink-0 items-center justify-center rounded-full text-lg ${completed ? "bg-primary text-white" : "bg-primary-soft text-primary"}`}>
+        <span className={`flex size-10 shrink-0 items-center justify-center rounded-full text-lg ${completed ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary"}`}>
           {completed ? "✓" : "•"}
         </span>
         <div className="min-w-0 flex-1">

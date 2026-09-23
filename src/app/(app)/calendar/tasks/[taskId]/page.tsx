@@ -30,7 +30,7 @@ export default async function PlanTaskPage({
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-2">
       <PageHeader title="รายละเอียดงาน" backHref="/calendar?view=tasks" />
-      <Card className="rounded-[1.5rem] bg-[linear-gradient(145deg,#e8f1e5,#f7f4e9_52%,#f5eadc)]">
+      <Card className="rounded-[1.5rem] time-tinted-panel">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm text-finance-muted">{task.list_name}</p>

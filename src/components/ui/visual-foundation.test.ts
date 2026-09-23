@@ -6,21 +6,25 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("mobile visual foundation", () => {
-  it("uses the approved warm sage palette as shared tokens", () => {
+  it("uses all seven approved Bangkok-time palettes as shared tokens", () => {
     const css = read("src/app/globals.css").toLowerCase();
     for (const value of [
-      "#ffffff",
-      "#58745e",
-      "#dde8df",
-      "#dce6ee",
-      "#39413d",
-      "#66706a",
+      "#fff9ef",
+      "#fff4e8",
+      "#fff3e2",
+      "#fff7d1",
+      "#ffd6c6",
+      "#081c30",
+      "#061523",
       "#789b63",
       "#e96c55",
     ])
       expect(css).toContain(value);
-    expect(css).toContain("--finance-hero: #49675a");
+    expect(css).toContain("--finance-hero: var(--time-primary)");
     expect(css).toContain("--color-finance-hero: var(--finance-hero)");
+    expect(css).toContain(
+      "--color-finance-primary-foreground: var(--finance-primary-foreground)",
+    );
   });
 
   it("uses shared soft cards and grouped controls", () => {

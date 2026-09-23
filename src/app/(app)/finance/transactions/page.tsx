@@ -365,7 +365,7 @@ export default async function TransactionSearchPage({
               className={buttonClassName(
                 "primary",
                 "md",
-                "!bg-finance-primary !text-white",
+                "!bg-finance-primary !text-finance-primary-foreground",
               )}
             >
               ใช้ตัวกรอง
@@ -396,7 +396,7 @@ export default async function TransactionSearchPage({
                   aria-current={active ? "page" : undefined}
                   className={`flex h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors ${
                     active
-                      ? "bg-finance-primary text-white shadow-sm"
+                      ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
                       : "bg-finance-surface-strong text-finance-muted shadow-sm"
                   }`}
                 >

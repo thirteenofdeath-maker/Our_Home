@@ -42,7 +42,7 @@ export default async function InventoryPage() {
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       <PageHeader title="คลังของในบ้าน" />
-      <section className="rounded-[1.65rem] bg-[linear-gradient(145deg,#edf4e8,#fff9ee_58%,#f6e2d8)] p-5 shadow-card">
+      <section className="rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
         <div className="flex items-center gap-4">
           <span className="flex size-14 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm">
             <AppIcon name="inventory" className="size-7" />
@@ -64,7 +64,7 @@ export default async function InventoryPage() {
       {canEdit ? (
         <FormSheetButton
           ariaLabel="เพิ่มของในคลัง"
-          triggerClassName="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-[max(1.25rem,env(safe-area-inset-right))] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] active:scale-95"
+          triggerClassName="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-[max(1.25rem,env(safe-area-inset-right))] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] active:scale-95"
           sheetTitle="เพิ่มของในคลัง"
           form={<InventoryItemForm householdId={household.id} />}
           tone="finance"

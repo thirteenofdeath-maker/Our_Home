@@ -51,14 +51,14 @@ export function ShoppingItemCard({
                   ? "นำกลับเข้ารายการที่ต้องซื้อ"
                   : "ทำเครื่องหมายว่าซื้อแล้ว"
               }
-              className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-white" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {purchased ? "✓" : ""}
             </button>
           </form>
         ) : (
           <span
-            className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-white" : "border-border"}`}
+            className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
           >
             {purchased ? "✓" : ""}
           </span>

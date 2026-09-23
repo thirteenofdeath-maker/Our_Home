@@ -24,7 +24,7 @@ export default function CalendarExportPage() {
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
       <PageHeader title="ส่งออกปฏิทิน" backHref="/calendar" />
-      <section className="rounded-[1.65rem] bg-[linear-gradient(145deg,#eef4e9,#fff9ef_60%,#f7e4dc)] p-5 shadow-card">
+      <section className="rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
         <div className="flex items-center gap-4">
           <span className="flex size-14 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong">
             <AppIcon name="calendar" className="size-7" />
@@ -60,7 +60,7 @@ export default function CalendarExportPage() {
               <a
                 href={`/calendar/export/download?scope=${choice.scope}`}
                 download
-                className="shrink-0 rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-white"
+                className="shrink-0 rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-finance-primary-foreground"
               >
                 ดาวน์โหลด
               </a>

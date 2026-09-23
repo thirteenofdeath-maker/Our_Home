@@ -59,7 +59,7 @@ export default async function WalletsPage({
       <PageHeader title="กระเป๋าเงิน" />
       <FormSheetButton
         ariaLabel="เพิ่มกระเป๋าเงิน"
-        triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
         sheetTitle="สร้างกระเป๋าเงิน"
         form={
           <WalletForm
@@ -72,7 +72,7 @@ export default async function WalletsPage({
       >
         <AppIcon name="plus" />
       </FormSheetButton>
-      <section className="relative overflow-hidden rounded-[1.65rem] bg-[linear-gradient(135deg,#e7efe3,#f8f2e8)] p-5 shadow-card">
+      <section className="relative overflow-hidden rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
         <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
         <p className="relative text-sm font-medium text-finance-muted">
           ยอดรวม{scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
