@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { cn } from "@/lib/utils/cn";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
@@ -50,12 +49,11 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const section = appSectionForPath(pathname);
-  const [pending, setPending] = useState<{
-    fromPath: string;
-    section: AppSection;
-  } | null>(null);
-  const activeSection =
-    pending?.fromPath === pathname ? pending.section : section;
+  // The highlighted tab must always describe the page currently on screen.
+  // An earlier optimistic state could survive an interrupted navigation or a
+  // Server Action redirect and highlight Home while /pets was still visible.
+  // Route prefetching keeps taps fast without allowing visual state to drift.
+  const activeSection = section;
   const isFinance = activeSection === "finance";
 
   function renderItem(item: (typeof NAV_ITEMS)[number]) {
@@ -66,9 +64,6 @@ export function BottomNav() {
           href={item.href}
           prefetch={true}
           onPointerDown={() => router.prefetch(item.href)}
-          onClick={() =>
-            setPending({ fromPath: pathname, section: item.section })
-          }
           aria-current={active ? "page" : undefined}
           className={cn(
             "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-[1rem] text-[10px] font-medium transition-colors",

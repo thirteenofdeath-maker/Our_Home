@@ -1,4 +1,6 @@
 import { createElement } from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,6 +11,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { BottomNav, NAV_ITEMS } from "./BottomNav";
+
+const source = readFileSync(
+  resolve(process.cwd(), "src/components/shared/BottomNav.tsx"),
+  "utf8",
+);
 
 describe("Bottom navigation — pure navigation, exactly five destinations", () => {
   it("points the finance destination at /finance", () => {
@@ -41,6 +48,11 @@ describe("Bottom navigation — pure navigation, exactly five destinations", () 
 
   it("takes no centerAction/quick-add prop at all — it is pure navigation", () => {
     expect(BottomNav.length).toBe(0);
+  });
+
+  it("derives the active destination only from the current URL", () => {
+    expect(source).toContain("const activeSection = section");
+    expect(source).not.toContain("setPending");
   });
 
   it("always renders exactly five real <a> destinations, on every module alike", () => {
