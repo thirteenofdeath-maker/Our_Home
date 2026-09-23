@@ -211,7 +211,7 @@ export default async function ChoresPage() {
                     />
                     <button
                       type="submit"
-                      className="rounded-full bg-primary-soft px-3 py-2 text-sm font-medium text-primary"
+                      className="rounded-full bg-primary-soft px-3 py-2 text-sm font-medium text-primary-strong"
                     >
                       {template.is_active ? "พักตาราง" : "เปิดตาราง"}
                     </button>

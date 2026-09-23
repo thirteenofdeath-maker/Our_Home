@@ -50,6 +50,21 @@ describe("accessibility foundation", () => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it.each([
+    ["#4f6754", "#e4eee0"],
+    ["#555d3f", "#d9e3c3"],
+    ["#5f513b", "#e9d8c7"],
+    ["#604d35", "#ebc9a7"],
+    ["#624339", "#f7b89c"],
+    ["#f2d8b5", "#4a636e"],
+    ["#dce4ea", "#4e6873"],
+  ])(
+    "keeps accent copy readable on soft controls",
+    (foreground, background) => {
+      expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
   it("does not disable browser zoom", () => {
     const layout = readFileSync(
       resolve(process.cwd(), "src/app/layout.tsx"),

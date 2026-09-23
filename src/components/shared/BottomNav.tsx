@@ -75,7 +75,7 @@ export function BottomNav() {
             active
               ? isFinance
                 ? "bg-finance-primary-soft/70 text-finance-primary-strong"
-                : "bg-primary-soft text-primary"
+                : "bg-primary-soft text-primary-strong"
               : isFinance
                 ? "text-finance-muted"
                 : "text-foreground-muted",
