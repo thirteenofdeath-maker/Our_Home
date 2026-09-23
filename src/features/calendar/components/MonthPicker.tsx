@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 export function MonthPicker({
   month,
   label,
+  pathname = "/calendar",
+  query = {},
 }: {
   month: string;
   label: string;
+  pathname?: string;
+  query?: Record<string, string>;
 }) {
   const router = useRouter();
 
@@ -20,7 +24,9 @@ export function MonthPicker({
         aria-label="เลือกเดือน"
         onChange={(event) => {
           if (event.target.value) {
-            router.push(`/calendar?month=${event.target.value}`);
+            const params = new URLSearchParams(query);
+            params.set("month", event.target.value);
+            router.push(`${pathname}?${params.toString()}`);
           }
         }}
         className="absolute inset-0 h-full w-full cursor-pointer opacity-0"

@@ -12,6 +12,7 @@ import { listDebts } from "@/features/debts/api";
 import { FinanceTrendCard } from "@/features/finance/components/FinanceTrendCard";
 import { FinanceSegmentedControl } from "@/features/finance/components/FinanceSegmentedControl";
 import { FinanceCreateFlow } from "@/features/finance/components/FinanceCreateFlow";
+import { FinanceMonthNavigator } from "@/features/finance/components/FinanceMonthNavigator";
 import {
   currentFinanceDate,
   currentFinanceMonth,
@@ -57,6 +58,7 @@ export default async function FinancePage({
   const prevMonth = shiftFinanceMonth(month, -1);
   const prevMonthRange = financeMonthRange(prevMonth);
   const nextMonth = shiftFinanceMonth(month, 1);
+  const currentMonth = currentFinanceMonth();
   const monthLabel = new Intl.DateTimeFormat("th-TH", {
     month: "long",
     year: "numeric",
@@ -71,9 +73,7 @@ export default async function FinancePage({
     timeZone: "Asia/Bangkok",
   }).format(new Date(`${prevMonth}-01T00:00:00+07:00`));
   const currentDay =
-    month === currentFinanceMonth()
-      ? Number(currentFinanceDate().slice(-2))
-      : undefined;
+    month === currentMonth ? Number(currentFinanceDate().slice(-2)) : undefined;
 
   // Materialization and the independent dashboard reads used to form a full
   // waterfall. Start them together; occurrences alone wait for both the bill
@@ -164,25 +164,15 @@ export default async function FinancePage({
               : `/finance/reports?month=${month}`
           }
         />
-        <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
-          <Link
-            href={`/finance?month=${prevMonth}${scope === "HOUSEHOLD" ? "&scope=HOUSEHOLD" : ""}`}
-            aria-label="เดือนก่อนหน้า"
-            className="flex size-9 items-center justify-center rounded-full text-finance-text"
-          >
-            <AppIcon name="chevron" className="size-4 rotate-180" />
-          </Link>
-          <p className="text-sm font-semibold text-finance-text">
-            {monthLabel}
-          </p>
-          <Link
-            href={`/finance?month=${nextMonth}${scope === "HOUSEHOLD" ? "&scope=HOUSEHOLD" : ""}`}
-            aria-label="เดือนถัดไป"
-            className="flex size-9 items-center justify-center rounded-full text-finance-text"
-          >
-            <AppIcon name="chevron" className="size-4" />
-          </Link>
-        </div>
+        <FinanceMonthNavigator
+          month={month}
+          label={monthLabel}
+          previousMonth={prevMonth}
+          nextMonth={nextMonth}
+          currentMonth={currentMonth}
+          pathname="/finance"
+          query={scope === "HOUSEHOLD" ? { scope: "HOUSEHOLD" } : undefined}
+        />
         {summaryCurrencies.map((currency) => {
           const total = currentMonthTotals.find(
             (item) => item.currency === currency,

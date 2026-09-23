@@ -100,7 +100,7 @@ describe("approved mobile Finance UI", () => {
   });
 
   it("starts the overview content with the income-expense summary", () => {
-    const monthSwitcher = hub.indexOf('aria-label="เดือนก่อนหน้า"');
+    const monthSwitcher = hub.indexOf("<FinanceMonthNavigator");
     const trendHeading = hub.indexOf('title="สรุปรายรับรายจ่าย"');
     const addEntry = hub.indexOf("{initialWallet ? (");
     const planning = hub.indexOf("วางแผนการเงิน");

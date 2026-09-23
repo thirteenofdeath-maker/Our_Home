@@ -1,10 +1,8 @@
-import Link from "next/link";
-
-import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
 import { AddBudgetFab } from "@/features/budgets/components/AddBudgetFab";
 import { BudgetCard } from "@/features/budgets/components/BudgetCard";
 import { FinanceEmptyState } from "@/features/finance/components/FinanceEmptyState";
+import { FinanceMonthNavigator } from "@/features/finance/components/FinanceMonthNavigator";
 import {
   currentFinanceMonth,
   financeMonthRange,
@@ -64,23 +62,14 @@ export default async function BudgetsPage({
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      <div className="flex items-center justify-between rounded-full bg-finance-surface-strong p-1 shadow-sm">
-        <Link
-          href={`/finance/budgets?month=${prevMonth}`}
-          aria-label="เดือนก่อนหน้า"
-          className="flex size-9 items-center justify-center rounded-full text-finance-text"
-        >
-          <AppIcon name="chevron" className="size-4 rotate-180" />
-        </Link>
-        <p className="font-medium text-finance-text">{monthLabel}</p>
-        <Link
-          href={`/finance/budgets?month=${nextMonth}`}
-          aria-label="เดือนถัดไป"
-          className="flex size-9 items-center justify-center rounded-full text-finance-text"
-        >
-          <AppIcon name="chevron" className="size-4" />
-        </Link>
-      </div>
+      <FinanceMonthNavigator
+        month={month}
+        label={monthLabel}
+        previousMonth={prevMonth}
+        nextMonth={nextMonth}
+        currentMonth={currentFinanceMonth()}
+        pathname="/finance/budgets"
+      />
 
       <section className="rounded-[1.6rem] time-tinted-panel p-5 shadow-card">
         <p className="text-sm font-medium text-finance-muted">
