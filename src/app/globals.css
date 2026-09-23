@@ -321,6 +321,17 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Keep every fixed quick-add action attached to the same centered 36rem app
+   column as the content and BottomNav. On phone this resolves to the regular
+   1.25rem screen inset; on iPad it no longer drifts to the viewport edge. */
+.app-fab {
+  right: max(
+    1.25rem,
+    env(safe-area-inset-right),
+    calc((100vw - 36rem) / 2 + 1.25rem)
+  );
+}
+
 /* Decorative summary panels use the same atmosphere as the current time
    palette, instead of keeping a pale daytime gradient after the app turns
    dark at 20:00. */

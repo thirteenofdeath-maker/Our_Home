@@ -34,6 +34,21 @@ describe("mobile visual foundation", () => {
     );
   });
 
+  it("keeps fixed quick-add actions aligned to the centered app column on tablets", () => {
+    const css = read("src/app/globals.css");
+    expect(css).toContain(".app-fab");
+    expect(css).toContain("calc((100vw - 36rem) / 2 + 1.25rem)");
+
+    for (const path of [
+      "src/features/finance/components/FinanceCreateFlow.tsx",
+      "src/features/calendar/components/AddCalendarEventFab.tsx",
+      "src/features/pets/components/AddPetFab.tsx",
+      "src/app/(app)/household/page.tsx",
+    ]) {
+      expect(read(path), path).toContain("app-fab");
+    }
+  });
+
   it("keeps the five real destinations and gives each an icon", () => {
     const nav = read("src/components/shared/BottomNav.tsx");
     expect(

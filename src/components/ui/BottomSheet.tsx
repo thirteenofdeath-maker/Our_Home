@@ -180,7 +180,7 @@ export function BottomSheet({
         if (event.target === event.currentTarget) onClose();
       }}
       className={cn(
-        "fixed inset-x-0 bottom-0 top-auto m-0 hidden w-full max-w-lg touch-pan-y open:flex flex-col overflow-x-hidden overscroll-x-none rounded-t-sheet border-0 p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/40",
+        "fixed inset-x-0 bottom-0 top-auto mx-auto my-0 hidden w-full max-w-xl touch-pan-y open:flex flex-col overflow-x-hidden overscroll-x-none rounded-t-sheet border-0 p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/40",
         tone === "finance" && "finance-vars",
         tone === "finance" ? "bg-finance-surface" : "bg-surface",
         size === "large" ? "max-h-[88dvh]" : "max-h-[70dvh]",

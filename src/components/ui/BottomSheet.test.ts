@@ -93,6 +93,13 @@ describe("BottomSheet mobile sizing", () => {
     expect(source).not.toContain("&times;");
   });
 
+  it("centers the sheet inside the same tablet-width column as the app", () => {
+    const classes = dialogClassCandidates().split(/\s+/).filter(Boolean);
+    expect(classes).toContain("mx-auto");
+    expect(classes).toContain("max-w-xl");
+    expect(classes).not.toContain("max-w-lg");
+  });
+
   // Regression for a real, shipped bug: a <dialog> hides itself when
   // closed via the browser's own `dialog:not([open]) { display: none }`
   // rule — an ordinary (non-!important) UA rule. Putting an unconditional
