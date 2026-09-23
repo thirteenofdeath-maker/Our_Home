@@ -112,52 +112,55 @@ html[data-time-theme="evening"] {
   --time-secondary: #e98a72;
 }
 
+/* Night keeps the page softly lit instead of turning every large surface navy.
+   Deep blues remain the accent, so the app still feels time-aware without
+   fighting the warm cover illustrations or flattening every card together. */
 html[data-time-theme="night"] {
-  color-scheme: dark;
-  --time-background: #081c30;
-  --time-surface: #20364a;
-  --time-surface-muted: #2f4b5d;
-  --time-border: #4e6873;
-  --time-foreground: #ffffff;
-  --time-foreground-muted: #dce4ea;
-  --time-primary: #f2d8b5;
-  --time-primary-strong: #f2d8b5;
-  --time-primary-soft: #4a636e;
-  --time-primary-foreground: #20364a;
-  --time-secondary: #4e6873;
-  --time-income: #91c99b;
-  --time-expense: #ff9c87;
-  --time-transfer: #91c8e2;
-  --time-finance-income: #91c99b;
-  --time-finance-expense: #ff9c87;
-  --time-finance-transfer: #91c8e2;
-  --time-semantic-foreground: #081c30;
-  --time-danger: #ff9b82;
-  --time-danger-foreground: #081c30;
+  color-scheme: light;
+  --time-background: #eef2f4;
+  --time-surface: #fffaf2;
+  --time-surface-muted: #dce4ea;
+  --time-border: #c6d3db;
+  --time-foreground: #20364a;
+  --time-foreground-muted: #5d6d79;
+  --time-primary: #20364a;
+  --time-primary-strong: #081c30;
+  --time-primary-soft: #dce4ea;
+  --time-primary-foreground: #ffffff;
+  --time-secondary: #f2d8b5;
+  --time-income: #5f9369;
+  --time-expense: #cf6856;
+  --time-transfer: #5d88a3;
+  --time-finance-income: #5f9369;
+  --time-finance-expense: #cf6856;
+  --time-finance-transfer: #5d88a3;
+  --time-semantic-foreground: #ffffff;
+  --time-danger: #b94f3d;
+  --time-danger-foreground: #ffffff;
 }
 
 html[data-time-theme="late-night"] {
-  color-scheme: dark;
-  --time-background: #061523;
-  --time-surface: #1b2d40;
-  --time-surface-muted: #294457;
-  --time-border: #4e6873;
-  --time-foreground: #ffffff;
-  --time-foreground-muted: #dce4ea;
-  --time-primary: #dce4ea;
-  --time-primary-strong: #dce4ea;
-  --time-primary-soft: #4e6873;
-  --time-primary-foreground: #061523;
-  --time-secondary: #4e6873;
-  --time-income: #91c99b;
-  --time-expense: #ff9c87;
-  --time-transfer: #91c8e2;
-  --time-finance-income: #91c99b;
-  --time-finance-expense: #ff9c87;
-  --time-finance-transfer: #91c8e2;
-  --time-semantic-foreground: #061523;
-  --time-danger: #ff9b82;
-  --time-danger-foreground: #061523;
+  color-scheme: light;
+  --time-background: #e8eef2;
+  --time-surface: #f9f7f2;
+  --time-surface-muted: #d7e1e8;
+  --time-border: #bccbd5;
+  --time-foreground: #1b2d40;
+  --time-foreground-muted: #586b79;
+  --time-primary: #1b2d40;
+  --time-primary-strong: #061523;
+  --time-primary-soft: #dce4ea;
+  --time-primary-foreground: #ffffff;
+  --time-secondary: #ead5b8;
+  --time-income: #5f9369;
+  --time-expense: #c95f50;
+  --time-transfer: #587f99;
+  --time-finance-income: #5f9369;
+  --time-finance-expense: #c95f50;
+  --time-finance-transfer: #587f99;
+  --time-semantic-foreground: #ffffff;
+  --time-danger: #b94f3d;
+  --time-danger-foreground: #ffffff;
 }
 
 html[data-time-theme="morning"] {

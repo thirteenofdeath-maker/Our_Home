@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 
 import {
-  isDarkTimeTheme,
   TIME_THEME_COLORS,
   timeThemeForBangkok,
 } from "@/features/theme/time-theme";
@@ -12,7 +11,7 @@ function applyCurrentTimeTheme() {
   const theme = timeThemeForBangkok();
   const root = document.documentElement;
   root.dataset.timeTheme = theme;
-  root.style.colorScheme = isDarkTimeTheme(theme) ? "dark" : "light";
+  root.style.colorScheme = "light";
 
   document
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')

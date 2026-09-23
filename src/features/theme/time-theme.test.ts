@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  isDarkTimeTheme,
   timeThemeForBangkok,
   timeThemeForHour,
 } from "./time-theme";
@@ -24,11 +23,5 @@ describe("timeThemeForHour", () => {
     expect(timeThemeForBangkok(new Date("2026-09-23T01:00:00Z"))).toBe(
       "late-morning",
     );
-  });
-
-  it("marks only the two night palettes as dark", () => {
-    expect(isDarkTimeTheme("evening")).toBe(false);
-    expect(isDarkTimeTheme("night")).toBe(true);
-    expect(isDarkTimeTheme("late-night")).toBe(true);
   });
 });

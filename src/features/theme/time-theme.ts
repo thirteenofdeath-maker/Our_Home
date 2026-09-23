@@ -40,10 +40,6 @@ export const TIME_THEME_COLORS: Record<TimeTheme, string> = {
   midday: "#7c6c4f",
   afternoon: "#7e6b4c",
   evening: "#715348",
-  night: "#081c30",
-  "late-night": "#061523",
+  night: "#eef2f4",
+  "late-night": "#e8eef2",
 };
-
-export function isDarkTimeTheme(theme: TimeTheme) {
-  return theme === "night" || theme === "late-night";
-}
