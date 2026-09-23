@@ -30,8 +30,12 @@ describe("offline-first PWA foundation", () => {
     expect(worker).toContain("cacheFirstMainPage(event, request)");
     expect(preloader).toContain("router.prefetch(route, {");
     expect(preloader).toContain('kind: "full"');
-    expect(preloader).toContain("onInvalidate");
-    expect(preloader).toContain('window.addEventListener("focus", warmAll)');
+    expect(preloader).toContain("requestIdleCallback");
+    expect(preloader).not.toContain("router.refresh()");
+    expect(preloader).not.toContain("onInvalidate");
+    expect(preloader).not.toContain(
+      'window.addEventListener("focus", warmAll)',
+    );
     expect(preloader).toContain('type: "WARM_APP_ROUTES"');
     expect(shell).toContain("<AppRoutePreloader />");
     expect(navigation).toContain("prefetch={true}");

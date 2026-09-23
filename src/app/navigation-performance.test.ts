@@ -32,4 +32,30 @@ describe("native-like main navigation performance", () => {
     expect(onboardingGate).toBeGreaterThan(profileStart);
     expect(profileJoin).toBeGreaterThan(onboardingGate);
   });
+
+  it("loads recent pet care in one household query instead of one query per pet", () => {
+    const home = read("src/app/(app)/page.tsx");
+    const index = read(
+      "supabase/migrations/20260923004810_pet_care_recent_activity_index.sql",
+    );
+    expect(home).toContain("listRecentHouseholdPetCareRecords(");
+    expect(home).not.toContain("pets.map(async (pet)");
+    expect(index).toContain("on public.pet_care_records(household_id, created_at desc)");
+    expect(index).toContain("where archived_at is null");
+  });
+
+  it("does not load wallets in the authenticated layout for unrelated pages", () => {
+    const layout = read("src/app/(app)/layout.tsx");
+    const quickAdd = read("src/components/shared/GlobalQuickAdd.tsx");
+    expect(layout).not.toContain("listMyWallets");
+    expect(layout).toContain("<GlobalQuickAdd />");
+    expect(quickAdd).toContain("getGlobalQuickAddBootstrapData");
+  });
+
+  it("batches signed storage URLs", () => {
+    const household = read("src/features/household/api.ts");
+    const pets = read("src/features/pets/api.ts");
+    expect(household).toContain("createSignedUrls(storedPaths");
+    expect(pets.match(/createSignedUrls\(/g)).toHaveLength(2);
+  });
 });

@@ -17,17 +17,6 @@ import type {
   PetWithCaregivers,
 } from "./types";
 
-async function signedPhotoUrl(
-  supabase: SupabaseClient<Database>,
-  path: string | null,
-) {
-  if (!path) return null;
-  const { data, error } = await supabase.storage
-    .from("pet-photos")
-    .createSignedUrl(path, 3600);
-  return error ? null : data.signedUrl;
-}
-
 async function hydratePets(
   supabase: SupabaseClient<Database>,
   householdId: string,
@@ -44,18 +33,31 @@ async function hydratePets(
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (links.error) throw links.error;
-  return Promise.all(
-    pets.map(async (pet) => ({
-      ...pet,
-      caregivers: members.filter((member) =>
-        links.data?.some(
-          (link) =>
-            link.pet_id === pet.id && link.household_member_id === member.id,
-        ),
+  const photoPaths = [
+    ...new Set(pets.flatMap((pet) => (pet.photo_path ? [pet.photo_path] : []))),
+  ];
+  const signedPhotos = new Map<string, string>();
+  if (photoPaths.length) {
+    const { data } = await supabase.storage
+      .from("pet-photos")
+      .createSignedUrls(photoPaths, 3600);
+    for (const item of data ?? []) {
+      if (item.path && item.signedUrl)
+        signedPhotos.set(item.path, item.signedUrl);
+    }
+  }
+  return pets.map((pet) => ({
+    ...pet,
+    caregivers: members.filter((member) =>
+      links.data?.some(
+        (link) =>
+          link.pet_id === pet.id && link.household_member_id === member.id,
       ),
-      photoUrl: await signedPhotoUrl(supabase, pet.photo_path),
-    })),
-  );
+    ),
+    photoUrl: pet.photo_path
+      ? (signedPhotos.get(pet.photo_path) ?? null)
+      : null,
+  }));
 }
 
 export async function listPets(
@@ -75,6 +77,20 @@ export async function listPets(
   const { data, error } = await query;
   if (error) throw error;
   return hydratePets(supabase, householdId, data ?? []);
+}
+
+export async function listPetSummaries(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+) {
+  const { data, error } = await supabase
+    .from("pets")
+    .select("id, name")
+    .eq("household_id", householdId)
+    .is("archived_at", null)
+    .order("created_at");
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getPet(
@@ -180,17 +196,6 @@ export async function deletePetPhoto(
   await supabase.storage.from("pet-photos").remove([path]);
 }
 
-async function signedDocumentUrl(
-  supabase: SupabaseClient<Database>,
-  path: string | null,
-) {
-  if (!path) return null;
-  const { data, error } = await supabase.storage
-    .from("pet-documents")
-    .createSignedUrl(path, 3600);
-  return error ? null : data.signedUrl;
-}
-
 export async function listPetCareRecords(
   supabase: SupabaseClient<Database>,
   petId: string,
@@ -203,12 +208,48 @@ export async function listPetCareRecords(
     .order("recorded_at", { ascending: false })
     .order("id", { ascending: false });
   if (error) throw error;
-  return Promise.all(
-    (data ?? []).map(async (record) => ({
-      ...record,
-      documentUrl: await signedDocumentUrl(supabase, record.document_path),
-    })),
-  );
+  const records = data ?? [];
+  const documentPaths = [
+    ...new Set(
+      records.flatMap((record) =>
+        record.document_path ? [record.document_path] : [],
+      ),
+    ),
+  ];
+  const signedDocuments = new Map<string, string>();
+  if (documentPaths.length) {
+    const { data: signed } = await supabase.storage
+      .from("pet-documents")
+      .createSignedUrls(documentPaths, 3600);
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl)
+        signedDocuments.set(item.path, item.signedUrl);
+    }
+  }
+  return records.map((record) => ({
+    ...record,
+    documentUrl: record.document_path
+      ? (signedDocuments.get(record.document_path) ?? null)
+      : null,
+  }));
+}
+
+export async function listRecentHouseholdPetCareRecords(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  limit = 3,
+): Promise<(PetCareRecord & { pet: { id: string; name: string } | null })[]> {
+  const { data, error } = await supabase
+    .from("pet_care_records")
+    .select("*, pet:pets(id, name)")
+    .eq("household_id", householdId)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as (PetCareRecord & {
+    pet: { id: string; name: string } | null;
+  })[];
 }
 
 export async function listScheduledPetCareRecords(

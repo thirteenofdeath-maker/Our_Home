@@ -217,3 +217,18 @@ export async function getCreateWalletSheetData() {
   const household = await getMyPrimaryHousehold(supabase, user.id);
   return { hasHousehold: Boolean(household) };
 }
+
+/**
+ * Loaded only after a generic Finance FAB is actually mounted. Keeping this
+ * out of the authenticated layout removes a wallets query from every app
+ * route while preserving the same instant sheet after the short idle warmup.
+ */
+export async function getGlobalQuickAddBootstrapData() {
+  const { supabase, user } = await requireUser();
+  const wallets = await listMyWallets(supabase);
+  if (wallets.length) {
+    return { walletId: wallets[0].id, hasHousehold: true };
+  }
+  const household = await getMyPrimaryHousehold(supabase, user.id);
+  return { walletId: null, hasHousehold: Boolean(household) };
+}

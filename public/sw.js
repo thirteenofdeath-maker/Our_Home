@@ -220,11 +220,12 @@ async function warmMainAppRoutes(routes) {
       isPrivateAppPage(new URL(route, self.location.origin)),
   );
 
-  // Four concurrent reads keep background warming from swamping navigation.
+  // Two low-priority reads keep background warming from competing with the
+  // page the person is actively opening.
   const pending = [...new Set(allowedRoutes)];
   const generation = cacheGeneration;
   await Promise.allSettled(
-    Array.from({ length: 4 }, async () => {
+    Array.from({ length: 2 }, async () => {
       while (pending.length && generation === cacheGeneration) {
         const route = pending.shift();
         const url = new URL(route, self.location.origin);

@@ -19,8 +19,8 @@ import {
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getCurrentProfile } from "@/features/profile/api";
 import {
-  listPetCareRecords,
-  listPets,
+  listPetSummaries,
+  listRecentHouseholdPetCareRecords,
   listScheduledPetCareRecords,
 } from "@/features/pets/api";
 import {
@@ -175,6 +175,7 @@ export default async function HomePage() {
     recentTransactions,
     pets,
     petCare,
+    recentPetCareRecords,
   ] = await Promise.all([
     profilePromise,
     listCalendarEvents(supabase, householdId, user.id),
@@ -186,7 +187,7 @@ export default async function HomePage() {
       end: `${tomorrow}T00:00:00+07:00`,
     }),
     listRecentFinanceTransactions(supabase, { limit: 5 }),
-    householdId ? listPets(supabase, householdId) : Promise.resolve([]),
+    householdId ? listPetSummaries(supabase, householdId) : Promise.resolve([]),
     householdId
       ? listScheduledPetCareRecords(
           supabase,
@@ -194,6 +195,9 @@ export default async function HomePage() {
           `${today}T00:00:00+07:00`,
           `${upcomingEnd}T00:00:00+07:00`,
         )
+      : Promise.resolve([]),
+    householdId
+      ? listRecentHouseholdPetCareRecords(supabase, householdId, 3)
       : Promise.resolve([]),
   ]);
 
@@ -204,17 +208,9 @@ export default async function HomePage() {
   const upcomingReminders = reminders.filter(
     (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) <= tomorrow,
   );
-  const recentPetCare = (
-    await Promise.all(
-      pets.map(async (pet) => ({
-        pet,
-        records: await listPetCareRecords(supabase, pet.id),
-      })),
-    )
-  )
-    .flatMap(({ pet, records }) => records.map((record) => ({ pet, record })))
-    .toSorted((a, b) => b.record.created_at.localeCompare(a.record.created_at))
-    .slice(0, 3);
+  const recentPetCare = recentPetCareRecords.flatMap((record) =>
+    record.pet ? [{ pet: record.pet, record }] : [],
+  );
   const displayName =
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
   const coverMode = homeCoverMode(profile?.birthday, now);

@@ -106,7 +106,9 @@ describe("Contextual create FAB — the real form slides up directly, never a re
   describe("Finance", () => {
     it("with a wallet, renders the two-stage FinanceCreateFlow sheet (choice -> form-in-sheet, no full-page redirect for entry) rather than the old items-based ActionSheet", () => {
       const source = read("src/components/shared/GlobalQuickAdd.tsx");
-      expect(source).toContain("<FinanceCreateFlow walletId={walletId} />");
+      expect(source).toContain(
+        "<FinanceCreateFlow walletId={bootstrap.walletId} />",
+      );
       const flow = read("src/features/finance/components/FinanceCreateFlow.tsx");
       // Reuses the exact same writers/forms as the full-page routes —
       // never a fork. TransactionForm/PocketTransferForm/WalletTransferForm

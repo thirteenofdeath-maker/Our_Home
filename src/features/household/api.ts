@@ -4,7 +4,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
-import { getAvatarDisplayUrl } from "@/features/profile/api";
 
 import type { HouseholdMemberWithProfile, HouseholdWithRole } from "./types";
 
@@ -48,24 +47,47 @@ export async function listHouseholdMembers(
 
   if (error) logDatabaseErrorInDev("listHouseholdMembers failed", error);
   const members = (data ?? []) as unknown as HouseholdMemberWithProfile[];
-  return Promise.all(
-    members
-      .filter(
-        (member) => options.includeObservers || member.role !== "observer",
-      )
-      .map(async (member) => ({
-        ...member,
-        profile: member.profile
-          ? {
-              ...member.profile,
-              avatar_url: await getAvatarDisplayUrl(
-                supabase,
-                member.profile.avatar_url,
-              ),
-            }
-          : null,
-      })),
+  const visibleMembers = members.filter(
+    (member) => options.includeObservers || member.role !== "observer",
   );
+  const storedPaths = [
+    ...new Set(
+      visibleMembers.flatMap((member) => {
+        const value = member.profile?.avatar_url;
+        return value && !/^https?:\/\//.test(value) ? [value] : [];
+      }),
+    ),
+  ];
+  const signedByPath = new Map<string, string>();
+  if (storedPaths.length) {
+    const { data: signed, error: signedError } = await supabase.storage
+      .from("avatars")
+      .createSignedUrls(storedPaths, 3600);
+    if (signedError)
+      logDatabaseErrorInDev(
+        "listHouseholdMembers avatar signing failed",
+        signedError,
+      );
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl)
+        signedByPath.set(item.path, item.signedUrl);
+    }
+  }
+  return visibleMembers.map((member) => {
+    const avatar = member.profile?.avatar_url;
+    return {
+      ...member,
+      profile: member.profile
+        ? {
+            ...member.profile,
+            avatar_url:
+              avatar && !/^https?:\/\//.test(avatar)
+                ? (signedByPath.get(avatar) ?? null)
+                : (avatar ?? null),
+          }
+        : null,
+    };
+  });
 }
 
 export async function updateOwnMemberPresentation(

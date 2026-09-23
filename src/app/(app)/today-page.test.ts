@@ -27,7 +27,8 @@ describe("Today dashboard composition", () => {
       "listCalendarFinanceItems",
       "getFinanceSummary",
       "listRecentFinanceTransactions",
-      "listPets",
+      "listPetSummaries",
+      "listRecentHouseholdPetCareRecords",
     ]) {
       expect(source).toContain(sourceFunction);
     }
