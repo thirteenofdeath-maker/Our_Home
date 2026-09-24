@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
@@ -178,21 +177,6 @@ export function MonthCalendar({
               </Link>
             );
           })}
-        </div>
-        <div className="light-cover-copy relative -mx-4 -mb-4 mt-2 h-16 overflow-hidden border-t border-finance-primary-soft/60 sm:mt-3 sm:h-20">
-          <Image
-            src="/art/plan-calendar.webp"
-            alt="แมวกับปฏิทินและอุปกรณ์วางแผน"
-            fill
-            sizes="(max-width: 640px) 100vw, 576px"
-            className="object-cover object-right"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.96),rgba(255,253,248,0.34)_60%,transparent)]" />
-          <p className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-medium leading-relaxed text-finance-muted">
-            ทุกวันคือวันที่ดี
-            <br />
-            สำหรับบ้านของเรา
-          </p>
         </div>
       </section>
       <section className="flex flex-col gap-2">

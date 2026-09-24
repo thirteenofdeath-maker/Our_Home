@@ -116,6 +116,11 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toContain("ยอดเงินส่วนตัว");
   });
 
+  it("keeps decorative artwork in the shared cover instead of dashboard cards", () => {
+    expect(hub).not.toContain("finance-corner.webp");
+    expect(hub).not.toContain("<Image");
+  });
+
   it("keeps the compact Pocket row within its requested height/icon budget", () => {
     const pocketManagerList = read(
       "src/features/pockets/components/PocketManagerList.tsx",

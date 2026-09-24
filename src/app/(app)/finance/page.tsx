@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import { AppIcon } from "@/components/ui/AppIcon";
 import { getBudgetSummary } from "@/features/budgets/api";
@@ -180,15 +179,8 @@ export default async function FinancePage({
           return (
             <div
               key={`summary-${currency}`}
-              className="relative grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
+              className="grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
             >
-              <Image
-                src="/art/finance-corner.webp"
-                alt=""
-                width={160}
-                height={80}
-                className="pointer-events-none absolute -bottom-1 -right-3 w-14 opacity-30"
-              />
               <FinanceSummaryItem
                 label="รายรับรวม"
                 value={formatCurrency(total.income, currency)}
