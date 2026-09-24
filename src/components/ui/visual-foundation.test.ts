@@ -78,6 +78,32 @@ describe("mobile visual foundation", () => {
     }
   });
 
+  it("art-directs every cover separately for iPhone and iPad crops", () => {
+    const css = read("src/app/globals.css");
+    expect(css).toContain("@media (min-width: 700px)");
+    for (const className of [
+      ".app-cover-home .app-cover-image",
+      ".app-cover-finance .app-cover-image",
+      ".app-cover-calendar .app-cover-image",
+      ".app-cover-pets .app-cover-image",
+      ".app-cover-household .app-cover-image",
+    ]) {
+      expect(
+        css.match(new RegExp(className.replaceAll(".", "\\."), "g"))?.length,
+      ).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("supports a query-only seven-theme QA mode without adding cover labels", () => {
+    const layout = read("src/app/layout.tsx");
+    const controller = read("src/components/shared/TimeThemeController.tsx");
+    const home = read("src/app/(app)/page.tsx");
+    expect(layout).toContain("timeTheme");
+    expect(controller).toContain('get("timeTheme")');
+    expect(home).toContain("themeOverride ?? homeCoverMode");
+    expect(home).not.toContain("ป้ายช่วงเวลา");
+  });
+
   it("uses one landscape-only split-view system without duplicating routes", () => {
     const css = read("src/app/globals.css");
     expect(css).toContain(

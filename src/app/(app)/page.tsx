@@ -35,6 +35,7 @@ import {
   homeCoverMode,
   type HomeCoverMode,
 } from "@/features/today/domain";
+import { parseTimeTheme } from "@/features/theme/time-theme";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -144,9 +145,10 @@ const HOME_COVER_STYLES: Record<
   },
 };
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<"/">) {
   const { supabase, user } = await requireUser();
   const now = new Date();
+  const themeOverride = parseTimeTheme((await searchParams).timeTheme);
 
   const walletsPromise = listMyWallets(supabase);
   const householdPromise = getMyPrimaryHousehold(supabase, user.id);
@@ -213,7 +215,7 @@ export default async function HomePage() {
   );
   const displayName =
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
-  const coverMode = homeCoverMode(profile?.birthday, now);
+  const coverMode = themeOverride ?? homeCoverMode(profile?.birthday, now);
   const coverStyle = HOME_COVER_STYLES[coverMode];
   const isBirthday = coverMode === "birthday";
   const todayItemCount =

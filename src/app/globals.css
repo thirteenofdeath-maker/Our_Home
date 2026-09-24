@@ -224,6 +224,52 @@ html[data-time-theme="morning"] {
   color-scheme: light;
 }
 
+/* Cover focal points are art-directed for the two real device families.
+   Phones crop the wide artwork at the left and right edges, so they bias
+   toward the people and pets. iPads show the full width and crop vertically,
+   so their focal points preserve faces and the main objects instead. */
+.app-cover-home .app-cover-image {
+  object-position: 62% 50%;
+}
+
+.app-cover-finance .app-cover-image {
+  object-position: 66% 52%;
+}
+
+.app-cover-calendar .app-cover-image {
+  object-position: 68% 54%;
+}
+
+.app-cover-pets .app-cover-image {
+  object-position: 66% 54%;
+}
+
+.app-cover-household .app-cover-image {
+  object-position: 64% 50%;
+}
+
+@media (min-width: 700px) {
+  .app-cover-home .app-cover-image {
+    object-position: 50% 46%;
+  }
+
+  .app-cover-finance .app-cover-image {
+    object-position: 50% 58%;
+  }
+
+  .app-cover-calendar .app-cover-image {
+    object-position: 50% 61%;
+  }
+
+  .app-cover-pets .app-cover-image {
+    object-position: 50% 58%;
+  }
+
+  .app-cover-household .app-cover-image {
+    object-position: 50% 47%;
+  }
+}
+
 /*
  * Finance Design V2 — a distinct, self-contained token set for the "soft
  * finance dashboard" direction. Pets/Calendar/Household never apply
@@ -395,10 +441,7 @@ body {
 @media (orientation: landscape) and (min-width: 700px) {
   .app-main {
     max-width: 72rem;
-    padding-left: max(
-      6.25rem,
-      calc(env(safe-area-inset-left) + 5.5rem)
-    );
+    padding-left: max(6.25rem, calc(env(safe-area-inset-left) + 5.5rem));
     padding-right: max(1.25rem, env(safe-area-inset-right));
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
     padding-top: 0.75rem !important;
@@ -519,24 +562,27 @@ body {
     overscroll-behavior: contain;
   }
 
+  /* Landscape iPads crop these wide scenes most aggressively on the vertical
+     axis. Lift the family scenes slightly while keeping object-led covers low
+     enough to retain their wallet, planner, and pets. */
   .app-cover-home .app-cover-image {
-    object-position: 58% 48%;
+    object-position: 50% 40%;
   }
 
   .app-cover-finance .app-cover-image {
-    object-position: 66% 52%;
+    object-position: 50% 58%;
   }
 
   .app-cover-calendar .app-cover-image {
-    object-position: 70% 48%;
+    object-position: 50% 59%;
   }
 
   .app-cover-pets .app-cover-image {
-    object-position: 68% 52%;
+    object-position: 50% 56%;
   }
 
   .app-cover-household .app-cover-image {
-    object-position: 65% 48%;
+    object-position: 50% 43%;
   }
 }
 

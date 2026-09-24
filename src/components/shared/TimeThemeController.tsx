@@ -3,12 +3,16 @@
 import { useEffect } from "react";
 
 import {
+  parseTimeTheme,
   TIME_THEME_COLORS,
   timeThemeForBangkok,
 } from "@/features/theme/time-theme";
 
 function applyCurrentTimeTheme() {
-  const theme = timeThemeForBangkok();
+  const theme =
+    parseTimeTheme(
+      new URLSearchParams(window.location.search).get("timeTheme"),
+    ) ?? timeThemeForBangkok();
   const root = document.documentElement;
   root.dataset.timeTheme = theme;
   root.style.colorScheme = "light";

@@ -12,6 +12,15 @@ export const TIME_THEMES = [
 
 export type TimeTheme = (typeof TIME_THEMES)[number];
 
+export function parseTimeTheme(value: unknown): TimeTheme | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+
+  return typeof candidate === "string" &&
+    TIME_THEMES.includes(candidate as TimeTheme)
+    ? (candidate as TimeTheme)
+    : null;
+}
+
 export function timeThemeForHour(hour: number): TimeTheme {
   if (hour >= 5 && hour < 8) return "morning";
   if (hour >= 8 && hour < 11) return "late-morning";

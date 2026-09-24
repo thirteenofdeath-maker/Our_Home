@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseTimeTheme,
   timeThemeForBangkok,
   timeThemeForHour,
 } from "./time-theme";
@@ -23,5 +24,13 @@ describe("timeThemeForHour", () => {
     expect(timeThemeForBangkok(new Date("2026-09-23T01:00:00Z"))).toBe(
       "late-morning",
     );
+  });
+
+  it("accepts only the seven explicit QA theme overrides", () => {
+    expect(parseTimeTheme("morning")).toBe("morning");
+    expect(parseTimeTheme("late-night")).toBe("late-night");
+    expect(parseTimeTheme(["evening", "night"])).toBe("evening");
+    expect(parseTimeTheme("birthday")).toBeNull();
+    expect(parseTimeTheme(undefined)).toBeNull();
   });
 });

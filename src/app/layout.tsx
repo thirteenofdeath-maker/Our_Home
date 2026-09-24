@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   themeColor: "#607a65",
 };
 
-const timeThemeBootstrap = `(()=>{try{const h=Number(new Intl.DateTimeFormat('en-US',{hour:'2-digit',hourCycle:'h23',timeZone:'Asia/Bangkok'}).format(new Date()));const t=h>=5&&h<8?'morning':h>=8&&h<11?'late-morning':h>=11&&h<14?'midday':h>=14&&h<17?'afternoon':h>=17&&h<20?'evening':h>=20&&h<23?'night':'late-night';const c={morning:'#607a65','late-morning':'#6f7653',midday:'#7c6c4f',afternoon:'#7e6b4c',evening:'#715348',night:'#eef2f4','late-night':'#e8eef2'};document.documentElement.dataset.timeTheme=t;document.documentElement.style.colorScheme='light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',c[t])}catch{}})();`;
+const timeThemeBootstrap = `(()=>{try{const q=new URLSearchParams(location.search).get('timeTheme');const a=['morning','late-morning','midday','afternoon','evening','night','late-night'];const h=Number(new Intl.DateTimeFormat('en-US',{hour:'2-digit',hourCycle:'h23',timeZone:'Asia/Bangkok'}).format(new Date()));const t=a.includes(q)?q:h>=5&&h<8?'morning':h>=8&&h<11?'late-morning':h>=11&&h<14?'midday':h>=14&&h<17?'afternoon':h>=17&&h<20?'evening':h>=20&&h<23?'night':'late-night';const c={morning:'#607a65','late-morning':'#6f7653',midday:'#7c6c4f',afternoon:'#7e6b4c',evening:'#715348',night:'#eef2f4','late-night':'#e8eef2'};document.documentElement.dataset.timeTheme=t;document.documentElement.style.colorScheme='light';document.querySelector('meta[name="theme-color"]')?.setAttribute('content',c[t])}catch{}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
