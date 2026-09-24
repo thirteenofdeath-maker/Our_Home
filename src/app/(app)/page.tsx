@@ -221,15 +221,15 @@ export default async function HomePage() {
   const currentWeek = weekDates(today);
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+    <div className="landscape-home-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
+      <section className="app-cover app-cover-home relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src={coverStyle.src}
           alt={coverStyle.alt}
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
-          className="object-cover object-center"
+          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          className="app-cover-image object-cover object-center"
         />
         {coverMode === "night" || coverMode === "late-night" ? (
           <div
@@ -371,7 +371,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid min-w-0 grid-cols-2 gap-3">
+      <section className="landscape-span-full grid min-w-0 grid-cols-2 gap-3">
         <DashboardCard
           title="การเงิน"
           href="/finance"
@@ -437,7 +437,7 @@ export default async function HomePage() {
 
       <section
         aria-label="ทางลัด"
-        className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
+        className="landscape-span-full grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
       >
         <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
         <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
@@ -547,7 +547,7 @@ function TodaySection({
   children: ReactNode;
 }) {
   return (
-    <section className="flex min-w-0 flex-col gap-2">
+    <section className="landscape-span-full flex min-w-0 flex-col gap-2">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-finance-text">{title}</h2>
         <Link

@@ -139,14 +139,14 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/plan-calendar.webp"
           alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
-          className="time-cover-image object-cover object-center"
+          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          className="app-cover-image time-cover-image object-cover object-center"
         />
         <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <div className="relative max-w-[62%]">

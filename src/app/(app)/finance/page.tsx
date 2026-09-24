@@ -153,7 +153,8 @@ export default async function FinancePage({
         />
       ) : null}
 
-      <section className="flex flex-col gap-3">
+      <div className="landscape-finance-grid flex min-w-0 flex-col gap-5">
+        <section className="flex min-w-0 flex-col gap-3">
         <SectionTitle
           title="สรุปรายรับรายจ่าย"
           primary
@@ -230,26 +231,28 @@ export default async function FinancePage({
             />
           );
         })}
-      </section>
+        </section>
 
-      {initialWallet ? (
-        <FinanceCreateFlow walletId={initialWallet.id} />
-      ) : (
-        <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
-          <p className="text-sm text-finance-muted">
-            เพิ่มกระเป๋าเงิน{scope === "HOUSEHOLD" ? "ครอบครัว" : "ส่วนตัว"}
-            ก่อนบันทึกรายการ
-          </p>
-          <AddWalletTrigger
-            defaultScope={scope}
-            triggerClassName="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong"
-          >
-            เพิ่มกระเป๋าเงิน
-          </AddWalletTrigger>
-        </div>
-      )}
+        <div className="landscape-finance-side min-w-0">
+          {initialWallet ? (
+            <FinanceCreateFlow walletId={initialWallet.id} />
+          ) : (
+            <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
+              <p className="text-sm text-finance-muted">
+                เพิ่มกระเป๋าเงิน
+                {scope === "HOUSEHOLD" ? "ครอบครัว" : "ส่วนตัว"}
+                ก่อนบันทึกรายการ
+              </p>
+              <AddWalletTrigger
+                defaultScope={scope}
+                triggerClassName="mt-2 inline-flex min-h-11 items-center text-finance-primary-strong"
+              >
+                เพิ่มกระเป๋าเงิน
+              </AddWalletTrigger>
+            </div>
+          )}
 
-      <section className="flex flex-col gap-2">
+          <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-finance-text">
           วางแผนการเงิน
         </h2>
@@ -299,9 +302,9 @@ export default async function FinancePage({
             tone="transfer"
           />
         </div>
-      </section>
+          </section>
 
-      <section className="flex flex-col gap-2">
+          <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-finance-muted">
           เครื่องมือเพิ่มเติม
         </h2>
@@ -320,7 +323,9 @@ export default async function FinancePage({
             </Link>
           ))}
         </div>
-      </section>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

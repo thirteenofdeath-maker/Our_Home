@@ -180,7 +180,7 @@ export function BottomSheet({
         if (event.target === event.currentTarget) onClose();
       }}
       className={cn(
-        "fixed inset-x-0 bottom-0 top-auto mx-auto my-0 hidden w-full max-w-xl touch-pan-y open:flex flex-col overflow-x-hidden overscroll-x-none rounded-t-sheet border-0 p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/40",
+        "app-bottom-sheet fixed inset-x-0 bottom-0 top-auto mx-auto my-0 hidden w-full max-w-xl touch-pan-y open:flex flex-col overflow-x-hidden overscroll-x-none rounded-t-sheet border-0 p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/40",
         tone === "finance" && "finance-vars",
         tone === "finance" ? "bg-finance-surface" : "bg-surface",
         size === "large" ? "max-h-[88dvh]" : "max-h-[70dvh]",
@@ -206,7 +206,7 @@ export function BottomSheet({
         "motion-reduce:[transform:translate3d(0,0,0)]",
       )}
     >
-      <div className="flex shrink-0 items-center justify-center pt-2.5 pb-1">
+      <div className="app-bottom-sheet-handle flex shrink-0 items-center justify-center pt-2.5 pb-1">
         <span
           aria-hidden="true"
           className={cn(

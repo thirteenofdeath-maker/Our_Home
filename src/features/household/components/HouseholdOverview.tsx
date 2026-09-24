@@ -48,7 +48,7 @@ export function HouseholdOverview({
     <>
       <section
         aria-labelledby="household-members-heading"
-        className="flex flex-col gap-3"
+        className="landscape-household-members flex min-w-0 flex-col gap-3"
       >
         <div className="flex items-center justify-between gap-3">
           <h2
@@ -95,7 +95,10 @@ export function HouseholdOverview({
         </p>
       </section>
       {observers.length > 0 ? (
-        <section aria-label="ผู้สังเกตการณ์" className="flex flex-col gap-3">
+        <section
+          aria-label="ผู้สังเกตการณ์"
+          className="landscape-household-observers flex min-w-0 flex-col gap-3"
+        >
           <h2 className="font-semibold text-finance-text">
             ผู้สังเกตการณ์ · {observers.length} คน
           </h2>

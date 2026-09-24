@@ -35,7 +35,7 @@ export function AppShell({
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="app-shell flex min-h-full flex-1 flex-col">
       <AppRoutePreloader />
       {/* The bottom padding must clear BOTH the floating BottomNav AND,
           on top of it, a bottom-right FAB where one exists — plus the
@@ -44,7 +44,7 @@ export function AppShell({
           BottomNav renders (even on a FAB-less deep page) rather than
           computed per-route, so no page can under-clear it by omission. */}
       <main
-        className={`mx-auto w-full max-w-xl flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2" : "pb-8 pt-1"}`}
+        className={`app-main mx-auto w-full max-w-xl flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2" : "pb-8 pt-1"}`}
       >
         {children}
       </main>

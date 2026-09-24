@@ -78,6 +78,49 @@ describe("mobile visual foundation", () => {
     }
   });
 
+  it("uses one landscape-only split-view system without duplicating routes", () => {
+    const css = read("src/app/globals.css");
+    expect(css).toContain(
+      "@media (orientation: landscape) and (min-width: 700px)",
+    );
+    for (const className of [
+      ".bottom-nav-shell",
+      ".app-bottom-sheet",
+      ".landscape-plan-split",
+      ".landscape-finance-grid",
+      ".landscape-pets-split",
+      ".landscape-home-grid",
+      ".landscape-household-grid",
+    ]) {
+      expect(css).toContain(className);
+    }
+
+    const sources = [
+      read("src/features/calendar/components/MonthCalendar.tsx"),
+      read("src/app/(app)/finance/page.tsx"),
+      read("src/app/(app)/pets/page.tsx"),
+      read("src/app/(app)/page.tsx"),
+      read("src/app/(app)/household/page.tsx"),
+    ].join("\n");
+    for (const className of [
+      "landscape-plan-split",
+      "landscape-finance-grid",
+      "landscape-pets-split",
+      "landscape-home-grid",
+      "landscape-household-grid",
+    ]) {
+      expect(sources).toContain(className);
+    }
+
+    expect(read("src/components/shared/AppShell.tsx")).toContain("app-main");
+    expect(read("src/components/shared/BottomNav.tsx")).toContain(
+      "bottom-nav-shell",
+    );
+    expect(read("src/components/ui/BottomSheet.tsx")).toContain(
+      "app-bottom-sheet",
+    );
+  });
+
   it("keeps the five real destinations and gives each an icon", () => {
     const nav = read("src/components/shared/BottomNav.tsx");
     expect(

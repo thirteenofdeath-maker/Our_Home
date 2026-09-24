@@ -389,6 +389,157 @@ body {
   );
 }
 
+/* Landscape is a first-class working layout rather than a stretched phone
+   canvas. The same routes and components remain mounted; CSS only changes
+   their composition, which keeps navigation state and form behavior shared. */
+@media (orientation: landscape) and (min-width: 700px) {
+  .app-main {
+    max-width: 72rem;
+    padding-left: max(
+      6.25rem,
+      calc(env(safe-area-inset-left) + 5.5rem)
+    );
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+    padding-top: 0.75rem !important;
+  }
+
+  .bottom-nav-shell {
+    inset: max(0.75rem, env(safe-area-inset-top)) auto
+      max(0.75rem, env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left));
+    width: 4.75rem;
+  }
+
+  .bottom-nav-list {
+    display: flex;
+    height: 100%;
+    max-width: none;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 1.75rem;
+  }
+
+  .bottom-nav-list > li {
+    width: 100%;
+  }
+
+  .bottom-nav-link {
+    height: 3.75rem;
+  }
+
+  .app-fab {
+    right: max(
+      1.25rem,
+      env(safe-area-inset-right),
+      calc((100vw - 72rem) / 2 + 1.25rem)
+    );
+    bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  .app-bottom-sheet {
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 1.5rem) !important;
+    max-width: 48rem;
+    border-radius: 1.5rem;
+    padding-bottom: 0;
+  }
+
+  .app-bottom-sheet-handle {
+    display: none;
+  }
+
+  .app-cover {
+    height: 10rem !important;
+  }
+
+  .landscape-plan-split,
+  .landscape-finance-grid,
+  .landscape-pets-split,
+  .landscape-home-grid,
+  .landscape-household-grid {
+    display: grid;
+    min-width: 0;
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .landscape-plan-split {
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  }
+
+  .landscape-finance-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 0.8fr);
+  }
+
+  .landscape-pets-split {
+    grid-template-columns: minmax(17rem, 0.75fr) minmax(0, 1.25fr);
+  }
+
+  .landscape-home-grid,
+  .landscape-household-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landscape-home-column,
+  .landscape-finance-side,
+  .landscape-pets-column,
+  .landscape-household-column {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .landscape-span-full,
+  .landscape-home-grid > .app-cover,
+  .landscape-household-grid > .app-cover {
+    grid-column: 1 / -1;
+  }
+
+  .landscape-household-members,
+  .landscape-household-observers {
+    grid-column: 1;
+  }
+
+  .landscape-household-info,
+  .landscape-household-activity {
+    grid-column: 2;
+  }
+
+  .landscape-household-info {
+    grid-row: 2;
+  }
+
+  .landscape-plan-detail {
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100dvh - 2.25rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app-cover-home .app-cover-image {
+    object-position: 58% 48%;
+  }
+
+  .app-cover-finance .app-cover-image {
+    object-position: 66% 52%;
+  }
+
+  .app-cover-calendar .app-cover-image {
+    object-position: 70% 48%;
+  }
+
+  .app-cover-pets .app-cover-image {
+    object-position: 68% 52%;
+  }
+
+  .app-cover-household .app-cover-image {
+    object-position: 65% 48%;
+  }
+}
+
 /* Decorative summary panels use the same atmosphere as the current time
    palette, instead of keeping a pale daytime gradient after the app turns
    dark at 20:00. */

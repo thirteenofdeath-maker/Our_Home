@@ -67,7 +67,7 @@ export default async function HouseholdPage() {
   }).format(new Date(household.created_at));
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-6 px-4 pb-8 pt-3">
+    <div className="landscape-household-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-6 px-4 pb-8 pt-3">
       {canManageMembers ? (
         <FormSheetButton
           ariaLabel="เพิ่มสมาชิก"
@@ -85,14 +85,14 @@ export default async function HouseholdPage() {
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-household light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/family-garden.webp"
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
-          className="time-cover-image object-cover object-center"
+          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          className="app-cover-image time-cover-image object-cover object-center"
         />
         <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <div className="relative flex h-full max-w-[62%] flex-col">
@@ -124,7 +124,7 @@ export default async function HouseholdPage() {
         userId={user.id}
         role={household.myRole}
       />
-      <section className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+      <section className="landscape-household-info grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-[1.4rem] bg-finance-surface-strong p-4 shadow-card">
           <div className="flex items-center gap-2">
             <AppIcon
@@ -150,7 +150,7 @@ export default async function HouseholdPage() {
           </p>
         </div>
       </section>
-      <section className="flex flex-col gap-3">
+      <section className="landscape-household-activity flex flex-col gap-3">
         <div>
           <p className="text-sm text-finance-muted">ความเคลื่อนไหวในบ้าน</p>
           <h2 className="font-semibold text-finance-text">กิจกรรมล่าสุด</h2>

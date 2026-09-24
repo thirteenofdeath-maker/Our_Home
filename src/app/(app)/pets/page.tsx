@@ -64,14 +64,14 @@ export default async function PetsPage({
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       {canManage ? <AddPetFab /> : null}
 
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-pets light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/pets-garden.webp"
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
-          className="time-cover-image object-cover object-center"
+          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          className="app-cover-image time-cover-image object-cover object-center"
         />
         <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <header className="relative max-w-[58%]">
@@ -87,134 +87,148 @@ export default async function PetsPage({
         </header>
       </section>
 
-      {active.length ? (
-        <section
-          className="flex flex-col gap-3"
-          aria-labelledby="pet-selector-title"
-        >
-          <h2
-            id="pet-selector-title"
-            className="font-semibold text-finance-text"
-          >
-            เลือกสัตว์เลี้ยง
-          </h2>
-          <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {active.map((pet) => {
-              const isSelected = pet.id === featured?.id;
-              return (
-                <Link
-                  key={pet.id}
-                  href={`/pets?pet=${pet.id}`}
-                  aria-current={isSelected ? "true" : undefined}
-                  className={`flex w-24 shrink-0 flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
-                    isSelected
-                      ? "border-finance-primary/30 bg-finance-primary-soft/55"
-                      : "border-transparent bg-transparent"
-                  }`}
-                >
-                  <PetPhoto name={pet.name} url={pet.photoUrl} size="md" />
-                  <span className="min-w-0 max-w-full">
-                    <span className="block truncate font-semibold text-finance-text">
-                      {pet.name}
-                    </span>
-                    <span className="block truncate text-xs text-finance-muted">
-                      {SPECIES_LABEL[pet.species]}
-                      {pet.breed ? ` · ${pet.breed}` : ""}
-                    </span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {featured ? (
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs text-finance-muted">ข้อมูลของ</p>
-              <h2 className="truncate font-semibold text-finance-text">
-                {featured.name}
-              </h2>
-            </div>
-            <Link
-              href={`/pets/${featured.id}`}
-              className="flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-finance-primary-soft px-4 text-sm font-medium text-finance-primary-strong"
+      <div className="landscape-pets-split flex min-w-0 flex-col gap-5">
+        <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
+          {active.length ? (
+            <section
+              className="flex flex-col gap-3"
+              aria-labelledby="pet-selector-title"
             >
-              ดูโปรไฟล์
-              <AppIcon name="chevron" className="size-4" />
-            </Link>
-          </div>
+              <h2
+                id="pet-selector-title"
+                className="font-semibold text-finance-text"
+              >
+                เลือกสัตว์เลี้ยง
+              </h2>
+              <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {active.map((pet) => {
+                  const isSelected = pet.id === featured?.id;
+                  return (
+                    <Link
+                      key={pet.id}
+                      href={`/pets?pet=${pet.id}`}
+                      aria-current={isSelected ? "true" : undefined}
+                      className={`flex w-24 shrink-0 flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
+                        isSelected
+                          ? "border-finance-primary/30 bg-finance-primary-soft/55"
+                          : "border-transparent bg-transparent"
+                      }`}
+                    >
+                      <PetPhoto
+                        name={pet.name}
+                        url={pet.photoUrl}
+                        size="md"
+                      />
+                      <span className="min-w-0 max-w-full">
+                        <span className="block truncate font-semibold text-finance-text">
+                          {pet.name}
+                        </span>
+                        <span className="block truncate text-xs text-finance-muted">
+                          {SPECIES_LABEL[pet.species]}
+                          {pet.breed ? ` · ${pet.breed}` : ""}
+                        </span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+        </div>
 
-          <section
-            className="grid grid-cols-2 gap-2.5"
-            aria-label={`สรุปการดูแล ${featured.name}`}
-          >
-            <PetSummaryCard
-              icon="info"
-              title="สุขภาพโดยรวม"
-              value={latestHealth?.title ?? "ยังไม่มีบันทึก"}
-              detail={
-                latestHealth
-                  ? petCareDateLabel(latestHealth.recorded_at)
-                  : "เพิ่มบันทึกสุขภาพ"
-              }
-              tone="green"
-            />
-            <PetSummaryCard
-              icon="plus"
-              title="วัคซีน"
-              value={latestVaccine?.title ?? "ยังไม่มีข้อมูล"}
-              detail={
-                latestVaccine
-                  ? petCareDateLabel(latestVaccine.recorded_at)
-                  : "เพิ่มประวัติวัคซีน"
-              }
-              tone="blue"
-            />
-            <PetSummaryCard
-              icon="calendar"
-              title="นัดถัดไป"
-              value={nextCare?.title ?? "ยังไม่มีนัด"}
-              detail={
-                nextCare?.scheduled_at
-                  ? petCareDateLabel(nextCare.scheduled_at)
-                  : "วางแผนการดูแล"
-              }
-              tone="pink"
-            />
-            <PetSummaryCard
-              icon="finance"
-              title="น้ำหนักล่าสุด"
-              value={
-                latestWeight?.value
-                  ? `${latestWeight.value} ${latestWeight.unit ?? ""}`
-                  : "ยังไม่มีข้อมูล"
-              }
-              detail={
-                latestWeight
-                  ? petCareDateLabel(latestWeight.recorded_at)
-                  : "เริ่มติดตามน้ำหนัก"
-              }
-              tone="yellow"
-            />
-          </section>
-          <p className="-mt-2 text-xs text-finance-muted">
-            {SPECIES_LABEL[featured.species]}
-            {featured.breed ? ` · ${featured.breed}` : ""}
-            {featured.sex ? ` · ${SEX_LABEL[featured.sex]}` : ""}
-            {age === null ? " · ยังไม่ระบุวันเกิด" : ` · อายุ ${age} ปี`}
-          </p>
-        </>
-      ) : (
-        <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
-          <p className="font-medium text-finance-text">ยังไม่มีสัตว์เลี้ยง</p>
-          <p className="mt-1 text-sm text-finance-muted">
-            เพิ่มสัตว์เลี้ยงเพื่อเริ่มบันทึกสุขภาพและการดูแล
-          </p>
-        </Card>
-      )}
+        <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
+          {featured ? (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-finance-muted">ข้อมูลของ</p>
+                  <h2 className="truncate font-semibold text-finance-text">
+                    {featured.name}
+                  </h2>
+                </div>
+                <Link
+                  href={`/pets/${featured.id}`}
+                  className="flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-finance-primary-soft px-4 text-sm font-medium text-finance-primary-strong"
+                >
+                  ดูโปรไฟล์
+                  <AppIcon name="chevron" className="size-4" />
+                </Link>
+              </div>
+
+              <section
+                className="grid grid-cols-2 gap-2.5"
+                aria-label={`สรุปการดูแล ${featured.name}`}
+              >
+                <PetSummaryCard
+                  icon="info"
+                  title="สุขภาพโดยรวม"
+                  value={latestHealth?.title ?? "ยังไม่มีบันทึก"}
+                  detail={
+                    latestHealth
+                      ? petCareDateLabel(latestHealth.recorded_at)
+                      : "เพิ่มบันทึกสุขภาพ"
+                  }
+                  tone="green"
+                />
+                <PetSummaryCard
+                  icon="plus"
+                  title="วัคซีน"
+                  value={latestVaccine?.title ?? "ยังไม่มีข้อมูล"}
+                  detail={
+                    latestVaccine
+                      ? petCareDateLabel(latestVaccine.recorded_at)
+                      : "เพิ่มประวัติวัคซีน"
+                  }
+                  tone="blue"
+                />
+                <PetSummaryCard
+                  icon="calendar"
+                  title="นัดถัดไป"
+                  value={nextCare?.title ?? "ยังไม่มีนัด"}
+                  detail={
+                    nextCare?.scheduled_at
+                      ? petCareDateLabel(nextCare.scheduled_at)
+                      : "วางแผนการดูแล"
+                  }
+                  tone="pink"
+                />
+                <PetSummaryCard
+                  icon="finance"
+                  title="น้ำหนักล่าสุด"
+                  value={
+                    latestWeight?.value
+                      ? `${latestWeight.value} ${latestWeight.unit ?? ""}`
+                      : "ยังไม่มีข้อมูล"
+                  }
+                  detail={
+                    latestWeight
+                      ? petCareDateLabel(latestWeight.recorded_at)
+                      : "เริ่มติดตามน้ำหนัก"
+                  }
+                  tone="yellow"
+                />
+              </section>
+              <p className="-mt-2 text-xs text-finance-muted">
+                {SPECIES_LABEL[featured.species]}
+                {featured.breed ? ` · ${featured.breed}` : ""}
+                {featured.sex ? ` · ${SEX_LABEL[featured.sex]}` : ""}
+                {age === null
+                  ? " · ยังไม่ระบุวันเกิด"
+                  : ` · อายุ ${age} ปี`}
+              </p>
+            </>
+          ) : (
+            <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
+              <p className="font-medium text-finance-text">
+                ยังไม่มีสัตว์เลี้ยง
+              </p>
+              <p className="mt-1 text-sm text-finance-muted">
+                เพิ่มสัตว์เลี้ยงเพื่อเริ่มบันทึกสุขภาพและการดูแล
+              </p>
+            </Card>
+          )}
+        </div>
+      </div>
 
       {archived.length ? (
         <section className="flex flex-col gap-3">
