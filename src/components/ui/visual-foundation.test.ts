@@ -49,6 +49,35 @@ describe("mobile visual foundation", () => {
     }
   });
 
+  it("ties every static main-page cover to the shared Bangkok-time palette", () => {
+    const css = read("src/app/globals.css");
+    for (const token of [
+      "--time-cover-surface",
+      "--time-cover-overlay-start",
+      "--time-cover-image-filter",
+      "--time-cover-text",
+      "--time-cover-muted",
+      "--time-cover-accent",
+    ]) {
+      expect(css).toContain(token);
+    }
+    expect(css).toContain(".time-cover-overlay");
+    expect(css).toContain('html[data-time-theme="night"]');
+    expect(css).toContain('html[data-time-theme="late-night"]');
+
+    for (const path of [
+      "src/features/finance/components/FinanceHeader.tsx",
+      "src/app/(app)/calendar/page.tsx",
+      "src/app/(app)/pets/page.tsx",
+      "src/app/(app)/household/page.tsx",
+    ]) {
+      const source = read(path);
+      expect(source, path).toContain("time-cover");
+      expect(source, path).toContain("time-cover-image");
+      expect(source, path).toContain("time-cover-overlay");
+    }
+  });
+
   it("keeps the five real destinations and gives each an icon", () => {
     const nav = read("src/components/shared/BottomNav.tsx");
     expect(

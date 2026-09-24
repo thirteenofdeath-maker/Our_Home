@@ -28,6 +28,15 @@
   --time-danger: #b3492f;
   --time-danger-foreground: #ffffff;
 
+  --time-cover-surface: #f0f4e9;
+  --time-cover-overlay-start: rgb(255 252 242 / 0.98);
+  --time-cover-overlay-middle: rgb(239 244 229 / 0.9);
+  --time-cover-overlay-end: rgb(213 229 210 / 0.08);
+  --time-cover-image-filter: saturate(0.9) brightness(1.03);
+  --time-cover-text: #352e2c;
+  --time-cover-muted: #685f58;
+  --time-cover-accent: #4f6754;
+
   --color-background: var(--time-background);
   --color-surface: var(--time-surface);
   --color-surface-muted: var(--time-surface-muted);
@@ -68,6 +77,14 @@ html[data-time-theme="late-morning"] {
   --time-primary-soft: #d9e3c3;
   --time-primary-foreground: #ffffff;
   --time-secondary: #f2e6d8;
+  --time-cover-surface: #f7ebdd;
+  --time-cover-overlay-start: rgb(255 250 243 / 0.98);
+  --time-cover-overlay-middle: rgb(246 234 220 / 0.9);
+  --time-cover-overlay-end: rgb(217 227 195 / 0.09);
+  --time-cover-image-filter: saturate(0.96) brightness(1.02);
+  --time-cover-text: #4f4439;
+  --time-cover-muted: #675f57;
+  --time-cover-accent: #555d3f;
 }
 
 html[data-time-theme="midday"] {
@@ -82,6 +99,14 @@ html[data-time-theme="midday"] {
   --time-primary-soft: #e9d8c7;
   --time-primary-foreground: #ffffff;
   --time-secondary: #d9c29c;
+  --time-cover-surface: #f3e1cb;
+  --time-cover-overlay-start: rgb(255 248 237 / 0.98);
+  --time-cover-overlay-middle: rgb(241 221 199 / 0.9);
+  --time-cover-overlay-end: rgb(217 194 156 / 0.1);
+  --time-cover-image-filter: saturate(1.03) brightness(1.02);
+  --time-cover-text: #514238;
+  --time-cover-muted: #6e6158;
+  --time-cover-accent: #5f513b;
 }
 
 html[data-time-theme="afternoon"] {
@@ -96,6 +121,14 @@ html[data-time-theme="afternoon"] {
   --time-primary-soft: #ebc9a7;
   --time-primary-foreground: #ffffff;
   --time-secondary: #d8b181;
+  --time-cover-surface: #f2d9b3;
+  --time-cover-overlay-start: rgb(255 248 231 / 0.98);
+  --time-cover-overlay-middle: rgb(244 223 195 / 0.9);
+  --time-cover-overlay-end: rgb(224 184 135 / 0.1);
+  --time-cover-image-filter: saturate(1.05) brightness(1.01);
+  --time-cover-text: #544238;
+  --time-cover-muted: #6f6257;
+  --time-cover-accent: #604d35;
 }
 
 html[data-time-theme="evening"] {
@@ -110,6 +143,14 @@ html[data-time-theme="evening"] {
   --time-primary-soft: #f7b89c;
   --time-primary-foreground: #ffffff;
   --time-secondary: #e98a72;
+  --time-cover-surface: #f6c7b4;
+  --time-cover-overlay-start: rgb(255 241 235 / 0.98);
+  --time-cover-overlay-middle: rgb(249 202 183 / 0.9);
+  --time-cover-overlay-end: rgb(185 111 111 / 0.12);
+  --time-cover-image-filter: saturate(0.92) brightness(0.94);
+  --time-cover-text: #513c35;
+  --time-cover-muted: #72584f;
+  --time-cover-accent: #624339;
 }
 
 /* Night keeps the page softly lit instead of turning every large surface navy.
@@ -137,6 +178,14 @@ html[data-time-theme="night"] {
   --time-semantic-foreground: #ffffff;
   --time-danger: #b94f3d;
   --time-danger-foreground: #ffffff;
+  --time-cover-surface: #dce6ed;
+  --time-cover-overlay-start: rgb(241 246 249 / 0.98);
+  --time-cover-overlay-middle: rgb(211 224 232 / 0.92);
+  --time-cover-overlay-end: rgb(32 54 74 / 0.16);
+  --time-cover-image-filter: saturate(0.72) brightness(0.86) contrast(0.92);
+  --time-cover-text: #20364a;
+  --time-cover-muted: #5d6d79;
+  --time-cover-accent: #20364a;
 }
 
 html[data-time-theme="late-night"] {
@@ -161,6 +210,14 @@ html[data-time-theme="late-night"] {
   --time-semantic-foreground: #ffffff;
   --time-danger: #b94f3d;
   --time-danger-foreground: #ffffff;
+  --time-cover-surface: #cbd8e2;
+  --time-cover-overlay-start: rgb(232 239 244 / 0.98);
+  --time-cover-overlay-middle: rgb(193 211 222 / 0.92);
+  --time-cover-overlay-end: rgb(6 21 35 / 0.25);
+  --time-cover-image-filter: saturate(0.62) brightness(0.76) contrast(0.9);
+  --time-cover-text: #1b2d40;
+  --time-cover-muted: #586b79;
+  --time-cover-accent: #1b2d40;
 }
 
 html[data-time-theme="morning"] {
@@ -345,20 +402,44 @@ body {
   color: var(--time-foreground);
 }
 
-/* Static cover art uses a warm translucent reading veil in every theme.
-   Keep its copy tied to that veil rather than to the page beneath it. */
+/* Main-page covers share the same Bangkok-time atmosphere as the app canvas.
+   The bootstrap swaps these variables before first paint, so Server Component
+   covers stay time-aware without hydration work or duplicate client state. */
+.time-cover {
+  background-color: var(--time-cover-surface);
+}
+
+.time-cover-image {
+  filter: var(--time-cover-image-filter);
+  transform: scale(1.015);
+}
+
+.time-cover-overlay {
+  background: linear-gradient(
+    90deg,
+    var(--time-cover-overlay-start) 0%,
+    var(--time-cover-overlay-middle) 44%,
+    var(--time-cover-overlay-end) 78%,
+    transparent 100%
+  );
+}
+
 .light-cover-copy {
-  --finance-text: #352e2c;
-  --finance-muted: #706963;
-  --finance-primary-strong: #4f7058;
+  --finance-text: var(--time-cover-text);
+  --finance-muted: var(--time-cover-muted);
+  --finance-primary-strong: var(--time-cover-accent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   body,
-  .finance-scope {
+  .finance-scope,
+  .time-cover,
+  .time-cover-image,
+  .time-cover-overlay {
     transition:
       background-color 400ms ease,
-      color 400ms ease;
+      color 400ms ease,
+      filter 400ms ease;
   }
 }
 

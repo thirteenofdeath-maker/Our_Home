@@ -85,16 +85,16 @@ export default async function HouseholdPage() {
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <section className="light-cover-copy relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e5] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/family-garden.webp"
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
           fill
           priority
           sizes="(max-width: 640px) 100vw, 576px"
-          className="object-cover object-center"
+          className="time-cover-image object-cover object-center"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,240,0.98)_0%,rgba(255,249,240,0.84)_42%,rgba(255,249,240,0.05)_78%)]" />
+        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <div className="relative flex h-full max-w-[62%] flex-col">
           <p className="text-xs font-medium text-finance-primary-strong">
             บ้านของเรา
