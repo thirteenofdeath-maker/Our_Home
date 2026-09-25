@@ -153,87 +153,87 @@ export default async function FinancePage({
         />
       ) : null}
 
-      <div className="landscape-finance-grid landscape-scroll-columns flex min-w-0 flex-col gap-5">
-        <section className="landscape-scroll-column flex min-w-0 flex-col gap-3">
-          <SectionTitle
-            title="สรุปรายรับรายจ่าย"
-            primary
-            href={
-              scope === "HOUSEHOLD"
-                ? `/finance/reports?month=${month}&scope=HOUSEHOLD`
-                : `/finance/reports?month=${month}`
-            }
-          />
-          <FinanceMonthNavigator
-            month={month}
-            label={monthLabel}
-            previousMonth={prevMonth}
-            nextMonth={nextMonth}
-            currentMonth={currentMonth}
-            pathname="/finance"
-            query={scope === "HOUSEHOLD" ? { scope: "HOUSEHOLD" } : undefined}
-          />
-          {summaryCurrencies.map((currency) => {
-            const total = currentMonthTotals.find(
-              (item) => item.currency === currency,
-            ) ?? { income: "0.00", expense: "0.00" };
-            return (
-              <div
-                key={`summary-${currency}`}
-                className="grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
-              >
-                <FinanceSummaryItem
-                  label="รายรับรวม"
-                  value={formatCurrency(total.income, currency)}
-                  tone="income"
-                />
-                <FinanceSummaryItem
-                  label="รายจ่ายรวม"
-                  value={formatCurrency(total.expense, currency)}
-                  tone="expense"
-                />
-                <FinanceSummaryItem
-                  label="คงเหลือ"
-                  value={formatCurrency(
-                    subtractMoney(total.income, total.expense),
-                    currency,
-                  )}
-                  tone="default"
-                />
-              </div>
-            );
-          })}
-          {summaryCurrencies.map((currency) => {
-            const total = currentMonthTotals.find(
-              (item) => item.currency === currency,
-            ) ?? { income: "0.00", expense: "0.00" };
-            const previousTotal = previousMonthTotals.find(
-              (item) => item.currency === currency,
-            ) ?? { income: "0.00", expense: "0.00" };
-            return (
-              <FinanceTrendCard
-                key={currency}
-                currency={currency}
-                showCurrencyLabel={summaryCurrencies.length > 1}
-                trend={buildCumulativeDailyTrend(month, report.days, currency)}
-                comparisonTrend={buildCumulativeDailyTrend(
-                  prevMonth,
-                  report.days,
+      <div className="landscape-finance-grid flex min-w-0 flex-col gap-5">
+        <section className="flex min-w-0 flex-col gap-3">
+        <SectionTitle
+          title="สรุปรายรับรายจ่าย"
+          primary
+          href={
+            scope === "HOUSEHOLD"
+              ? `/finance/reports?month=${month}&scope=HOUSEHOLD`
+              : `/finance/reports?month=${month}`
+          }
+        />
+        <FinanceMonthNavigator
+          month={month}
+          label={monthLabel}
+          previousMonth={prevMonth}
+          nextMonth={nextMonth}
+          currentMonth={currentMonth}
+          pathname="/finance"
+          query={scope === "HOUSEHOLD" ? { scope: "HOUSEHOLD" } : undefined}
+        />
+        {summaryCurrencies.map((currency) => {
+          const total = currentMonthTotals.find(
+            (item) => item.currency === currency,
+          ) ?? { income: "0.00", expense: "0.00" };
+          return (
+            <div
+              key={`summary-${currency}`}
+              className="grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
+            >
+              <FinanceSummaryItem
+                label="รายรับรวม"
+                value={formatCurrency(total.income, currency)}
+                tone="income"
+              />
+              <FinanceSummaryItem
+                label="รายจ่ายรวม"
+                value={formatCurrency(total.expense, currency)}
+                tone="expense"
+              />
+              <FinanceSummaryItem
+                label="คงเหลือ"
+                value={formatCurrency(
+                  subtractMoney(total.income, total.expense),
                   currency,
                 )}
-                monthLabel={chartMonthLabel}
-                comparisonMonthLabel={prevMonthLabel}
-                throughDay={currentDay}
-                income={total.income}
-                expense={total.expense}
-                previousIncome={previousTotal.income}
-                previousExpense={previousTotal.expense}
+                tone="default"
               />
-            );
-          })}
+            </div>
+          );
+        })}
+        {summaryCurrencies.map((currency) => {
+          const total = currentMonthTotals.find(
+            (item) => item.currency === currency,
+          ) ?? { income: "0.00", expense: "0.00" };
+          const previousTotal = previousMonthTotals.find(
+            (item) => item.currency === currency,
+          ) ?? { income: "0.00", expense: "0.00" };
+          return (
+            <FinanceTrendCard
+              key={currency}
+              currency={currency}
+              showCurrencyLabel={summaryCurrencies.length > 1}
+              trend={buildCumulativeDailyTrend(month, report.days, currency)}
+              comparisonTrend={buildCumulativeDailyTrend(
+                prevMonth,
+                report.days,
+                currency,
+              )}
+              monthLabel={chartMonthLabel}
+              comparisonMonthLabel={prevMonthLabel}
+              throughDay={currentDay}
+              income={total.income}
+              expense={total.expense}
+              previousIncome={previousTotal.income}
+              previousExpense={previousTotal.expense}
+            />
+          );
+        })}
         </section>
 
-        <div className="landscape-finance-side landscape-scroll-column min-w-0">
+        <div className="landscape-finance-side min-w-0">
           {initialWallet ? (
             <FinanceCreateFlow walletId={initialWallet.id} />
           ) : (
@@ -253,76 +253,76 @@ export default async function FinancePage({
           )}
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold text-finance-text">
-              วางแผนการเงิน
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <FinancePlanCard
-                href="/finance/budgets"
-                label="งบประมาณ"
-                detail={
-                  budgets.active.length
-                    ? `${budgets.active.length} หมวดที่ติดตาม`
-                    : "เริ่มตั้งงบเดือนนี้"
-                }
-                icon="finance"
-                tone="warning"
-              />
-              <FinancePlanCard
-                href="/finance/goals"
-                label="เป้าหมาย"
-                detail={
-                  activeGoals.length
-                    ? `${activeGoals.length} เป้าหมายกำลังออม`
-                    : "สร้างเป้าหมายแรก"
-                }
-                icon="pocket"
-                tone="income"
-              />
-              <FinancePlanCard
-                href="/finance/bills"
-                label="บิลที่ต้องจ่าย"
-                detail={
-                  billOccurrences.length
-                    ? `${billOccurrences.length} รายการใกล้ถึง`
-                    : "ยังไม่มีบิลค้าง"
-                }
-                icon="calendar"
-                tone="expense"
-              />
-              <FinancePlanCard
-                href="/finance/debts"
-                label="หนี้สินของฉัน"
-                detail={
-                  activeDebts.length
-                    ? `${activeDebts.length} รายการคงค้าง`
-                    : "ไม่มีหนี้คงค้าง"
-                }
-                icon="wallet"
-                tone="transfer"
-              />
-            </div>
+        <h2 className="text-lg font-semibold text-finance-text">
+          วางแผนการเงิน
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <FinancePlanCard
+            href="/finance/budgets"
+            label="งบประมาณ"
+            detail={
+              budgets.active.length
+                ? `${budgets.active.length} หมวดที่ติดตาม`
+                : "เริ่มตั้งงบเดือนนี้"
+            }
+            icon="finance"
+            tone="warning"
+          />
+          <FinancePlanCard
+            href="/finance/goals"
+            label="เป้าหมาย"
+            detail={
+              activeGoals.length
+                ? `${activeGoals.length} เป้าหมายกำลังออม`
+                : "สร้างเป้าหมายแรก"
+            }
+            icon="pocket"
+            tone="income"
+          />
+          <FinancePlanCard
+            href="/finance/bills"
+            label="บิลที่ต้องจ่าย"
+            detail={
+              billOccurrences.length
+                ? `${billOccurrences.length} รายการใกล้ถึง`
+                : "ยังไม่มีบิลค้าง"
+            }
+            icon="calendar"
+            tone="expense"
+          />
+          <FinancePlanCard
+            href="/finance/debts"
+            label="หนี้สินของฉัน"
+            detail={
+              activeDebts.length
+                ? `${activeDebts.length} รายการคงค้าง`
+                : "ไม่มีหนี้คงค้าง"
+            }
+            icon="wallet"
+            tone="transfer"
+          />
+        </div>
           </section>
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-finance-muted">
-              เครื่องมือเพิ่มเติม
-            </h2>
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {SHORTCUTS.map((shortcut) => (
-                <Link
-                  key={shortcut.href}
-                  href={shortcut.href}
-                  className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-finance-surface-strong px-4 text-sm font-medium text-finance-text shadow-sm"
-                >
-                  <AppIcon
-                    name={shortcut.icon}
-                    className="size-4 text-finance-muted"
-                  />
-                  {shortcut.label}
-                </Link>
-              ))}
-            </div>
+        <h2 className="text-sm font-medium text-finance-muted">
+          เครื่องมือเพิ่มเติม
+        </h2>
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {SHORTCUTS.map((shortcut) => (
+            <Link
+              key={shortcut.href}
+              href={shortcut.href}
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-finance-surface-strong px-4 text-sm font-medium text-finance-text shadow-sm"
+            >
+              <AppIcon
+                name={shortcut.icon}
+                className="size-4 text-finance-muted"
+              />
+              {shortcut.label}
+            </Link>
+          ))}
+        </div>
           </section>
         </div>
       </div>

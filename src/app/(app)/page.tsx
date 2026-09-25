@@ -272,223 +272,209 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </p>
       </section>
 
-      <div className="landscape-home-columns landscape-scroll-columns flex min-w-0 flex-col gap-4">
-        <div className="landscape-home-column landscape-scroll-column flex min-w-0 flex-col gap-4">
-          <DashboardCard
-            title="งานวันนี้"
-            href="/calendar"
-            linkLabel="ดูทั้งหมด"
-            icon="calendar"
-          >
-            <p className="mb-3 text-sm text-finance-muted">
-              {todayItemCount
-                ? `${todayItemCount} รายการที่ต้องดู`
-                : "วันนี้ยังไม่มีรายการค้าง"}
-            </p>
-            <div className="flex min-w-0 flex-col gap-2">
-              {todayEvents.slice(0, 3).map((event) => (
-                <TodayItem
-                  key={`event-${event.id}`}
-                  href={`/calendar/${event.id}`}
-                  marker="นัดหมาย"
-                  title={event.title}
-                  detail={
-                    event.is_all_day
-                      ? "ทั้งวัน"
-                      : formatEventTime(event.starts_at!)
-                  }
-                />
-              ))}
-              {dueTasks.slice(0, 3).map((task) => (
-                <TodayItem
-                  key={`task-${task.id}`}
-                  href={`/calendar/tasks/${task.id}`}
-                  marker={task.due_date! < today ? "เลยกำหนด" : "งาน"}
-                  title={task.title}
-                  detail={planDateLabel(task.due_date, task.due_time)}
-                />
-              ))}
-              {upcomingReminders.slice(0, 2).map((reminder) => (
-                <TodayItem
-                  key={`reminder-${reminder.id}`}
-                  href={`/calendar/reminders/${reminder.id}`}
-                  marker="เตือน"
-                  title={reminder.title}
-                  detail={reminderDateLabel(reminder.reminds_at)}
-                />
-              ))}
-              {todayItemCount === 0 ? (
-                <EmptyToday text="วันนี้ว่าง ลองเพิ่มงานหรือวางแผนใหม่ได้เลย" />
-              ) : null}
-            </div>
-          </DashboardCard>
-
-          <section
-            className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
-            aria-label="ปฏิทินครอบครัวสัปดาห์นี้"
-          >
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs text-finance-muted">สัปดาห์นี้</p>
-                <h2 className="font-semibold text-finance-text">
-                  ปฏิทินครอบครัว
-                </h2>
-              </div>
-              <Link
-                href="/calendar"
-                className="text-sm font-medium text-finance-primary-strong"
-              >
-                ดูทั้งหมด
-              </Link>
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {currentWeek.map((date) => {
-                const count =
-                  events.filter((event) => eventDate(event) === date).length +
-                  tasks.filter(
-                    (task) => !task.is_completed && task.due_date === date,
-                  ).length +
-                  reminders.filter(
-                    (reminder) =>
-                      toBangkokInput(reminder.reminds_at).slice(0, 10) === date,
-                  ).length;
-                const isToday = date === today;
-                return (
-                  <Link
-                    key={date}
-                    href={`/calendar?date=${date}`}
-                    className={`flex min-w-0 flex-col items-center rounded-[0.9rem] px-1 py-2 ${isToday ? "bg-finance-primary text-finance-primary-foreground" : "bg-finance-primary-soft/35 text-finance-text"}`}
-                  >
-                    <span
-                      className={`text-[10px] ${isToday ? "text-finance-primary-foreground/80" : "text-finance-muted"}`}
-                    >
-                      {new Intl.DateTimeFormat("th-TH", {
-                        weekday: "narrow",
-                        timeZone: "UTC",
-                      }).format(new Date(`${date}T00:00:00Z`))}
-                    </span>
-                    <span className="mt-0.5 text-sm font-semibold tabular-nums">
-                      {Number(date.slice(-2))}
-                    </span>
-                    <span
-                      className={`mt-1 size-1.5 rounded-full ${count ? (isToday ? "bg-finance-primary-foreground" : "bg-finance-primary") : "bg-transparent"}`}
-                    />
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-
-        <div className="landscape-home-column landscape-scroll-column flex min-w-0 flex-col gap-4">
-          <section className="landscape-home-secondary grid min-w-0 grid-cols-2 gap-3">
-            <DashboardCard
-              title="การเงิน"
-              href="/finance"
-              linkLabel="ดู"
-              icon="wallet"
-            >
-              <div className="space-y-2">
-                {finance.monthTotals.length ? (
-                  finance.monthTotals.map((total) => (
-                    <div
-                      key={total.currency}
-                      className="rounded-[1rem] bg-finance-primary-soft/60 p-3"
-                    >
-                      <p className="text-xs text-finance-muted">
-                        รายจ่ายวันนี้ · {total.currency}
-                      </p>
-                      <p className="mt-1 text-xl font-semibold text-finance-text">
-                        {formatCurrency(total.expense, total.currency)}
-                      </p>
-                      <p className="text-xs text-emerald-700">
-                        รายรับ {formatCurrency(total.income, total.currency)}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <EmptyToday text="วันนี้ยังไม่มีรายการรับ–จ่าย" />
-                )}
-                {dueFinance.length ? (
-                  <p className="text-xs text-finance-muted">
-                    มี {dueFinance.length} บิลหรือค่างวดใกล้ครบกำหนด
-                  </p>
-                ) : null}
-              </div>
-            </DashboardCard>
-
-            <DashboardCard
-              title="สัตว์เลี้ยง"
-              href="/pets"
-              linkLabel="ดู"
-              icon="pets"
-            >
-              <p className="text-sm text-finance-muted">
-                {pets.length
-                  ? `${pets.length} ตัว · ${pets.map((pet) => pet.name).join(" · ")}`
-                  : "ยังไม่มีสัตว์เลี้ยง"}
-              </p>
-              <div className="mt-3 flex min-w-0 flex-col gap-2">
-                {petCare.slice(0, 2).map((record) => (
-                  <TodayItem
-                    key={record.id}
-                    href={`/pets/${record.pet_id}`}
-                    marker={PET_CARE_RECORD_LABEL[record.record_type]}
-                    title={`${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`}
-                    detail={petCareDateLabel(record.scheduled_at!)}
-                  />
-                ))}
-                {petCare.length === 0 ? (
-                  <EmptyToday text="ไม่มีตารางดูแลใน 7 วันข้างหน้า" />
-                ) : null}
-              </div>
-            </DashboardCard>
-          </section>
-
-          <section
-            aria-label="ทางลัด"
-            className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
-          >
-            <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
-            <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
-            <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
-            <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />
-            <QuickLink
-              href="/inventory"
-              icon="inventory"
-              label="คลังของในบ้าน"
+      <DashboardCard
+        title="งานวันนี้"
+        href="/calendar"
+        linkLabel="ดูทั้งหมด"
+        icon="calendar"
+      >
+        <p className="mb-3 text-sm text-finance-muted">
+          {todayItemCount
+            ? `${todayItemCount} รายการที่ต้องดู`
+            : "วันนี้ยังไม่มีรายการค้าง"}
+        </p>
+        <div className="flex min-w-0 flex-col gap-2">
+          {todayEvents.slice(0, 3).map((event) => (
+            <TodayItem
+              key={`event-${event.id}`}
+              href={`/calendar/${event.id}`}
+              marker="นัดหมาย"
+              title={event.title}
+              detail={
+                event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!)
+              }
             />
-          </section>
-
-          <TodaySection
-            title="กิจกรรมล่าสุด"
-            href="/finance/transactions"
-            linkLabel="ดูทั้งหมด"
-          >
-            {recentTransactions.map((item) => (
-              <TodayItem
-                key={item.transactionId}
-                href={`/finance/transactions/${item.transactionId}`}
-                marker={item.creatorName ?? "การเงิน"}
-                title={item.title ?? item.categoryName ?? "รายการการเงิน"}
-                detail={formatCurrency(item.amount, item.currency)}
-              />
-            ))}
-            {recentPetCare.map(({ pet, record }) => (
-              <TodayItem
-                key={`pet-activity-${record.id}`}
-                href={`/pets/${pet.id}`}
-                marker={PET_CARE_RECORD_LABEL[record.record_type]}
-                title={`${pet.name} · ${record.title}`}
-                detail={petCareDateLabel(record.created_at)}
-              />
-            ))}
-            {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
-              <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
-            ) : null}
-          </TodaySection>
+          ))}
+          {dueTasks.slice(0, 3).map((task) => (
+            <TodayItem
+              key={`task-${task.id}`}
+              href={`/calendar/tasks/${task.id}`}
+              marker={task.due_date! < today ? "เลยกำหนด" : "งาน"}
+              title={task.title}
+              detail={planDateLabel(task.due_date, task.due_time)}
+            />
+          ))}
+          {upcomingReminders.slice(0, 2).map((reminder) => (
+            <TodayItem
+              key={`reminder-${reminder.id}`}
+              href={`/calendar/reminders/${reminder.id}`}
+              marker="เตือน"
+              title={reminder.title}
+              detail={reminderDateLabel(reminder.reminds_at)}
+            />
+          ))}
+          {todayItemCount === 0 ? (
+            <EmptyToday text="วันนี้ว่าง ลองเพิ่มงานหรือวางแผนใหม่ได้เลย" />
+          ) : null}
         </div>
-      </div>
+      </DashboardCard>
+
+      <section
+        className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
+        aria-label="ปฏิทินครอบครัวสัปดาห์นี้"
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-finance-muted">สัปดาห์นี้</p>
+            <h2 className="font-semibold text-finance-text">ปฏิทินครอบครัว</h2>
+          </div>
+          <Link
+            href="/calendar"
+            className="text-sm font-medium text-finance-primary-strong"
+          >
+            ดูทั้งหมด
+          </Link>
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {currentWeek.map((date) => {
+            const count =
+              events.filter((event) => eventDate(event) === date).length +
+              tasks.filter(
+                (task) => !task.is_completed && task.due_date === date,
+              ).length +
+              reminders.filter(
+                (reminder) =>
+                  toBangkokInput(reminder.reminds_at).slice(0, 10) === date,
+              ).length;
+            const isToday = date === today;
+            return (
+              <Link
+                key={date}
+                href={`/calendar?date=${date}`}
+                className={`flex min-w-0 flex-col items-center rounded-[0.9rem] px-1 py-2 ${isToday ? "bg-finance-primary text-finance-primary-foreground" : "bg-finance-primary-soft/35 text-finance-text"}`}
+              >
+                <span
+                  className={`text-[10px] ${isToday ? "text-finance-primary-foreground/80" : "text-finance-muted"}`}
+                >
+                  {new Intl.DateTimeFormat("th-TH", {
+                    weekday: "narrow",
+                    timeZone: "UTC",
+                  }).format(new Date(`${date}T00:00:00Z`))}
+                </span>
+                <span className="mt-0.5 text-sm font-semibold tabular-nums">
+                  {Number(date.slice(-2))}
+                </span>
+                <span
+                  className={`mt-1 size-1.5 rounded-full ${count ? (isToday ? "bg-finance-primary-foreground" : "bg-finance-primary") : "bg-transparent"}`}
+                />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="landscape-span-full grid min-w-0 grid-cols-2 gap-3">
+        <DashboardCard
+          title="การเงิน"
+          href="/finance"
+          linkLabel="ดู"
+          icon="wallet"
+        >
+          <div className="space-y-2">
+            {finance.monthTotals.length ? (
+              finance.monthTotals.map((total) => (
+                <div
+                  key={total.currency}
+                  className="rounded-[1rem] bg-finance-primary-soft/60 p-3"
+                >
+                  <p className="text-xs text-finance-muted">
+                    รายจ่ายวันนี้ · {total.currency}
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-finance-text">
+                    {formatCurrency(total.expense, total.currency)}
+                  </p>
+                  <p className="text-xs text-emerald-700">
+                    รายรับ {formatCurrency(total.income, total.currency)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <EmptyToday text="วันนี้ยังไม่มีรายการรับ–จ่าย" />
+            )}
+            {dueFinance.length ? (
+              <p className="text-xs text-finance-muted">
+                มี {dueFinance.length} บิลหรือค่างวดใกล้ครบกำหนด
+              </p>
+            ) : null}
+          </div>
+        </DashboardCard>
+
+        <DashboardCard
+          title="สัตว์เลี้ยง"
+          href="/pets"
+          linkLabel="ดู"
+          icon="pets"
+        >
+          <p className="text-sm text-finance-muted">
+            {pets.length
+              ? `${pets.length} ตัว · ${pets.map((pet) => pet.name).join(" · ")}`
+              : "ยังไม่มีสัตว์เลี้ยง"}
+          </p>
+          <div className="mt-3 flex min-w-0 flex-col gap-2">
+            {petCare.slice(0, 2).map((record) => (
+              <TodayItem
+                key={record.id}
+                href={`/pets/${record.pet_id}`}
+                marker={PET_CARE_RECORD_LABEL[record.record_type]}
+                title={`${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`}
+                detail={petCareDateLabel(record.scheduled_at!)}
+              />
+            ))}
+            {petCare.length === 0 ? (
+              <EmptyToday text="ไม่มีตารางดูแลใน 7 วันข้างหน้า" />
+            ) : null}
+          </div>
+        </DashboardCard>
+      </section>
+
+      <section
+        aria-label="ทางลัด"
+        className="landscape-span-full grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
+      >
+        <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
+        <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
+        <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
+        <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />
+        <QuickLink href="/inventory" icon="inventory" label="คลังของในบ้าน" />
+      </section>
+
+      <TodaySection
+        title="กิจกรรมล่าสุด"
+        href="/finance/transactions"
+        linkLabel="ดูทั้งหมด"
+      >
+        {recentTransactions.map((item) => (
+          <TodayItem
+            key={item.transactionId}
+            href={`/finance/transactions/${item.transactionId}`}
+            marker={item.creatorName ?? "การเงิน"}
+            title={item.title ?? item.categoryName ?? "รายการการเงิน"}
+            detail={formatCurrency(item.amount, item.currency)}
+          />
+        ))}
+        {recentPetCare.map(({ pet, record }) => (
+          <TodayItem
+            key={`pet-activity-${record.id}`}
+            href={`/pets/${pet.id}`}
+            marker={PET_CARE_RECORD_LABEL[record.record_type]}
+            title={`${pet.name} · ${record.title}`}
+            detail={petCareDateLabel(record.created_at)}
+          />
+        ))}
+        {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
+          <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
+        ) : null}
+      </TodaySection>
     </div>
   );
 }

@@ -89,8 +89,8 @@ export function MonthCalendar({
   }
 
   return (
-    <div className="landscape-plan-split landscape-scroll-columns flex min-w-0 flex-col gap-4">
-      <section className="landscape-scroll-column overflow-hidden rounded-[1.65rem] bg-finance-surface-strong p-4 shadow-card">
+    <div className="landscape-plan-split flex min-w-0 flex-col gap-4">
+      <section className="overflow-hidden rounded-[1.65rem] bg-finance-surface-strong p-4 shadow-card">
         <nav
           aria-label="เปลี่ยนเดือน"
           className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2"
@@ -179,7 +179,7 @@ export function MonthCalendar({
           })}
         </div>
       </section>
-      <section className="landscape-plan-detail landscape-scroll-column flex min-w-0 flex-col gap-2">
+      <section className="landscape-plan-detail flex min-w-0 flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-finance-muted">รายการประจำวัน</p>

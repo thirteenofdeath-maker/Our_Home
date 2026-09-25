@@ -532,13 +532,15 @@ body {
   .landscape-home-grid,
   .landscape-household-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landscape-household-grid {
     height: calc(100dvh - 2.25rem);
     grid-template-rows: max-content minmax(0, 1fr);
     overflow: hidden;
     padding-bottom: 0;
   }
 
-  .landscape-home-columns,
   .landscape-household-columns {
     display: grid;
     grid-column: 1 / -1;
@@ -548,18 +550,6 @@ body {
     align-items: stretch;
     gap: 1.25rem;
     overflow: hidden;
-  }
-
-  .landscape-finance-grid {
-    height: calc(100dvh - 5.5rem);
-  }
-
-  .landscape-plan-split {
-    height: calc(100dvh - 17rem);
-  }
-
-  .landscape-pets-split {
-    height: calc(100dvh - 13.5rem);
   }
 
   .landscape-home-column,
@@ -582,23 +572,20 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .landscape-home-secondary {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .landscape-scroll-columns {
-    min-height: 0;
-    align-items: stretch;
-    overflow: hidden;
-  }
-
-  .landscape-scroll-column {
+  .landscape-household-column {
     height: 100%;
-    min-height: 0;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scroll-padding-block: 0.5rem;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .landscape-plan-detail {
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100dvh - 2.25rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* Landscape iPads crop these wide scenes most aggressively on the vertical
