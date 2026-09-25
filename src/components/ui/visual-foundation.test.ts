@@ -120,6 +120,9 @@ describe("mobile visual foundation", () => {
     ]) {
       expect(css).toContain(className);
     }
+    expect(css).toMatch(
+      /\.app-cover\s*\{[\s\S]*?height:\s*11\.5rem !important;/,
+    );
 
     const sources = [
       read("src/features/calendar/components/MonthCalendar.tsx"),

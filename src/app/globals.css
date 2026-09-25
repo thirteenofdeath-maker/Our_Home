@@ -503,7 +503,10 @@ body {
   }
 
   .app-cover {
-    height: 10rem !important;
+    /* Keep enough vertical breathing room between cover copy and inset
+       summary pills/cards. At 10rem the calendar totals could visually touch
+       the subtitle, and the household member pill was compressed against it. */
+    height: 11.5rem !important;
   }
 
   .landscape-plan-split,
