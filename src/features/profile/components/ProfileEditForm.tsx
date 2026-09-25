@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { MEMBER_COLORS } from "@/features/household/domain/member";
+import { MemberColorInput } from "@/features/household/components/MemberColorInput";
 import { initialActionState } from "@/lib/types/action-state";
 import { bangkokDateKey } from "@/lib/date/bangkok";
 import type { ProfileGender } from "@/types/database";
@@ -89,32 +89,7 @@ export function ProfileEditForm(props: {
           </span>
         </span>
       </label>
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium text-foreground-muted">
-          สีประจำสมาชิก
-        </legend>
-        <div className="flex flex-wrap gap-3">
-          {MEMBER_COLORS.map((color) => (
-            <label
-              key={color}
-              className="flex size-11 cursor-pointer items-center justify-center rounded-full focus-within:ring-2 focus-within:ring-primary"
-            >
-              <input
-                className="peer sr-only"
-                type="radio"
-                name="memberColor"
-                value={color}
-                defaultChecked={color === props.memberColor}
-                required
-              />
-              <span
-                className="size-8 rounded-full border-2 border-transparent peer-checked:border-foreground"
-                style={{ backgroundColor: color }}
-              />
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <MemberColorInput defaultValue={props.memberColor} />
       {state.error ? (
         <p aria-live="polite" className="text-sm text-danger">
           {state.error}

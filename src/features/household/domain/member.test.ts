@@ -5,7 +5,7 @@ import {
   canInviteRole,
   canRemoveMember,
   countFamilyMembers,
-  MEMBER_COLORS,
+  MEMBER_COLOR_PATTERN,
 } from "./member";
 
 describe("member permissions", () => {
@@ -24,9 +24,11 @@ describe("member permissions", () => {
     expect(canInviteRole("member", "member")).toBe(false);
   });
 
-  it("uses only constrained member colors", () => {
-    expect(MEMBER_COLORS).toContain("#7A9E7E");
-    expect(MEMBER_COLORS).not.toContain("red");
+  it("accepts any six-digit hex member color", () => {
+    expect(MEMBER_COLOR_PATTERN.test("#7A9E7E")).toBe(true);
+    expect(MEMBER_COLOR_PATTERN.test("#123abc")).toBe(true);
+    expect(MEMBER_COLOR_PATTERN.test("red")).toBe(false);
+    expect(MEMBER_COLOR_PATTERN.test("#1234")).toBe(false);
   });
 });
 

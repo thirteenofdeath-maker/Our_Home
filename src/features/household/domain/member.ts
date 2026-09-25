@@ -1,14 +1,6 @@
 import type { HouseholdRole } from "@/types/database";
 
-export const MEMBER_COLORS = [
-  "#7A9E7E",
-  "#7C9DBD",
-  "#D49A89",
-  "#C5A3C7",
-  "#D2AD62",
-  "#789F97",
-] as const;
-export type MemberColor = (typeof MEMBER_COLORS)[number];
+export const MEMBER_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
 export function canChangeMemberRole(
   actorRole: HouseholdRole,

@@ -4,27 +4,53 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { MEMBER_COLORS } from "@/features/household/domain/member";
+import { MEMBER_COLOR_PATTERN } from "@/features/household/domain/member";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { bangkokDateKey } from "@/lib/date/bangkok";
 
-import { deleteAvatar, getCurrentProfile, updateProfileDetails, uploadAvatar } from "./api";
-import { avatarPath, AVATAR_MIME_EXTENSIONS, PROFILE_GENDERS, validateAvatarFile } from "./domain/profile";
+import {
+  deleteAvatar,
+  getCurrentProfile,
+  updateProfileDetails,
+  uploadAvatar,
+} from "./api";
+import {
+  avatarPath,
+  AVATAR_MIME_EXTENSIONS,
+  PROFILE_GENDERS,
+  validateAvatarFile,
+} from "./domain/profile";
 
 const schema = z.object({
   householdId: z.string().uuid(),
   displayName: z.string().trim().min(1, "Display name is required").max(80),
-  gender: z.union([z.enum(PROFILE_GENDERS), z.literal("")]).transform((value) => value || null),
-  birthday: z.string().refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Invalid birthday")
-    .refine((value) => value === "" || value <= bangkokDateKey(), "Birthday cannot be in the future")
+  gender: z
+    .union([z.enum(PROFILE_GENDERS), z.literal("")])
+    .transform((value) => value || null),
+  birthday: z
+    .string()
+    .refine(
+      (value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value),
+      "Invalid birthday",
+    )
+    .refine(
+      (value) => value === "" || value <= bangkokDateKey(),
+      "Birthday cannot be in the future",
+    )
     .transform((value) => value || null),
   shareBirthdayWithHousehold: z.boolean(),
-  memberColor: z.enum(MEMBER_COLORS),
+  memberColor: z
+    .string()
+    .regex(MEMBER_COLOR_PATTERN, "Invalid member color")
+    .transform((value) => value.toUpperCase()),
 });
 
-export async function updateProfileAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+export async function updateProfileAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase, user } = await requireUser();
   const parsed = schema.safeParse({
     householdId: formData.get("householdId"),
@@ -35,7 +61,8 @@ export async function updateProfileAction(_state: ActionState, formData: FormDat
       formData.get("shareBirthdayWithHousehold") === "on",
     memberColor: formData.get("memberColor"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   if (parsed.data.shareBirthdayWithHousehold && !parsed.data.birthday)
     return { error: "กรุณาระบุวันเกิดก่อนเปิดแชร์กับครอบครัว" };
 
@@ -51,7 +78,10 @@ export async function updateProfileAction(_state: ActionState, formData: FormDat
   let nextAvatar = current.avatar_url;
   let uploadedPath: string | null = null;
   if (hasAvatar) {
-    uploadedPath = avatarPath(user.id, file.type as keyof typeof AVATAR_MIME_EXTENSIONS);
+    uploadedPath = avatarPath(
+      user.id,
+      file.type as keyof typeof AVATAR_MIME_EXTENSIONS,
+    );
     try {
       await uploadAvatar(supabase, uploadedPath, file);
       nextAvatar = uploadedPath;
@@ -62,13 +92,22 @@ export async function updateProfileAction(_state: ActionState, formData: FormDat
   }
 
   try {
-    await updateProfileDetails(supabase, { ...parsed.data, avatarUrl: nextAvatar });
+    await updateProfileDetails(supabase, {
+      ...parsed.data,
+      avatarUrl: nextAvatar,
+    });
   } catch (error) {
     logDatabaseErrorInDev("updateProfileAction profile update failed", error);
-    if (uploadedPath && uploadedPath !== current.avatar_url) await deleteAvatar(supabase, uploadedPath);
+    if (uploadedPath && uploadedPath !== current.avatar_url)
+      await deleteAvatar(supabase, uploadedPath);
     return { error: "Could not update profile" };
   }
-  if (uploadedPath && current.avatar_url && current.avatar_url !== uploadedPath && !/^https?:\/\//.test(current.avatar_url)) {
+  if (
+    uploadedPath &&
+    current.avatar_url &&
+    current.avatar_url !== uploadedPath &&
+    !/^https?:\/\//.test(current.avatar_url)
+  ) {
     await deleteAvatar(supabase, current.avatar_url);
   }
   revalidatePath("/household/members");

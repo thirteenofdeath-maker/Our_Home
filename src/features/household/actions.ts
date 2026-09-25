@@ -15,7 +15,7 @@ import {
   createHousehold,
   updateOwnMemberPresentation,
 } from "./api";
-import { MEMBER_COLORS } from "./domain/member";
+import { MEMBER_COLOR_PATTERN } from "./domain/member";
 
 const createHouseholdSchema = z.object({
   name: z
@@ -88,7 +88,10 @@ export async function addHouseholdMemberAction(
 const presentationSchema = z.object({
   householdId: z.string().uuid(),
   displayName: z.string().trim().min(1, "Display name is required").max(80),
-  memberColor: z.enum(MEMBER_COLORS),
+  memberColor: z
+    .string()
+    .regex(MEMBER_COLOR_PATTERN, "Invalid member color")
+    .transform((value) => value.toUpperCase()),
 });
 
 export async function updateMemberPresentationAction(

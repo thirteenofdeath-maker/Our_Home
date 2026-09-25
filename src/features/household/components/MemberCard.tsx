@@ -38,9 +38,7 @@ export function MemberCard({
             ) : null}
           </p>
           <p className="text-sm text-finance-muted">
-            {ROLE_LABEL[member.role]} ·{" "}
-            <span style={{ color: member.member_color }}>●</span>{" "}
-            {member.member_color}
+            {ROLE_LABEL[member.role]}
           </p>
         </div>
       </div>
