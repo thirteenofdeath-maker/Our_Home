@@ -144,9 +144,12 @@ describe("mobile visual foundation", () => {
       "mt-auto flex w-fit items-center gap-1.5 rounded-full",
     );
     expect(css).not.toContain(".landscape-household-info {\n    grid-row: 2;");
-    expect(css).toContain("grid-template-rows: max-content minmax(0, 1fr)");
     expect(css).toMatch(
-      /\.landscape-household-column\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior-y:\s*contain;/,
+      /\.landscape-household-column\s*\{[\s\S]*?position:\s*sticky;[\s\S]*?overflow-x:\s*hidden;[\s\S]*?overflow-y:\s*auto;/,
+    );
+    expect(css).toContain("touch-action: pan-y");
+    expect(css).not.toContain(
+      "height: calc(100dvh - 2.25rem);\n    grid-template-rows",
     );
 
     expect(read("src/components/shared/AppShell.tsx")).toContain("app-main");

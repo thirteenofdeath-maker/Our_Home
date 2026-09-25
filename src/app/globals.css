@@ -534,22 +534,13 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .landscape-household-grid {
-    height: calc(100dvh - 2.25rem);
-    grid-template-rows: max-content minmax(0, 1fr);
-    overflow: hidden;
-    padding-bottom: 0;
-  }
-
   .landscape-household-columns {
     display: grid;
     grid-column: 1 / -1;
-    height: 100%;
     min-width: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
+    align-items: start;
     gap: 1.25rem;
-    overflow: hidden;
   }
 
   .landscape-home-column,
@@ -573,10 +564,14 @@ body {
   }
 
   .landscape-household-column {
-    height: 100%;
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100dvh - 2.25rem);
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scroll-padding-block: 0.5rem;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
   }
 
