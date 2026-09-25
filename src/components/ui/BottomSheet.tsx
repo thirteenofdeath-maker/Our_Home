@@ -183,7 +183,15 @@ export function BottomSheet({
         "app-bottom-sheet fixed inset-x-0 bottom-0 top-auto mx-auto my-0 hidden w-full max-w-xl touch-pan-y open:flex flex-col overflow-x-hidden overscroll-x-none rounded-t-sheet border-0 p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/40",
         tone === "finance" && "finance-vars",
         tone === "finance" ? "bg-finance-surface" : "bg-surface",
-        size === "large" ? "max-h-[88dvh]" : "max-h-[70dvh]",
+        // A large sheet is a real form workspace, so give it a definite
+        // block-size instead of only a ceiling. Safari on iPad can resolve a
+        // flex child with `flex: 1 1 0%` to zero when its dialog parent has an
+        // automatic height; the result is a header-height sheet whose form is
+        // clipped below the viewport. A definite dvh height gives the
+        // scrollable child a real containing block on every orientation.
+        size === "large"
+          ? "h-[88dvh] max-h-[88dvh]"
+          : "max-h-[70dvh]",
         // Slide-up + fade, ~240ms ease-out. Explicit `transform:
         // translate3d(...)` rather than Tailwind's own translate-y-*
         // utility — that utility sets the standalone CSS `translate`
@@ -240,7 +248,7 @@ export function BottomSheet({
       </div>
       <div
         className={cn(
-          "min-w-0 max-w-full touch-pan-y overflow-x-hidden overflow-y-auto overscroll-x-none p-4",
+          "min-h-0 min-w-0 max-w-full touch-pan-y overflow-x-hidden overflow-y-auto overscroll-x-none p-4",
           size === "large" && "flex-1",
         )}
       >

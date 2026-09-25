@@ -48,6 +48,14 @@ describe("BottomSheet mobile sizing", () => {
     expect(matches).toContain(88);
   });
 
+  it("gives large form sheets a definite dynamic-viewport height so iPad Safari cannot collapse the flex content to header height", () => {
+    const classes = dialogClassCandidates();
+    expect(classes).toContain("h-[88dvh]");
+    expect(source).toMatch(
+      /size === "large"[\s\S]*?"h-\[88dvh\] max-h-\[88dvh\]"/,
+    );
+  });
+
   it("supports a content-sized mode that doesn't force a large/filter-sheet-sized sheet for a short action list", () => {
     expect(source).toContain('size?: "content" | "large"');
     expect(source).toMatch(/size === "large"\s*&&\s*"flex-1"/);
@@ -60,6 +68,7 @@ describe("BottomSheet mobile sizing", () => {
     expect(classes).toContain("flex-col");
     const contentDiv =
       source.match(/<div\s+className=\{cn\(\s*"([^"]*)"/)?.[1] ?? "";
+    expect(contentDiv).toContain("min-h-0");
     expect(contentDiv).toContain("overflow-y-auto");
   });
 
