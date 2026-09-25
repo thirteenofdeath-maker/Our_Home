@@ -12,9 +12,11 @@ import {
 } from "./birthday.ts";
 import {
   addDigestCount,
+  addDigestDetail,
   birthdayFallsInWindow,
   digestBody,
   type DigestCounts,
+  type DigestDetails,
 } from "./digest.ts";
 import { notificationPreferenceAllows } from "./preferences.ts";
 
@@ -200,7 +202,7 @@ async function digestCandidates(
     admin
       .from("inventory_items")
       .select(
-        "household_id,quantity,restock_threshold,expiry_date,warranty_expires_on",
+        "household_id,name,quantity,restock_threshold,expiry_date,warranty_expires_on",
       )
       .is("archived_at", null),
   ]);
@@ -234,6 +236,7 @@ async function digestCandidates(
       ? [row.created_by]
       : (usersByHousehold.get(row.household_id) ?? []);
   const counts = new Map<string, DigestCounts>();
+  const details = new Map<string, DigestDetails>();
   for (const row of tasksResult.data ?? [])
     addDigestCount(counts, itemUsers(row), "tasks");
   for (const row of remindersResult.data ?? [])
@@ -320,10 +323,26 @@ async function digestCandidates(
       row.warranty_expires_on >= startDate &&
       row.warranty_expires_on <= endDate;
     if (!low && !expiryInWindow && !warrantyInWindow) continue;
-    addDigestCount(
-      counts,
-      usersByHousehold.get(row.household_id) ?? [],
+    const users = usersByHousehold.get(row.household_id) ?? [];
+    addDigestCount(counts, users, "inventory");
+    const reasons = [
+      low ? "ใกล้หมด" : null,
+      expiryInWindow
+        ? row.expiry_date === startDate
+          ? "หมดอายุวันนี้"
+          : "ใกล้หมดอายุ"
+        : null,
+      warrantyInWindow
+        ? row.warranty_expires_on === startDate
+          ? "ประกันสิ้นสุดวันนี้"
+          : "ประกันใกล้สิ้นสุด"
+        : null,
+    ].filter(Boolean);
+    addDigestDetail(
+      details,
+      users,
       "inventory",
+      `${row.name} ${reasons.join(" · ")}`,
     );
   }
 
@@ -335,7 +354,7 @@ async function digestCandidates(
     category: "plan",
     preferenceKey: daily ? "daily_digest_enabled" : "weekly_digest_enabled",
     title: daily ? "สรุปบ้านวันนี้" : "สรุปบ้านสัปดาห์หน้า",
-    body: digestBody(userCounts, period),
+    body: digestBody(userCounts, period, details.get(userId)),
     url: "/",
     scheduledFor: now.toISOString(),
     users: [userId],

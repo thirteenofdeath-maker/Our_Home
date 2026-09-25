@@ -2,6 +2,7 @@ export type DigestCountKey =
   "tasks" | "appointments" | "birthdays" | "bills" | "pets" | "inventory";
 
 export type DigestCounts = Record<DigestCountKey, number>;
+export type DigestDetails = Partial<Record<DigestCountKey, string[]>>;
 
 export function addDigestCount(
   countsByUser: Map<string, DigestCounts>,
@@ -23,18 +24,41 @@ export function addDigestCount(
   }
 }
 
-export function digestBody(counts: DigestCounts, period: "DAILY" | "WEEKLY") {
-  const labels: Array<[DigestCountKey, string]> = [
-    ["tasks", "งาน"],
-    ["appointments", "นัดหมาย"],
-    ["birthdays", "วันเกิด"],
-    ["bills", "บิล"],
-    ["pets", "รายการสัตว์เลี้ยง"],
-    ["inventory", "รายการคลังของ"],
+export function addDigestDetail(
+  detailsByUser: Map<string, DigestDetails>,
+  userIds: Iterable<string>,
+  key: DigestCountKey,
+  detail: string,
+) {
+  for (const userId of new Set(userIds)) {
+    if (!userId || !detail) continue;
+    const details = detailsByUser.get(userId) ?? {};
+    details[key] = [...new Set([...(details[key] ?? []), detail])];
+    detailsByUser.set(userId, details);
+  }
+}
+
+export function digestBody(
+  counts: DigestCounts,
+  period: "DAILY" | "WEEKLY",
+  details: DigestDetails = {},
+) {
+  const labels: Array<[DigestCountKey, string, string]> = [
+    ["tasks", "งาน", "งาน"],
+    ["appointments", "นัดหมาย", "นัดหมาย"],
+    ["birthdays", "วันเกิด", "วันเกิด"],
+    ["bills", "บิล", "บิล"],
+    ["pets", "รายการสัตว์เลี้ยง", "สัตว์เลี้ยง"],
+    ["inventory", "รายการคลังของ", "คลังของ"],
   ];
   const parts = labels
     .filter(([key]) => counts[key] > 0)
-    .map(([key, label]) => `${counts[key]} ${label}`);
+    .map(([key, countLabel, detailLabel]) => {
+      const firstDetail = details[key]?.[0];
+      if (!firstDetail) return `${counts[key]} ${countLabel}`;
+      const remaining = Math.max(0, counts[key] - 1);
+      return `${detailLabel}: ${firstDetail}${remaining ? ` และอีก ${remaining} รายการ` : ""}`;
+    });
   if (parts.length) return parts.join(" · ");
   return period === "DAILY"
     ? "วันนี้ไม่มีรายการสำคัญ บ้านพร้อมแล้ว"

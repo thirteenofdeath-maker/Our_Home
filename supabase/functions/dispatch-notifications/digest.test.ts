@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { addDigestCount, birthdayFallsInWindow, digestBody } from "./digest";
+import {
+  addDigestCount,
+  addDigestDetail,
+  birthdayFallsInWindow,
+  digestBody,
+} from "./digest";
 
 describe("notification digests", () => {
   it("deduplicates recipients while accumulating categories", () => {
@@ -25,6 +30,43 @@ describe("notification digests", () => {
         "DAILY",
       ),
     ).toBe("3 งาน · 1 นัดหมาย · 2 บิล · 1 รายการสัตว์เลี้ยง · 2 รายการคลังของ");
+  });
+
+  it("names the inventory item instead of showing only a vague count", () => {
+    expect(
+      digestBody(
+        {
+          tasks: 0,
+          appointments: 0,
+          birthdays: 0,
+          bills: 0,
+          pets: 0,
+          inventory: 1,
+        },
+        "DAILY",
+        { inventory: ["อาหารแมว ใกล้หมด"] },
+      ),
+    ).toBe("คลังของ: อาหารแมว ใกล้หมด");
+  });
+
+  it("shows the first inventory item and the remaining count compactly", () => {
+    const details = new Map();
+    addDigestDetail(details, ["user-1"], "inventory", "อาหารแมว ใกล้หมด");
+    addDigestDetail(details, ["user-1"], "inventory", "ทรายแมว ใกล้หมด");
+    expect(
+      digestBody(
+        {
+          tasks: 0,
+          appointments: 0,
+          birthdays: 0,
+          bills: 0,
+          pets: 0,
+          inventory: 2,
+        },
+        "DAILY",
+        details.get("user-1"),
+      ),
+    ).toBe("คลังของ: อาหารแมว ใกล้หมด และอีก 1 รายการ");
   });
 
   it("finds birthdays across the new-year boundary", () => {
