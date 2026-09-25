@@ -563,18 +563,6 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .landscape-household-column {
-    position: sticky;
-    top: 0.75rem;
-    max-height: calc(100dvh - 2.25rem);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scroll-padding-block: 0.5rem;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
-  }
-
   .landscape-plan-detail {
     position: sticky;
     top: 0.75rem;
