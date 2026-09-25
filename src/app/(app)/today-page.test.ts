@@ -24,10 +24,25 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("const todayFinance");
     expect(source).toContain("const todayPetCare");
     expect(source).toContain("const todayQueue = [");
-    expect(source).toContain("const visibleTodayQueue = todayQueue.slice(0, 5)");
+    expect(source).toContain(
+      "const visibleTodayQueue = todayQueue.slice(0, 5)",
+    );
     expect(source).toContain("<TodayMetric");
     expect(source).toContain("remainingTodayItemCount");
     expect(source).toContain("เปิดแผนงาน");
+  });
+
+  it("streams the cover before daily and secondary dashboard data", () => {
+    expect(source).toContain(
+      "<Suspense fallback={<HomeTodaySkeleton />}> ".trim(),
+    );
+    expect(source).toContain(
+      "<Suspense fallback={<HomeSecondarySkeleton />}> ".trim(),
+    );
+    expect(source).toContain("async function HomeTodaySections");
+    expect(source).toContain("async function HomeSecondarySections");
+    expect(source).toContain("eventsPromise={eventsPromise}");
+    expect(source).toContain("financePromise={financePromise}");
   });
 
   it("composes source modules without writing duplicate records", () => {

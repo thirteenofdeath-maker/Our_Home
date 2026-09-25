@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
@@ -140,29 +140,25 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const upcomingEnd = shiftDate(today, 8);
   const householdId = household?.id ?? null;
 
-  const [
-    profile,
-    events,
-    tasks,
-    reminders,
-    dueFinance,
-    finance,
-    recentTransactions,
-    pets,
-    petCare,
-    recentPetCareRecords,
-  ] = await Promise.all([
-    profilePromise,
-    listCalendarEvents(supabase, householdId, user.id),
-    listPlanTasks(supabase),
-    listPlanReminders(supabase, { completed: false }),
-    listCalendarFinanceItems(supabase, today, upcomingEnd),
-    getFinanceSummary(supabase, {
-      start: `${today}T00:00:00+07:00`,
-      end: `${tomorrow}T00:00:00+07:00`,
-    }),
-    listRecentFinanceTransactions(supabase, { limit: 5 }),
-    householdId ? listPetSummaries(supabase, householdId) : Promise.resolve([]),
+  const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
+  const tasksPromise = listPlanTasks(supabase);
+  const remindersPromise = listPlanReminders(supabase, { completed: false });
+  const dueFinancePromise = listCalendarFinanceItems(
+    supabase,
+    today,
+    upcomingEnd,
+  );
+  const financePromise = getFinanceSummary(supabase, {
+    start: `${today}T00:00:00+07:00`,
+    end: `${tomorrow}T00:00:00+07:00`,
+  });
+  const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
+    limit: 5,
+  });
+  const petsPromise: ReturnType<typeof listPetSummaries> = householdId
+    ? listPetSummaries(supabase, householdId)
+    : Promise.resolve([]);
+  const petCarePromise: ReturnType<typeof listScheduledPetCareRecords> =
     householdId
       ? listScheduledPetCareRecords(
           supabase,
@@ -170,12 +166,106 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           `${today}T00:00:00+07:00`,
           `${upcomingEnd}T00:00:00+07:00`,
         )
-      : Promise.resolve([]),
-    householdId
-      ? listRecentHouseholdPetCareRecords(supabase, householdId, 3)
-      : Promise.resolve([]),
-  ]);
+      : Promise.resolve([]);
+  const recentPetCareRecordsPromise: ReturnType<
+    typeof listRecentHouseholdPetCareRecords
+  > = householdId
+    ? listRecentHouseholdPetCareRecords(supabase, householdId, 3)
+    : Promise.resolve([]);
 
+  const profile = await profilePromise;
+  const displayName =
+    profile?.display_name || user.email?.split("@")[0] || "คุณ";
+  const coverMode = themeOverride ?? homeCoverMode(profile?.birthday, now);
+  const coverStyle = HOME_COVER_STYLES[coverMode];
+  const isBirthday = coverMode === "birthday";
+  return (
+    <div className="landscape-home-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
+      <section className="app-cover app-cover-home light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+        <Image
+          src={coverStyle.src}
+          alt={coverStyle.alt}
+          fill
+          priority
+          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          className="app-cover-image time-cover-image object-cover object-center"
+        />
+        <div
+          aria-hidden="true"
+          className="time-cover-overlay absolute inset-0"
+        />
+        <Link
+          href="/profile/notifications"
+          aria-label="ดูประวัติการแจ้งเตือน"
+          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm transition-transform active:scale-95"
+        >
+          <AppIcon name="bell" className="size-5" />
+        </Link>
+        <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
+          {thaiToday(today)}
+        </p>
+        <h1 className="relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight text-finance-text">
+          {isBirthday
+            ? `สุขสันต์วันเกิด ${displayName} 🎉`
+            : `${greetingForBangkok(now)} ${displayName}`}
+        </h1>
+        <p className="relative mt-2 max-w-[62%] text-sm leading-relaxed text-finance-muted">
+          {isBirthday
+            ? "วันนี้ให้บ้านของเราช่วยฉลองวันพิเศษของคุณนะ"
+            : "วันนี้ก็มาดูแลบ้านของเราไปด้วยกันนะ"}
+        </p>
+      </section>
+
+      <Suspense fallback={<HomeTodaySkeleton />}>
+        <HomeTodaySections
+          today={today}
+          tomorrow={tomorrow}
+          eventsPromise={eventsPromise}
+          tasksPromise={tasksPromise}
+          remindersPromise={remindersPromise}
+          dueFinancePromise={dueFinancePromise}
+          petCarePromise={petCarePromise}
+        />
+      </Suspense>
+
+      <Suspense fallback={<HomeSecondarySkeleton />}>
+        <HomeSecondarySections
+          financePromise={financePromise}
+          recentTransactionsPromise={recentTransactionsPromise}
+          petsPromise={petsPromise}
+          dueFinancePromise={dueFinancePromise}
+          petCarePromise={petCarePromise}
+          recentPetCareRecordsPromise={recentPetCareRecordsPromise}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function HomeTodaySections({
+  today,
+  tomorrow,
+  eventsPromise,
+  tasksPromise,
+  remindersPromise,
+  dueFinancePromise,
+  petCarePromise,
+}: {
+  today: string;
+  tomorrow: string;
+  eventsPromise: ReturnType<typeof listCalendarEvents>;
+  tasksPromise: ReturnType<typeof listPlanTasks>;
+  remindersPromise: ReturnType<typeof listPlanReminders>;
+  dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
+  petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
+}) {
+  const [events, tasks, reminders, dueFinance, petCare] = await Promise.all([
+    eventsPromise,
+    tasksPromise,
+    remindersPromise,
+    dueFinancePromise,
+    petCarePromise,
+  ]);
   const todayEvents = events.filter((event) => eventDate(event) === today);
   const dueTasks = tasks.filter(
     (task) => !task.is_completed && task.due_date && task.due_date <= today,
@@ -185,20 +275,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const upcomingReminders = reminders.filter(
     (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) <= tomorrow,
   );
-  const recentPetCare = recentPetCareRecords.flatMap((record) =>
-    record.pet ? [{ pet: record.pet, record }] : [],
-  );
   const todayFinance = dueFinance.filter((item) => item.date === today);
   const todayPetCare = petCare.filter(
     (record) =>
       record.scheduled_at &&
       toBangkokInput(record.scheduled_at).slice(0, 10) === today,
   );
-  const displayName =
-    profile?.display_name || user.email?.split("@")[0] || "คุณ";
-  const coverMode = themeOverride ?? homeCoverMode(profile?.birthday, now);
-  const coverStyle = HOME_COVER_STYLES[coverMode];
-  const isBirthday = coverMode === "birthday";
   const todayQueue = [
     ...overdueTasks.map((task) => ({
       key: `task-${task.id}`,
@@ -248,39 +330,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const currentWeek = weekDates(today);
 
   return (
-    <div className="landscape-home-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="app-cover app-cover-home light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
-        <Image
-          src={coverStyle.src}
-          alt={coverStyle.alt}
-          fill
-          priority
-          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
-          className="app-cover-image time-cover-image object-cover object-center"
-        />
-        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
-        <Link
-          href="/profile/notifications"
-          aria-label="ดูประวัติการแจ้งเตือน"
-          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm transition-transform active:scale-95"
-        >
-          <AppIcon name="bell" className="size-5" />
-        </Link>
-        <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
-          {thaiToday(today)}
-        </p>
-        <h1 className="relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight text-finance-text">
-          {isBirthday
-            ? `สุขสันต์วันเกิด ${displayName} 🎉`
-            : `${greetingForBangkok(now)} ${displayName}`}
-        </h1>
-        <p className="relative mt-2 max-w-[62%] text-sm leading-relaxed text-finance-muted">
-          {isBirthday
-            ? "วันนี้ให้บ้านของเราช่วยฉลองวันพิเศษของคุณนะ"
-            : "วันนี้ก็มาดูแลบ้านของเราไปด้วยกันนะ"}
-        </p>
-      </section>
-
+    <>
       <DashboardCard
         title="วันนี้ต้องดู"
         href="/calendar"
@@ -375,7 +425,48 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           })}
         </div>
       </section>
+    </>
+  );
+}
 
+async function HomeSecondarySections({
+  financePromise,
+  recentTransactionsPromise,
+  petsPromise,
+  dueFinancePromise,
+  petCarePromise,
+  recentPetCareRecordsPromise,
+}: {
+  financePromise: ReturnType<typeof getFinanceSummary>;
+  recentTransactionsPromise: ReturnType<typeof listRecentFinanceTransactions>;
+  petsPromise: ReturnType<typeof listPetSummaries>;
+  dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
+  petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
+  recentPetCareRecordsPromise: ReturnType<
+    typeof listRecentHouseholdPetCareRecords
+  >;
+}) {
+  const [
+    finance,
+    recentTransactions,
+    pets,
+    dueFinance,
+    petCare,
+    recentPetCareRecords,
+  ] = await Promise.all([
+    financePromise,
+    recentTransactionsPromise,
+    petsPromise,
+    dueFinancePromise,
+    petCarePromise,
+    recentPetCareRecordsPromise,
+  ]);
+  const recentPetCare = recentPetCareRecords.flatMap((record) =>
+    record.pet ? [{ pet: record.pet, record }] : [],
+  );
+
+  return (
+    <>
       <section className="landscape-span-full grid min-w-0 grid-cols-2 gap-3">
         <DashboardCard
           title="การเงิน"
@@ -478,7 +569,29 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
         ) : null}
       </TodaySection>
-    </div>
+    </>
+  );
+}
+
+function HomeTodaySkeleton() {
+  return (
+    <>
+      <div className="min-h-64 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+      <div className="min-h-32 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+    </>
+  );
+}
+
+function HomeSecondarySkeleton() {
+  return (
+    <>
+      <div className="landscape-span-full grid grid-cols-2 gap-3">
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+      </div>
+      <div className="landscape-span-full min-h-28 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+      <div className="landscape-span-full min-h-28 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+    </>
   );
 }
 

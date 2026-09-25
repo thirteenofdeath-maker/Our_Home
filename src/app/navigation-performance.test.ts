@@ -26,11 +26,30 @@ describe("native-like main navigation performance", () => {
     const home = read("src/app/(app)/page.tsx");
     const profileStart = home.indexOf("const profilePromise =");
     const onboardingGate = home.indexOf('redirect("/onboarding")');
-    const profileJoin = home.indexOf("profilePromise,", onboardingGate);
+    const profileJoin = home.indexOf(
+      "const profile = await profilePromise;",
+      onboardingGate,
+    );
 
     expect(profileStart).toBeGreaterThan(-1);
     expect(onboardingGate).toBeGreaterThan(profileStart);
     expect(profileJoin).toBeGreaterThan(onboardingGate);
+  });
+
+  it("streams home dashboard groups behind independent suspense boundaries", () => {
+    const home = read("src/app/(app)/page.tsx");
+    expect(home).toContain("fallback={<HomeTodaySkeleton />}");
+    expect(home).toContain("fallback={<HomeSecondarySkeleton />}");
+    expect(home).toContain("async function HomeTodaySections");
+    expect(home).toContain("async function HomeSecondarySections");
+  });
+
+  it("collects real-user speed metrics", () => {
+    const layout = read("src/app/layout.tsx");
+    expect(layout).toContain(
+      'import { SpeedInsights } from "@vercel/speed-insights/next"',
+    );
+    expect(layout).toContain("<SpeedInsights />");
   });
 
   it("loads recent pet care in one household query instead of one query per pet", () => {
@@ -40,7 +59,9 @@ describe("native-like main navigation performance", () => {
     );
     expect(home).toContain("listRecentHouseholdPetCareRecords(");
     expect(home).not.toContain("pets.map(async (pet)");
-    expect(index).toContain("on public.pet_care_records(household_id, created_at desc)");
+    expect(index).toContain(
+      "on public.pet_care_records(household_id, created_at desc)",
+    );
     expect(index).toContain("where archived_at is null");
   });
 

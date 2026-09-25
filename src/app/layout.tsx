@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 import { ServiceWorkerRegister } from "./ServiceWorkerRegister";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <OfflineStatus />
         <TimeThemeController />
         <ServiceWorkerRegister />
+        <SpeedInsights />
       </body>
     </html>
   );
