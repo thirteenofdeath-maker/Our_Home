@@ -49,7 +49,7 @@ describe("mobile visual foundation", () => {
     }
   });
 
-  it("ties every static main-page cover to the shared Bangkok-time palette", () => {
+  it("ties every main-page cover to the shared Bangkok-time palette", () => {
     const css = read("src/app/globals.css");
     for (const token of [
       "--time-cover-surface",
@@ -66,6 +66,7 @@ describe("mobile visual foundation", () => {
     expect(css).toContain('html[data-time-theme="late-night"]');
 
     for (const path of [
+      "src/app/(app)/page.tsx",
       "src/features/finance/components/FinanceHeader.tsx",
       "src/app/(app)/calendar/page.tsx",
       "src/app/(app)/pets/page.tsx",

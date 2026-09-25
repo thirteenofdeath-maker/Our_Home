@@ -51,14 +51,13 @@ describe("Today dashboard composition", () => {
     expect(source).not.toMatch(/brightness-|saturate-|hue-rotate|sepia-/u);
   });
 
-  it("keeps late-night cover copy readable over the dark artwork", () => {
-    expect(source).toContain(
-      'text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]"',
-    );
-    expect(source).toContain(
-      'coverMode === "night" || coverMode === "late-night"',
-    );
-    expect(source).toContain("from-[#081c30]/90");
-    expect(source).toContain("rgba(255,249,239,0.97)");
+  it("uses the shared time-aware cover palette for every home artwork", () => {
+    expect(source).toContain("light-cover-copy time-cover");
+    expect(source).toContain("app-cover-image time-cover-image");
+    expect(source).toContain("time-cover-overlay");
+    expect(source).toContain("text-finance-text");
+    expect(source).toContain("text-finance-muted");
+    expect(source).not.toContain("from-[#081c30]/90");
+    expect(source).not.toContain("rgba(255,249,239,0.97)");
   });
 });

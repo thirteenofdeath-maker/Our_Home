@@ -82,66 +82,39 @@ const HOME_COVER_STYLES: Record<
   {
     src: string;
     alt: string;
-    text: string;
-    muted: string;
-    action: string;
   }
 > = {
   birthday: {
     src: "/art/home-birthday.webp",
     alt: "พ่อแม่และลูกสาวฉลองวันเกิดที่บ้านกับแมวสี่ตัวและกระต่าย",
-    text: "text-[#5f3d37]",
-    muted: "text-[#8a6259]",
-    action: "bg-white/85 text-[#b65f53]",
   },
   morning: {
     src: "/art/home-morning.webp",
     alt: "ยามเช้าที่พ่อแม่และลูกสาวเริ่มต้นวันพร้อมแมวสี่ตัวและกระต่าย",
-    text: "text-finance-text",
-    muted: "text-finance-muted",
-    action: "bg-white/85 text-finance-primary-strong",
   },
   "late-morning": {
     src: "/art/home-late-morning.webp",
     alt: "ช่วงสายที่พ่อแม่และลูกสาวช่วยกันทำงานบ้านพร้อมสัตว์เลี้ยง",
-    text: "text-[#4f4439]",
-    muted: "text-[#75685b]",
-    action: "bg-white/85 text-[#6f7653]",
   },
   midday: {
     src: "/art/home-midday.webp",
     alt: "ตอนเที่ยงที่พ่อแม่และลูกสาวเตรียมอาหารพร้อมสัตว์เลี้ยง",
-    text: "text-[#514238]",
-    muted: "text-[#78675c]",
-    action: "bg-white/85 text-[#7c6c4f]",
   },
   afternoon: {
     src: "/art/home-afternoon.webp",
     alt: "ยามบ่ายที่พ่อแม่และลูกสาวทำกิจกรรมพร้อมแมวสี่ตัวและกระต่าย",
-    text: "text-[#544238]",
-    muted: "text-[#7b685b]",
-    action: "bg-white/85 text-[#7e6b4c]",
   },
   evening: {
     src: "/art/home-evening.webp",
     alt: "ยามเย็นที่พ่อกลับบ้านและครอบครัวเตรียมอาหารพร้อมสัตว์เลี้ยง",
-    text: "text-[#513c35]",
-    muted: "text-[#72584f]",
-    action: "bg-white/75 text-[#715348] backdrop-blur-sm",
   },
   night: {
     src: "/art/home-night.webp",
     alt: "ตอนค่ำที่พ่อแม่อ่านนิทานให้ลูกสาวพร้อมแมวสี่ตัวและกระต่าย",
-    text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]",
-    muted: "text-white/85 drop-shadow-[0_1px_2px_rgba(8,24,40,0.9)]",
-    action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
   },
   "late-night": {
     src: "/art/home-late-night.webp",
     alt: "ยามดึกที่พ่อแม่ ลูกสาว แมวสี่ตัว และกระต่ายนอนหลับพักผ่อน",
-    text: "text-white drop-shadow-[0_1px_3px_rgba(8,24,40,0.9)]",
-    muted: "text-white/85 drop-shadow-[0_1px_2px_rgba(8,24,40,0.9)]",
-    action: "bg-white/80 text-[#4e6873] backdrop-blur-sm",
   },
 };
 
@@ -224,48 +197,32 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="landscape-home-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="app-cover app-cover-home relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-home light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src={coverStyle.src}
           alt={coverStyle.alt}
           fill
           priority
           sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
-          className="app-cover-image object-cover object-center"
+          className="app-cover-image time-cover-image object-cover object-center"
         />
-        {coverMode === "night" || coverMode === "late-night" ? (
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-[#081c30]/90 via-[#081c30]/60 to-transparent"
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,239,0.97)_0%,rgba(255,249,239,0.9)_40%,rgba(255,249,239,0.65)_65%,rgba(255,249,239,0.06)_100%)]"
-          />
-        )}
+        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <Link
           href="/profile/notifications"
           aria-label="ดูประวัติการแจ้งเตือน"
-          className={`absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full shadow-sm transition-transform active:scale-95 ${coverStyle.action}`}
+          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm transition-transform active:scale-95"
         >
           <AppIcon name="bell" className="size-5" />
         </Link>
-        <p
-          className={`relative max-w-[72%] text-xs font-medium ${coverStyle.muted}`}
-        >
+        <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
           {thaiToday(today)}
         </p>
-        <h1
-          className={`relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight ${coverStyle.text}`}
-        >
+        <h1 className="relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight text-finance-text">
           {isBirthday
             ? `สุขสันต์วันเกิด ${displayName} 🎉`
             : `${greetingForBangkok(now)} ${displayName}`}
         </h1>
-        <p
-          className={`relative mt-2 max-w-[62%] text-sm leading-relaxed ${coverStyle.muted}`}
-        >
+        <p className="relative mt-2 max-w-[62%] text-sm leading-relaxed text-finance-muted">
           {isBirthday
             ? "วันนี้ให้บ้านของเราช่วยฉลองวันพิเศษของคุณนะ"
             : "วันนี้ก็มาดูแลบ้านของเราไปด้วยกันนะ"}
