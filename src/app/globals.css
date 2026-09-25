@@ -459,11 +459,21 @@ body {
     height: 100%;
     max-width: none;
     flex-direction: column;
-    justify-content: center;
+    justify-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-padding-block: 0.375rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     border-radius: 1.75rem;
   }
 
+  .bottom-nav-list::-webkit-scrollbar {
+    display: none;
+  }
+
   .bottom-nav-list > li {
+    flex: 0 0 auto;
     width: 100%;
   }
 

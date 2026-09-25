@@ -92,7 +92,7 @@ export function BottomNav() {
     >
       <ul
         className={cn(
-          "bottom-nav-list mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "bottom-nav-list mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-x-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

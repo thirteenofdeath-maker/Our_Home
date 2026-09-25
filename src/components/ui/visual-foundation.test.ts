@@ -147,6 +147,18 @@ describe("mobile visual foundation", () => {
     );
   });
 
+  it("keeps every landscape nav item reachable when browser chrome reduces height", () => {
+    const css = read("src/app/globals.css");
+    const nav = read("src/components/shared/BottomNav.tsx");
+    expect(css).toMatch(
+      /\.bottom-nav-list\s*\{[\s\S]*?justify-content:\s*safe center;[\s\S]*?overflow-y:\s*auto;/,
+    );
+    expect(css).toContain("-webkit-overflow-scrolling: touch");
+    expect(css).toContain(".bottom-nav-list::-webkit-scrollbar");
+    expect(nav).toContain("overflow-x-hidden");
+    expect(nav).not.toContain("gap-1 overflow-hidden");
+  });
+
   it("keeps the five real destinations and gives each an icon", () => {
     const nav = read("src/components/shared/BottomNav.tsx");
     expect(

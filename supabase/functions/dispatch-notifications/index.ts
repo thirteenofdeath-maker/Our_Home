@@ -887,24 +887,26 @@ Deno.serve(async (request: Request) => {
   const prefs = new Map(
     (preferences ?? []).map((row: any) => [row.user_id, row]),
   );
-  let sent = 0;
-  for (const candidate of candidates)
-    for (const subscription of subscriptions ?? []) {
-      if (!candidate.users.includes(subscription.user_id)) continue;
-      const preference: any = prefs.get(subscription.user_id) ?? {
-        plan_enabled: true,
-        pets_enabled: true,
-        finance_enabled: true,
-        inventory_enabled: true,
-        member_birthdays_enabled: true,
-        pet_birthdays_enabled: true,
-        birthday_week_before_enabled: true,
-        day_before_enabled: true,
-        due_day_enabled: true,
-        digest_mode_enabled: true,
-        daily_digest_enabled: true,
-        weekly_digest_enabled: true,
-      };
+  const defaultPreference = {
+    plan_enabled: true,
+    pets_enabled: true,
+    finance_enabled: true,
+    inventory_enabled: true,
+    member_birthdays_enabled: true,
+    pet_birthdays_enabled: true,
+    birthday_week_before_enabled: true,
+    day_before_enabled: true,
+    due_day_enabled: true,
+    digest_mode_enabled: true,
+    daily_digest_enabled: true,
+    weekly_digest_enabled: true,
+  };
+  const eligibleUsers = new Map<Candidate, Set<string>>();
+  const historyRows = [];
+  for (const candidate of candidates) {
+    const users = new Set<string>();
+    for (const userId of new Set(candidate.users)) {
+      const preference: any = prefs.get(userId) ?? defaultPreference;
       const isDigest =
         candidate.sourceType === "DAILY_DIGEST" ||
         candidate.sourceType === "WEEKLY_DIGEST";
@@ -914,6 +916,37 @@ Deno.serve(async (request: Request) => {
       )
         continue;
       if (!notificationPreferenceAllows(candidate, preference)) continue;
+      users.add(userId);
+      historyRows.push({
+        user_id: userId,
+        source_type: candidate.sourceType,
+        source_id: candidate.sourceId,
+        occurrence_key: candidate.occurrenceKey,
+        notification_kind: candidate.kind,
+        category: candidate.category,
+        title: candidate.title,
+        body: candidate.body,
+        url: candidate.url,
+        scheduled_for: candidate.scheduledFor,
+      });
+    }
+    eligibleUsers.set(candidate, users);
+  }
+  if (historyRows.length) {
+    const { error: historyError } = await admin
+      .from("notification_history")
+      .upsert(historyRows, {
+        onConflict:
+          "user_id,source_type,source_id,occurrence_key,notification_kind",
+        ignoreDuplicates: true,
+      });
+    if (historyError) throw historyError;
+  }
+
+  let sent = 0;
+  for (const candidate of candidates)
+    for (const subscription of subscriptions ?? []) {
+      if (!eligibleUsers.get(candidate)?.has(subscription.user_id)) continue;
       const { data: deliveryId } = await admin.rpc(
         "claim_notification_delivery",
         {
@@ -964,7 +997,12 @@ Deno.serve(async (request: Request) => {
             .eq("id", subscription.id);
       }
     }
-  return new Response(JSON.stringify({ candidates: candidates.length, sent }), {
-    headers: jsonHeaders,
-  });
+  return new Response(
+    JSON.stringify({
+      candidates: candidates.length,
+      history: historyRows.length,
+      sent,
+    }),
+    { headers: jsonHeaders },
+  );
 });

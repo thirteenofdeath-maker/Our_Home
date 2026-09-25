@@ -246,7 +246,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         )}
         <Link
           href="/profile/notifications"
-          aria-label="ตั้งค่าการแจ้งเตือน"
+          aria-label="ดูประวัติการแจ้งเตือน"
           className={`absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full shadow-sm transition-transform active:scale-95 ${coverStyle.action}`}
         >
           <AppIcon name="bell" className="size-5" />

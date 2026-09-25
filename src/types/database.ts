@@ -174,6 +174,28 @@ export interface Database {
         };
         Relationships: [];
       };
+      notification_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          source_type: string;
+          source_id: string;
+          occurrence_key: string;
+          notification_kind: string;
+          category: "plan" | "pets" | "finance" | "inventory";
+          title: string;
+          body: string;
+          url: string;
+          scheduled_for: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: {
+          read_at?: string | null;
+        };
+        Relationships: [];
+      };
       push_subscriptions: {
         Row: {
           id: string;

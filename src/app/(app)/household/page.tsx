@@ -59,13 +59,6 @@ export default async function HouseholdPage() {
   // from HouseholdOverview below) — this FAB is only the single-creation-
   // type "add a member" shortcut, so its form slides up directly.
   const canManageMembers = canInviteRole(household.myRole, "member");
-  const startedLabel = new Intl.DateTimeFormat("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Asia/Bangkok",
-  }).format(new Date(household.created_at));
-
   return (
     <div className="landscape-household-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-6 px-4 pb-8 pt-3">
       {canManageMembers ? (
@@ -94,7 +87,10 @@ export default async function HouseholdPage() {
           sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
           className="app-cover-image time-cover-image object-cover object-center"
         />
-        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="time-cover-overlay absolute inset-0"
+        />
         <div className="relative flex h-full max-w-[62%] flex-col">
           <p className="text-xs font-medium text-finance-primary-strong">
             บ้านของเรา
@@ -112,9 +108,6 @@ export default async function HouseholdPage() {
                 className="size-4 text-finance-primary-strong"
               />
               {countFamilyMembers(members)} คน
-            </p>
-            <p className="mt-0.5 truncate text-finance-muted">
-              สร้างครอบครัวในแอป {startedLabel}
             </p>
           </div>
         </div>
