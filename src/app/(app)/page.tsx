@@ -180,19 +180,71 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const dueTasks = tasks.filter(
     (task) => !task.is_completed && task.due_date && task.due_date <= today,
   );
+  const overdueTasks = dueTasks.filter((task) => task.due_date! < today);
+  const todayTasks = dueTasks.filter((task) => task.due_date === today);
   const upcomingReminders = reminders.filter(
     (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) <= tomorrow,
   );
   const recentPetCare = recentPetCareRecords.flatMap((record) =>
     record.pet ? [{ pet: record.pet, record }] : [],
   );
+  const todayFinance = dueFinance.filter((item) => item.date === today);
+  const todayPetCare = petCare.filter(
+    (record) =>
+      record.scheduled_at &&
+      toBangkokInput(record.scheduled_at).slice(0, 10) === today,
+  );
   const displayName =
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
   const coverMode = themeOverride ?? homeCoverMode(profile?.birthday, now);
   const coverStyle = HOME_COVER_STYLES[coverMode];
   const isBirthday = coverMode === "birthday";
-  const todayItemCount =
-    todayEvents.length + dueTasks.length + upcomingReminders.length;
+  const todayQueue = [
+    ...overdueTasks.map((task) => ({
+      key: `task-${task.id}`,
+      href: `/calendar/tasks/${task.id}`,
+      marker: "เลยกำหนด",
+      title: task.title,
+      detail: planDateLabel(task.due_date, task.due_time),
+    })),
+    ...todayEvents.map((event) => ({
+      key: `event-${event.id}`,
+      href: `/calendar/${event.id}`,
+      marker: "นัดหมาย",
+      title: event.title,
+      detail: event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!),
+    })),
+    ...todayTasks.map((task) => ({
+      key: `task-${task.id}`,
+      href: `/calendar/tasks/${task.id}`,
+      marker: "งาน",
+      title: task.title,
+      detail: planDateLabel(task.due_date, task.due_time),
+    })),
+    ...todayFinance.map((item) => ({
+      key: `finance-${item.source}-${item.sourceId}`,
+      href: item.href,
+      marker: "การเงิน",
+      title: item.title,
+      detail: "ครบกำหนดวันนี้",
+    })),
+    ...todayPetCare.map((record) => ({
+      key: `pet-care-${record.id}`,
+      href: `/pets/${record.pet_id}`,
+      marker: PET_CARE_RECORD_LABEL[record.record_type],
+      title: `${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`,
+      detail: petCareDateLabel(record.scheduled_at!),
+    })),
+    ...upcomingReminders.map((reminder) => ({
+      key: `reminder-${reminder.id}`,
+      href: `/calendar/reminders/${reminder.id}`,
+      marker: "เตือน",
+      title: reminder.title,
+      detail: reminderDateLabel(reminder.reminds_at),
+    })),
+  ];
+  const visibleTodayQueue = todayQueue.slice(0, 5);
+  const remainingTodayItemCount = todayQueue.length - visibleTodayQueue.length;
   const currentWeek = weekDates(today);
 
   return (
@@ -230,48 +282,42 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       </section>
 
       <DashboardCard
-        title="งานวันนี้"
+        title="วันนี้ต้องดู"
         href="/calendar"
-        linkLabel="ดูทั้งหมด"
+        linkLabel="เปิดแผนงาน"
         icon="calendar"
+        className="ring-1 ring-finance-primary/15"
       >
-        <p className="mb-3 text-sm text-finance-muted">
-          {todayItemCount
-            ? `${todayItemCount} รายการที่ต้องดู`
-            : "วันนี้ยังไม่มีรายการค้าง"}
-        </p>
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          <TodayMetric value={overdueTasks.length} label="เลยกำหนด" />
+          <TodayMetric value={todayEvents.length} label="นัดหมาย" />
+          <TodayMetric
+            value={
+              todayTasks.length + todayFinance.length + todayPetCare.length
+            }
+            label="ต้องทำ"
+          />
+        </div>
         <div className="flex min-w-0 flex-col gap-2">
-          {todayEvents.slice(0, 3).map((event) => (
+          {visibleTodayQueue.map((item) => (
             <TodayItem
-              key={`event-${event.id}`}
-              href={`/calendar/${event.id}`}
-              marker="นัดหมาย"
-              title={event.title}
-              detail={
-                event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!)
-              }
+              key={item.key}
+              href={item.href}
+              marker={item.marker}
+              title={item.title}
+              detail={item.detail}
             />
           ))}
-          {dueTasks.slice(0, 3).map((task) => (
-            <TodayItem
-              key={`task-${task.id}`}
-              href={`/calendar/tasks/${task.id}`}
-              marker={task.due_date! < today ? "เลยกำหนด" : "งาน"}
-              title={task.title}
-              detail={planDateLabel(task.due_date, task.due_time)}
-            />
-          ))}
-          {upcomingReminders.slice(0, 2).map((reminder) => (
-            <TodayItem
-              key={`reminder-${reminder.id}`}
-              href={`/calendar/reminders/${reminder.id}`}
-              marker="เตือน"
-              title={reminder.title}
-              detail={reminderDateLabel(reminder.reminds_at)}
-            />
-          ))}
-          {todayItemCount === 0 ? (
-            <EmptyToday text="วันนี้ว่าง ลองเพิ่มงานหรือวางแผนใหม่ได้เลย" />
+          {todayQueue.length === 0 ? (
+            <EmptyToday text="วันนี้เรียบร้อยดี ยังไม่มีเรื่องที่ต้องจัดการ" />
+          ) : null}
+          {remainingTodayItemCount > 0 ? (
+            <Link
+              href="/calendar"
+              className="rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 text-center text-sm font-medium text-finance-primary-strong transition-colors hover:bg-finance-primary-soft/55"
+            >
+              ดูอีก {remainingTodayItemCount} รายการ
+            </Link>
           ) : null}
         </div>
       </DashboardCard>
@@ -547,6 +593,17 @@ function TodayItem({
         {detail}
       </p>
     </Link>
+  );
+}
+
+function TodayMetric({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-[1rem] bg-finance-primary-soft/45 px-2 py-2.5 text-center">
+      <p className="text-lg font-semibold tabular-nums text-finance-text">
+        {value}
+      </p>
+      <p className="text-[11px] text-finance-muted">{label}</p>
+    </div>
   );
 }
 

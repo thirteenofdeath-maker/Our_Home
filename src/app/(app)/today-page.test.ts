@@ -12,11 +12,22 @@ describe("Today dashboard composition", () => {
     expect(source).not.toContain('redirect("/wallets")');
     expect(source).toContain("greetingForBangkok(now)");
     expect(source).toContain("homeCoverMode(profile?.birthday, now)");
-    expect(source).toContain("งานวันนี้");
+    expect(source).toContain("วันนี้ต้องดู");
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="การเงิน"');
     expect(source).toContain('title="สัตว์เลี้ยง"');
     expect(source).toContain("<QuickLink");
+  });
+
+  it("turns today's mixed data into one short priority queue", () => {
+    expect(source).toContain("const overdueTasks");
+    expect(source).toContain("const todayFinance");
+    expect(source).toContain("const todayPetCare");
+    expect(source).toContain("const todayQueue = [");
+    expect(source).toContain("const visibleTodayQueue = todayQueue.slice(0, 5)");
+    expect(source).toContain("<TodayMetric");
+    expect(source).toContain("remainingTodayItemCount");
+    expect(source).toContain("เปิดแผนงาน");
   });
 
   it("composes source modules without writing duplicate records", () => {
