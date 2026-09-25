@@ -534,6 +534,15 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .landscape-household-columns {
+    display: grid;
+    grid-column: 1 / -1;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 1.25rem;
+  }
+
   .landscape-home-column,
   .landscape-finance-side,
   .landscape-pets-column,
@@ -550,18 +559,8 @@ body {
     grid-column: 1 / -1;
   }
 
-  .landscape-household-members,
-  .landscape-household-observers {
-    grid-column: 1;
-  }
-
-  .landscape-household-info,
-  .landscape-household-activity {
-    grid-column: 2;
-  }
-
   .landscape-household-info {
-    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .landscape-plan-detail {

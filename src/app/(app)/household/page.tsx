@@ -101,87 +101,101 @@ export default async function HouseholdPage() {
           <p className="mt-2 text-sm leading-relaxed text-finance-muted">
             อยู่ด้วยกัน มีความสุขเสมอ
           </p>
-          <div className="mt-auto rounded-[1rem] bg-white/75 px-3 py-2 text-xs backdrop-blur-sm">
-            <p className="flex items-center gap-1.5 font-semibold text-finance-text">
-              <AppIcon
-                name="household"
-                className="size-4 text-finance-primary-strong"
-              />
-              {countFamilyMembers(members)} คน
-            </p>
-          </div>
-        </div>
-      </section>
-      <HouseholdOverview
-        members={members}
-        userId={user.id}
-        role={household.myRole}
-      />
-      <section className="landscape-household-info grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-[1.4rem] bg-finance-surface-strong p-4 shadow-card">
-          <div className="flex items-center gap-2">
-            <AppIcon
-              name="info"
-              className="size-5 text-finance-primary-strong"
-            />
-            <h2 className="font-semibold text-finance-text">ข้อมูลส่วนตัว</h2>
-          </div>
-          <p className="mt-1 text-sm text-finance-muted">
-            มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับโน้ต งาน และการเงินส่วนตัว
-          </p>
-        </div>
-        <div className="rounded-[1.4rem] bg-finance-primary-soft p-4 shadow-card">
-          <div className="flex items-center gap-2">
+          <div className="mt-auto flex w-fit items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-finance-text backdrop-blur-sm">
             <AppIcon
               name="household"
-              className="size-5 text-finance-primary-strong"
+              className="size-4 text-finance-primary-strong"
             />
-            <h2 className="font-semibold text-finance-text">ข้อมูลของบ้าน</h2>
+            {countFamilyMembers(members)} คน
           </div>
-          <p className="mt-1 text-sm text-finance-muted">
-            สมาชิกในบ้านเห็นข้อมูลร่วมกันตามบทบาทของตน
-          </p>
         </div>
       </section>
-      <section className="landscape-household-activity flex flex-col gap-3">
-        <div>
-          <p className="text-sm text-finance-muted">ความเคลื่อนไหวในบ้าน</p>
-          <h2 className="font-semibold text-finance-text">กิจกรรมล่าสุด</h2>
+      <div className="landscape-household-columns flex min-w-0 flex-col gap-6">
+        <div className="landscape-household-column flex min-w-0 flex-col gap-6">
+          <HouseholdOverview
+            members={members}
+            userId={user.id}
+            role={household.myRole}
+          />
         </div>
-        {[
-          ...recentTransactions.map((item) => ({
-            id: `finance-${item.transactionId}`,
-            href: `/finance/transactions/${item.transactionId}`,
-            title: item.title ?? item.categoryName ?? "รายการการเงิน",
-            detail: `${item.creatorName ?? "สมาชิก"} · การเงิน`,
-            at: item.occurredAt,
-          })),
-          ...petRecords.map((record) => ({
-            id: `pet-${record.id}`,
-            href: `/pets/${record.pet_id}`,
-            title: record.title,
-            detail: `${members.find((member) => member.user_id === record.created_by)?.profile?.display_name ?? "สมาชิก"} · ${PET_CARE_RECORD_LABEL[record.record_type]}`,
-            at: record.created_at,
-          })),
-        ]
-          .toSorted((a, b) => b.at.localeCompare(a.at))
-          .slice(0, 6)
-          .map((activity) => (
-            <Link
-              key={activity.id}
-              href={activity.href}
-              className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card"
-            >
-              <p className="font-medium text-finance-text">{activity.title}</p>
-              <p className="text-sm text-finance-muted">{activity.detail}</p>
-            </Link>
-          ))}
-        {recentTransactions.length === 0 && petRecords.length === 0 ? (
-          <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card">
-            <p className="text-sm text-finance-muted">ยังไม่มีกิจกรรมล่าสุด</p>
-          </div>
-        ) : null}
-      </section>
+        <div className="landscape-household-column flex min-w-0 flex-col gap-6">
+          <section className="landscape-household-info grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-[1.4rem] bg-finance-surface-strong p-4 shadow-card">
+              <div className="flex items-center gap-2">
+                <AppIcon
+                  name="info"
+                  className="size-5 text-finance-primary-strong"
+                />
+                <h2 className="font-semibold text-finance-text">
+                  ข้อมูลส่วนตัว
+                </h2>
+              </div>
+              <p className="mt-1 text-sm text-finance-muted">
+                มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับโน้ต งาน และการเงินส่วนตัว
+              </p>
+            </div>
+            <div className="rounded-[1.4rem] bg-finance-primary-soft p-4 shadow-card">
+              <div className="flex items-center gap-2">
+                <AppIcon
+                  name="household"
+                  className="size-5 text-finance-primary-strong"
+                />
+                <h2 className="font-semibold text-finance-text">
+                  ข้อมูลของบ้าน
+                </h2>
+              </div>
+              <p className="mt-1 text-sm text-finance-muted">
+                สมาชิกในบ้านเห็นข้อมูลร่วมกันตามบทบาทของตน
+              </p>
+            </div>
+          </section>
+          <section className="landscape-household-activity flex flex-col gap-3">
+            <div>
+              <p className="text-sm text-finance-muted">ความเคลื่อนไหวในบ้าน</p>
+              <h2 className="font-semibold text-finance-text">กิจกรรมล่าสุด</h2>
+            </div>
+            {[
+              ...recentTransactions.map((item) => ({
+                id: `finance-${item.transactionId}`,
+                href: `/finance/transactions/${item.transactionId}`,
+                title: item.title ?? item.categoryName ?? "รายการการเงิน",
+                detail: `${item.creatorName ?? "สมาชิก"} · การเงิน`,
+                at: item.occurredAt,
+              })),
+              ...petRecords.map((record) => ({
+                id: `pet-${record.id}`,
+                href: `/pets/${record.pet_id}`,
+                title: record.title,
+                detail: `${members.find((member) => member.user_id === record.created_by)?.profile?.display_name ?? "สมาชิก"} · ${PET_CARE_RECORD_LABEL[record.record_type]}`,
+                at: record.created_at,
+              })),
+            ]
+              .toSorted((a, b) => b.at.localeCompare(a.at))
+              .slice(0, 6)
+              .map((activity) => (
+                <Link
+                  key={activity.id}
+                  href={activity.href}
+                  className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card"
+                >
+                  <p className="font-medium text-finance-text">
+                    {activity.title}
+                  </p>
+                  <p className="text-sm text-finance-muted">
+                    {activity.detail}
+                  </p>
+                </Link>
+              ))}
+            {recentTransactions.length === 0 && petRecords.length === 0 ? (
+              <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card">
+                <p className="text-sm text-finance-muted">
+                  ยังไม่มีกิจกรรมล่าสุด
+                </p>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

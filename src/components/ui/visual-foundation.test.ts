@@ -134,9 +134,16 @@ describe("mobile visual foundation", () => {
       "landscape-pets-split",
       "landscape-home-grid",
       "landscape-household-grid",
+      "landscape-household-columns",
     ]) {
       expect(sources).toContain(className);
     }
+
+    const householdPage = read("src/app/(app)/household/page.tsx");
+    expect(householdPage).toContain(
+      "mt-auto flex w-fit items-center gap-1.5 rounded-full",
+    );
+    expect(css).not.toContain(".landscape-household-info {\n    grid-row: 2;");
 
     expect(read("src/components/shared/AppShell.tsx")).toContain("app-main");
     expect(read("src/components/shared/BottomNav.tsx")).toContain(
