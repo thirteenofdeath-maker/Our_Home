@@ -448,9 +448,18 @@ body {
   }
 
   .bottom-nav-shell {
-    inset: max(0.75rem, env(safe-area-inset-top)) auto
-      max(0.75rem, env(safe-area-inset-bottom))
-      max(0.75rem, env(safe-area-inset-left));
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: max(0.75rem, env(safe-area-inset-left));
+    height: min(
+      34rem,
+      calc(
+        100dvh - max(0.75rem, env(safe-area-inset-top)) -
+          max(0.75rem, env(safe-area-inset-bottom))
+      )
+    );
+    transform: translateY(-50%);
     width: 4.75rem;
   }
 
@@ -479,6 +488,17 @@ body {
 
   .bottom-nav-link {
     height: 3.75rem;
+  }
+
+  @media (max-height: 27rem) {
+    .bottom-nav-list {
+      gap: 0.125rem;
+      padding-block: 0.25rem;
+    }
+
+    .bottom-nav-link {
+      height: 3.25rem;
+    }
   }
 
   .app-fab {

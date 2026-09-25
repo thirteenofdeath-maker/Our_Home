@@ -172,10 +172,14 @@ describe("mobile visual foundation", () => {
     const css = read("src/app/globals.css");
     const nav = read("src/components/shared/BottomNav.tsx");
     expect(css).toMatch(
+      /\.bottom-nav-shell\s*\{[\s\S]*?top:\s*50%;[\s\S]*?height:\s*min\([\s\S]*?34rem,[\s\S]*?100dvh[\s\S]*?transform:\s*translateY\(-50%\);/,
+    );
+    expect(css).toMatch(
       /\.bottom-nav-list\s*\{[\s\S]*?justify-content:\s*safe center;[\s\S]*?overflow-y:\s*auto;/,
     );
     expect(css).toContain("-webkit-overflow-scrolling: touch");
     expect(css).toContain(".bottom-nav-list::-webkit-scrollbar");
+    expect(css).toContain("@media (max-height: 27rem)");
     expect(nav).toContain("overflow-x-hidden");
     expect(nav).not.toContain("gap-1 overflow-hidden");
   });
