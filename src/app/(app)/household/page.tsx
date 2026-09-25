@@ -110,15 +110,15 @@ export default async function HouseholdPage() {
           </div>
         </div>
       </section>
-      <div className="landscape-household-columns flex min-w-0 flex-col gap-6">
-        <div className="landscape-household-column flex min-w-0 flex-col gap-6">
+      <div className="landscape-household-columns landscape-scroll-columns flex min-w-0 flex-col gap-6">
+        <div className="landscape-household-column landscape-scroll-column flex min-w-0 flex-col gap-6">
           <HouseholdOverview
             members={members}
             userId={user.id}
             role={household.myRole}
           />
         </div>
-        <div className="landscape-household-column flex min-w-0 flex-col gap-6">
+        <div className="landscape-household-column landscape-scroll-column flex min-w-0 flex-col gap-6">
           <section className="landscape-household-info grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-[1.4rem] bg-finance-surface-strong p-4 shadow-card">
               <div className="flex items-center gap-2">

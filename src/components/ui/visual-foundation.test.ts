@@ -135,6 +135,8 @@ describe("mobile visual foundation", () => {
       "landscape-home-grid",
       "landscape-household-grid",
       "landscape-household-columns",
+      "landscape-scroll-columns",
+      "landscape-scroll-column",
     ]) {
       expect(sources).toContain(className);
     }
@@ -144,6 +146,14 @@ describe("mobile visual foundation", () => {
       "mt-auto flex w-fit items-center gap-1.5 rounded-full",
     );
     expect(css).not.toContain(".landscape-household-info {\n    grid-row: 2;");
+    expect(css).toContain("grid-template-rows: max-content minmax(0, 1fr)");
+    expect(css).toMatch(
+      /\.landscape-scroll-column\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior-y:\s*contain;/,
+    );
+    expect(sources.match(/landscape-scroll-columns/g)).toHaveLength(5);
+    expect(sources.match(/landscape-scroll-column/g)?.length).toBeGreaterThan(
+      8,
+    );
 
     expect(read("src/components/shared/AppShell.tsx")).toContain("app-main");
     expect(read("src/components/shared/BottomNav.tsx")).toContain(
