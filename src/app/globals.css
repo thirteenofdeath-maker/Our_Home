@@ -563,6 +563,14 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .landscape-plan-split > section:first-child,
+  .landscape-plan-detail > .shadow-card,
+  .landscape-plan-detail > a > .shadow-card,
+  .landscape-household-info > .shadow-card,
+  .landscape-household-activity > .shadow-card {
+    padding: 1.25rem;
+  }
+
   .landscape-plan-detail {
     position: sticky;
     top: 0.75rem;

@@ -151,6 +151,9 @@ describe("mobile visual foundation", () => {
     expect(css).not.toContain(
       "height: calc(100dvh - 2.25rem);\n    grid-template-rows",
     );
+    expect(css).toContain(".landscape-plan-detail > a > .shadow-card");
+    expect(css).toContain(".landscape-household-info > .shadow-card");
+    expect(css).toContain("padding: 1.25rem");
 
     expect(read("src/components/shared/AppShell.tsx")).toContain("app-main");
     expect(read("src/components/shared/BottomNav.tsx")).toContain(
