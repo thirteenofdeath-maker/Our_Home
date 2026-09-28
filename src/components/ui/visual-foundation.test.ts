@@ -105,11 +105,20 @@ describe("mobile visual foundation", () => {
     expect(home).not.toContain("ป้ายช่วงเวลา");
   });
 
-  it("uses one landscape-only split-view system without duplicating routes", () => {
+  it("uses distinct tablet and wide split-view systems without duplicating routes", () => {
     const css = read("src/app/globals.css");
     expect(css).toContain(
-      "@media (orientation: landscape) and (min-width: 700px)",
+      "@media (min-width: 700px) and (orientation: portrait)",
     );
+    expect(css).toContain(
+      "(min-width: 700px) and (max-width: 1023px) and (min-height: 600px)",
+    );
+    expect(css).toContain(
+      "@media (orientation: landscape) and (min-width: 1024px)",
+    );
+    expect(css).toContain("max-width: 52rem");
+    expect(css).toContain("max-width: 90rem");
+    expect(css).toContain("max-width: 44rem");
     for (const className of [
       ".bottom-nav-shell",
       ".app-bottom-sheet",
