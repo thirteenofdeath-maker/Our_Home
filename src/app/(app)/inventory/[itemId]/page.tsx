@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
@@ -27,11 +27,13 @@ import {
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
-export default async function InventoryDetailPage({
-  params,
-}: {
+type InventoryDetailPageProps = {
   params: Promise<{ itemId: string }>;
-}) {
+};
+
+export async function InventoryDetailPage({
+  params,
+}: InventoryDetailPageProps) {
   const { itemId } = await params;
   const { supabase, user } = await requireUser();
   const [item, household] = await Promise.all([
@@ -211,6 +213,13 @@ export default async function InventoryDetailPage({
       </section>
     </div>
   );
+}
+
+export default async function LegacyInventoryDetailPage({
+  params,
+}: InventoryDetailPageProps) {
+  const { itemId } = await params;
+  redirect(`/calendar/inventory/${itemId}`);
 }
 
 function Info({ label, value }: { label: string; value: string }) {
