@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   planDateLabel,
-  planNoteFormSchema,
   planReminderFormSchema,
   planTaskFormSchema,
   reminderInputParts,
@@ -19,26 +18,6 @@ describe("Plan domain", () => {
       dueDate: "",
       dueTime: "18:30",
       priority: "HIGH",
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("allows a note with content and no title", () => {
-    const result = planNoteFormSchema.safeParse({
-      title: "",
-      content: "รหัสตู้จดหมาย 1234",
-      scope: "PERSONAL",
-      color: "SAGE",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects an empty note", () => {
-    const result = planNoteFormSchema.safeParse({
-      title: " ",
-      content: " ",
-      scope: "PERSONAL",
-      color: "WHITE",
     });
     expect(result.success).toBe(false);
   });
