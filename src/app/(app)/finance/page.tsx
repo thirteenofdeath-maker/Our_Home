@@ -133,9 +133,10 @@ export default async function FinancePage({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
+    <div className="grid min-w-0 gap-5 lg:landscape:grid-cols-12 lg:landscape:items-start">
       {household ? (
-        <FinanceSegmentedControl
+        <div className="lg:landscape:col-span-12">
+          <FinanceSegmentedControl
           ariaLabel="ขอบเขตข้อมูลการเงิน"
           activeValue={scope}
           options={[
@@ -150,10 +151,11 @@ export default async function FinancePage({
               href: `/finance?month=${month}&scope=HOUSEHOLD`,
             },
           ]}
-        />
+          />
+        </div>
       ) : null}
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3 lg:landscape:col-span-8 lg:landscape:row-start-2">
         <SectionTitle
           title="สรุปรายรับรายจ่าย"
           primary
@@ -232,10 +234,11 @@ export default async function FinancePage({
         })}
       </section>
 
-      {initialWallet ? (
-        <FinanceCreateFlow walletId={initialWallet.id} />
-      ) : (
-        <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
+      <div className="lg:landscape:col-span-12">
+        {initialWallet ? (
+          <FinanceCreateFlow walletId={initialWallet.id} />
+        ) : (
+          <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
           <p className="text-sm text-finance-muted">
             เพิ่มกระเป๋าเงิน{scope === "HOUSEHOLD" ? "ครอบครัว" : "ส่วนตัว"}
             ก่อนบันทึกรายการ
@@ -246,10 +249,11 @@ export default async function FinancePage({
           >
             เพิ่มกระเป๋าเงิน
           </AddWalletTrigger>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-2 lg:landscape:col-span-4 lg:landscape:col-start-9 lg:landscape:row-start-2">
         <h2 className="text-lg font-semibold text-finance-text">
           วางแผนการเงิน
         </h2>
@@ -301,11 +305,11 @@ export default async function FinancePage({
         </div>
       </section>
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-2 lg:landscape:col-span-12">
         <h2 className="text-sm font-medium text-finance-muted">
           เครื่องมือเพิ่มเติม
         </h2>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:landscape:mx-0 lg:landscape:flex-wrap lg:landscape:overflow-visible lg:landscape:px-0 [&::-webkit-scrollbar]:hidden">
           {SHORTCUTS.map((shortcut) => (
             <Link
               key={shortcut.href}

@@ -67,16 +67,16 @@ export default async function PetsPage({
     .toSorted((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+    <div className="finance-scope -mx-4 -mt-2 grid min-w-0 gap-5 px-4 pb-8 pt-3 lg:landscape:grid-cols-12 lg:landscape:items-start">
       {canManage ? <AddPetFab members={members} /> : null}
 
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6 lg:landscape:sticky lg:landscape:top-4 lg:landscape:col-span-5 lg:landscape:h-[28rem]">
         <Image
           src="/art/pets-garden.webp"
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
+          sizes="(min-width: 1024px) and (orientation: landscape) 40vw, (min-width: 768px) 768px, 100vw"
           className="time-cover-image object-cover object-center"
         />
         <div
@@ -96,8 +96,9 @@ export default async function PetsPage({
         </header>
       </section>
 
-      {active.length ? (
-        <section
+      <div className="flex min-w-0 flex-col gap-5 lg:landscape:col-span-7">
+        {active.length ? (
+          <section
           className="flex flex-col gap-3"
           aria-labelledby="pet-selector-title"
         >
@@ -107,7 +108,7 @@ export default async function PetsPage({
           >
             เลือกสัตว์เลี้ยง
           </h2>
-          <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] lg:landscape:grid lg:landscape:grid-cols-3 lg:landscape:overflow-visible [&::-webkit-scrollbar]:hidden">
             {active.map((pet) => {
               const isSelected = pet.id === featured?.id;
               return (
@@ -115,7 +116,7 @@ export default async function PetsPage({
                   key={pet.id}
                   href={`/pets?pet=${pet.id}`}
                   aria-current={isSelected ? "true" : undefined}
-                  className={`flex w-24 shrink-0 flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
+                  className={`flex w-24 shrink-0 flex-col items-center lg:landscape:w-full gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
                     isSelected
                       ? "border-finance-primary/30 bg-finance-primary-soft/55"
                       : "border-transparent bg-transparent"
@@ -225,14 +226,15 @@ export default async function PetsPage({
         </Card>
       )}
 
-      {archived.length ? (
-        <section className="flex flex-col gap-3">
+        {archived.length ? (
+          <section className="flex flex-col gap-3">
           <h2 className="font-semibold text-finance-text">เก็บเข้าคลัง</h2>
           {archived.map((pet) => (
             <PetCard key={pet.id} pet={pet} />
-          ))}
-        </section>
-      ) : null}
+            ))}
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

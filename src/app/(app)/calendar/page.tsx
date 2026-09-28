@@ -138,14 +138,14 @@ export default async function CalendarPage({
   ).length;
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+    <div className="finance-scope -mx-4 -mt-2 grid min-w-0 gap-5 px-4 pb-8 pt-3 lg:landscape:grid-cols-12 lg:landscape:items-start">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6 lg:landscape:sticky lg:landscape:top-4 lg:landscape:col-span-5 lg:landscape:h-[28rem]">
         <Image
           src="/art/plan-calendar.webp"
           alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
+          sizes="(min-width: 1024px) and (orientation: landscape) 40vw, (min-width: 768px) 768px, 100vw"
           className="time-cover-image object-cover object-center"
         />
         <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
@@ -189,7 +189,8 @@ export default async function CalendarPage({
         </div>
       </section>
 
-      <PlanTabs active={view} />
+      <div className="flex min-w-0 flex-col gap-5 lg:landscape:col-span-7">
+        <PlanTabs active={view} />
 
       {view === "calendar" ? (
         <>
@@ -267,9 +268,9 @@ export default async function CalendarPage({
         </>
       ) : null}
 
-      {view === "notes" ? (
-        <>
-          <PlanCreateButton
+        {view === "notes" ? (
+          <>
+            <PlanCreateButton
             title="เพิ่มโน้ต"
             form={<NoteForm hasHousehold={Boolean(household)} />}
           />
@@ -293,9 +294,10 @@ export default async function CalendarPage({
               {showArchivedNotes ? "กลับไปโน้ต" : "คลังโน้ต"}
             </Link>
           </div>
-          <NoteGrid notes={notes} />
-        </>
-      ) : null}
+            <NoteGrid notes={notes} />
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

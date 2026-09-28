@@ -67,7 +67,7 @@ export default async function HouseholdPage() {
   }).format(new Date(household.created_at));
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-6 px-4 pb-8 pt-3">
+    <div className="finance-scope -mx-4 -mt-2 grid min-w-0 gap-6 px-4 pb-8 pt-3 lg:landscape:grid-cols-12 lg:landscape:items-start">
       {canManageMembers ? (
         <FormSheetButton
           ariaLabel="เพิ่มสมาชิก"
@@ -85,13 +85,13 @@ export default async function HouseholdPage() {
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6 lg:landscape:sticky lg:landscape:top-4 lg:landscape:col-span-5 lg:landscape:h-[28rem]">
         <Image
           src="/art/family-garden.webp"
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
+          sizes="(min-width: 1024px) and (orientation: landscape) 40vw, (min-width: 768px) 768px, 100vw"
           className="time-cover-image object-cover object-center"
         />
         <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
@@ -119,7 +119,8 @@ export default async function HouseholdPage() {
           </div>
         </div>
       </section>
-      <HouseholdOverview
+      <div className="flex min-w-0 flex-col gap-6 lg:landscape:col-span-7">
+        <HouseholdOverview
         members={members}
         userId={user.id}
         role={household.myRole}
@@ -183,12 +184,13 @@ export default async function HouseholdPage() {
               <p className="text-sm text-finance-muted">{activity.detail}</p>
             </Link>
           ))}
-        {recentTransactions.length === 0 && petRecords.length === 0 ? (
-          <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card">
-            <p className="text-sm text-finance-muted">ยังไม่มีกิจกรรมล่าสุด</p>
-          </div>
-        ) : null}
-      </section>
+          {recentTransactions.length === 0 && petRecords.length === 0 ? (
+            <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 shadow-card">
+              <p className="text-sm text-finance-muted">ยังไม่มีกิจกรรมล่าสุด</p>
+            </div>
+          ) : null}
+        </section>
+      </div>
     </div>
   );
 }

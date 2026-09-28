@@ -64,7 +64,7 @@ export function HouseholdOverview({
             {canManage ? "จัดการสมาชิก" : "ดูสมาชิกทั้งหมด"}
           </Link>
         </div>
-        <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] lg:landscape:grid lg:landscape:grid-cols-3 lg:landscape:overflow-visible [&::-webkit-scrollbar]:hidden">
           {current ? (
             <div data-testid="current-user" className="contents">
               <Link
@@ -127,7 +127,7 @@ function FamilyMemberTile({
   const name =
     member.profile?.display_name || member.profile?.email || "Member";
   return (
-    <Card className="flex w-28 shrink-0 flex-col items-center justify-center rounded-[1.15rem] bg-finance-primary-soft/25 p-3 text-center shadow-none">
+    <Card className="flex w-28 shrink-0 flex-col items-center lg:landscape:w-full justify-center rounded-[1.15rem] bg-finance-primary-soft/25 p-3 text-center shadow-none">
       <Avatar
         displayName={name}
         url={member.profile?.avatar_url ?? null}
