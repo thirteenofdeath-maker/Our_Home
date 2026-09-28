@@ -12,7 +12,7 @@ import {
   SEX_LABEL,
   SPECIES_LABEL,
 } from "@/features/pets/components/PetCard";
-import { PetPhoto } from "@/features/pets/components/PetPhoto";
+import { PetSelector } from "@/features/pets/components/PetSelector";
 import { petCareDateLabel } from "@/features/pets/domain/care-record";
 import { ageFromBirthday } from "@/features/pets/domain/pet";
 import { requireUser } from "@/lib/auth/require-user";
@@ -93,45 +93,15 @@ export default async function PetsPage({
       <div className="landscape-pets-split flex min-w-0 flex-col gap-5">
         <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
           {active.length ? (
-            <section
-              className="flex flex-col gap-3"
-              aria-labelledby="pet-selector-title"
-            >
-              <h2
-                id="pet-selector-title"
-                className="font-semibold text-finance-text"
-              >
-                เลือกสัตว์เลี้ยง
-              </h2>
-              <div className="flex gap-3 overflow-x-auto rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {active.map((pet) => {
-                  const isSelected = pet.id === featured?.id;
-                  return (
-                    <Link
-                      key={pet.id}
-                      href={`/pets?pet=${pet.id}`}
-                      aria-current={isSelected ? "true" : undefined}
-                      className={`flex w-24 shrink-0 flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
-                        isSelected
-                          ? "border-finance-primary/30 bg-finance-primary-soft/55"
-                          : "border-transparent bg-transparent"
-                      }`}
-                    >
-                      <PetPhoto name={pet.name} url={pet.photoUrl} size="md" />
-                      <span className="min-w-0 max-w-full">
-                        <span className="block truncate font-semibold text-finance-text">
-                          {pet.name}
-                        </span>
-                        <span className="block truncate text-xs text-finance-muted">
-                          {SPECIES_LABEL[pet.species]}
-                          {pet.breed ? ` · ${pet.breed}` : ""}
-                        </span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
+            <PetSelector
+              selectedPetId={featured!.id}
+              pets={active.map((pet) => ({
+                id: pet.id,
+                name: pet.name,
+                photoUrl: pet.photoUrl,
+                detail: `${SPECIES_LABEL[pet.species]}${pet.breed ? ` · ${pet.breed}` : ""}`,
+              }))}
+            />
           ) : null}
         </div>
 
