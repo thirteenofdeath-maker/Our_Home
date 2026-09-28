@@ -10,6 +10,10 @@ const householdSource = readFileSync(
   resolve(process.cwd(), "src/app/(app)/household/page.tsx"),
   "utf8",
 );
+const planSource = readFileSync(
+  resolve(process.cwd(), "src/app/(app)/calendar/page.tsx"),
+  "utf8",
+);
 
 describe("Today dashboard composition", () => {
   it("is a read-model dashboard rather than a redirect to wallets", () => {
@@ -42,6 +46,15 @@ describe("Today dashboard composition", () => {
     );
   });
 
+  it("keeps household alerts and finance summary inside today's card", () => {
+    expect(source).toContain("const todaySummary");
+    expect(source).toContain("summaryItems={todaySummary}");
+    expect(source).toContain('label: "คลังของ"');
+    expect(source).toContain('label: "รายการซื้อของ"');
+    expect(source).toContain("การเงินวันนี้");
+    expect(source).toContain("openFinanceDue");
+  });
+
   it("streams the cover before daily and secondary dashboard data", () => {
     expect(source).toContain(
       "<Suspense fallback={<HomeTodaySkeleton />}> ".trim(),
@@ -63,29 +76,32 @@ describe("Today dashboard composition", () => {
       "listPlanTasks",
       "listPlanReminders",
       "listCalendarFinanceItems",
+      "getFinanceSummary",
       "listRecentFinanceTransactions",
       "listRecentHouseholdPetCareRecords",
       "listChoreWorkspace",
+      "listShoppingItems",
+      "listInventoryItems",
     ]) {
       expect(source).toContain(sourceFunction);
     }
-    expect(source).not.toContain("listShoppingItems");
-    expect(source).not.toContain("listInventoryItems");
     expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
   });
 
-  it("moves household operations to the family dashboard", () => {
+  it("moves household operations to the plan dashboard", () => {
     for (const sourceFunction of [
       "listChoreWorkspace",
       "listShoppingItems",
       "listInventoryItems",
     ]) {
-      expect(householdSource).toContain(sourceFunction);
+      expect(planSource).toContain(sourceFunction);
+      expect(householdSource).not.toContain(sourceFunction);
     }
-    expect(householdSource).toContain('title="งานบ้าน"');
-    expect(householdSource).toContain('title="รายการซื้อของ"');
-    expect(householdSource).toContain('title="คลังของในบ้าน"');
-    expect(householdSource).toContain('aria-label="การจัดการบ้าน"');
+    expect(planSource).toContain('title="งานบ้าน"');
+    expect(planSource).toContain('title="รายการซื้อของ"');
+    expect(planSource).toContain('title="คลังของในบ้าน"');
+    expect(planSource).toContain("เรื่องที่ต้องจัดการ");
+    expect(householdSource).not.toContain('aria-label="การจัดการบ้าน"');
   });
 
   it("uses real artwork for every time period without CSS image filters", () => {
