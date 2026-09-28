@@ -56,14 +56,26 @@ export function AppRoutePreloader() {
 
     if (navigator.storage?.persist)
       void navigator.storage.persist().catch(() => false);
-    const scheduleWarm = () => {
+
+    // Start Next's low-priority route prefetch as soon as the authenticated
+    // shell hydrates. Waiting for the browser to become idle left a 0.8–2s
+    // window where an early bottom-nav tap still had to show loading.tsx.
+    // The service-worker document warm remains idle work because it performs
+    // real network/cache I/O and must not compete with the current page.
+    warmRouter();
+    const scheduleDocumentWarm = () => {
       if (typeof window.requestIdleCallback === "function") {
-        return window.requestIdleCallback(warmAll, { timeout: 2000 });
+        return window.requestIdleCallback(() => warmDocuments(), {
+          timeout: 2000,
+        });
       }
-      return globalThis.setTimeout(warmAll, 800) as unknown as number;
+      return globalThis.setTimeout(
+        () => warmDocuments(),
+        800,
+      ) as unknown as number;
     };
 
-    const idleHandle = scheduleWarm();
+    const idleHandle = scheduleDocumentWarm();
     const warmIntendedLink = (event: PointerEvent | FocusEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
