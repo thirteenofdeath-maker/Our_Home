@@ -15,7 +15,7 @@ export function AddCalendarEventFab() {
   return (
     <AsyncFormSheetButton
       ariaLabel="เพิ่มกิจกรรม"
-      triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+      triggerClassName="app-fab desktop-dashboard-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:landscape:w-auto lg:landscape:gap-2 lg:landscape:px-5"
       sheetTitle="เพิ่มกิจกรรม"
       tone="finance"
       loadData={getCalendarEventSheetData}
@@ -24,6 +24,7 @@ export function AddCalendarEventFab() {
       )}
     >
       <AppIcon name="plus" />
+      <span className="hidden lg:landscape:inline">เพิ่มกิจกรรม</span>
     </AsyncFormSheetButton>
   );
 }

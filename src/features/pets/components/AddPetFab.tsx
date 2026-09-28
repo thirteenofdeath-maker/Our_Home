@@ -20,12 +20,13 @@ export function AddPetFab({
   return (
     <FormSheetButton
       ariaLabel="เพิ่มสัตว์เลี้ยง"
-      triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+      triggerClassName="app-fab desktop-dashboard-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:landscape:w-auto lg:landscape:gap-2 lg:landscape:px-5"
       sheetTitle="เพิ่มสัตว์เลี้ยง"
       tone="finance"
       form={<PetForm members={members} variant="sheet" />}
     >
       <AppIcon name="plus" />
+      <span className="hidden lg:landscape:inline">เพิ่มสัตว์เลี้ยง</span>
     </FormSheetButton>
   );
 }
