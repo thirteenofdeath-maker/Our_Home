@@ -63,6 +63,13 @@ export default function FinanceLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const section = pathname.split("/")[2] ?? "";
 
+  // The preview finance hub is a complete top-level dashboard. Keep the
+  // legacy Finance cover/module tabs for its subpages, but do not stack them
+  // above the new hub or duplicate the app's persistent navigation.
+  if (pathname === "/finance") {
+    return <div className="finance-scope contents">{children}</div>;
+  }
+
   const isModuleRoot = pathname.split("/").filter(Boolean).length <= 2;
 
   return (
