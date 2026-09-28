@@ -424,7 +424,7 @@ async function HomeTodaySections({
           const time = template?.due_time?.slice(0, 5) ?? null;
           return {
             key: `chore-${chore.id}`,
-            href: "/chores",
+            href: "/calendar?view=chores",
             category: "งานบ้าน",
             icon: "chores" as const,
             title: template?.title ?? "งานบ้าน",
@@ -456,7 +456,7 @@ async function HomeTodaySections({
   const todaySummary: DailySummaryItem[] = [
     {
       key: "inventory",
-      href: "/inventory",
+      href: "/calendar?view=inventory",
       icon: "inventory",
       label: "คลังของ",
       value: `${attentionInventory.length} รายการ`,
@@ -466,7 +466,7 @@ async function HomeTodaySections({
     },
     {
       key: "shopping",
-      href: "/shopping",
+      href: "/calendar?view=shopping",
       icon: "shopping",
       label: "รายการซื้อของ",
       value: `${pendingShopping.length} รายการ`,
