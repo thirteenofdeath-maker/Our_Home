@@ -154,7 +154,7 @@ export async function updateInventoryItemAction(
     });
     if (error) throw error;
     revalidatePath("/calendar");
-    revalidatePath(`/inventory/${itemId}`);
+    revalidatePath(`/calendar/inventory/${itemId}`);
     revalidatePath("/");
     return { success: true };
   } catch (error) {
@@ -186,7 +186,7 @@ export async function adjustInventoryQuantityAction(form: FormData) {
     });
     if (error) throw error;
     revalidatePath("/calendar");
-    revalidatePath(`/inventory/${parsed.data.itemId}`);
+    revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
   } catch (error) {
     logDatabaseErrorInDev("adjustInventoryQuantityAction failed", error);
   }
@@ -202,7 +202,7 @@ export async function sendInventoryToShoppingAction(form: FormData) {
     });
     if (error) throw error;
     revalidatePath("/calendar");
-    revalidatePath(`/inventory/${itemId}`);
+    revalidatePath(`/calendar/inventory/${itemId}`);
     revalidatePath("/calendar");
   } catch (error) {
     logDatabaseErrorInDev("sendInventoryToShoppingAction failed", error);
@@ -282,7 +282,7 @@ export async function uploadInventoryDocumentAction(
       await supabase.storage.from("inventory-documents").remove([path]);
       throw error;
     }
-    revalidatePath(`/inventory/${parsed.data.itemId}`);
+    revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
     return { success: true };
   } catch (error) {
     logDatabaseErrorInDev("uploadInventoryDocumentAction failed", error);
@@ -311,7 +311,7 @@ export async function deleteInventoryDocumentAction(form: FormData) {
       await supabase.storage
         .from("inventory-documents")
         .remove([data.storage_path]);
-    revalidatePath(`/inventory/${parsed.data.itemId}`);
+    revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
   } catch (error) {
     logDatabaseErrorInDev("deleteInventoryDocumentAction failed", error);
   }
