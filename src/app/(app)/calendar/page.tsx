@@ -139,16 +139,19 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 grid min-w-0 gap-5 px-4 pb-8 pt-3 lg:landscape:grid-cols-12 lg:landscape:items-start">
-      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6 lg:landscape:sticky lg:landscape:top-4 lg:landscape:col-span-5 lg:landscape:h-[28rem]">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6 lg:landscape:col-span-7">
         <Image
           src="/art/plan-calendar.webp"
           alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
           fill
           priority
-          sizes="(min-width: 1024px) and (orientation: landscape) 40vw, (min-width: 768px) 768px, 100vw"
+          sizes="(min-width: 1024px) and (orientation: landscape) 58vw, (min-width: 768px) 768px, 100vw"
           className="time-cover-image object-cover object-center"
         />
-        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="time-cover-overlay absolute inset-0"
+        />
         <div className="relative max-w-[62%]">
           <p className="text-xs font-medium text-finance-primary-strong">
             สรุปแผนงานวันนี้
@@ -189,111 +192,111 @@ export default async function CalendarPage({
         </div>
       </section>
 
-      <div className="flex min-w-0 flex-col gap-5 lg:landscape:col-span-7">
+      <div className="flex min-w-0 flex-col gap-5 lg:landscape:col-span-5">
         <PlanTabs active={view} />
 
-      {view === "calendar" ? (
-        <>
-          <AddCalendarEventFab />
-          <MonthCalendar
-            month={month}
-            selected={selected}
-            today={today}
-            events={events}
-            financeItems={financeItems}
-            tasks={allTasks}
-            reminders={allReminders}
-            petCareRecords={petCareRecords}
-          />
-          {archivedEvents.length ? (
-            <section>
-              <h2 className="mb-2 font-semibold">กิจกรรมที่เก็บเข้าคลัง</h2>
-              <div className="flex flex-col gap-2">
-                {archivedEvents.map((event) => (
-                  <Link
-                    className="text-primary"
-                    key={event.id}
-                    href={`/calendar/${event.id}`}
-                  >
-                    {event.title}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </>
-      ) : null}
+        {view === "calendar" ? (
+          <>
+            <AddCalendarEventFab />
+            <MonthCalendar
+              month={month}
+              selected={selected}
+              today={today}
+              events={events}
+              financeItems={financeItems}
+              tasks={allTasks}
+              reminders={allReminders}
+              petCareRecords={petCareRecords}
+            />
+            {archivedEvents.length ? (
+              <section>
+                <h2 className="mb-2 font-semibold">กิจกรรมที่เก็บเข้าคลัง</h2>
+                <div className="flex flex-col gap-2">
+                  {archivedEvents.map((event) => (
+                    <Link
+                      className="text-primary"
+                      key={event.id}
+                      href={`/calendar/${event.id}`}
+                    >
+                      {event.title}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
+        ) : null}
 
-      {view === "tasks" ? (
-        <>
-          <PlanCreateButton
-            title="เพิ่มงาน"
-            form={<TaskForm hasHousehold={Boolean(household)} />}
-          />
-          <SearchBar view="tasks" defaultValue={search} />
-          <nav
-            aria-label="สถานะงาน"
-            className="flex gap-2 overflow-x-auto rounded-full bg-finance-surface-strong p-1 shadow-sm"
-          >
-            {[
-              { value: "open", label: "ต้องทำ" },
-              { value: "done", label: "เสร็จแล้ว" },
-              { value: "all", label: "ทั้งหมด" },
-            ].map((item) => (
-              <Link
-                key={item.value}
-                href={`/calendar?view=tasks&status=${item.value}`}
-                className={cn(
-                  "flex min-h-10 flex-1 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium",
-                  taskStatus === item.value
-                    ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
-                    : "text-finance-muted",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <TaskList tasks={filteredTasks} />
-        </>
-      ) : null}
+        {view === "tasks" ? (
+          <>
+            <PlanCreateButton
+              title="เพิ่มงาน"
+              form={<TaskForm hasHousehold={Boolean(household)} />}
+            />
+            <SearchBar view="tasks" defaultValue={search} />
+            <nav
+              aria-label="สถานะงาน"
+              className="flex gap-2 overflow-x-auto rounded-full bg-finance-surface-strong p-1 shadow-sm"
+            >
+              {[
+                { value: "open", label: "ต้องทำ" },
+                { value: "done", label: "เสร็จแล้ว" },
+                { value: "all", label: "ทั้งหมด" },
+              ].map((item) => (
+                <Link
+                  key={item.value}
+                  href={`/calendar?view=tasks&status=${item.value}`}
+                  className={cn(
+                    "flex min-h-10 flex-1 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium",
+                    taskStatus === item.value
+                      ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
+                      : "text-finance-muted",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <TaskList tasks={filteredTasks} />
+          </>
+        ) : null}
 
-      {view === "reminders" ? (
-        <>
-          <PlanCreateButton
-            title="เพิ่มรายการเตือน"
-            form={<ReminderForm hasHousehold={Boolean(household)} />}
-          />
-          <ReminderList reminders={allReminders} />
-        </>
-      ) : null}
+        {view === "reminders" ? (
+          <>
+            <PlanCreateButton
+              title="เพิ่มรายการเตือน"
+              form={<ReminderForm hasHousehold={Boolean(household)} />}
+            />
+            <ReminderList reminders={allReminders} />
+          </>
+        ) : null}
 
         {view === "notes" ? (
           <>
             <PlanCreateButton
-            title="เพิ่มโน้ต"
-            form={<NoteForm hasHousehold={Boolean(household)} />}
-          />
-          <SearchBar
-            view="notes"
-            defaultValue={search}
-            archived={showArchivedNotes}
-          />
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-finance-text">
-              {showArchivedNotes ? "โน้ตที่เก็บถาวร" : "โน้ตทั้งหมด"}
-            </h2>
-            <Link
-              className="text-sm font-medium text-finance-primary-strong"
-              href={
-                showArchivedNotes
-                  ? "/calendar?view=notes"
-                  : "/calendar?view=notes&archived=1"
-              }
-            >
-              {showArchivedNotes ? "กลับไปโน้ต" : "คลังโน้ต"}
-            </Link>
-          </div>
+              title="เพิ่มโน้ต"
+              form={<NoteForm hasHousehold={Boolean(household)} />}
+            />
+            <SearchBar
+              view="notes"
+              defaultValue={search}
+              archived={showArchivedNotes}
+            />
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-finance-text">
+                {showArchivedNotes ? "โน้ตที่เก็บถาวร" : "โน้ตทั้งหมด"}
+              </h2>
+              <Link
+                className="text-sm font-medium text-finance-primary-strong"
+                href={
+                  showArchivedNotes
+                    ? "/calendar?view=notes"
+                    : "/calendar?view=notes&archived=1"
+                }
+              >
+                {showArchivedNotes ? "กลับไปโน้ต" : "คลังโน้ต"}
+              </Link>
+            </div>
             <NoteGrid notes={notes} />
           </>
         ) : null}
@@ -333,12 +336,13 @@ function PlanCreateButton({ title, form }: { title: string; form: ReactNode }) {
   return (
     <FormSheetButton
       ariaLabel={title}
-      triggerClassName="app-fab fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
+      triggerClassName="app-fab desktop-dashboard-fab fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary lg:landscape:w-auto lg:landscape:gap-2 lg:landscape:px-5"
       sheetTitle={title}
       form={form}
       tone="finance"
     >
       <AppIcon name="plus" />
+      <span className="hidden lg:landscape:inline">{title}</span>
     </FormSheetButton>
   );
 }

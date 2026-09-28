@@ -389,6 +389,21 @@ body {
   );
 }
 
+/* Primary-module actions stop behaving like phone FABs once the shell becomes
+   a wide landscape workspace. Align them with the 90rem dashboard edge and
+   give them a visible action label so they do not look like a stray plus in
+   the middle of a desktop canvas. */
+@media (min-width: 64rem) and (orientation: landscape) {
+  .desktop-dashboard-fab {
+    right: max(
+      1.25rem,
+      env(safe-area-inset-right),
+      calc((100vw - 6rem - 90rem) / 2 + 1.25rem)
+    );
+    bottom: max(2rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
 /* Decorative summary panels use the same atmosphere as the current time
    palette, instead of keeping a pale daytime gradient after the app turns
    dark at 20:00. */
