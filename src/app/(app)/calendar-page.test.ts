@@ -10,6 +10,10 @@ const monthCalendar = readFileSync(
   resolve(process.cwd(), "src/features/calendar/components/MonthCalendar.tsx"),
   "utf8",
 );
+const planTabs = readFileSync(
+  resolve(process.cwd(), "src/features/plan/components/PlanTabs.tsx"),
+  "utf8",
+);
 
 describe("Plan cover summary", () => {
   it("keeps the four plan totals in the cover instead of a section per tab", () => {
@@ -26,13 +30,17 @@ describe("Plan cover summary", () => {
     expect(monthCalendar).not.toContain("<Image");
   });
 
-  it("surfaces household operations in the calendar overview", () => {
+  it("surfaces household operations in a new plan hub header", () => {
     expect(source).toContain("listChoreWorkspace");
     expect(source).toContain("listShoppingItems");
     expect(source).toContain("listInventoryItems");
-    expect(source).toContain('title="งานบ้าน"');
-    expect(source).toContain('title="รายการซื้อของ"');
-    expect(source).toContain('title="คลังของในบ้าน"');
-    expect(source).toContain('view === "calendar" && household');
+    expect(source).toContain("householdCounts={{");
+    expect(source).not.toContain("<PlanModuleCard");
+    expect(planTabs).toContain('aria-label="ศูนย์แผนงาน"');
+    expect(planTabs).toContain("วางแผน");
+    expect(planTabs).toContain("ดูแลบ้าน");
+    expect(planTabs).toContain('href: "/chores"');
+    expect(planTabs).toContain('href: "/shopping"');
+    expect(planTabs).toContain('href: "/inventory"');
   });
 });
