@@ -11,6 +11,7 @@ import type { TagOption } from "@/features/tags/types";
 import type { Wallet } from "@/features/wallets/types";
 import { initialActionState } from "@/lib/types/action-state";
 import { formatCurrency } from "@/lib/utils/money";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 
 import { createExpenseAdjustmentAction } from "../actions";
 import type { RefundableSummary } from "../types";
@@ -37,11 +38,17 @@ export function ExpenseAdjustmentForm({
   pocketsByWallet: Record<string, Pocket[]>;
   tags: TagOption[];
 }) {
-  const [state, formAction] = useActionState(createExpenseAdjustmentAction, initialActionState);
+  const [state, formAction] = useActionState(
+    createExpenseAdjustmentAction,
+    initialActionState,
+  );
   const [walletId, setWalletId] = useState(wallets[0]?.id ?? "");
-  const pockets = useMemo(() => pocketsByWallet[walletId] ?? [], [pocketsByWallet, walletId]);
+  const pockets = useMemo(
+    () => pocketsByWallet[walletId] ?? [],
+    [pocketsByWallet, walletId],
+  );
   const [pocketId, setPocketId] = useState(pockets[0]?.id ?? "");
-  const today = new Date().toLocaleDateString("en-CA");
+  const occurredAtDefault = bangkokDateTimeInput();
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -51,29 +58,50 @@ export function ExpenseAdjustmentForm({
       <div className="rounded-card border border-border bg-surface-muted p-4 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-foreground-muted">ยอดเดิม</span>
-          <span className="tabular-nums">{formatCurrency(refundable.originalAmount, currency)}</span>
+          <span className="tabular-nums">
+            {formatCurrency(refundable.originalAmount, currency)}
+          </span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-foreground-muted">คืน/เบิกแล้ว</span>
           <span className="tabular-nums">
-            {formatCurrency((Number(refundable.activeRefundTotal) + Number(refundable.activeReimbursementTotal)).toFixed(2), currency)}
+            {formatCurrency(
+              (
+                Number(refundable.activeRefundTotal) +
+                Number(refundable.activeReimbursementTotal)
+              ).toFixed(2),
+              currency,
+            )}
           </span>
         </div>
         <div className="mt-1 flex items-center justify-between font-medium">
           <span>คืนได้อีก</span>
-          <span className="tabular-nums text-income">{formatCurrency(refundable.remainingAdjustableAmount, currency)}</span>
+          <span className="tabular-nums text-income">
+            {formatCurrency(refundable.remainingAdjustableAmount, currency)}
+          </span>
         </div>
       </div>
 
       <Field label="จำนวน" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required autoFocus />
+        <Input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          required
+          autoFocus
+        />
       </Field>
 
       <FinanceOptionField
         label="เข้ากระเป๋าเงิน"
         title="เลือก Wallet"
         name="walletId"
-        options={wallets.map((wallet) => ({ id: wallet.id, label: wallet.name }))}
+        options={wallets.map((wallet) => ({
+          id: wallet.id,
+          label: wallet.name,
+        }))}
         value={walletId}
         onChange={(nextWalletId) => {
           setWalletId(nextWalletId);
@@ -95,8 +123,14 @@ export function ExpenseAdjustmentForm({
         disabled={!walletId}
       />
 
-      <Field label="วันที่" htmlFor="occurredAt">
-        <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />
+      <Field label="วันที่และเวลา" htmlFor="occurredAt">
+        <Input
+          id="occurredAt"
+          name="occurredAt"
+          type="datetime-local"
+          defaultValue={occurredAtDefault}
+          required
+        />
       </Field>
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
@@ -111,7 +145,9 @@ export function ExpenseAdjustmentForm({
         <TagPicker name="tagIds" tags={tags} walletId={walletId} />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
       <SubmitButton size="lg" variant="primary">
         บันทึก{KIND_LABEL[adjustmentKind]}
       </SubmitButton>

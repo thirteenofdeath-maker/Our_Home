@@ -10,6 +10,7 @@ import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import type { Wallet } from "@/features/wallets/types";
 import { initialActionState } from "@/lib/types/action-state";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 import { cn } from "@/lib/utils/cn";
 
 import { createWalletTransferAction } from "../actions";
@@ -30,19 +31,30 @@ export function WalletTransferForm({
   /** Presentation only — see TransactionForm.tsx's own `variant` doc. */
   variant?: "page" | "sheet";
 }) {
-  const [state, formAction] = useActionState(createWalletTransferAction, initialActionState);
+  const [state, formAction] = useActionState(
+    createWalletTransferAction,
+    initialActionState,
+  );
   const [toWalletId, setToWalletId] = useState(otherWallets[0]?.id ?? "");
   const [fromPocketId, setFromPocketId] = useState(fromPockets[0]?.id ?? "");
   const [toPocketId, setToPocketId] = useState(
     pocketsByWallet[otherWallets[0]?.id ?? ""]?.[0]?.id ?? "",
   );
-  const toPockets = useMemo(() => pocketsByWallet[toWalletId] ?? [], [pocketsByWallet, toWalletId]);
-  const today = new Date().toLocaleDateString("en-CA");
+  const toPockets = useMemo(
+    () => pocketsByWallet[toWalletId] ?? [],
+    [pocketsByWallet, toWalletId],
+  );
+  const occurredAtDefault = bangkokDateTimeInput();
 
   return (
     <form
       action={formAction}
-      className={cn("finance-ui-tone", variant === "sheet" ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card")}
+      className={cn(
+        "finance-ui-tone",
+        variant === "sheet"
+          ? "flex flex-col gap-4"
+          : "flex flex-col gap-4 rounded-card bg-surface p-4 shadow-card",
+      )}
     >
       <input type="hidden" name="fromWalletId" value={fromWallet.id} />
 
@@ -63,7 +75,10 @@ export function WalletTransferForm({
         label="Wallet ปลายทาง"
         title="เลือก Wallet ปลายทาง"
         name="toWalletId"
-        options={otherWallets.map((wallet) => ({ id: wallet.id, label: wallet.name }))}
+        options={otherWallets.map((wallet) => ({
+          id: wallet.id,
+          label: wallet.name,
+        }))}
         value={toWalletId}
         onChange={(nextWalletId) => {
           setToWalletId(nextWalletId);
@@ -86,19 +101,42 @@ export function WalletTransferForm({
       />
 
       <Field label="จำนวนเงิน" htmlFor="amount">
-        <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />
+        <Input
+          id="amount"
+          name="amount"
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          required
+        />
       </Field>
 
-      <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title"><Input id="title" name="title" type="text" /></Field>
-      <Field label="โน้ต (ถ้ามี)" htmlFor="note"><Input id="note" name="note" type="text" /></Field>
-      <Field label="วันที่" htmlFor="occurredAt"><Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required /></Field>
+      <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
+        <Input id="title" name="title" type="text" />
+      </Field>
+      <Field label="โน้ต (ถ้ามี)" htmlFor="note">
+        <Input id="note" name="note" type="text" />
+      </Field>
+      <Field label="วันที่และเวลา" htmlFor="occurredAt">
+        <Input
+          id="occurredAt"
+          name="occurredAt"
+          type="datetime-local"
+          defaultValue={occurredAtDefault}
+          required
+        />
+      </Field>
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
         <TagPicker name="tagIds" tags={tags} walletId={fromWallet.id} />
       </Field>
 
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <SubmitButton size="lg" variant="financeTransfer">โอนเงิน</SubmitButton>
+      {state.error ? (
+        <p className="text-sm text-danger">{state.error}</p>
+      ) : null}
+      <SubmitButton size="lg" variant="financeTransfer">
+        โอนเงิน
+      </SubmitButton>
     </form>
   );
 }

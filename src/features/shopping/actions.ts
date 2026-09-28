@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
+import { parseBangkokDateTimeInput } from "@/lib/date/bangkok";
 import {
   createShoppingItem,
   setShoppingItemArchived,
@@ -157,10 +158,10 @@ const shoppingExpenseSchema = z.object({
     .string()
     .min(1)
     .refine(
-      (value) => !Number.isNaN(new Date(`${value}T12:00:00`).getTime()),
-      "วันที่ไม่ถูกต้อง",
+      (value) => parseBangkokDateTimeInput(value) !== null,
+      "วันที่และเวลาไม่ถูกต้อง",
     )
-    .transform((value) => new Date(`${value}T12:00:00`).toISOString()),
+    .transform((value) => parseBangkokDateTimeInput(value)!.toISOString()),
   tagIds: z.array(z.string().uuid()).max(20),
 });
 

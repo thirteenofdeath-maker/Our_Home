@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 import {
   buildFinancePocketOptions,
   FinancePocketField,
@@ -47,12 +47,12 @@ export function PayInstallmentForm({
         selectedPocketId={pocketId}
         onSelect={(option) => setPocketId(option.pocketId)}
       />
-      <Field label="วันที่จ่าย" htmlFor="occurredAt">
+      <Field label="วันที่และเวลาที่จ่าย" htmlFor="occurredAt">
         <Input
           id="occurredAt"
           name="occurredAt"
-          type="date"
-          defaultValue={bangkokDateKey()}
+          type="datetime-local"
+          defaultValue={bangkokDateTimeInput()}
           required
         />
       </Field>

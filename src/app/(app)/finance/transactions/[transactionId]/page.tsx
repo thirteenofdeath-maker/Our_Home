@@ -52,10 +52,11 @@ export default async function TransactionDetailPage({
 
   const isTransfer = transaction.transactionType === "TRANSFER";
   const isVoided = transaction.voidedAt !== null;
-  const occurredDate = new Date(transaction.occurredAt).toLocaleDateString(
-    "th-TH",
-    { dateStyle: "long" },
-  );
+  const occurredDateTime = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date(transaction.occurredAt));
 
   // Only a genuine, still-active, non-adjustment EXPENSE can itself be
   // refunded/reimbursed — a refund is immutable and can never be a new
@@ -188,7 +189,7 @@ export default async function TransactionDetailPage({
         )}
         <Row label="ชื่อรายการ" value={transaction.title || "-"} />
         <Row label="โน้ต" value={transaction.note || "-"} />
-        <Row label="วันที่" value={occurredDate} />
+        <Row label="วันที่และเวลา" value={occurredDateTime} />
         <Row label="สถานะ" value={isVoided ? "ยกเลิกแล้ว" : "ปกติ"} />
       </Card>
 

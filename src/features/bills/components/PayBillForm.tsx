@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { bangkokDateKey } from "@/features/calendar/domain/calendar";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import {
@@ -79,12 +79,12 @@ export function PayBillForm({
           }
         />
       </Field>
-      <Field label="วันที่จ่าย" htmlFor="occurredAt">
+      <Field label="วันที่และเวลาที่จ่าย" htmlFor="occurredAt">
         <Input
           id="occurredAt"
           name="occurredAt"
-          type="date"
-          defaultValue={bangkokDateKey()}
+          type="datetime-local"
+          defaultValue={bangkokDateTimeInput()}
           required
         />
       </Field>

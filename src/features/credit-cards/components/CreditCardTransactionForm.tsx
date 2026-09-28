@@ -10,6 +10,7 @@ import { FinancePocketPickerSheet } from "@/features/finance/components/FinanceP
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 
 import { createCreditCardTransactionAction } from "../actions";
 import type {
@@ -50,7 +51,7 @@ export function CreditCardTransactionForm({
   );
   const endpoint =
     compatibleEndpoints.find((item) => item.pocketId === endpointId) ?? null;
-  const today = new Date().toLocaleDateString("en-CA");
+  const occurredAtDefault = bangkokDateTimeInput();
 
   function changeCard(nextCard: CreditCardAccountOption) {
     setCardId(nextCard.accountId);
@@ -192,11 +193,11 @@ export function CreditCardTransactionForm({
 
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-            วันที่
+            วันที่และเวลา
             <Input
               name="occurredAt"
-              type="date"
-              defaultValue={today}
+              type="datetime-local"
+              defaultValue={occurredAtDefault}
               required
             />
           </label>

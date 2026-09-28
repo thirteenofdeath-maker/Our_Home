@@ -157,7 +157,7 @@ export function TransactionHistoryList({
         const whenLabel =
           variant === "full"
             ? timeLabel
-            : `${occurred.toLocaleDateString("th-TH")} · ${timeLabel}`;
+            : `${occurred.toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok" })} · ${timeLabel}`;
         // Dashboard rows are a compact recent-activity preview — a bare
         // timestamp on every row adds little there and pushes the row
         // taller for no real benefit, so line 3 only appears when there

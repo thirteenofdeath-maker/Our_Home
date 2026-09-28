@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
+import { parseBangkokDateTimeInput } from "@/lib/date/bangkok";
 
 import { createExpenseAdjustment } from "./api";
 
@@ -30,10 +31,15 @@ const occurredAtSchema = z
   .string()
   .trim()
   .min(1, "Choose a date")
-  .refine((value) => !Number.isNaN(Date.parse(value)), "Choose a valid date")
-  .transform((value) => new Date(`${value}T12:00:00`).toISOString());
+  .refine(
+    (value) => parseBangkokDateTimeInput(value) !== null,
+    "Choose a valid date and time",
+  )
+  .transform((value) => parseBangkokDateTimeInput(value)!.toISOString());
 
-const tagIdsSchema = z.array(z.string().uuid("Invalid tag")).max(20, "Too many tags");
+const tagIdsSchema = z
+  .array(z.string().uuid("Invalid tag"))
+  .max(20, "Too many tags");
 
 const createAdjustmentSchema = z.object({
   originalExpenseId: z.string().uuid(),
@@ -47,7 +53,10 @@ const createAdjustmentSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function createExpenseAdjustmentAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createExpenseAdjustmentAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = createAdjustmentSchema.safeParse({
@@ -83,7 +92,10 @@ export async function createExpenseAdjustmentAction(_prevState: ActionState, for
     // The DB is the source of truth for the refund cap / currency / scope
     // / archived-dependency checks — surface its rejection rather than a
     // generic message, same reasoning as updateWallet's currency error.
-    return { error: "ไม่สามารถบันทึกรายการคืนเงิน/เบิกคืนได้ — ตรวจสอบยอดคงเหลือที่คืนได้ สกุลเงิน และกระเป๋าเงินปลายทาง" };
+    return {
+      error:
+        "ไม่สามารถบันทึกรายการคืนเงิน/เบิกคืนได้ — ตรวจสอบยอดคงเหลือที่คืนได้ สกุลเงิน และกระเป๋าเงินปลายทาง",
+    };
   }
 
   revalidatePath(`/finance/transactions/${parsed.data.originalExpenseId}`);

@@ -15,6 +15,7 @@ import {
   type TransferEndpoint,
 } from "@/features/transactions/domain/unified-transfer";
 import { initialActionState } from "@/lib/types/action-state";
+import { bangkokDateTimeInput } from "@/lib/date/bangkok";
 import { formatCurrency } from "@/lib/utils/money";
 
 type Picker = "from" | "to" | null;
@@ -40,7 +41,7 @@ export function UnifiedTransferForm({
     createUnifiedTransferAction,
     initialActionState,
   );
-  const today = new Date().toLocaleDateString("en-CA");
+  const occurredAtDefault = bangkokDateTimeInput();
 
   function chooseFrom(endpoint: TransferEndpoint) {
     setFrom(endpoint);
@@ -120,11 +121,11 @@ export function UnifiedTransferForm({
         ) : null}
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-            วันที่
+            วันที่และเวลา
             <Input
               name="occurredAt"
-              type="date"
-              defaultValue={today}
+              type="datetime-local"
+              defaultValue={occurredAtDefault}
               required
             />
           </label>

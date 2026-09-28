@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
+import { parseBangkokDateTimeInput } from "@/lib/date/bangkok";
 
 import {
   createCreditCardCashAdvance,
@@ -32,7 +33,8 @@ const cardTransactionSchema = z.object({
   occurredAt: z
     .string()
     .min(1)
-    .transform((value) => new Date(`${value}T12:00:00`).toISOString()),
+    .refine((value) => parseBangkokDateTimeInput(value) !== null)
+    .transform((value) => parseBangkokDateTimeInput(value)!.toISOString()),
 });
 
 export async function createCreditCardTransactionAction(

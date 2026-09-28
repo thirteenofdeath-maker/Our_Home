@@ -13,6 +13,10 @@ import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import { initialActionState } from "@/lib/types/action-state";
+import {
+  bangkokDateTimeInput,
+  bangkokDateTimeInputForDate,
+} from "@/lib/date/bangkok";
 import { cn } from "@/lib/utils/cn";
 import type { TransferEndpoint } from "../domain/unified-transfer";
 
@@ -162,8 +166,9 @@ export function TransactionForm({
   const activeCurrency =
     sheetData.pockets.find((pocket) => pocket.id === activePocketId)
       ?.currency ?? "THB";
-  const today =
-    postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
+  const occurredAtDefault = postOccurrence?.dueDate
+    ? bangkokDateTimeInputForDate(postOccurrence.dueDate)
+    : bangkokDateTimeInput();
 
   return (
     <form
@@ -305,12 +310,12 @@ export function TransactionForm({
         />
       </Field>
 
-      <Field label="วันที่" htmlFor="occurredAt">
+      <Field label="วันที่และเวลา" htmlFor="occurredAt">
         <Input
           id="occurredAt"
           name="occurredAt"
-          type="date"
-          defaultValue={today}
+          type="datetime-local"
+          defaultValue={occurredAtDefault}
           required
         />
       </Field>
