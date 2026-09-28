@@ -11,8 +11,10 @@ import type { CreditCardAccountOption } from "../types";
 
 export function CreditCardCycleForm({
   account,
+  embedded = false,
 }: {
   account: CreditCardAccountOption;
+  embedded?: boolean;
 }) {
   const [state, action] = useActionState(
     updateCreditCardCycleAction,
@@ -22,7 +24,11 @@ export function CreditCardCycleForm({
   return (
     <form
       action={action}
-      className="finance-ui-tone flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+      className={
+        embedded
+          ? "finance-ui-tone flex flex-col gap-3"
+          : "finance-ui-tone flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+      }
     >
       <input type="hidden" name="accountId" value={account.accountId} />
       <input type="hidden" name="walletId" value={account.walletId} />

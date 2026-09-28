@@ -1,6 +1,8 @@
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { CreditCardCycleForm } from "@/features/credit-cards/components/CreditCardCycleForm";
+import type { CreditCardAccountOption } from "@/features/credit-cards/types";
 import { formatCurrency } from "@/lib/utils/money";
 import Link from "next/link";
 
@@ -16,88 +18,111 @@ export function PocketManagerList({
   walletId,
   pockets,
   archivedPockets,
+  creditCardAccounts = [],
   compact = false,
 }: {
   walletId: string;
   pockets: PocketWithBalance[];
   archivedPockets: Pocket[];
+  creditCardAccounts?: CreditCardAccountOption[];
   compact?: boolean;
 }) {
+  const creditCardAccountsByPocketId = new Map(
+    creditCardAccounts.map((account) => [account.pocketId, account]),
+  );
+
   return (
     <div className="flex flex-col gap-2">
       <ul className="flex flex-col gap-3">
-        {pockets.map((pocket) => (
-          <li
-            key={pocket.id}
-            id={`pocket-${pocket.id}`}
-            className="rounded-card bg-surface shadow-card"
-          >
-            {compact ? (
-              <Link
-                href={`/wallets/${walletId}/manage#pocket-${pocket.id}`}
-                className="flex min-h-[76px] items-center gap-3 px-4 py-3"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
-                  <AppIcon name="pocket" className="size-4" />
-                </span>
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {pocket.name}
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="block tabular-nums font-semibold">
-                    {formatCurrency(pocket.balance, pocket.currency)}
+        {pockets.map((pocket) => {
+          const creditCardAccount = creditCardAccountsByPocketId.get(pocket.id);
+
+          return (
+            <li
+              key={pocket.id}
+              id={`pocket-${pocket.id}`}
+              className="rounded-card bg-surface shadow-card"
+            >
+              {compact ? (
+                <Link
+                  href={`/wallets/${walletId}/manage#pocket-${pocket.id}`}
+                  className="flex min-h-[76px] items-center gap-3 px-4 py-3"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
+                    <AppIcon name="pocket" className="size-4" />
                   </span>
-                  <span className="block text-xs text-foreground-muted">
-                    {pocket.currency} ·{" "}
-                    {pocket.pocket_type === "CREDIT_CARD"
-                      ? "บัตรเครดิต"
-                      : "Pocket"}
+                  <span className="min-w-0 flex-1 truncate font-medium">
+                    {pocket.name}
                   </span>
-                </span>
-                <AppIcon
-                  name="chevron"
-                  className="size-4 text-foreground-muted"
-                />
-              </Link>
-            ) : (
-              <div className="flex min-h-20 items-center justify-between gap-3 p-4">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
-                  <AppIcon name="pocket" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate font-medium">{pocket.name}</p>
-                    <p className="shrink-0 tabular-nums font-semibold">
+                  <span className="shrink-0 text-right">
+                    <span className="block tabular-nums font-semibold">
                       {formatCurrency(pocket.balance, pocket.currency)}
-                    </p>
+                    </span>
+                    <span className="block text-xs text-foreground-muted">
+                      {pocket.currency} ·{" "}
+                      {pocket.pocket_type === "CREDIT_CARD"
+                        ? "บัตรเครดิต"
+                        : "Pocket"}
+                    </span>
+                  </span>
+                  <AppIcon
+                    name="chevron"
+                    className="size-4 text-foreground-muted"
+                  />
+                </Link>
+              ) : (
+                <>
+                  <div className="flex min-h-20 items-center justify-between gap-3 p-4">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
+                      <AppIcon name="pocket" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-medium">{pocket.name}</p>
+                        <p className="shrink-0 tabular-nums font-semibold">
+                          {formatCurrency(pocket.balance, pocket.currency)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-foreground-muted">
+                        {pocket.currency} ·{" "}
+                        {pocket.pocket_type === "CREDIT_CARD"
+                          ? "บัตรเครดิต"
+                          : "Pocket"}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <RenamePocketForm
+                          pocketId={pocket.id}
+                          walletId={walletId}
+                          currentName={pocket.name}
+                          currentBalance={pocket.balance}
+                          currentType={pocket.pocket_type}
+                        />
+                        <ActionButton
+                          action={archivePocketAction}
+                          hiddenFields={{ pocketId: pocket.id, walletId }}
+                          label="เก็บถาวร"
+                          variant="ghost"
+                          className="w-auto px-3 text-xs text-danger shadow-none"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-foreground-muted">
-                    {pocket.currency} ·{" "}
-                    {pocket.pocket_type === "CREDIT_CARD"
-                      ? "บัตรเครดิต"
-                      : "Pocket"}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <RenamePocketForm
-                      pocketId={pocket.id}
-                      walletId={walletId}
-                      currentName={pocket.name}
-                      currentBalance={pocket.balance}
-                      currentType={pocket.pocket_type}
-                    />
-                    <ActionButton
-                      action={archivePocketAction}
-                      hiddenFields={{ pocketId: pocket.id, walletId }}
-                      label="เก็บถาวร"
-                      variant="ghost"
-                      className="w-auto px-3 text-xs text-danger shadow-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </li>
-        ))}
+                  {creditCardAccount ? (
+                    <div className="border-t border-border px-4 pb-4 pt-3">
+                      <p className="mb-3 text-sm font-semibold">
+                        รอบบัตรเครดิต
+                      </p>
+                      <CreditCardCycleForm
+                        account={creditCardAccount}
+                        embedded
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {compact && archivedPockets.length > 0 ? (
