@@ -71,12 +71,9 @@ function isPrivateAppPage(url) {
       "/categories",
       "/finance",
       "/household",
-      "/inventory",
       "/onboarding",
       "/pets",
       "/profile",
-      "/shopping",
-      "/chores",
       "/wallets",
     ].some(
       (prefix) =>
