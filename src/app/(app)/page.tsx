@@ -8,25 +8,14 @@ import { Card } from "@/components/ui/Card";
 import { listCalendarEvents } from "@/features/calendar/api";
 import {
   bangkokDateKey,
-  formatEventTime,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
-import {
-  getFinanceSummary,
-  listRecentFinanceTransactions,
-} from "@/features/finance/api";
+import { listRecentFinanceTransactions } from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listInventoryItems } from "@/features/inventory/api";
-import {
-  inventoryQuantityLabel,
-  isDateWithinDays,
-  isLowStock,
-} from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
 import {
-  listPetSummaries,
   listRecentHouseholdPetCareRecords,
   listScheduledPetCareRecords,
 } from "@/features/pets/api";
@@ -36,7 +25,6 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
-import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
 import {
   greetingForBangkok,
@@ -150,22 +138,15 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
   const tasksPromise = listPlanTasks(supabase);
-  const remindersPromise = listPlanReminders(supabase, { completed: false });
+  const remindersPromise = listPlanReminders(supabase);
   const dueFinancePromise = listCalendarFinanceItems(
     supabase,
     today,
     upcomingEnd,
   );
-  const financePromise = getFinanceSummary(supabase, {
-    start: `${today}T00:00:00+07:00`,
-    end: `${tomorrow}T00:00:00+07:00`,
-  });
   const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
     limit: 5,
   });
-  const petsPromise: ReturnType<typeof listPetSummaries> = householdId
-    ? listPetSummaries(supabase, householdId)
-    : Promise.resolve([]);
   const petCarePromise: ReturnType<typeof listScheduledPetCareRecords> =
     householdId
       ? listScheduledPetCareRecords(
@@ -183,12 +164,6 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const choresPromise: ReturnType<typeof listChoreWorkspace> = householdId
     ? listChoreWorkspace(supabase, householdId)
     : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
-  const shoppingPromise: ReturnType<typeof listShoppingItems> = householdId
-    ? listShoppingItems(supabase, householdId)
-    : Promise.resolve([]);
-  const inventoryPromise: ReturnType<typeof listInventoryItems> = householdId
-    ? listInventoryItems(supabase, householdId)
-    : Promise.resolve([]);
 
   const profile = await profilePromise;
   const displayName =
@@ -243,29 +218,37 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           choresPromise={choresPromise}
-          shoppingPromise={shoppingPromise}
-          inventoryPromise={inventoryPromise}
         />
       </Suspense>
 
       <Suspense fallback={<HomeSecondarySkeleton />}>
         <HomeSecondarySections
-          financePromise={financePromise}
           recentTransactionsPromise={recentTransactionsPromise}
-          petsPromise={petsPromise}
-          dueFinancePromise={dueFinancePromise}
-          petCarePromise={petCarePromise}
           recentPetCareRecordsPromise={recentPetCareRecordsPromise}
-          choresPromise={choresPromise}
-          shoppingPromise={shoppingPromise}
-          inventoryPromise={inventoryPromise}
-          householdName={household?.name ?? null}
-          today={today}
         />
       </Suspense>
     </div>
   );
 }
+
+type TimelineItem = {
+  key: string;
+  href: string;
+  category: string;
+  icon: AppIconName;
+  title: string;
+  detail: string;
+  timeLabel: string;
+  sortKey: string;
+  completed: boolean | null;
+};
+
+const FINANCE_COMPLETE_STATUSES = new Set([
+  "PAID",
+  "POSTED",
+  "SKIPPED",
+  "RESOLVED",
+]);
 
 async function HomeTodaySections({
   today,
@@ -276,8 +259,6 @@ async function HomeTodaySections({
   dueFinancePromise,
   petCarePromise,
   choresPromise,
-  shoppingPromise,
-  inventoryPromise,
 }: {
   today: string;
   tomorrow: string;
@@ -287,209 +268,151 @@ async function HomeTodaySections({
   dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   choresPromise: ReturnType<typeof listChoreWorkspace>;
-  shoppingPromise: ReturnType<typeof listShoppingItems>;
-  inventoryPromise: ReturnType<typeof listInventoryItems>;
 }) {
-  const [
-    events,
-    tasks,
-    reminders,
-    dueFinance,
-    petCare,
-    chores,
-    shopping,
-    inventory,
-  ] = await Promise.all([
-    eventsPromise,
-    tasksPromise,
-    remindersPromise,
-    dueFinancePromise,
-    petCarePromise,
-    choresPromise,
-    shoppingPromise,
-    inventoryPromise,
-  ]);
-  const todayEvents = events.filter((event) => eventDate(event) === today);
-  const dueTasks = tasks.filter(
-    (task) => !task.is_completed && task.due_date && task.due_date <= today,
-  );
-  const overdueTasks = dueTasks.filter((task) => task.due_date! < today);
-  const todayTasks = dueTasks.filter((task) => task.due_date === today);
-  const upcomingReminders = reminders.filter(
-    (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) <= tomorrow,
-  );
-  const todayFinance = dueFinance.filter((item) => item.date === today);
-  const todayPetCare = petCare.filter(
-    (record) =>
-      record.scheduled_at &&
-      toBangkokInput(record.scheduled_at).slice(0, 10) === today,
-  );
+  const [events, tasks, reminders, dueFinance, petCare, chores] =
+    await Promise.all([
+      eventsPromise,
+      tasksPromise,
+      remindersPromise,
+      dueFinancePromise,
+      petCarePromise,
+      choresPromise,
+    ]);
   const choreTemplates = new Map(
     chores.templates.map((template) => [template.id, template]),
   );
-  const dueChores = chores.occurrences
-    .filter((item) => !item.completed_at && item.due_date <= today)
-    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
-  const overdueChores = dueChores.filter((item) => item.due_date < today);
-  const todayChores = dueChores.filter((item) => item.due_date === today);
-  const pendingShopping = shopping.filter((item) => !item.purchased_at);
-  const attentionInventory = inventory.filter(
-    (item) =>
-      isLowStock(item) ||
-      isDateWithinDays(item.expiry_date, today, 30) ||
-      isDateWithinDays(item.warranty_expires_on, today, 30),
-  );
-  const todayQueue = [
-    ...overdueTasks.map((task) => ({
-      key: `task-${task.id}`,
-      href: `/calendar/tasks/${task.id}`,
-      marker: "เลยกำหนด",
-      title: task.title,
-      detail: planDateLabel(task.due_date, task.due_time),
-    })),
-    ...overdueChores.map((chore) => ({
-      key: `chore-${chore.id}`,
-      href: "/chores",
-      marker: "งานบ้านค้าง",
-      title: choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน",
-      detail: `กำหนด ${chore.due_date}`,
-    })),
-    ...todayEvents.map((event) => ({
-      key: `event-${event.id}`,
-      href: `/calendar/${event.id}`,
-      marker: "นัดหมาย",
-      title: event.title,
-      detail: event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!),
-    })),
-    ...todayChores.map((chore) => {
-      const dueTime = choreTemplates.get(chore.template_id)?.due_time;
-      return {
-        key: `chore-${chore.id}`,
-        href: "/chores",
-        marker: "งานบ้าน",
-        title: choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน",
-        detail: dueTime ? `${dueTime.slice(0, 5)} น.` : "วันนี้",
-      };
-    }),
-    ...todayTasks.map((task) => ({
-      key: `task-${task.id}`,
-      href: `/calendar/tasks/${task.id}`,
-      marker: "งาน",
-      title: task.title,
-      detail: planDateLabel(task.due_date, task.due_time),
-    })),
-    ...todayFinance.map((item) => ({
-      key: `finance-${item.source}-${item.sourceId}`,
-      href: item.href,
-      marker: "การเงิน",
-      title: item.title,
-      detail: "ครบกำหนดวันนี้",
-    })),
-    ...todayPetCare.map((record) => ({
-      key: `pet-care-${record.id}`,
-      href: `/pets/${record.pet_id}`,
-      marker: PET_CARE_RECORD_LABEL[record.record_type],
-      title: `${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`,
-      detail: petCareDateLabel(record.scheduled_at!),
-    })),
-    ...upcomingReminders.map((reminder) => ({
-      key: `reminder-${reminder.id}`,
-      href: `/calendar/reminders/${reminder.id}`,
-      marker: "เตือน",
-      title: reminder.title,
-      detail: reminderDateLabel(reminder.reminds_at),
-    })),
-    ...attentionInventory.slice(0, 2).map((item) => ({
-      key: `inventory-${item.id}`,
-      href: `/inventory/${item.id}`,
-      marker: isLowStock(item) ? "ควรเติม" : "ใกล้กำหนด",
-      title: item.name,
-      detail: isLowStock(item)
-        ? `เหลือ ${inventoryQuantityLabel(item)}`
-        : "ตรวจวันหมดอายุหรือประกัน",
-    })),
-    ...pendingShopping.slice(0, 2).map((item) => ({
-      key: `shopping-${item.id}`,
-      href: "/shopping",
-      marker: "ต้องซื้อ",
-      title: item.name,
-      detail: `${item.quantity}${item.unit ? ` ${item.unit}` : ""}`,
-    })),
-  ];
-  const visibleTodayQueue = todayQueue.slice(0, 8);
-  const remainingTodayItemCount = todayQueue.length - visibleTodayQueue.length;
+
+  const timelineForDate = (date: string): TimelineItem[] =>
+    [
+      ...events
+        .filter((event) => eventDate(event) === date)
+        .map((event) => {
+          const time = event.is_all_day
+            ? null
+            : toBangkokInput(event.starts_at).slice(11, 16);
+          return {
+            key: `event-${event.id}`,
+            href: `/calendar/${event.id}`,
+            category: "ปฏิทิน",
+            icon: "calendar" as const,
+            title: event.title,
+            detail: event.is_all_day ? "กิจกรรมทั้งวัน" : "นัดหมาย",
+            timeLabel: time ? `${time} น.` : "ทั้งวัน",
+            sortKey: time ?? "00:00",
+            completed: null,
+          };
+        }),
+      ...tasks
+        .filter((task) => task.due_date === date)
+        .map((task) => ({
+          key: `task-${task.id}`,
+          href: `/calendar/tasks/${task.id}`,
+          category: "แผนงาน",
+          icon: "chores" as const,
+          title: task.title,
+          detail: task.list_name || planDateLabel(task.due_date, task.due_time),
+          timeLabel: task.due_time
+            ? `${task.due_time.slice(0, 5)} น.`
+            : "ทั้งวัน",
+          sortKey: task.due_time?.slice(0, 5) ?? "00:01",
+          completed: task.is_completed,
+        })),
+      ...reminders
+        .filter(
+          (reminder) =>
+            toBangkokInput(reminder.reminds_at).slice(0, 10) === date,
+        )
+        .map((reminder) => {
+          const time = toBangkokInput(reminder.reminds_at).slice(11, 16);
+          return {
+            key: `reminder-${reminder.id}`,
+            href: `/calendar/reminders/${reminder.id}`,
+            category: "เตือนความจำ",
+            icon: "bell" as const,
+            title: reminder.title,
+            detail: reminderDateLabel(reminder.reminds_at),
+            timeLabel: `${time} น.`,
+            sortKey: time,
+            completed: reminder.is_completed,
+          };
+        }),
+      ...dueFinance
+        .filter((item) => item.date === date)
+        .map((item) => ({
+          key: `finance-${item.source}-${item.sourceId}`,
+          href: item.href,
+          category: "การเงิน",
+          icon: "finance" as const,
+          title: item.title,
+          detail: FINANCE_COMPLETE_STATUSES.has(item.status)
+            ? "จัดการแล้ว"
+            : "ครบกำหนด",
+          timeLabel: "ทั้งวัน",
+          sortKey: "00:02",
+          completed: FINANCE_COMPLETE_STATUSES.has(item.status),
+        })),
+      ...petCare
+        .filter(
+          (record) =>
+            record.scheduled_at &&
+            toBangkokInput(record.scheduled_at).slice(0, 10) === date,
+        )
+        .map((record) => {
+          const time = toBangkokInput(record.scheduled_at).slice(11, 16);
+          return {
+            key: `pet-care-${record.id}`,
+            href: `/pets/${record.pet_id}`,
+            category: "สัตว์เลี้ยง",
+            icon: "pets" as const,
+            title: `${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`,
+            detail: PET_CARE_RECORD_LABEL[record.record_type],
+            timeLabel: `${time} น.`,
+            sortKey: time,
+            completed: null,
+          };
+        }),
+      ...chores.occurrences
+        .filter((item) => item.due_date === date)
+        .map((chore) => {
+          const template = choreTemplates.get(chore.template_id);
+          const time = template?.due_time?.slice(0, 5) ?? null;
+          return {
+            key: `chore-${chore.id}`,
+            href: "/chores",
+            category: "งานบ้าน",
+            icon: "chores" as const,
+            title: template?.title ?? "งานบ้าน",
+            detail: chore.completed_at ? "เสร็จแล้ว" : "รอดำเนินการ",
+            timeLabel: time ? `${time} น.` : "ทั้งวัน",
+            sortKey: time ?? "00:03",
+            completed: Boolean(chore.completed_at),
+          };
+        }),
+    ].toSorted((a, b) =>
+      `${a.sortKey}-${a.category}-${a.title}`.localeCompare(
+        `${b.sortKey}-${b.category}-${b.title}`,
+      ),
+    );
+
+  const todayTimeline = timelineForDate(today);
+  const tomorrowTimeline = timelineForDate(tomorrow);
   const currentWeek = weekDates(today);
 
   return (
     <>
-      <DashboardCard
-        title="วันนี้ต้องดู"
-        icon="calendar"
-        className="ring-1 ring-finance-primary/15"
-      >
-        <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-          <DashboardMetric
-            href="/calendar"
-            icon="calendar"
-            value={
-              overdueTasks.length +
-              todayEvents.length +
-              todayTasks.length +
-              upcomingReminders.length
-            }
-            label="แผนงาน"
-          />
-          <DashboardMetric
-            href="/finance"
-            icon="finance"
-            value={todayFinance.length}
-            label="การเงิน"
-          />
-          <DashboardMetric
-            href="/pets"
-            icon="pets"
-            value={todayPetCare.length}
-            label="สัตว์เลี้ยง"
-          />
-          <DashboardMetric
-            href="/chores"
-            icon="chores"
-            value={dueChores.length}
-            label="งานบ้าน"
-          />
-          <DashboardMetric
-            href="/shopping"
-            icon="shopping"
-            value={pendingShopping.length}
-            label="ต้องซื้อ"
-          />
-          <DashboardMetric
-            href="/inventory"
-            icon="inventory"
-            value={attentionInventory.length}
-            label="คลังของ"
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-2">
-          {visibleTodayQueue.map((item) => (
-            <TodayItem
-              key={item.key}
-              href={item.href}
-              marker={item.marker}
-              title={item.title}
-              detail={item.detail}
-            />
-          ))}
-          {todayQueue.length === 0 ? (
-            <EmptyToday text="วันนี้เรียบร้อยดี ยังไม่มีเรื่องที่ต้องจัดการ" />
-          ) : null}
-          {remainingTodayItemCount > 0 ? (
-            <p className="rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 text-center text-sm font-medium text-finance-primary-strong">
-              ยังมีอีก {remainingTodayItemCount} รายการในแต่ละหมวด
-            </p>
-          ) : null}
-        </div>
-      </DashboardCard>
+      <TimelineCard
+        title="งานวันนี้"
+        dateLabel={thaiToday(today)}
+        items={todayTimeline}
+        emptyText="วันนี้ยังไม่มีงานหรือนัดหมาย"
+      />
+
+      <TimelineCard
+        title="งานวันพรุ่งนี้"
+        dateLabel={thaiToday(tomorrow)}
+        items={tomorrowTimeline}
+        emptyText="พรุ่งนี้ยังไม่มีงาน เตรียมวันสบาย ๆ ได้เลย"
+      />
 
       <section
         className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
@@ -509,15 +432,7 @@ async function HomeTodaySections({
         </div>
         <div className="grid grid-cols-7 gap-1">
           {currentWeek.map((date) => {
-            const count =
-              events.filter((event) => eventDate(event) === date).length +
-              tasks.filter(
-                (task) => !task.is_completed && task.due_date === date,
-              ).length +
-              reminders.filter(
-                (reminder) =>
-                  toBangkokInput(reminder.reminds_at).slice(0, 10) === date,
-              ).length;
+            const count = timelineForDate(date).length;
             const isToday = date === today;
             return (
               <Link
@@ -549,276 +464,50 @@ async function HomeTodaySections({
 }
 
 async function HomeSecondarySections({
-  financePromise,
   recentTransactionsPromise,
-  petsPromise,
-  dueFinancePromise,
-  petCarePromise,
   recentPetCareRecordsPromise,
-  choresPromise,
-  shoppingPromise,
-  inventoryPromise,
-  householdName,
-  today,
 }: {
-  financePromise: ReturnType<typeof getFinanceSummary>;
   recentTransactionsPromise: ReturnType<typeof listRecentFinanceTransactions>;
-  petsPromise: ReturnType<typeof listPetSummaries>;
-  dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
-  petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   recentPetCareRecordsPromise: ReturnType<
     typeof listRecentHouseholdPetCareRecords
   >;
-  choresPromise: ReturnType<typeof listChoreWorkspace>;
-  shoppingPromise: ReturnType<typeof listShoppingItems>;
-  inventoryPromise: ReturnType<typeof listInventoryItems>;
-  householdName: string | null;
-  today: string;
 }) {
-  const [
-    finance,
-    recentTransactions,
-    pets,
-    dueFinance,
-    petCare,
-    recentPetCareRecords,
-    chores,
-    shopping,
-    inventory,
-  ] = await Promise.all([
-    financePromise,
+  const [recentTransactions, recentPetCareRecords] = await Promise.all([
     recentTransactionsPromise,
-    petsPromise,
-    dueFinancePromise,
-    petCarePromise,
     recentPetCareRecordsPromise,
-    choresPromise,
-    shoppingPromise,
-    inventoryPromise,
   ]);
   const recentPetCare = recentPetCareRecords.flatMap((record) =>
     record.pet ? [{ pet: record.pet, record }] : [],
   );
-  const choreTemplates = new Map(
-    chores.templates.map((template) => [template.id, template]),
-  );
-  const openChores = chores.occurrences
-    .filter((item) => !item.completed_at)
-    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
-  const pendingShopping = shopping.filter((item) => !item.purchased_at);
-  const attentionInventory = inventory.filter(
-    (item) =>
-      isLowStock(item) ||
-      isDateWithinDays(item.expiry_date, today, 30) ||
-      isDateWithinDays(item.warranty_expires_on, today, 30),
-  );
 
   return (
-    <>
-      <section className="landscape-span-full grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard
-          title="การเงิน"
-          href="/finance"
-          linkLabel="ดู"
-          icon="wallet"
-        >
-          <div className="space-y-2">
-            {finance.monthTotals.length ? (
-              finance.monthTotals.map((total) => (
-                <div
-                  key={total.currency}
-                  className="rounded-[1rem] bg-finance-primary-soft/60 p-3"
-                >
-                  <p className="text-xs text-finance-muted">
-                    รายจ่ายวันนี้ · {total.currency}
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-finance-text">
-                    {formatCurrency(total.expense, total.currency)}
-                  </p>
-                  <p className="text-xs text-emerald-700">
-                    รายรับ {formatCurrency(total.income, total.currency)}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <EmptyToday text="วันนี้ยังไม่มีรายการรับ–จ่าย" />
-            )}
-            {dueFinance.length ? (
-              <p className="text-xs text-finance-muted">
-                มี {dueFinance.length} บิลหรือค่างวดใกล้ครบกำหนด
-              </p>
-            ) : null}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="สัตว์เลี้ยง"
-          href="/pets"
-          linkLabel="ดู"
-          icon="pets"
-        >
-          <p className="text-sm text-finance-muted">
-            {pets.length
-              ? `${pets.length} ตัว · ${pets.map((pet) => pet.name).join(" · ")}`
-              : "ยังไม่มีสัตว์เลี้ยง"}
-          </p>
-          <div className="mt-3 flex min-w-0 flex-col gap-2">
-            {petCare.slice(0, 2).map((record) => (
-              <TodayItem
-                key={record.id}
-                href={`/pets/${record.pet_id}`}
-                marker={PET_CARE_RECORD_LABEL[record.record_type]}
-                title={`${record.pet?.name ?? "สัตว์เลี้ยง"} · ${record.title}`}
-                detail={petCareDateLabel(record.scheduled_at!)}
-              />
-            ))}
-            {petCare.length === 0 ? (
-              <EmptyToday text="ไม่มีตารางดูแลใน 7 วันข้างหน้า" />
-            ) : null}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="ครอบครัว"
-          href="/household"
-          linkLabel="ดู"
-          icon="household"
-        >
-          <div className="rounded-[1rem] bg-finance-primary-soft/45 p-3">
-            <p className="font-semibold text-finance-text">
-              {householdName ?? "บ้านของเรา"}
-            </p>
-            <p className="mt-1 text-sm text-finance-muted">
-              สมาชิก สิทธิ์การใช้งาน และเรื่องที่ช่วยกันดูแล
-            </p>
-          </div>
-        </DashboardCard>
-      </section>
-
-      <section className="landscape-span-full grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <DashboardCard
-          title="งานบ้าน"
-          href="/chores"
-          linkLabel="ดูทั้งหมด"
-          icon="chores"
-        >
-          <p className="mb-3 text-sm text-finance-muted">
-            {openChores.length
-              ? `เหลือ ${openChores.length} งานที่ยังไม่เสร็จ`
-              : "งานบ้านเรียบร้อยแล้ว"}
-          </p>
-          <div className="flex min-w-0 flex-col gap-2">
-            {openChores.slice(0, 2).map((chore) => (
-              <TodayItem
-                key={`chore-summary-${chore.id}`}
-                href="/chores"
-                marker={chore.due_date < today ? "ค้าง" : "งานบ้าน"}
-                title={
-                  choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน"
-                }
-                detail={chore.due_date}
-              />
-            ))}
-            {openChores.length === 0 ? (
-              <EmptyToday text="ไม่มีงานบ้านค้างอยู่" />
-            ) : null}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="รายการซื้อของ"
-          href="/shopping"
-          linkLabel="ดูทั้งหมด"
-          icon="shopping"
-        >
-          <p className="mb-3 text-sm text-finance-muted">
-            {pendingShopping.length
-              ? `รอซื้อ ${pendingShopping.length} รายการ`
-              : "ซื้อครบตามรายการแล้ว"}
-          </p>
-          <div className="flex min-w-0 flex-col gap-2">
-            {pendingShopping.slice(0, 2).map((item) => (
-              <TodayItem
-                key={`shopping-summary-${item.id}`}
-                href="/shopping"
-                marker="ต้องซื้อ"
-                title={item.name}
-                detail={`${item.quantity}${item.unit ? ` ${item.unit}` : ""}`}
-              />
-            ))}
-            {pendingShopping.length === 0 ? (
-              <EmptyToday text="ยังไม่มีของที่ต้องซื้อ" />
-            ) : null}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard
-          title="คลังของในบ้าน"
-          href="/inventory"
-          linkLabel="ดูทั้งหมด"
-          icon="inventory"
-        >
-          <p className="mb-3 text-sm text-finance-muted">
-            {attentionInventory.length
-              ? `มี ${attentionInventory.length} รายการที่ควรตรวจดู`
-              : `ของในคลัง ${inventory.length} รายการอยู่ในสถานะปกติ`}
-          </p>
-          <div className="flex min-w-0 flex-col gap-2">
-            {attentionInventory.slice(0, 2).map((item) => (
-              <TodayItem
-                key={`inventory-summary-${item.id}`}
-                href={`/inventory/${item.id}`}
-                marker={isLowStock(item) ? "ใกล้หมด" : "ใกล้กำหนด"}
-                title={item.name}
-                detail={inventoryQuantityLabel(item)}
-              />
-            ))}
-            {attentionInventory.length === 0 ? (
-              <EmptyToday text="ยังไม่มีของใกล้หมดหรือใกล้กำหนด" />
-            ) : null}
-          </div>
-        </DashboardCard>
-      </section>
-
-      <section
-        aria-label="ทางลัด"
-        className="landscape-span-full grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
-      >
-        <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
-        <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
-        <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
-        <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />
-        <QuickLink href="/inventory" icon="inventory" label="คลังของในบ้าน" />
-      </section>
-
-      <TodaySection
-        title="กิจกรรมล่าสุด"
-        href="/finance/transactions"
-        linkLabel="ดูทั้งหมด"
-      >
-        {recentTransactions.map((item) => (
-          <TodayItem
-            key={item.transactionId}
-            href={`/finance/transactions/${item.transactionId}`}
-            marker={item.creatorName ?? "การเงิน"}
-            title={item.title ?? item.categoryName ?? "รายการการเงิน"}
-            detail={formatCurrency(item.amount, item.currency)}
-          />
-        ))}
-        {recentPetCare.map(({ pet, record }) => (
-          <TodayItem
-            key={`pet-activity-${record.id}`}
-            href={`/pets/${pet.id}`}
-            marker={PET_CARE_RECORD_LABEL[record.record_type]}
-            title={`${pet.name} · ${record.title}`}
-            detail={petCareDateLabel(record.created_at)}
-          />
-        ))}
-        {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
-          <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
-        ) : null}
-      </TodaySection>
-    </>
+    <TodaySection
+      title="กิจกรรมล่าสุด"
+      href="/finance/transactions"
+      linkLabel="ดูทั้งหมด"
+    >
+      {recentTransactions.map((item) => (
+        <TodayItem
+          key={item.transactionId}
+          href={`/finance/transactions/${item.transactionId}`}
+          marker={item.creatorName ?? "การเงิน"}
+          title={item.title ?? item.categoryName ?? "รายการการเงิน"}
+          detail={formatCurrency(item.amount, item.currency)}
+        />
+      ))}
+      {recentPetCare.map(({ pet, record }) => (
+        <TodayItem
+          key={`pet-activity-${record.id}`}
+          href={`/pets/${pet.id}`}
+          marker={PET_CARE_RECORD_LABEL[record.record_type]}
+          title={`${pet.name} · ${record.title}`}
+          detail={petCareDateLabel(record.created_at)}
+        />
+      ))}
+      {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
+        <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
+      ) : null}
+    </TodaySection>
   );
 }
 
@@ -826,6 +515,7 @@ function HomeTodaySkeleton() {
   return (
     <>
       <div className="min-h-64 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+      <div className="min-h-56 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
       <div className="min-h-32 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
     </>
   );
@@ -833,80 +523,118 @@ function HomeTodaySkeleton() {
 
 function HomeSecondarySkeleton() {
   return (
-    <>
-      <div className="landscape-span-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-      </div>
-      <div className="landscape-span-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-      </div>
-      <div className="landscape-span-full min-h-28 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-      <div className="landscape-span-full min-h-28 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
-    </>
+    <div className="landscape-span-full min-h-36 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
   );
 }
 
-function DashboardCard({
+function TimelineCard({
   title,
-  href,
-  linkLabel,
-  icon,
-  className = "",
-  children,
+  dateLabel,
+  items,
+  emptyText,
 }: {
   title: string;
-  href?: string;
-  linkLabel?: string;
-  icon: AppIconName;
-  className?: string;
-  children: ReactNode;
+  dateLabel: string;
+  items: TimelineItem[];
+  emptyText: string;
 }) {
-  return (
-    <Card
-      className={`min-w-0 rounded-[1.5rem] bg-finance-surface-strong ${className}`}
-    >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
-            <AppIcon name={icon} className="size-5" />
-          </span>
-          <h2 className="truncate font-semibold text-finance-text">{title}</h2>
-        </div>
-        {href && linkLabel ? (
-          <Link
-            href={href}
-            className="shrink-0 text-sm font-medium text-finance-primary-strong"
-          >
-            {linkLabel}
-          </Link>
-        ) : null}
-      </div>
-      {children}
-    </Card>
-  );
-}
+  const trackableItems = items.filter((item) => item.completed !== null);
+  const completedCount = trackableItems.filter((item) => item.completed).length;
+  const progress = trackableItems.length
+    ? Math.round((completedCount / trackableItems.length) * 100)
+    : 0;
 
-function QuickLink({
-  href,
-  icon,
-  label,
-}: {
-  href: string;
-  icon: AppIconName;
-  label: string;
-}) {
   return (
-    <Link
-      href={href}
-      className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-[1.1rem] bg-finance-primary-soft/45 px-2 text-center text-sm font-medium text-finance-text transition-colors hover:bg-finance-primary-soft"
-    >
-      <AppIcon name={icon} className="size-6 text-finance-primary-strong" />
-      <span>{label}</span>
-    </Link>
+    <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong ring-1 ring-finance-primary/15">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-finance-muted">{dateLabel}</p>
+          <h2 className="mt-0.5 text-lg font-semibold text-finance-text">
+            {title}
+          </h2>
+        </div>
+        <span className="rounded-full bg-finance-primary-soft px-3 py-1 text-sm font-medium tabular-nums text-finance-primary-strong">
+          {items.length} รายการ
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-[1rem] bg-finance-primary-soft/30 p-3">
+        <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+          <span className="text-finance-muted">
+            {trackableItems.length
+              ? `เสร็จ ${completedCount} จาก ${trackableItems.length} งาน`
+              : "ยังไม่มีงานที่ติดตามสถานะ"}
+          </span>
+          <span className="font-semibold tabular-nums text-finance-primary-strong">
+            {progress}%
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label={`ความคืบหน้า${title}`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          className="h-2 overflow-hidden rounded-full bg-finance-surface-strong"
+        >
+          <div
+            className="h-full rounded-full bg-finance-primary transition-[width]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {items.length ? (
+        <ol className="mt-4">
+          {items.map((item, index) => (
+            <li
+              key={item.key}
+              className="grid min-w-0 grid-cols-[3.75rem_1.25rem_minmax(0,1fr)] gap-2"
+            >
+              <p className="pt-3 text-right text-xs font-medium tabular-nums text-finance-muted">
+                {item.timeLabel}
+              </p>
+              <div className="relative flex justify-center">
+                {index < items.length - 1 ? (
+                  <span className="absolute bottom-0 top-5 w-px bg-finance-primary-soft" />
+                ) : null}
+                <span
+                  className={`relative mt-3 flex size-5 items-center justify-center rounded-full ring-4 ring-finance-surface-strong ${item.completed ? "bg-finance-primary text-finance-primary-foreground" : "bg-finance-primary-soft text-finance-primary-strong"}`}
+                >
+                  {item.completed ? (
+                    <span className="text-[10px] font-bold">✓</span>
+                  ) : (
+                    <AppIcon name={item.icon} className="size-3" />
+                  )}
+                </span>
+              </div>
+              <Link
+                href={item.href}
+                className={`mb-2 min-w-0 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55 ${item.completed ? "opacity-65" : ""}`}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="shrink-0 rounded-full bg-finance-primary-soft px-2 py-0.5 text-[10px] font-medium text-finance-primary-strong">
+                    {item.category}
+                  </span>
+                  <p
+                    className={`min-w-0 flex-1 truncate font-medium text-finance-text ${item.completed ? "line-through" : ""}`}
+                  >
+                    {item.title}
+                  </p>
+                </div>
+                <p className="mt-1 truncate text-xs text-finance-muted">
+                  {item.detail}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div className="mt-4">
+          <EmptyToday text={emptyText} />
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -962,34 +690,6 @@ function TodayItem({
       <p className="max-w-[42%] shrink-0 truncate text-sm text-finance-muted">
         {detail}
       </p>
-    </Link>
-  );
-}
-
-function DashboardMetric({
-  href,
-  icon,
-  value,
-  label,
-}: {
-  href: string;
-  icon: AppIconName;
-  value: number;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex min-w-0 flex-col items-center rounded-[1rem] bg-finance-primary-soft/45 px-2 py-2.5 text-center transition-colors hover:bg-finance-primary-soft"
-    >
-      <AppIcon
-        name={icon}
-        className="mb-1 size-4 text-finance-primary-strong"
-      />
-      <p className="text-lg font-semibold tabular-nums text-finance-text">
-        {value}
-      </p>
-      <p className="truncate text-[11px] text-finance-muted">{label}</p>
     </Link>
   );
 }
