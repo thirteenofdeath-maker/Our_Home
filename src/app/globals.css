@@ -435,12 +435,106 @@ body {
   );
 }
 
-/* Landscape is a first-class working layout rather than a stretched phone
-   canvas. The same routes and components remain mounted; CSS only changes
-   their composition, which keeps navigation state and form behavior shared. */
-@media (orientation: landscape) and (min-width: 700px) {
+/* Tablet is its own composition, not a stretched phone. Portrait tablets
+   keep the reachable bottom navigation, but use the available width for
+   two-column dashboards and wider sheets. The second query also covers small
+   landscape tablets while excluding short phone landscape viewports. */
+@media (min-width: 700px) and (orientation: portrait),
+  (min-width: 700px) and (max-width: 1023px) and (min-height: 600px) {
   .app-main {
-    max-width: 72rem;
+    max-width: 52rem;
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-top: 1rem !important;
+  }
+
+  .bottom-nav-shell {
+    right: max(1.5rem, env(safe-area-inset-right));
+    left: max(1.5rem, env(safe-area-inset-left));
+  }
+
+  .bottom-nav-list {
+    max-width: 44rem;
+  }
+
+  .app-fab {
+    right: max(
+      1.5rem,
+      env(safe-area-inset-right),
+      calc((100vw - 52rem) / 2 + 1.5rem)
+    );
+  }
+
+  .app-bottom-sheet {
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 1.5rem) !important;
+    max-width: 44rem;
+    border-radius: 1.5rem;
+    padding-bottom: 0;
+  }
+
+  .app-cover {
+    height: 13.5rem !important;
+  }
+
+  .landscape-plan-split,
+  .landscape-finance-grid,
+  .landscape-pets-split,
+  .landscape-home-grid,
+  .landscape-household-grid,
+  .landscape-household-columns {
+    display: grid;
+    min-width: 0;
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .landscape-plan-split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+  }
+
+  .landscape-finance-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  }
+
+  .landscape-pets-split {
+    grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .landscape-home-grid,
+  .landscape-household-grid,
+  .landscape-household-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landscape-household-columns,
+  .landscape-span-full,
+  .landscape-home-grid > .app-cover,
+  .landscape-household-grid > .app-cover {
+    grid-column: 1 / -1;
+  }
+
+  .landscape-home-column,
+  .landscape-finance-side,
+  .landscape-pets-column,
+  .landscape-household-column {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .landscape-household-info {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Wide landscape is a desktop-class workspace with a persistent side rail.
+   Starting at 1024px keeps every phone — including landscape phones — in the
+   compact layout while iPad landscape and computers get the full dashboard. */
+@media (orientation: landscape) and (min-width: 1024px) {
+  .app-main {
+    max-width: 90rem;
     padding-left: max(6.25rem, calc(env(safe-area-inset-left) + 5.5rem));
     padding-right: max(1.25rem, env(safe-area-inset-right));
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
@@ -505,7 +599,7 @@ body {
     right: max(
       1.25rem,
       env(safe-area-inset-right),
-      calc((100vw - 72rem) / 2 + 1.25rem)
+      calc((100vw - 90rem) / 2 + 1.25rem)
     );
     bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
   }
