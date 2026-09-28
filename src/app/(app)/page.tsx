@@ -260,14 +260,14 @@ export default async function HomePage() {
   );
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6">
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3 lg:grid lg:grid-cols-12 lg:items-start lg:gap-5">
+      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f2e8] p-5 shadow-card sm:h-52 sm:p-6 lg:col-span-7 lg:row-start-1 lg:h-full lg:min-h-52">
         <Image
           src={coverStyle.src}
           alt={coverStyle.alt}
           fill
           priority
-          sizes="(max-width: 640px) 100vw, 576px"
+          sizes="(max-width: 1023px) 100vw, 58vw"
           className="object-cover object-center"
         />
         {coverMode === "night" || coverMode === "late-night" ? (
@@ -314,6 +314,7 @@ export default async function HomePage() {
         href="/calendar"
         linkLabel="ดูทั้งหมด"
         icon="calendar"
+        className="lg:col-span-5 lg:row-start-1 lg:h-full"
       >
         <p className="mb-3 text-sm text-finance-muted">
           {todayItemCount
@@ -357,7 +358,7 @@ export default async function HomePage() {
       </DashboardCard>
 
       <section
-        className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
+        className="rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card lg:col-span-7 lg:row-start-2 lg:h-full"
         aria-label="ปฏิทินครอบครัวสัปดาห์นี้"
       >
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -411,7 +412,7 @@ export default async function HomePage() {
       </section>
 
       <section
-        className="flex min-w-0 flex-col gap-3"
+        className="flex min-w-0 flex-col gap-3 lg:col-span-12 lg:row-start-3"
         aria-labelledby="home-dashboard-title"
       >
         <div>
@@ -423,7 +424,7 @@ export default async function HomePage() {
             ภาพรวมบ้าน
           </h2>
         </div>
-        <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+        <div className="grid min-w-0 gap-3 md:grid-cols-3">
           <HomeDashboardTile
             href="/chores"
             icon="chores"
@@ -467,7 +468,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid min-w-0 grid-cols-2 gap-3">
+      <section className="grid min-w-0 grid-cols-2 gap-3 lg:col-span-7 lg:row-start-4">
         <DashboardCard
           title="การเงิน"
           href="/finance"
@@ -533,7 +534,7 @@ export default async function HomePage() {
 
       <section
         aria-label="ทางลัด"
-        className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1"
+        className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1 lg:col-span-5 lg:col-start-8 lg:row-start-2 lg:h-full"
       >
         <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
         <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
@@ -546,6 +547,7 @@ export default async function HomePage() {
         title="กิจกรรมล่าสุด"
         href="/finance/transactions"
         linkLabel="ดูทั้งหมด"
+        className="lg:col-span-5 lg:col-start-8 lg:row-start-4"
       >
         {recentTransactions.map((item) => (
           <TodayItem
@@ -680,15 +682,17 @@ function TodaySection({
   title,
   href,
   linkLabel,
+  className = "",
   children,
 }: {
   title: string;
   href: string;
   linkLabel: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="flex min-w-0 flex-col gap-2">
+    <section className={`flex min-w-0 flex-col gap-2 ${className}`}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-semibold text-finance-text">{title}</h2>
         <Link

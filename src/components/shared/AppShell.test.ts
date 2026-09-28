@@ -59,6 +59,12 @@ describe("AppShell visibility", () => {
     expect(onboarding).not.toContain("<nav");
   });
 
+  it("widens only the home dashboard on large screens while forms keep the focused app width", () => {
+    expect(renderShell("/")).toContain("max-w-7xl");
+    expect(renderShell("/finance")).toContain("max-w-xl");
+    expect(renderShell("/wallets/abc/manage")).toContain("max-w-xl");
+  });
+
   it("gives every route where BottomNav renders the same bottom clearance — never computed per-route, so no page can under-clear it by omission", () => {
     const wallets = renderShell("/wallets/abc/manage");
     const finance = renderShell("/finance");
