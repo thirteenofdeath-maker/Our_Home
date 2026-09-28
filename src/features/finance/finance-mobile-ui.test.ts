@@ -100,7 +100,7 @@ describe("approved mobile Finance UI", () => {
   });
 
   it("starts the overview content with the income-expense summary", () => {
-    const monthSwitcher = hub.indexOf('aria-label="เดือนก่อนหน้า"');
+    const monthSwitcher = hub.indexOf("<FinanceMonthNavigator");
     const trendHeading = hub.indexOf('title="สรุปรายรับรายจ่าย"');
     const addEntry = hub.indexOf("{initialWallet ? (");
     const planning = hub.indexOf("วางแผนการเงิน");
@@ -114,6 +114,11 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toContain('title="รายการล่าสุด"');
     expect(hub).not.toContain('title="กระเป๋าเงิน"');
     expect(hub).not.toContain("ยอดเงินส่วนตัว");
+  });
+
+  it("keeps decorative artwork in the shared cover instead of dashboard cards", () => {
+    expect(hub).not.toContain("finance-corner.webp");
+    expect(hub).not.toContain("<Image");
   });
 
   it("keeps the compact Pocket row within its requested height/icon budget", () => {

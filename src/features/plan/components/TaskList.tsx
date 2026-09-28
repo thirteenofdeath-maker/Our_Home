@@ -38,7 +38,7 @@ export function TaskList({ tasks }: { tasks: PlanTask[] }) {
               className={cn(
                 "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-2",
                 task.is_completed
-                  ? "border-finance-primary bg-finance-primary text-white"
+                  ? "border-finance-primary bg-finance-primary text-finance-primary-foreground"
                   : "border-finance-primary-soft bg-finance-surface-strong",
               )}
             >

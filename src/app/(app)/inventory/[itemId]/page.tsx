@@ -44,7 +44,7 @@ export default async function InventoryDetailPage({
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
       <PageHeader title={item.name} backHref="/inventory" />
-      <Card className="rounded-[1.5rem] bg-[linear-gradient(145deg,#edf4e8,#fff9ee_62%,#f6e2d8)]">
+      <Card className="rounded-[1.5rem] time-tinted-panel">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-finance-primary-strong">
@@ -121,7 +121,7 @@ export default async function InventoryDetailPage({
           </FormSheetButton>
           <form action={sendInventoryToShoppingAction}>
             <input type="hidden" name="itemId" value={item.id} />
-            <button className="rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-white">
+            <button className="rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-finance-primary-foreground">
               ส่งไปรายการซื้อ
             </button>
           </form>

@@ -75,7 +75,7 @@ export default async function BillsPage({
         </div>
       ) : null}
 
-      <section className="rounded-[1.6rem] bg-[linear-gradient(135deg,#fde7df,#f8f1e7)] p-5 shadow-card">
+      <section className="rounded-[1.6rem] time-tinted-panel p-5 shadow-card">
         <p className="text-sm font-medium text-finance-muted">ยอดที่ต้องจ่าย</p>
         {totals.length ? (
           totals.map((total) => (

@@ -87,7 +87,7 @@ export async function createPetAction(
     return { error: "Could not create pet" };
   }
   revalidatePath("/pets");
-  redirect(`/pets/${id}`);
+  redirect(`/pets?pet=${id}`);
 }
 
 export async function updatePetAction(
@@ -125,7 +125,7 @@ export async function updatePetAction(
   }
   revalidatePath("/pets");
   revalidatePath(`/pets/${petId}`);
-  redirect(`/pets/${petId}`);
+  redirect(`/pets?pet=${petId}`);
 }
 
 export async function archivePetAction(formData: FormData) {

@@ -71,7 +71,7 @@ export default async function HouseholdPage() {
       {canManageMembers ? (
         <FormSheetButton
           ariaLabel="เพิ่มสมาชิก"
-          triggerClassName="fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary right-[max(1.25rem,env(safe-area-inset-right))] bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+          triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
           sheetTitle="เพิ่มสมาชิก"
           tone="finance"
           form={
@@ -85,16 +85,16 @@ export default async function HouseholdPage() {
           <AppIcon name="plus" />
         </FormSheetButton>
       ) : null}
-      <section className="relative h-48 overflow-hidden rounded-[1.75rem] bg-[#f8f1e5] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/family-garden.webp"
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
           fill
           priority
           sizes="(max-width: 640px) 100vw, 576px"
-          className="object-cover object-center"
+          className="time-cover-image object-cover object-center"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,240,0.98)_0%,rgba(255,249,240,0.84)_42%,rgba(255,249,240,0.05)_78%)]" />
+        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
         <div className="relative flex h-full max-w-[62%] flex-col">
           <p className="text-xs font-medium text-finance-primary-strong">
             บ้านของเรา

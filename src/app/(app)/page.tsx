@@ -349,10 +349,10 @@ export default async function HomePage() {
               <Link
                 key={date}
                 href={`/calendar?date=${date}`}
-                className={`flex min-w-0 flex-col items-center rounded-[0.9rem] px-1 py-2 ${isToday ? "bg-finance-primary text-white" : "bg-finance-primary-soft/35 text-finance-text"}`}
+                className={`flex min-w-0 flex-col items-center rounded-[0.9rem] px-1 py-2 ${isToday ? "bg-finance-primary text-finance-primary-foreground" : "bg-finance-primary-soft/35 text-finance-text"}`}
               >
                 <span
-                  className={`text-[10px] ${isToday ? "text-white/80" : "text-finance-muted"}`}
+                  className={`text-[10px] ${isToday ? "text-finance-primary-foreground/80" : "text-finance-muted"}`}
                 >
                   {new Intl.DateTimeFormat("th-TH", {
                     weekday: "narrow",
@@ -363,7 +363,7 @@ export default async function HomePage() {
                   {Number(date.slice(-2))}
                 </span>
                 <span
-                  className={`mt-1 size-1.5 rounded-full ${count ? (isToday ? "bg-white" : "bg-finance-primary") : "bg-transparent"}`}
+                  className={`mt-1 size-1.5 rounded-full ${count ? (isToday ? "bg-finance-primary-foreground" : "bg-finance-primary") : "bg-transparent"}`}
                 />
               </Link>
             );

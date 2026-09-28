@@ -39,7 +39,7 @@ export function OfflineStatus() {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[90] mx-auto max-w-md rounded-full px-4 py-2 text-center text-sm font-medium text-white shadow-lg ${isOffline ? "bg-[#8f6f36]" : "bg-primary"}`}
+      className={`fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[90] mx-auto max-w-md rounded-full px-4 py-2 text-center text-sm font-medium shadow-lg ${isOffline ? "bg-[#8f6f36] text-white" : "bg-primary text-primary-foreground"}`}
     >
       {isOffline
         ? "ออฟไลน์ · กำลังใช้ข้อมูลล่าสุดในเครื่อง"

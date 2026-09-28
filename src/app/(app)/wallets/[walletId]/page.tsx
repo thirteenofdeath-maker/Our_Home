@@ -59,12 +59,15 @@ export default async function WalletDetailPage({
         }
       />
 
-      <div className="relative overflow-hidden rounded-[1.5rem] bg-finance-primary p-6 text-center text-white shadow-[0_1px_2px_rgb(68_80_92_/_0.04),0_8px_20px_rgb(68_80_92_/_0.1)]">
+      <div className="relative overflow-hidden rounded-[1.5rem] bg-finance-primary p-6 text-center text-finance-primary-foreground shadow-[0_1px_2px_rgb(68_80_92_/_0.04),0_8px_20px_rgb(68_80_92_/_0.1)]">
         <div
           aria-hidden="true"
           className="absolute -right-6 -top-6 flex size-28 items-center justify-center rounded-full bg-white/10"
         >
-          <AppIcon name="wallet" className="size-14 text-white/40" />
+          <AppIcon
+            name="wallet"
+            className="size-14 text-finance-primary-foreground/40"
+          />
         </div>
         <div className="relative z-[1] flex flex-col gap-1">
           {balances.length ? (
@@ -80,7 +83,7 @@ export default async function WalletDetailPage({
             <p className="text-3xl font-semibold">฿0.00</p>
           )}
         </div>
-        <p className="relative z-[1] mt-1 text-sm text-white/80">
+        <p className="relative z-[1] mt-1 text-sm text-finance-primary-foreground/80">
           {wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"} ·{" "}
           {pockets.length} Pocket
         </p>

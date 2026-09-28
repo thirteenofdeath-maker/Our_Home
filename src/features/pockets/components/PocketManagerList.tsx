@@ -37,7 +37,7 @@ export function PocketManagerList({
                 href={`/wallets/${walletId}/manage#pocket-${pocket.id}`}
                 className="flex min-h-[76px] items-center gap-3 px-4 py-3"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
                   <AppIcon name="pocket" className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1 truncate font-medium">
@@ -61,7 +61,7 @@ export function PocketManagerList({
               </Link>
             ) : (
               <div className="flex min-h-20 items-center justify-between gap-3 p-4">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary-strong">
                   <AppIcon name="pocket" />
                 </span>
                 <div className="min-w-0 flex-1">

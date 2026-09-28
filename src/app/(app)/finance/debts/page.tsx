@@ -125,9 +125,7 @@ export default async function DebtsPage({
         ]}
       />
 
-      <div
-        className={`relative overflow-hidden rounded-[1.6rem] p-5 shadow-card ${direction === "LIABILITY" ? "bg-[linear-gradient(135deg,#fde5de,#f8f1e8)]" : "bg-[linear-gradient(135deg,#e3efe0,#f8f1e8)]"}`}
-      >
+      <div className="time-tinted-panel relative overflow-hidden rounded-[1.6rem] p-5 shadow-card">
         <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
         <p className="relative text-sm font-medium text-finance-muted">
           {direction === "LIABILITY"

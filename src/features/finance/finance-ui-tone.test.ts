@@ -89,15 +89,15 @@ describe("Shared generic primitives are completely unchanged — Finance tone is
     );
   });
 
-  it("Button.tsx's new financeIncome/financeExpense/financeTransfer variants reuse the existing --finance-income/--finance-expense/--finance-transfer tokens via Tailwind utility classes — never a duplicated hex value", () => {
+  it("Button.tsx's finance semantic variants reuse palette tokens for both background and accessible foreground — never a duplicated hex value", () => {
     expect(button).toContain(
-      'financeIncome: "bg-finance-income text-white hover:opacity-90"',
+      '"bg-finance-income text-finance-semantic-foreground hover:opacity-90"',
     );
     expect(button).toContain(
-      'financeExpense: "bg-finance-expense text-white hover:opacity-90"',
+      '"bg-finance-expense text-finance-semantic-foreground hover:opacity-90"',
     );
     expect(button).toContain(
-      'financeTransfer: "bg-finance-transfer text-white hover:opacity-90"',
+      '"bg-finance-transfer text-finance-semantic-foreground hover:opacity-90"',
     );
     expect(button).not.toMatch(HEX_COLOR);
   });

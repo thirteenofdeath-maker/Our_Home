@@ -20,7 +20,7 @@ export function PlanSummary({
     timeZone: "UTC",
   }).format(new Date(`${today}T00:00:00Z`));
   return (
-    <Card className="relative overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#e8f1e5,#f7f4e9_52%,#f5eadc)] p-5 shadow-card">
+    <Card className="relative overflow-hidden rounded-[1.75rem] time-tinted-panel p-5 shadow-card">
       <div className="absolute -right-8 -top-10 size-32 rounded-full bg-white/45" />
       <p className="relative text-sm font-medium text-finance-muted">
         วันนี้ · {date}

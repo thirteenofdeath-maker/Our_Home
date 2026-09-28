@@ -43,7 +43,7 @@ export function RemoveMemberButton({
         ลบ {name} ออกจากครอบครัว? บุคคลนี้จะเข้าถึงข้อมูลร่วมของบ้านไม่ได้อีก
       </p>
       <div className="flex gap-2">
-        <SubmitButton size="md" className="bg-danger text-white">
+        <SubmitButton size="md" className="bg-danger text-danger-foreground">
           ยืนยันลบ
         </SubmitButton>
         <Button

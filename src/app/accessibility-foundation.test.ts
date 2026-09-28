@@ -26,12 +26,44 @@ function contrast(foreground: string, background: string) {
 }
 
 describe("accessibility foundation", () => {
-  it("keeps small-text palette colors at WCAG AA contrast", () => {
-    expect(contrast("#66706a", "#ffffff")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast("#58745e", "#ffffff")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast("#706963", "#fbf8f2")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast("#607a65", "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  it.each([
+    ["เช้า", "#685f58", "#fff9ef"],
+    ["สาย", "#675f57", "#fff4e8"],
+    ["เที่ยง", "#6e6158", "#fff3e2"],
+    ["บ่าย", "#6f6257", "#fff7d1"],
+    ["เย็น", "#72584f", "#ffd6c6"],
+    ["ค่ำ", "#dce4ea", "#081c30"],
+    ["ดึก", "#dce4ea", "#061523"],
+  ])("keeps %s muted copy at WCAG AA contrast", (_, foreground, background) => {
+    expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it.each([
+    ["#607a65", "#ffffff"],
+    ["#6f7653", "#ffffff"],
+    ["#7c6c4f", "#ffffff"],
+    ["#7e6b4c", "#ffffff"],
+    ["#715348", "#ffffff"],
+    ["#f2d8b5", "#20364a"],
+    ["#dce4ea", "#061523"],
+  ])("keeps primary actions readable", (background, foreground) => {
+    expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    ["#4f6754", "#e4eee0"],
+    ["#555d3f", "#d9e3c3"],
+    ["#5f513b", "#e9d8c7"],
+    ["#604d35", "#ebc9a7"],
+    ["#624339", "#f7b89c"],
+    ["#f2d8b5", "#4a636e"],
+    ["#dce4ea", "#4e6873"],
+  ])(
+    "keeps accent copy readable on soft controls",
+    (foreground, background) => {
+      expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
 
   it("does not disable browser zoom", () => {
     const layout = readFileSync(
