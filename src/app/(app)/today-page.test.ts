@@ -16,6 +16,10 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="การเงิน"');
     expect(source).toContain('title="สัตว์เลี้ยง"');
+    expect(source).toContain('title="ครอบครัว"');
+    expect(source).toContain('title="งานบ้าน"');
+    expect(source).toContain('title="รายการซื้อของ"');
+    expect(source).toContain('title="คลังของในบ้าน"');
     expect(source).toContain("<QuickLink");
   });
 
@@ -23,13 +27,18 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("const overdueTasks");
     expect(source).toContain("const todayFinance");
     expect(source).toContain("const todayPetCare");
+    expect(source).toContain("const dueChores");
+    expect(source).toContain("const pendingShopping");
+    expect(source).toContain("const attentionInventory");
     expect(source).toContain("const todayQueue = [");
     expect(source).toContain(
-      "const visibleTodayQueue = todayQueue.slice(0, 5)",
+      "const visibleTodayQueue = todayQueue.slice(0, 8)",
     );
-    expect(source).toContain("<TodayMetric");
+    expect(source).toContain("<DashboardMetric");
     expect(source).toContain("remainingTodayItemCount");
-    expect(source).toContain("เปิดแผนงาน");
+    expect(source).toContain('href="/chores"');
+    expect(source).toContain('href="/shopping"');
+    expect(source).toContain('href="/inventory"');
   });
 
   it("streams the cover before daily and secondary dashboard data", () => {
@@ -55,6 +64,9 @@ describe("Today dashboard composition", () => {
       "listRecentFinanceTransactions",
       "listPetSummaries",
       "listRecentHouseholdPetCareRecords",
+      "listChoreWorkspace",
+      "listShoppingItems",
+      "listInventoryItems",
     ]) {
       expect(source).toContain(sourceFunction);
     }
