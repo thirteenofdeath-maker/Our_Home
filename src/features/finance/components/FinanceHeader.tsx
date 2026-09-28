@@ -9,7 +9,7 @@ export function FinanceHeader() {
         alt="กระเป๋าเงิน เหรียญ และแผนการเงินของบ้าน"
         fill
         priority
-        sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+        sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
         className="app-cover-image time-cover-image object-cover object-center"
       />
       <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
