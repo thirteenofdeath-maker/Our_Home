@@ -12,11 +12,14 @@ import {
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
+import { listChoreWorkspace } from "@/features/chores/api";
 import {
   getFinanceSummary,
   listRecentFinanceTransactions,
 } from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { listInventoryItems } from "@/features/inventory/api";
+import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
 import {
   listPetSummaries,
@@ -29,6 +32,7 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
+import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
 import {
   greetingForBangkok,
@@ -176,6 +180,9 @@ export default async function HomePage() {
     pets,
     petCare,
     recentPetCareRecords,
+    choreWorkspace,
+    shoppingItems,
+    inventoryItems,
   ] = await Promise.all([
     profilePromise,
     listCalendarEvents(supabase, householdId, user.id),
@@ -199,6 +206,15 @@ export default async function HomePage() {
     householdId
       ? listRecentHouseholdPetCareRecords(supabase, householdId, 3)
       : Promise.resolve([]),
+    householdId
+      ? listChoreWorkspace(supabase, householdId)
+      : Promise.resolve(null),
+    householdId
+      ? listShoppingItems(supabase, householdId)
+      : Promise.resolve([]),
+    householdId
+      ? listInventoryItems(supabase, householdId)
+      : Promise.resolve([]),
   ]);
 
   const todayEvents = events.filter((event) => eventDate(event) === today);
@@ -219,6 +235,29 @@ export default async function HomePage() {
   const todayItemCount =
     todayEvents.length + dueTasks.length + upcomingReminders.length;
   const currentWeek = weekDates(today);
+  const choreTemplates = new Map(
+    choreWorkspace?.templates.map((template) => [template.id, template]) ?? [],
+  );
+  const openChores = (choreWorkspace?.occurrences ?? [])
+    .filter((occurrence) => !occurrence.completed_at)
+    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const dueChores = openChores.filter(
+    (occurrence) => occurrence.due_date <= today,
+  );
+  const overdueChores = dueChores.filter(
+    (occurrence) => occurrence.due_date < today,
+  );
+  const nextChore = openChores[0];
+  const nextChoreTitle = nextChore
+    ? choreTemplates.get(nextChore.template_id)?.title
+    : null;
+  const pendingShopping = shoppingItems.filter((item) => !item.purchased_at);
+  const lowStockItems = inventoryItems.filter(isLowStock);
+  const expiringItems = inventoryItems.filter(
+    (item) =>
+      isDateWithinDays(item.expiry_date, today, 30) ||
+      isDateWithinDays(item.warranty_expires_on, today, 30),
+  );
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
@@ -371,6 +410,63 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section
+        className="flex min-w-0 flex-col gap-3"
+        aria-labelledby="home-dashboard-title"
+      >
+        <div>
+          <p className="text-xs text-finance-muted">สถานะล่าสุด</p>
+          <h2
+            id="home-dashboard-title"
+            className="font-semibold text-finance-text"
+          >
+            ภาพรวมบ้าน
+          </h2>
+        </div>
+        <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+          <HomeDashboardTile
+            href="/chores"
+            icon="chores"
+            title="งานบ้าน"
+            value={`${openChores.length} งานรอทำ`}
+            detail={
+              overdueChores.length
+                ? `เลยกำหนด ${overdueChores.length} งาน`
+                : nextChore && nextChoreTitle
+                  ? `ถัดไป ${nextChoreTitle} · ${planDateLabel(nextChore.due_date, null)}`
+                  : "ยังไม่มีงานค้าง"
+            }
+            alert={overdueChores.length > 0}
+          />
+          <HomeDashboardTile
+            href="/shopping"
+            icon="shopping"
+            title="รายการซื้อของ"
+            value={`${pendingShopping.length} รายการต้องซื้อ`}
+            detail={
+              pendingShopping.length
+                ? pendingShopping
+                    .slice(0, 2)
+                    .map((item) => item.name)
+                    .join(" · ")
+                : "ซื้อครบแล้ว"
+            }
+          />
+          <HomeDashboardTile
+            href="/inventory"
+            icon="inventory"
+            title="คลังของในบ้าน"
+            value={`${inventoryItems.length} รายการในคลัง`}
+            detail={
+              lowStockItems.length || expiringItems.length
+                ? `ควรเติม ${lowStockItems.length} · หมดอายุ/ใกล้กำหนด ${expiringItems.length}`
+                : "ของในคลังยังปกติ"
+            }
+            alert={lowStockItems.length > 0 || expiringItems.length > 0}
+          />
+        </div>
+      </section>
+
       <section className="grid min-w-0 grid-cols-2 gap-3">
         <DashboardCard
           title="การเงิน"
@@ -512,6 +608,51 @@ function DashboardCard({
       </div>
       {children}
     </Card>
+  );
+}
+
+function HomeDashboardTile({
+  href,
+  icon,
+  title,
+  value,
+  detail,
+  alert = false,
+}: {
+  href: string;
+  icon: AppIconName;
+  title: string;
+  value: string;
+  detail: string;
+  alert?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-w-0 items-center gap-3 rounded-[1.35rem] bg-finance-surface-strong p-4 shadow-card transition-transform active:scale-[0.99]"
+    >
+      <span
+        className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
+          alert
+            ? "bg-danger/10 text-danger"
+            : "bg-finance-primary-soft text-finance-primary-strong"
+        }`}
+      >
+        <AppIcon name={icon} className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs text-finance-muted">{title}</span>
+        <span className="mt-0.5 block truncate font-semibold text-finance-text">
+          {value}
+        </span>
+        <span
+          className={`mt-0.5 block truncate text-xs ${alert ? "text-danger" : "text-finance-muted"}`}
+        >
+          {detail}
+        </span>
+      </span>
+      <AppIcon name="chevron" className="size-4 shrink-0 text-finance-muted" />
+    </Link>
   );
 }
 
