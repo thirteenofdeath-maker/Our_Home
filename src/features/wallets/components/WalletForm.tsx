@@ -128,7 +128,7 @@ export function WalletForm({
             ระบบจะคำนวณยอดใช้ไปเริ่มต้นจากวงเงินทั้งหมดลบวงเงินคงเหลือ
           </p>
           <TwoColumnFieldGrid>
-            <Field label="วันตัดรอบ" htmlFor="statementClosingDay">
+            <Field label="วันตัดยอด" htmlFor="statementClosingDay">
               <Input
                 id="statementClosingDay"
                 name="statementClosingDay"

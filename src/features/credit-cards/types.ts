@@ -5,6 +5,9 @@ export interface CreditCardAccountOption {
   walletId: string;
   pocketId: string;
   name: string;
+  issuer: string | null;
+  network: string | null;
+  lastFour: string | null;
   scope: "PERSONAL" | "HOUSEHOLD";
   householdId: string | null;
   currency: string;
@@ -13,6 +16,9 @@ export interface CreditCardAccountOption {
   liability: string;
   cardCredit: string;
   availableCredit: string;
+  statementClosingDay: number;
+  paymentDueDay: number;
+  apr: string | null;
   archived: boolean;
 }
 
