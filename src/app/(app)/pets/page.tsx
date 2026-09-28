@@ -70,10 +70,13 @@ export default async function PetsPage({
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"
           fill
           priority
-          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
           className="app-cover-image time-cover-image object-cover object-center"
         />
-        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="time-cover-overlay absolute inset-0"
+        />
         <header className="relative max-w-[58%]">
           <p className="text-xs font-medium text-finance-primary-strong">
             สมาชิกตัวน้อยของบ้าน
@@ -114,11 +117,7 @@ export default async function PetsPage({
                           : "border-transparent bg-transparent"
                       }`}
                     >
-                      <PetPhoto
-                        name={pet.name}
-                        url={pet.photoUrl}
-                        size="md"
-                      />
+                      <PetPhoto name={pet.name} url={pet.photoUrl} size="md" />
                       <span className="min-w-0 max-w-full">
                         <span className="block truncate font-semibold text-finance-text">
                           {pet.name}
@@ -212,9 +211,7 @@ export default async function PetsPage({
                 {SPECIES_LABEL[featured.species]}
                 {featured.breed ? ` · ${featured.breed}` : ""}
                 {featured.sex ? ` · ${SEX_LABEL[featured.sex]}` : ""}
-                {age === null
-                  ? " · ยังไม่ระบุวันเกิด"
-                  : ` · อายุ ${age} ปี`}
+                {age === null ? " · ยังไม่ระบุวันเกิด" : ` · อายุ ${age} ปี`}
               </p>
             </>
           ) : (
