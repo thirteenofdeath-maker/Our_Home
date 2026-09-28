@@ -60,7 +60,8 @@ describe("AppShell visibility", () => {
   });
 
   it("widens only the home dashboard on large screens while forms keep the focused app width", () => {
-    expect(renderShell("/")).toContain("max-w-7xl");
+    expect(renderShell("/")).toContain("md:max-w-3xl");
+    expect(renderShell("/")).toContain("lg:landscape:max-w-7xl");
     expect(renderShell("/finance")).toContain("max-w-xl");
     expect(renderShell("/wallets/abc/manage")).toContain("max-w-xl");
   });

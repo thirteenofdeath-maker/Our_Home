@@ -33,7 +33,14 @@ export function AppShell({
   // also reads (for active-tab/tone), so the two can never disagree about
   // which routes count as "in the app".
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
-  const contentWidth = pathname === "/" ? "max-w-7xl" : "max-w-xl";
+  // A tablet's CSS width can reach the desktop breakpoint even while held
+  // vertically (for example an iPad Pro at 1024px). Keep portrait screens in
+  // the focused reading layout and only unlock the wide dashboard when the
+  // viewport is both large and landscape.
+  const contentWidth =
+    pathname === "/"
+      ? "max-w-xl md:max-w-3xl lg:landscape:max-w-7xl"
+      : "max-w-xl";
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
