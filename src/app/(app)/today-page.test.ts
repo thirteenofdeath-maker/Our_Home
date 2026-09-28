@@ -42,6 +42,14 @@ describe("Today dashboard composition", () => {
     expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
   });
 
+  it("uses a real multi-column desktop dashboard without changing the mobile stack", () => {
+    expect(source).toContain("lg:grid-cols-12");
+    expect(source).toContain("lg:col-span-7");
+    expect(source).toContain("lg:col-span-5");
+    expect(source).toContain("lg:col-span-12");
+    expect(source).toContain("md:grid-cols-3");
+  });
+
   it("uses real artwork for every time period without CSS image filters", () => {
     for (const asset of [
       "home-morning.webp",

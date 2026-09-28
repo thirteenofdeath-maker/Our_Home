@@ -33,6 +33,7 @@ export function AppShell({
   // also reads (for active-tab/tone), so the two can never disagree about
   // which routes count as "in the app".
   const showBottomNav = appSectionForPath(pathname) !== "onboarding";
+  const contentWidth = pathname === "/" ? "max-w-7xl" : "max-w-xl";
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -44,7 +45,7 @@ export function AppShell({
           BottomNav renders (even on a FAB-less deep page) rather than
           computed per-route, so no page can under-clear it by omission. */}
       <main
-        className={`mx-auto w-full max-w-xl flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2" : "pb-8 pt-1"}`}
+        className={`mx-auto w-full ${contentWidth} flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2" : "pb-8 pt-1"}`}
       >
         {children}
       </main>
