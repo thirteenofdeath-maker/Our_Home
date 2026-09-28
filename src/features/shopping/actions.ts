@@ -74,7 +74,7 @@ export async function createShoppingItemAction(
   try {
     const { supabase } = await requireUser();
     await createShoppingItem(supabase, parsed.data);
-    revalidatePath("/shopping");
+    revalidatePath("/calendar");
     revalidatePath("/");
     return { success: true };
   } catch (error) {
@@ -109,7 +109,7 @@ export async function updateShoppingItemAction(
       p_assigned_member_id: parsed.data.assignedMemberId,
     });
     if (error) throw error;
-    revalidatePath("/shopping");
+    revalidatePath("/calendar");
     revalidatePath("/");
     return { success: true };
   } catch (error) {
@@ -125,7 +125,7 @@ export async function toggleShoppingItemAction(form: FormData) {
   try {
     const { supabase } = await requireUser();
     await setShoppingItemPurchased(supabase, itemId, purchased);
-    revalidatePath("/shopping");
+    revalidatePath("/calendar");
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("toggleShoppingItemAction failed", error);
@@ -138,7 +138,7 @@ export async function archiveShoppingItemAction(form: FormData) {
   try {
     const { supabase } = await requireUser();
     await setShoppingItemArchived(supabase, itemId);
-    revalidatePath("/shopping");
+    revalidatePath("/calendar");
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveShoppingItemAction failed", error);
@@ -201,7 +201,7 @@ export async function createShoppingExpenseAction(
     logDatabaseErrorInDev("createShoppingExpenseAction failed", error);
     return { error: "สร้างรายจ่ายไม่สำเร็จ" };
   }
-  revalidatePath("/shopping");
+  revalidatePath("/calendar");
   revalidatePath("/finance");
-  redirect("/shopping");
+  redirect("/calendar?view=shopping");
 }
