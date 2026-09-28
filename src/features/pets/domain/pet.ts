@@ -6,7 +6,9 @@ import { ageOnBangkokDate, bangkokDateKey } from "@/lib/date/bangkok";
 export const PET_SPECIES = ["CAT", "DOG", "RABBIT", "BIRD", "FISH", "OTHER"] as const satisfies readonly PetSpecies[];
 export const PET_SEXES = ["MALE", "FEMALE", "UNKNOWN"] as const satisfies readonly PetSex[];
 export const PET_PHOTO_MIME_EXTENSIONS = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
-export const MAX_PET_PHOTO_BYTES = 15 * 1024 * 1024;
+/** Keep the complete multipart request safely below Vercel's 4.5 MB limit. */
+export const MAX_PET_PHOTO_BYTES = 3.5 * 1024 * 1024;
+export const MAX_PET_PHOTO_SOURCE_BYTES = 15 * 1024 * 1024;
 
 const optionalDate = z.string().refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Invalid birthday")
   .refine((value) => value === "" || value <= bangkokDateKey(), "Birthday cannot be in the future")
@@ -23,7 +25,13 @@ export const petFormSchema = z.object({
 
 export function validatePetPhoto(file: Pick<File, "size" | "type">): string | null {
   if (!(file.type in PET_PHOTO_MIME_EXTENSIONS)) return "Use a JPEG, PNG, or WebP image";
-  if (file.size > MAX_PET_PHOTO_BYTES) return "Pet photo must be 15 MB or smaller";
+  if (file.size > MAX_PET_PHOTO_BYTES) return "รูปสัตว์เลี้ยงมีขนาดใหญ่เกินไป กรุณาเลือกใหม่";
+  return null;
+}
+
+export function validatePetPhotoSource(file: Pick<File, "size" | "type">): string | null {
+  if (!(file.type in PET_PHOTO_MIME_EXTENSIONS)) return "รองรับเฉพาะรูป JPEG, PNG หรือ WebP";
+  if (file.size > MAX_PET_PHOTO_SOURCE_BYTES) return "รูปต้นฉบับต้องมีขนาดไม่เกิน 15 MB";
   return null;
 }
 
