@@ -97,7 +97,8 @@ describe("Today dashboard composition", () => {
       expect(planSource).toContain(sourceFunction);
       expect(householdSource).not.toContain(sourceFunction);
     }
-    expect(planSource).toContain("householdCounts={{");
+    expect(planSource).toContain("const activeCover = cover[view]");
+    expect(planSource).toContain("<PlanTabs active={view} />");
     expect(planSource).not.toContain("<PlanModuleCard");
     expect(householdSource).not.toContain('aria-label="การจัดการบ้าน"');
   });
