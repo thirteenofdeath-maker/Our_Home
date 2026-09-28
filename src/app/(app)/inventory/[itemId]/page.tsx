@@ -43,7 +43,7 @@ export default async function InventoryDetailPage({
   const canEdit = household.myRole !== "observer";
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
-      <PageHeader title={item.name} backHref="/inventory" />
+      <PageHeader title={item.name} backHref="/calendar?view=inventory" />
       <Card className="rounded-[1.5rem] time-tinted-panel">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -127,7 +127,7 @@ export default async function InventoryDetailPage({
           </form>
           {item.shopping_item_id ? (
             <Link
-              href="/shopping"
+              href="/calendar?view=shopping"
               className="rounded-full border border-finance-primary/30 px-4 py-2.5 text-sm font-medium text-finance-primary-strong"
             >
               ดูรายการซื้อ
