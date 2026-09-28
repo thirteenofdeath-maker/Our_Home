@@ -12,11 +12,18 @@ import {
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
+import { listChoreWorkspace } from "@/features/chores/api";
 import {
   getFinanceSummary,
   listRecentFinanceTransactions,
 } from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { listInventoryItems } from "@/features/inventory/api";
+import {
+  inventoryQuantityLabel,
+  isDateWithinDays,
+  isLowStock,
+} from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
 import {
   listPetSummaries,
@@ -29,6 +36,7 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
+import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
 import {
   greetingForBangkok,
@@ -172,6 +180,15 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   > = householdId
     ? listRecentHouseholdPetCareRecords(supabase, householdId, 3)
     : Promise.resolve([]);
+  const choresPromise: ReturnType<typeof listChoreWorkspace> = householdId
+    ? listChoreWorkspace(supabase, householdId)
+    : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
+  const shoppingPromise: ReturnType<typeof listShoppingItems> = householdId
+    ? listShoppingItems(supabase, householdId)
+    : Promise.resolve([]);
+  const inventoryPromise: ReturnType<typeof listInventoryItems> = householdId
+    ? listInventoryItems(supabase, householdId)
+    : Promise.resolve([]);
 
   const profile = await profilePromise;
   const displayName =
@@ -225,6 +242,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           remindersPromise={remindersPromise}
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
+          choresPromise={choresPromise}
+          shoppingPromise={shoppingPromise}
+          inventoryPromise={inventoryPromise}
         />
       </Suspense>
 
@@ -236,6 +256,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           recentPetCareRecordsPromise={recentPetCareRecordsPromise}
+          choresPromise={choresPromise}
+          shoppingPromise={shoppingPromise}
+          inventoryPromise={inventoryPromise}
+          householdName={household?.name ?? null}
+          today={today}
         />
       </Suspense>
     </div>
@@ -250,6 +275,9 @@ async function HomeTodaySections({
   remindersPromise,
   dueFinancePromise,
   petCarePromise,
+  choresPromise,
+  shoppingPromise,
+  inventoryPromise,
 }: {
   today: string;
   tomorrow: string;
@@ -258,13 +286,28 @@ async function HomeTodaySections({
   remindersPromise: ReturnType<typeof listPlanReminders>;
   dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
+  choresPromise: ReturnType<typeof listChoreWorkspace>;
+  shoppingPromise: ReturnType<typeof listShoppingItems>;
+  inventoryPromise: ReturnType<typeof listInventoryItems>;
 }) {
-  const [events, tasks, reminders, dueFinance, petCare] = await Promise.all([
+  const [
+    events,
+    tasks,
+    reminders,
+    dueFinance,
+    petCare,
+    chores,
+    shopping,
+    inventory,
+  ] = await Promise.all([
     eventsPromise,
     tasksPromise,
     remindersPromise,
     dueFinancePromise,
     petCarePromise,
+    choresPromise,
+    shoppingPromise,
+    inventoryPromise,
   ]);
   const todayEvents = events.filter((event) => eventDate(event) === today);
   const dueTasks = tasks.filter(
@@ -281,6 +324,21 @@ async function HomeTodaySections({
       record.scheduled_at &&
       toBangkokInput(record.scheduled_at).slice(0, 10) === today,
   );
+  const choreTemplates = new Map(
+    chores.templates.map((template) => [template.id, template]),
+  );
+  const dueChores = chores.occurrences
+    .filter((item) => !item.completed_at && item.due_date <= today)
+    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const overdueChores = dueChores.filter((item) => item.due_date < today);
+  const todayChores = dueChores.filter((item) => item.due_date === today);
+  const pendingShopping = shopping.filter((item) => !item.purchased_at);
+  const attentionInventory = inventory.filter(
+    (item) =>
+      isLowStock(item) ||
+      isDateWithinDays(item.expiry_date, today, 30) ||
+      isDateWithinDays(item.warranty_expires_on, today, 30),
+  );
   const todayQueue = [
     ...overdueTasks.map((task) => ({
       key: `task-${task.id}`,
@@ -289,6 +347,13 @@ async function HomeTodaySections({
       title: task.title,
       detail: planDateLabel(task.due_date, task.due_time),
     })),
+    ...overdueChores.map((chore) => ({
+      key: `chore-${chore.id}`,
+      href: "/chores",
+      marker: "งานบ้านค้าง",
+      title: choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน",
+      detail: `กำหนด ${chore.due_date}`,
+    })),
     ...todayEvents.map((event) => ({
       key: `event-${event.id}`,
       href: `/calendar/${event.id}`,
@@ -296,6 +361,16 @@ async function HomeTodaySections({
       title: event.title,
       detail: event.is_all_day ? "ทั้งวัน" : formatEventTime(event.starts_at!),
     })),
+    ...todayChores.map((chore) => {
+      const dueTime = choreTemplates.get(chore.template_id)?.due_time;
+      return {
+        key: `chore-${chore.id}`,
+        href: "/chores",
+        marker: "งานบ้าน",
+        title: choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน",
+        detail: dueTime ? `${dueTime.slice(0, 5)} น.` : "วันนี้",
+      };
+    }),
     ...todayTasks.map((task) => ({
       key: `task-${task.id}`,
       href: `/calendar/tasks/${task.id}`,
@@ -324,8 +399,24 @@ async function HomeTodaySections({
       title: reminder.title,
       detail: reminderDateLabel(reminder.reminds_at),
     })),
+    ...attentionInventory.slice(0, 2).map((item) => ({
+      key: `inventory-${item.id}`,
+      href: `/inventory/${item.id}`,
+      marker: isLowStock(item) ? "ควรเติม" : "ใกล้กำหนด",
+      title: item.name,
+      detail: isLowStock(item)
+        ? `เหลือ ${inventoryQuantityLabel(item)}`
+        : "ตรวจวันหมดอายุหรือประกัน",
+    })),
+    ...pendingShopping.slice(0, 2).map((item) => ({
+      key: `shopping-${item.id}`,
+      href: "/shopping",
+      marker: "ต้องซื้อ",
+      title: item.name,
+      detail: `${item.quantity}${item.unit ? ` ${item.unit}` : ""}`,
+    })),
   ];
-  const visibleTodayQueue = todayQueue.slice(0, 5);
+  const visibleTodayQueue = todayQueue.slice(0, 8);
   const remainingTodayItemCount = todayQueue.length - visibleTodayQueue.length;
   const currentWeek = weekDates(today);
 
@@ -333,19 +424,50 @@ async function HomeTodaySections({
     <>
       <DashboardCard
         title="วันนี้ต้องดู"
-        href="/calendar"
-        linkLabel="เปิดแผนงาน"
         icon="calendar"
         className="ring-1 ring-finance-primary/15"
       >
-        <div className="mb-3 grid grid-cols-3 gap-2">
-          <TodayMetric value={overdueTasks.length} label="เลยกำหนด" />
-          <TodayMetric value={todayEvents.length} label="นัดหมาย" />
-          <TodayMetric
+        <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <DashboardMetric
+            href="/calendar"
+            icon="calendar"
             value={
-              todayTasks.length + todayFinance.length + todayPetCare.length
+              overdueTasks.length +
+              todayEvents.length +
+              todayTasks.length +
+              upcomingReminders.length
             }
-            label="ต้องทำ"
+            label="แผนงาน"
+          />
+          <DashboardMetric
+            href="/finance"
+            icon="finance"
+            value={todayFinance.length}
+            label="การเงิน"
+          />
+          <DashboardMetric
+            href="/pets"
+            icon="pets"
+            value={todayPetCare.length}
+            label="สัตว์เลี้ยง"
+          />
+          <DashboardMetric
+            href="/chores"
+            icon="chores"
+            value={dueChores.length}
+            label="งานบ้าน"
+          />
+          <DashboardMetric
+            href="/shopping"
+            icon="shopping"
+            value={pendingShopping.length}
+            label="ต้องซื้อ"
+          />
+          <DashboardMetric
+            href="/inventory"
+            icon="inventory"
+            value={attentionInventory.length}
+            label="คลังของ"
           />
         </div>
         <div className="flex min-w-0 flex-col gap-2">
@@ -362,12 +484,9 @@ async function HomeTodaySections({
             <EmptyToday text="วันนี้เรียบร้อยดี ยังไม่มีเรื่องที่ต้องจัดการ" />
           ) : null}
           {remainingTodayItemCount > 0 ? (
-            <Link
-              href="/calendar"
-              className="rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 text-center text-sm font-medium text-finance-primary-strong transition-colors hover:bg-finance-primary-soft/55"
-            >
-              ดูอีก {remainingTodayItemCount} รายการ
-            </Link>
+            <p className="rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 text-center text-sm font-medium text-finance-primary-strong">
+              ยังมีอีก {remainingTodayItemCount} รายการในแต่ละหมวด
+            </p>
           ) : null}
         </div>
       </DashboardCard>
@@ -436,6 +555,11 @@ async function HomeSecondarySections({
   dueFinancePromise,
   petCarePromise,
   recentPetCareRecordsPromise,
+  choresPromise,
+  shoppingPromise,
+  inventoryPromise,
+  householdName,
+  today,
 }: {
   financePromise: ReturnType<typeof getFinanceSummary>;
   recentTransactionsPromise: ReturnType<typeof listRecentFinanceTransactions>;
@@ -445,6 +569,11 @@ async function HomeSecondarySections({
   recentPetCareRecordsPromise: ReturnType<
     typeof listRecentHouseholdPetCareRecords
   >;
+  choresPromise: ReturnType<typeof listChoreWorkspace>;
+  shoppingPromise: ReturnType<typeof listShoppingItems>;
+  inventoryPromise: ReturnType<typeof listInventoryItems>;
+  householdName: string | null;
+  today: string;
 }) {
   const [
     finance,
@@ -453,6 +582,9 @@ async function HomeSecondarySections({
     dueFinance,
     petCare,
     recentPetCareRecords,
+    chores,
+    shopping,
+    inventory,
   ] = await Promise.all([
     financePromise,
     recentTransactionsPromise,
@@ -460,14 +592,30 @@ async function HomeSecondarySections({
     dueFinancePromise,
     petCarePromise,
     recentPetCareRecordsPromise,
+    choresPromise,
+    shoppingPromise,
+    inventoryPromise,
   ]);
   const recentPetCare = recentPetCareRecords.flatMap((record) =>
     record.pet ? [{ pet: record.pet, record }] : [],
   );
+  const choreTemplates = new Map(
+    chores.templates.map((template) => [template.id, template]),
+  );
+  const openChores = chores.occurrences
+    .filter((item) => !item.completed_at)
+    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const pendingShopping = shopping.filter((item) => !item.purchased_at);
+  const attentionInventory = inventory.filter(
+    (item) =>
+      isLowStock(item) ||
+      isDateWithinDays(item.expiry_date, today, 30) ||
+      isDateWithinDays(item.warranty_expires_on, today, 30),
+  );
 
   return (
     <>
-      <section className="landscape-span-full grid min-w-0 grid-cols-2 gap-3">
+      <section className="landscape-span-full grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard
           title="การเงิน"
           href="/finance"
@@ -529,6 +677,107 @@ async function HomeSecondarySections({
             ) : null}
           </div>
         </DashboardCard>
+
+        <DashboardCard
+          title="ครอบครัว"
+          href="/household"
+          linkLabel="ดู"
+          icon="household"
+        >
+          <div className="rounded-[1rem] bg-finance-primary-soft/45 p-3">
+            <p className="font-semibold text-finance-text">
+              {householdName ?? "บ้านของเรา"}
+            </p>
+            <p className="mt-1 text-sm text-finance-muted">
+              สมาชิก สิทธิ์การใช้งาน และเรื่องที่ช่วยกันดูแล
+            </p>
+          </div>
+        </DashboardCard>
+      </section>
+
+      <section className="landscape-span-full grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <DashboardCard
+          title="งานบ้าน"
+          href="/chores"
+          linkLabel="ดูทั้งหมด"
+          icon="chores"
+        >
+          <p className="mb-3 text-sm text-finance-muted">
+            {openChores.length
+              ? `เหลือ ${openChores.length} งานที่ยังไม่เสร็จ`
+              : "งานบ้านเรียบร้อยแล้ว"}
+          </p>
+          <div className="flex min-w-0 flex-col gap-2">
+            {openChores.slice(0, 2).map((chore) => (
+              <TodayItem
+                key={`chore-summary-${chore.id}`}
+                href="/chores"
+                marker={chore.due_date < today ? "ค้าง" : "งานบ้าน"}
+                title={
+                  choreTemplates.get(chore.template_id)?.title ?? "งานบ้าน"
+                }
+                detail={chore.due_date}
+              />
+            ))}
+            {openChores.length === 0 ? (
+              <EmptyToday text="ไม่มีงานบ้านค้างอยู่" />
+            ) : null}
+          </div>
+        </DashboardCard>
+
+        <DashboardCard
+          title="รายการซื้อของ"
+          href="/shopping"
+          linkLabel="ดูทั้งหมด"
+          icon="shopping"
+        >
+          <p className="mb-3 text-sm text-finance-muted">
+            {pendingShopping.length
+              ? `รอซื้อ ${pendingShopping.length} รายการ`
+              : "ซื้อครบตามรายการแล้ว"}
+          </p>
+          <div className="flex min-w-0 flex-col gap-2">
+            {pendingShopping.slice(0, 2).map((item) => (
+              <TodayItem
+                key={`shopping-summary-${item.id}`}
+                href="/shopping"
+                marker="ต้องซื้อ"
+                title={item.name}
+                detail={`${item.quantity}${item.unit ? ` ${item.unit}` : ""}`}
+              />
+            ))}
+            {pendingShopping.length === 0 ? (
+              <EmptyToday text="ยังไม่มีของที่ต้องซื้อ" />
+            ) : null}
+          </div>
+        </DashboardCard>
+
+        <DashboardCard
+          title="คลังของในบ้าน"
+          href="/inventory"
+          linkLabel="ดูทั้งหมด"
+          icon="inventory"
+        >
+          <p className="mb-3 text-sm text-finance-muted">
+            {attentionInventory.length
+              ? `มี ${attentionInventory.length} รายการที่ควรตรวจดู`
+              : `ของในคลัง ${inventory.length} รายการอยู่ในสถานะปกติ`}
+          </p>
+          <div className="flex min-w-0 flex-col gap-2">
+            {attentionInventory.slice(0, 2).map((item) => (
+              <TodayItem
+                key={`inventory-summary-${item.id}`}
+                href={`/inventory/${item.id}`}
+                marker={isLowStock(item) ? "ใกล้หมด" : "ใกล้กำหนด"}
+                title={item.name}
+                detail={inventoryQuantityLabel(item)}
+              />
+            ))}
+            {attentionInventory.length === 0 ? (
+              <EmptyToday text="ยังไม่มีของใกล้หมดหรือใกล้กำหนด" />
+            ) : null}
+          </div>
+        </DashboardCard>
       </section>
 
       <section
@@ -585,7 +834,13 @@ function HomeTodaySkeleton() {
 function HomeSecondarySkeleton() {
   return (
     <>
-      <div className="landscape-span-full grid grid-cols-2 gap-3">
+      <div className="landscape-span-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
+      </div>
+      <div className="landscape-span-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
         <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
         <div className="min-h-44 animate-pulse rounded-[1.5rem] bg-finance-surface-strong shadow-card motion-reduce:animate-none" />
       </div>
@@ -604,8 +859,8 @@ function DashboardCard({
   children,
 }: {
   title: string;
-  href: string;
-  linkLabel: string;
+  href?: string;
+  linkLabel?: string;
   icon: AppIconName;
   className?: string;
   children: ReactNode;
@@ -621,12 +876,14 @@ function DashboardCard({
           </span>
           <h2 className="truncate font-semibold text-finance-text">{title}</h2>
         </div>
-        <Link
-          href={href}
-          className="shrink-0 text-sm font-medium text-finance-primary-strong"
-        >
-          {linkLabel}
-        </Link>
+        {href && linkLabel ? (
+          <Link
+            href={href}
+            className="shrink-0 text-sm font-medium text-finance-primary-strong"
+          >
+            {linkLabel}
+          </Link>
+        ) : null}
       </div>
       {children}
     </Card>
@@ -709,14 +966,31 @@ function TodayItem({
   );
 }
 
-function TodayMetric({ value, label }: { value: number; label: string }) {
+function DashboardMetric({
+  href,
+  icon,
+  value,
+  label,
+}: {
+  href: string;
+  icon: AppIconName;
+  value: number;
+  label: string;
+}) {
   return (
-    <div className="rounded-[1rem] bg-finance-primary-soft/45 px-2 py-2.5 text-center">
+    <Link
+      href={href}
+      className="flex min-w-0 flex-col items-center rounded-[1rem] bg-finance-primary-soft/45 px-2 py-2.5 text-center transition-colors hover:bg-finance-primary-soft"
+    >
+      <AppIcon
+        name={icon}
+        className="mb-1 size-4 text-finance-primary-strong"
+      />
       <p className="text-lg font-semibold tabular-nums text-finance-text">
         {value}
       </p>
-      <p className="text-[11px] text-finance-muted">{label}</p>
-    </div>
+      <p className="truncate text-[11px] text-finance-muted">{label}</p>
+    </Link>
   );
 }
 
