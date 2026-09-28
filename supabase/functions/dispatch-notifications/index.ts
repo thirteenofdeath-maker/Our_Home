@@ -540,7 +540,7 @@ async function scheduledCandidates(
               ? `${row.name} ${alert.label}พรุ่งนี้`
               : `${row.name} ${alert.label}ใน 7 วัน`,
         body: "เปิดคลังของในบ้านเพื่อดูรายละเอียด",
-        url: `/inventory/${row.id}`,
+        url: `/calendar/inventory/${row.id}`,
         scheduledFor: now.toISOString(),
         users,
       });
@@ -558,7 +558,7 @@ async function scheduledCandidates(
         preferenceKey: "inventory_enabled",
         title: `${row.name} ใกล้หมด`,
         body: `เหลือ ${row.quantity}${row.unit ? ` ${row.unit}` : ""} · แตะเพื่อส่งไปรายการซื้อ`,
-        url: `/inventory/${row.id}`,
+        url: `/calendar/inventory/${row.id}`,
         scheduledFor: now.toISOString(),
         users,
       });
