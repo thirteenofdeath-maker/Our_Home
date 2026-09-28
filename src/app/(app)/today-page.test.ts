@@ -97,10 +97,8 @@ describe("Today dashboard composition", () => {
       expect(planSource).toContain(sourceFunction);
       expect(householdSource).not.toContain(sourceFunction);
     }
-    expect(planSource).toContain('title="งานบ้าน"');
-    expect(planSource).toContain('title="รายการซื้อของ"');
-    expect(planSource).toContain('title="คลังของในบ้าน"');
-    expect(planSource).toContain("เรื่องที่ต้องจัดการ");
+    expect(planSource).toContain("householdCounts={{");
+    expect(planSource).not.toContain("<PlanModuleCard");
     expect(householdSource).not.toContain('aria-label="การจัดการบ้าน"');
   });
 
