@@ -33,16 +33,14 @@ export default async function EditProfilePage() {
           default rather than a derivable parent. router.back() still
           covers the actual common case (arriving from whichever root the
           user was on) correctly regardless of this choice. */}
-      <PageHeader title="แก้ไขโปรไฟล์" backHref="/finance" />
+      <PageHeader title="แก้ไขโปรไฟล์" backHref="/household" />
       <Card>
         <ProfileEditForm
           householdId={household.id}
           displayName={profile.display_name}
           gender={profile.gender}
           birthday={profile.birthday}
-          shareBirthdayWithHousehold={
-            profile.share_birthday_with_household
-          }
+          shareBirthdayWithHousehold={profile.share_birthday_with_household}
           memberColor={membership.member_color}
           avatarUrl={avatarUrl}
         />
