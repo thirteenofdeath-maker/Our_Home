@@ -12,8 +12,13 @@ import {
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
-import { listRecentFinanceTransactions } from "@/features/finance/api";
+import {
+  getFinanceSummary,
+  listRecentFinanceTransactions,
+} from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { listInventoryItems } from "@/features/inventory/api";
+import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
 import {
   listRecentHouseholdPetCareRecords,
@@ -25,6 +30,7 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
+import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
 import {
   greetingForBangkok,
@@ -144,6 +150,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     today,
     upcomingEnd,
   );
+  const financePromise = getFinanceSummary(supabase, {
+    start: `${today}T00:00:00+07:00`,
+    end: `${tomorrow}T00:00:00+07:00`,
+  });
   const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
     limit: 5,
   });
@@ -164,6 +174,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const choresPromise: ReturnType<typeof listChoreWorkspace> = householdId
     ? listChoreWorkspace(supabase, householdId)
     : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
+  const shoppingPromise: ReturnType<typeof listShoppingItems> = householdId
+    ? listShoppingItems(supabase, householdId)
+    : Promise.resolve([]);
+  const inventoryPromise: ReturnType<typeof listInventoryItems> = householdId
+    ? listInventoryItems(supabase, householdId)
+    : Promise.resolve([]);
 
   const profile = await profilePromise;
   const displayName =
@@ -218,6 +234,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           choresPromise={choresPromise}
+          financePromise={financePromise}
+          shoppingPromise={shoppingPromise}
+          inventoryPromise={inventoryPromise}
         />
       </Suspense>
 
@@ -243,6 +262,15 @@ type TimelineItem = {
   completed: boolean | null;
 };
 
+type DailySummaryItem = {
+  key: string;
+  href: string;
+  icon: AppIconName;
+  label: string;
+  value: string;
+  detail: string;
+};
+
 const FINANCE_COMPLETE_STATUSES = new Set([
   "PAID",
   "POSTED",
@@ -259,6 +287,9 @@ async function HomeTodaySections({
   dueFinancePromise,
   petCarePromise,
   choresPromise,
+  financePromise,
+  shoppingPromise,
+  inventoryPromise,
 }: {
   today: string;
   tomorrow: string;
@@ -268,16 +299,31 @@ async function HomeTodaySections({
   dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   choresPromise: ReturnType<typeof listChoreWorkspace>;
+  financePromise: ReturnType<typeof getFinanceSummary>;
+  shoppingPromise: ReturnType<typeof listShoppingItems>;
+  inventoryPromise: ReturnType<typeof listInventoryItems>;
 }) {
-  const [events, tasks, reminders, dueFinance, petCare, chores] =
-    await Promise.all([
-      eventsPromise,
-      tasksPromise,
-      remindersPromise,
-      dueFinancePromise,
-      petCarePromise,
-      choresPromise,
-    ]);
+  const [
+    events,
+    tasks,
+    reminders,
+    dueFinance,
+    petCare,
+    chores,
+    finance,
+    shopping,
+    inventory,
+  ] = await Promise.all([
+    eventsPromise,
+    tasksPromise,
+    remindersPromise,
+    dueFinancePromise,
+    petCarePromise,
+    choresPromise,
+    financePromise,
+    shoppingPromise,
+    inventoryPromise,
+  ]);
   const choreTemplates = new Map(
     chores.templates.map((template) => [template.id, template]),
   );
@@ -396,6 +442,56 @@ async function HomeTodaySections({
 
   const todayTimeline = timelineForDate(today);
   const tomorrowTimeline = timelineForDate(tomorrow);
+  const pendingShopping = shopping.filter((item) => !item.purchased_at);
+  const attentionInventory = inventory.filter(
+    (item) =>
+      isLowStock(item) ||
+      isDateWithinDays(item.expiry_date, today, 30) ||
+      isDateWithinDays(item.warranty_expires_on, today, 30),
+  );
+  const openFinanceDue = dueFinance.filter(
+    (item) =>
+      item.date === today && !FINANCE_COMPLETE_STATUSES.has(item.status),
+  );
+  const todaySummary: DailySummaryItem[] = [
+    {
+      key: "inventory",
+      href: "/inventory",
+      icon: "inventory",
+      label: "คลังของ",
+      value: `${attentionInventory.length} รายการ`,
+      detail: attentionInventory.length
+        ? "ใกล้หมด ใกล้หมดอายุ หรือใกล้หมดประกัน"
+        : "ของในบ้านยังอยู่ในสถานะปกติ",
+    },
+    {
+      key: "shopping",
+      href: "/shopping",
+      icon: "shopping",
+      label: "รายการซื้อของ",
+      value: `${pendingShopping.length} รายการ`,
+      detail: pendingShopping.length ? "ยังรอซื้ออยู่" : "ซื้อครบแล้ว",
+    },
+    ...(finance.monthTotals.length
+      ? finance.monthTotals.map((total) => ({
+          key: `finance-${total.currency}`,
+          href: "/finance",
+          icon: "finance" as const,
+          label: `การเงินวันนี้ · ${total.currency}`,
+          value: `รับ ${formatCurrency(total.income, total.currency)}`,
+          detail: `จ่าย ${formatCurrency(total.expense, total.currency)} · ครบกำหนด ${openFinanceDue.length}`,
+        }))
+      : [
+          {
+            key: "finance-empty",
+            href: "/finance",
+            icon: "finance" as const,
+            label: "การเงินวันนี้",
+            value: "ยังไม่มีรับ–จ่าย",
+            detail: `ครบกำหนด ${openFinanceDue.length} รายการ`,
+          },
+        ]),
+  ];
   const currentWeek = weekDates(today);
 
   return (
@@ -404,6 +500,7 @@ async function HomeTodaySections({
         title="งานวันนี้"
         dateLabel={thaiToday(today)}
         items={todayTimeline}
+        summaryItems={todaySummary}
         emptyText="วันนี้ยังไม่มีงานหรือนัดหมาย"
       />
 
@@ -531,11 +628,13 @@ function TimelineCard({
   title,
   dateLabel,
   items,
+  summaryItems = [],
   emptyText,
 }: {
   title: string;
   dateLabel: string;
   items: TimelineItem[];
+  summaryItems?: DailySummaryItem[];
   emptyText: string;
 }) {
   const trackableItems = items.filter((item) => item.completed !== null);
@@ -557,6 +656,36 @@ function TimelineCard({
           {items.length} รายการ
         </span>
       </div>
+
+      {summaryItems.length ? (
+        <div
+          aria-label={`สรุป${title}`}
+          className="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {summaryItems.map((summary) => (
+            <Link
+              key={summary.key}
+              href={summary.href}
+              className="min-w-0 rounded-[1rem] bg-finance-primary-soft/45 p-3 transition-colors hover:bg-finance-primary-soft"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong">
+                  <AppIcon name={summary.icon} className="size-4" />
+                </span>
+                <p className="min-w-0 truncate text-xs font-medium text-finance-muted">
+                  {summary.label}
+                </p>
+              </div>
+              <p className="mt-2 truncate font-semibold text-finance-text">
+                {summary.value}
+              </p>
+              <p className="mt-0.5 line-clamp-2 text-xs text-finance-muted">
+                {summary.detail}
+              </p>
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-4 rounded-[1rem] bg-finance-primary-soft/30 p-3">
         <div className="mb-2 flex items-center justify-between gap-3 text-xs">
