@@ -84,7 +84,7 @@ export default async function HouseholdPage() {
           alt="สมาชิกในบ้านใช้เวลาร่วมกันในสวน"
           fill
           priority
-          sizes="(orientation: landscape) and (min-width: 700px) calc(100vw - 7rem), (max-width: 640px) 100vw, 576px"
+          sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
           className="app-cover-image time-cover-image object-cover object-center"
         />
         <div
