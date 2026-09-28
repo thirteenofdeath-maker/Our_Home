@@ -7,10 +7,7 @@ const source = readFileSync(
   "utf8",
 );
 const monthCalendar = readFileSync(
-  resolve(
-    process.cwd(),
-    "src/features/calendar/components/MonthCalendar.tsx",
-  ),
+  resolve(process.cwd(), "src/features/calendar/components/MonthCalendar.tsx"),
   "utf8",
 );
 
@@ -27,5 +24,15 @@ describe("Plan cover summary", () => {
     expect(source).toContain("plan-calendar.webp");
     expect(monthCalendar).not.toContain("plan-calendar.webp");
     expect(monthCalendar).not.toContain("<Image");
+  });
+
+  it("surfaces household operations in the calendar overview", () => {
+    expect(source).toContain("listChoreWorkspace");
+    expect(source).toContain("listShoppingItems");
+    expect(source).toContain("listInventoryItems");
+    expect(source).toContain('title="งานบ้าน"');
+    expect(source).toContain('title="รายการซื้อของ"');
+    expect(source).toContain('title="คลังของในบ้าน"');
+    expect(source).toContain('view === "calendar" && household');
   });
 });
