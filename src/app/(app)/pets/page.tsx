@@ -3,7 +3,10 @@ import Image from "next/image";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
-import { getMyPrimaryHousehold } from "@/features/household/api";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { canInviteRole } from "@/features/household/domain/member";
 import { listPetCareRecords, listPets } from "@/features/pets/api";
 import { AddPetFab } from "@/features/pets/components/AddPetFab";
@@ -26,10 +29,14 @@ export default async function PetsPage({
   const { pet: selectedPetId } = await searchParams;
   const household = await getMyPrimaryHousehold(supabase, user.id);
   if (!household) return <Card>สร้างครอบครัวก่อนเพิ่มสัตว์เลี้ยง</Card>;
+  const canManage = canInviteRole(household.myRole, "member");
 
-  const [active, archived] = await Promise.all([
+  const [active, archived, members] = await Promise.all([
     listPets(supabase, household.id),
     listPets(supabase, household.id, true),
+    canManage
+      ? listHouseholdMembers(supabase, household.id)
+      : Promise.resolve([]),
   ]);
   const recordsByPet = new Map(
     await Promise.all(
@@ -39,7 +46,6 @@ export default async function PetsPage({
       ),
     ),
   );
-  const canManage = canInviteRole(household.myRole, "member");
   const featured =
     active.find((pet) => pet.id === selectedPetId) ?? active[0] ?? null;
   const records = featured ? (recordsByPet.get(featured.id) ?? []) : [];
@@ -62,7 +68,7 @@ export default async function PetsPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      {canManage ? <AddPetFab /> : null}
+      {canManage ? <AddPetFab members={members} /> : null}
 
       <section className="light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
@@ -73,7 +79,10 @@ export default async function PetsPage({
           sizes="(max-width: 640px) 100vw, 576px"
           className="time-cover-image object-cover object-center"
         />
-        <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="time-cover-overlay absolute inset-0"
+        />
         <header className="relative max-w-[58%]">
           <p className="text-xs font-medium text-finance-primary-strong">
             สมาชิกตัวน้อยของบ้าน

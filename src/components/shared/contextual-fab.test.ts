@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Contextual create FAB — the real form slides up directly, never a redundant one-item choice sheet or a bare navigation link", () => {
   describe("Pets", () => {
@@ -30,9 +31,14 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       expect(detail).toContain("canInviteRole(role");
     });
 
-    it("AddPetFab's own data loader re-enforces the same permission gate server-side — a client-only gate is not enough", () => {
-      const loader = read("src/features/pets/quick-add-data.ts");
-      expect(loader).toContain("canInviteRole(household.myRole");
+    it("loads members behind the server-side permission gate and opens without a second request", () => {
+      expect(list).toContain("listHouseholdMembers(supabase");
+      expect(list).toContain("canManage");
+      expect(list).toContain("<AddPetFab members={members}");
+      expect(fab).toContain("<FormSheetButton");
+      expect(fab).toContain("form={<PetForm");
+      expect(fab).not.toContain("AsyncFormSheetButton");
+      expect(fab).not.toContain("getPetSheetData");
     });
   });
 
@@ -40,7 +46,9 @@ describe("Contextual create FAB — the real form slides up directly, never a re
     const list = read("src/app/(app)/calendar/page.tsx");
     const detail = read("src/app/(app)/calendar/[eventId]/page.tsx");
     const createPage = read("src/app/(app)/calendar/new/page.tsx");
-    const fab = read("src/features/calendar/components/AddCalendarEventFab.tsx");
+    const fab = read(
+      "src/features/calendar/components/AddCalendarEventFab.tsx",
+    );
 
     it("renders the real CalendarEventForm inside AddCalendarEventFab's sheet on both browse and detail contexts", () => {
       expect(fab).toContain("<CalendarEventForm");
@@ -59,7 +67,11 @@ describe("Contextual create FAB — the real form slides up directly, never a re
     const members = read("src/app/(app)/household/members/page.tsx");
 
     it("never invents a /household/members/new route anywhere in the app", () => {
-      const appFiles = ["src/app/(app)/household/page.tsx", "src/app/(app)/household/members/page.tsx", "src/app/(app)/household/new/page.tsx"];
+      const appFiles = [
+        "src/app/(app)/household/page.tsx",
+        "src/app/(app)/household/members/page.tsx",
+        "src/app/(app)/household/new/page.tsx",
+      ];
       for (const file of appFiles) {
         expect(read(file), file).not.toContain("/household/members/new");
       }
@@ -78,20 +90,26 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       expect(root).toMatch(/canManageMembers\s*\?\s*\(?\s*<FormSheetButton/);
       expect(root).toContain("canInviteRole(household.myRole");
       // /household/members itself gates AddMemberForm the same way.
-      expect(members).toMatch(/household\.myRole === "owner" \|\| household\.myRole === "admin"/);
+      expect(members).toMatch(
+        /household\.myRole === "owner" \|\| household\.myRole === "admin"/,
+      );
     });
 
     it("the full manage/remove-members flow stays reachable on /household/members — this FAB only adds the single-creation-type shortcut, it doesn't replace management", () => {
       expect(members).toContain("<AddMemberForm");
       // HouseholdOverview (rendered on /household) still links there.
-      const overview = read("src/features/household/components/HouseholdOverview.tsx");
+      const overview = read(
+        "src/features/household/components/HouseholdOverview.tsx",
+      );
       expect(overview).toContain('href="/household/members"');
     });
 
     it("does not duplicate the no-household EmptyState's own 'สร้างครอบครัว' CTA — that stays the only creation affordance when there is no household yet, and now opens CreateHouseholdForm directly instead of navigating", () => {
       expect(root).toContain("สร้างครอบครัว");
       expect(root).toContain("<AddHouseholdTrigger");
-      const trigger = read("src/features/household/components/AddHouseholdTrigger.tsx");
+      const trigger = read(
+        "src/features/household/components/AddHouseholdTrigger.tsx",
+      );
       expect(trigger).toContain("<CreateHouseholdForm");
       expect(root).not.toContain('"/household/new"');
       // The member-add FAB block is only reachable once `household` is
@@ -109,7 +127,9 @@ describe("Contextual create FAB — the real form slides up directly, never a re
       expect(source).toContain(
         "<FinanceCreateFlow walletId={bootstrap.walletId} />",
       );
-      const flow = read("src/features/finance/components/FinanceCreateFlow.tsx");
+      const flow = read(
+        "src/features/finance/components/FinanceCreateFlow.tsx",
+      );
       // Reuses the exact same writers/forms as the full-page routes —
       // never a fork. TransactionForm/PocketTransferForm/WalletTransferForm
       // are the SAME components transactions/actions.ts already wires up.
