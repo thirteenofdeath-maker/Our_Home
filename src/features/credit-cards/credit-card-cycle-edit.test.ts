@@ -8,13 +8,21 @@ function read(path: string) {
 }
 
 describe("credit-card cycle editing", () => {
-  it("shows editable closing and due days only in credit-card management", () => {
+  it("shows editable closing and due days on each matching card Pocket", () => {
     const page = read("src/app/(app)/wallets/[walletId]/manage/page.tsx");
+    const pocketManager = read(
+      "src/features/pockets/components/PocketManagerList.tsx",
+    );
     const form = read(
       "src/features/credit-cards/components/CreditCardCycleForm.tsx",
     );
-    expect(page).toContain('wallet.wallet_type === "CREDIT_CARD"');
-    expect(page).toContain("<CreditCardCycleForm");
+    expect(page).toContain("listCreditCardAccounts(supabase");
+    expect(page).toContain("creditCardAccounts={walletCreditCardAccounts}");
+    expect(pocketManager).toContain(
+      "creditCardAccountsByPocketId.get(pocket.id)",
+    );
+    expect(pocketManager).toContain("<CreditCardCycleForm");
+    expect(pocketManager).toContain("รอบบัตรเครดิต");
     expect(form).toContain('name="statementClosingDay"');
     expect(form).toContain('name="paymentDueDay"');
     expect(form).toContain("min={1}");
