@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { AppIcon } from "@/components/ui/AppIcon";
+import { Card } from "@/components/ui/Card";
 import { listCalendarEvents } from "@/features/calendar/api";
 import { AddCalendarEventFab } from "@/features/calendar/components/AddCalendarEventFab";
 import { MonthCalendar } from "@/features/calendar/components/MonthCalendar";
@@ -15,9 +16,17 @@ import {
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
-import { listChoreWorkspace } from "@/features/chores/api";
-import { getMyPrimaryHousehold } from "@/features/household/api";
+import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
+import { toggleChoreTemplateAction } from "@/features/chores/actions";
+import { ChoreForm } from "@/features/chores/components/ChoreForm";
+import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { listInventoryItems } from "@/features/inventory/api";
+import { InventoryItemCard } from "@/features/inventory/components/InventoryItemCard";
+import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import {
   listPlanNotes,
@@ -32,12 +41,20 @@ import { ReminderList } from "@/features/plan/components/ReminderList";
 import { TaskForm } from "@/features/plan/components/TaskForm";
 import { TaskList } from "@/features/plan/components/TaskList";
 import { listShoppingItems } from "@/features/shopping/api";
+import { ShoppingItemCard } from "@/features/shopping/components/ShoppingItemCard";
+import { ShoppingItemForm } from "@/features/shopping/components/ShoppingItemForm";
 import { requireUser } from "@/lib/auth/require-user";
+import { shiftDate } from "@/lib/date/bangkok";
 import { cn } from "@/lib/utils/cn";
 import { listScheduledPetCareRecords } from "@/features/pets/api";
 
 function activeView(value: unknown): PlanView {
-  return value === "tasks" || value === "reminders" || value === "notes"
+  return value === "tasks" ||
+    value === "reminders" ||
+    value === "notes" ||
+    value === "chores" ||
+    value === "shopping" ||
+    value === "inventory"
     ? value
     : "calendar";
 }
@@ -75,6 +92,10 @@ export default async function CalendarPage({
     query.status === "done" || query.status === "all" ? query.status : "open";
   const showArchivedNotes = query.archived === "1";
 
+  if (view === "chores" && household && household.myRole !== "observer") {
+    await materializeChores(supabase, household.id, shiftDate(today, 14));
+  }
+
   const [
     events,
     archivedEvents,
@@ -87,6 +108,7 @@ export default async function CalendarPage({
     chores,
     shopping,
     inventory,
+    members,
   ] = await Promise.all([
     listCalendarEvents(supabase, household?.id ?? null, user.id),
     view === "calendar"
@@ -115,6 +137,9 @@ export default async function CalendarPage({
     household ? listShoppingItems(supabase, household.id) : Promise.resolve([]),
     household
       ? listInventoryItems(supabase, household.id)
+      : Promise.resolve([]),
+    household && (view === "chores" || view === "shopping")
+      ? listHouseholdMembers(supabase, household.id)
       : Promise.resolve([]),
   ]);
 
@@ -160,6 +185,27 @@ export default async function CalendarPage({
       isDateWithinDays(item.expiry_date, today, 30) ||
       isDateWithinDays(item.warranty_expires_on, today, 30),
   );
+  const canEditHousehold = Boolean(
+    household && household.myRole !== "observer",
+  );
+  const canManageChores = Boolean(
+    household && (household.myRole === "owner" || household.myRole === "admin"),
+  );
+  const currentMemberId =
+    members.find((member) => member.user_id === user.id)?.id ?? null;
+  const choreTemplates = new Map(
+    chores.templates.map((template) => [template.id, template]),
+  );
+  const upcomingChores = chores.occurrences
+    .filter((item) => !item.completed_at && item.due_date >= today)
+    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const overdueChores = chores.occurrences
+    .filter((item) => !item.completed_at && item.due_date < today)
+    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const choreHistory = chores.occurrences
+    .filter((item) => item.completed_at)
+    .slice(0, 12);
+  const purchasedShopping = shopping.filter((item) => item.purchased_at);
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -330,7 +376,366 @@ export default async function CalendarPage({
           <NoteGrid notes={notes} />
         </>
       ) : null}
+
+      {(view === "chores" || view === "shopping" || view === "inventory") &&
+      !household ? (
+        <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
+          <p className="font-medium text-finance-text">
+            สร้างบ้านก่อนเริ่มจัดการเรื่องภายในบ้านร่วมกัน
+          </p>
+          <Link
+            className="mt-3 inline-block text-sm font-medium text-finance-primary-strong"
+            href="/household/new"
+          >
+            สร้างบ้าน
+          </Link>
+        </Card>
+      ) : null}
+
+      {view === "chores" && household ? (
+        <>
+          {canManageChores ? (
+            <PlanCreateButton
+              title="เพิ่มตารางงานบ้าน"
+              form={
+                <ChoreForm
+                  householdId={household.id}
+                  today={today}
+                  members={members.map((member) => ({
+                    id: member.id,
+                    label:
+                      member.profile?.display_name ??
+                      member.profile?.email ??
+                      "สมาชิก",
+                  }))}
+                />
+              }
+            />
+          ) : household.myRole === "observer" ? (
+            <ReadOnlyNotice>
+              ผู้สังเกตการณ์ดูตารางและประวัติได้ แต่ไม่สามารถเปลี่ยนแปลงงานบ้าน
+            </ReadOnlyNotice>
+          ) : null}
+
+          <ViewSummary
+            icon="chores"
+            title="งานบ้าน"
+            detail={`เลยกำหนด ${overdueChores.length} · งานถัดไป ${upcomingChores.length}`}
+          />
+
+          {overdueChores.length ? (
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="เลยกำหนด"
+                count={overdueChores.length}
+                danger
+              />
+              {overdueChores.map((occurrence) => {
+                const template = choreTemplates.get(occurrence.template_id);
+                return template ? (
+                  <ChoreOccurrenceCard
+                    key={occurrence.id}
+                    occurrence={occurrence}
+                    template={template}
+                    members={members}
+                    currentMemberId={currentMemberId}
+                    canParticipate={canEditHousehold}
+                  />
+                ) : null;
+              })}
+            </section>
+          ) : null}
+
+          <section className="flex flex-col gap-3">
+            <SectionHeading
+              title="งานถัดไป"
+              count={upcomingChores.length}
+              suffix="14 วัน"
+            />
+            {upcomingChores.length ? (
+              upcomingChores.map((occurrence) => {
+                const template = choreTemplates.get(occurrence.template_id);
+                return template ? (
+                  <ChoreOccurrenceCard
+                    key={occurrence.id}
+                    occurrence={occurrence}
+                    template={template}
+                    members={members}
+                    currentMemberId={currentMemberId}
+                    canParticipate={canEditHousehold}
+                  />
+                ) : null;
+              })
+            ) : (
+              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                ยังไม่มีตารางงานบ้าน กด + เพื่อเริ่มจัดงาน
+              </Card>
+            )}
+          </section>
+
+          {canManageChores && chores.templates.length ? (
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="ตารางหมุนเวียน"
+                count={chores.templates.length}
+              />
+              {chores.templates.map((template) => {
+                const templateAssignees = chores.assignees.filter(
+                  (item) => item.template_id === template.id,
+                );
+                return (
+                  <Card
+                    key={template.id}
+                    className="flex items-center justify-between gap-3 rounded-[1.35rem] bg-finance-surface-strong"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-finance-text">
+                        {template.title}
+                      </h3>
+                      <p className="mt-0.5 text-sm text-finance-muted">
+                        {template.cadence === "DAILY" ? "ทุกวัน" : "ทุกสัปดาห์"}{" "}
+                        · {templateAssignees.length} คน
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <FormSheetButton
+                        ariaLabel={`แก้ไข ${template.title}`}
+                        triggerClassName="rounded-full border border-finance-primary-soft bg-finance-surface-strong px-3 py-2 text-sm font-medium text-finance-primary-strong"
+                        sheetTitle="แก้ไขตารางงานบ้าน"
+                        form={
+                          <ChoreForm
+                            householdId={household.id}
+                            today={today}
+                            members={members.map((member) => ({
+                              id: member.id,
+                              label:
+                                member.profile?.display_name ??
+                                member.profile?.email ??
+                                "สมาชิก",
+                            }))}
+                            template={template}
+                            selectedMemberIds={templateAssignees.map(
+                              (item) => item.member_id,
+                            )}
+                          />
+                        }
+                        tone="finance"
+                      >
+                        แก้ไข
+                      </FormSheetButton>
+                      <form action={toggleChoreTemplateAction}>
+                        <input
+                          type="hidden"
+                          name="templateId"
+                          value={template.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="active"
+                          value={String(!template.is_active)}
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-full bg-finance-primary-soft px-3 py-2 text-sm font-medium text-finance-primary-strong"
+                        >
+                          {template.is_active ? "พักตาราง" : "เปิดตาราง"}
+                        </button>
+                      </form>
+                    </div>
+                  </Card>
+                );
+              })}
+            </section>
+          ) : null}
+
+          {choreHistory.length ? (
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="ประวัติล่าสุด"
+                count={choreHistory.length}
+              />
+              {choreHistory.map((occurrence) => {
+                const template = choreTemplates.get(occurrence.template_id);
+                return template ? (
+                  <ChoreOccurrenceCard
+                    key={occurrence.id}
+                    occurrence={occurrence}
+                    template={template}
+                    members={members}
+                    currentMemberId={currentMemberId}
+                    canParticipate={canEditHousehold}
+                  />
+                ) : null;
+              })}
+            </section>
+          ) : null}
+        </>
+      ) : null}
+
+      {view === "shopping" && household ? (
+        <>
+          {canEditHousehold ? (
+            <PlanCreateButton
+              title="เพิ่มของที่ต้องซื้อ"
+              form={
+                <ShoppingItemForm
+                  householdId={household.id}
+                  members={members.map((member) => ({
+                    id: member.id,
+                    label:
+                      member.profile?.display_name ??
+                      member.profile?.email ??
+                      "สมาชิก",
+                  }))}
+                />
+              }
+            />
+          ) : (
+            <ReadOnlyNotice>
+              ผู้สังเกตการณ์ดูรายการได้ แต่ไม่สามารถเพิ่มหรือเปลี่ยนแปลงรายการ
+            </ReadOnlyNotice>
+          )}
+
+          <ViewSummary
+            icon="shopping"
+            title="รายการซื้อของ"
+            detail={`ต้องซื้อ ${pendingShopping.length} · ซื้อแล้ว ${purchasedShopping.length}`}
+          />
+
+          <section className="flex flex-col gap-3">
+            <SectionHeading title="ต้องซื้อ" count={pendingShopping.length} />
+            {pendingShopping.length ? (
+              pendingShopping.map((item) => (
+                <ShoppingItemCard
+                  key={item.id}
+                  item={item}
+                  members={members}
+                  canEdit={canEditHousehold}
+                />
+              ))
+            ) : (
+              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                ซื้อครบแล้ว บ้านพร้อมมาก 🎉
+              </Card>
+            )}
+          </section>
+
+          {purchasedShopping.length ? (
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="ซื้อแล้ว"
+                count={purchasedShopping.length}
+              />
+              {purchasedShopping.map((item) => (
+                <ShoppingItemCard
+                  key={item.id}
+                  item={item}
+                  members={members}
+                  canEdit={canEditHousehold}
+                />
+              ))}
+            </section>
+          ) : null}
+        </>
+      ) : null}
+
+      {view === "inventory" && household ? (
+        <>
+          {canEditHousehold ? (
+            <PlanCreateButton
+              title="เพิ่มของในคลัง"
+              form={<InventoryItemForm householdId={household.id} />}
+            />
+          ) : (
+            <ReadOnlyNotice>
+              ผู้สังเกตการณ์ดูคลังได้ แต่ไม่สามารถเปลี่ยนแปลงข้อมูล
+            </ReadOnlyNotice>
+          )}
+
+          <ViewSummary
+            icon="inventory"
+            title="คลังของในบ้าน"
+            detail={`ทั้งหมด ${inventory.length} · ควรดูแล ${attentionInventory.length}`}
+          />
+
+          <section className="flex flex-col gap-3">
+            <SectionHeading title="รายการทั้งหมด" count={inventory.length} />
+            {inventory.length ? (
+              inventory.map((item) => (
+                <InventoryItemCard
+                  key={item.id}
+                  item={item}
+                  canEdit={canEditHousehold}
+                  today={today}
+                />
+              ))
+            ) : (
+              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                ยังไม่มีของในคลัง กด + เพื่อเริ่มบันทึก
+              </Card>
+            )}
+          </section>
+        </>
+      ) : null}
     </div>
+  );
+}
+
+function ViewSummary({
+  icon,
+  title,
+  detail,
+}: {
+  icon: "chores" | "shopping" | "inventory";
+  title: string;
+  detail: string;
+}) {
+  return (
+    <section className="flex items-center gap-3 rounded-[1.35rem] bg-finance-primary-soft/45 p-4 shadow-sm">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong">
+        <AppIcon name={icon} className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <h2 className="font-semibold text-finance-text">{title}</h2>
+        <p className="mt-0.5 text-sm text-finance-muted">{detail}</p>
+      </div>
+    </section>
+  );
+}
+
+function SectionHeading({
+  title,
+  count,
+  suffix,
+  danger = false,
+}: {
+  title: string;
+  count: number;
+  suffix?: string;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2
+        className={cn(
+          "font-semibold text-finance-text",
+          danger && "text-danger",
+        )}
+      >
+        {title}
+      </h2>
+      <span className="text-sm text-finance-muted">
+        {count} รายการ{suffix ? ` · ${suffix}` : ""}
+      </span>
+    </div>
+  );
+}
+
+function ReadOnlyNotice({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-[1rem] bg-finance-primary-soft/60 px-4 py-3 text-sm text-finance-muted">
+      {children}
+    </p>
   );
 }
 
