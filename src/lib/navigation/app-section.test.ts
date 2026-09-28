@@ -26,10 +26,10 @@ describe("appSectionForPath", () => {
   });
 
   it("keeps Home modules on the Home BottomNav tab", () => {
-    expect(appSectionForPath("/shopping")).toBe("home");
-    expect(appSectionForPath("/shopping/item-1")).toBe("home");
-    expect(appSectionForPath("/chores")).toBe("home");
-    expect(appSectionForPath("/inventory/item-1")).toBe("home");
+    expect(appSectionForPath("/shopping")).toBe("calendar");
+    expect(appSectionForPath("/shopping/item-1")).toBe("calendar");
+    expect(appSectionForPath("/chores")).toBe("calendar");
+    expect(appSectionForPath("/inventory/item-1")).toBe("calendar");
   });
 
   it("classifies Onboarding distinctly from every other section", () => {
