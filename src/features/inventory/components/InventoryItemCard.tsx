@@ -28,7 +28,10 @@ export function InventoryItemCard({
   return (
     <Card className="rounded-[1.35rem] bg-finance-surface-strong">
       <div className="flex items-start justify-between gap-3">
-        <Link href={`/inventory/${item.id}`} className="min-w-0 flex-1">
+        <Link
+          href={`/calendar/inventory/${item.id}`}
+          className="min-w-0 flex-1"
+        >
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold text-finance-text">{item.name}</h3>
             {low ? (
