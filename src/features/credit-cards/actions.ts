@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
@@ -29,10 +30,7 @@ const cardTransactionSchema = z.object({
   endpointPocketId: z.string().uuid().nullish(),
   amount: positiveAmountSchema,
   note: optionalText,
-  occurredAt: z
-    .string()
-    .min(1)
-    .transform((value) => new Date(`${value}T12:00:00`).toISOString()),
+  occurredAt: financeOccurredAtSchema,
 });
 
 export async function createCreditCardTransactionAction(

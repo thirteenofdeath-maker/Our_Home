@@ -7,6 +7,7 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FinancePocketPickerSheet } from "@/features/finance/components/FinancePocketPicker";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import { initialActionState } from "@/lib/types/action-state";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/money";
@@ -50,7 +51,6 @@ export function CreditCardTransactionForm({
   );
   const endpoint =
     compatibleEndpoints.find((item) => item.pocketId === endpointId) ?? null;
-  const today = new Date().toLocaleDateString("en-CA");
 
   function changeCard(nextCard: CreditCardAccountOption) {
     setCardId(nextCard.accountId);
@@ -190,16 +190,8 @@ export function CreditCardTransactionForm({
           <p>{info}</p>
         </div>
 
-        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
-          <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-            วันที่
-            <Input
-              name="occurredAt"
-              type="date"
-              defaultValue={today}
-              required
-            />
-          </label>
+        <FinanceOccurredAtField />
+        <div>
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
             หมายเหตุ
             <Input

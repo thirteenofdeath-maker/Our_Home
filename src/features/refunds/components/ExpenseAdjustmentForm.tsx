@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -41,7 +42,6 @@ export function ExpenseAdjustmentForm({
   const [walletId, setWalletId] = useState(wallets[0]?.id ?? "");
   const pockets = useMemo(() => pocketsByWallet[walletId] ?? [], [pocketsByWallet, walletId]);
   const [pocketId, setPocketId] = useState(pockets[0]?.id ?? "");
-  const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -95,9 +95,7 @@ export function ExpenseAdjustmentForm({
         disabled={!walletId}
       />
 
-      <Field label="วันที่" htmlFor="occurredAt">
-        <Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required />
-      </Field>
+      <FinanceOccurredAtField />
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title">
         <Input id="title" name="title" type="text" />

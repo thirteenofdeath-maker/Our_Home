@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
@@ -41,13 +42,6 @@ const optionalText = z
   .nullish()
   .transform((v) => (v ? v : null));
 
-const occurredAtSchema = z
-  .string()
-  .trim()
-  .min(1, "Choose a date")
-  .refine((value) => !Number.isNaN(Date.parse(value)), "Choose a valid date")
-  .transform((value) => new Date(`${value}T12:00:00`).toISOString());
-
 const incomeExpenseSchema = z.object({
   transactionType: z.enum(["INCOME", "EXPENSE"]),
   walletId: z.string().uuid(),
@@ -56,7 +50,7 @@ const incomeExpenseSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   returnTo: returnToSchema,
   tagIds: tagIdsSchema,
 });
@@ -109,7 +103,7 @@ const pocketTransferSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   tagIds: tagIdsSchema,
 });
 
@@ -162,7 +156,7 @@ const walletTransferSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   tagIds: tagIdsSchema,
 });
 
@@ -216,7 +210,7 @@ const unifiedTransferSchema = z.object({
   toPocketId: z.string().uuid(),
   amount: positiveAmountSchema,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   tagIds: tagIdsSchema,
 });
 
@@ -281,7 +275,7 @@ const editIncomeExpenseSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   // Always sent by EditTransactionForm's TagPicker as the full desired
   // tag set (possibly empty) — see updateIncomeExpense in api.ts: an
   // array here always means "replace with exactly this", never "leave

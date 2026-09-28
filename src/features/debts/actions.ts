@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getMyPrimaryHousehold } from "@/features/household/api";
+import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
@@ -30,6 +31,7 @@ export async function createDebtAction(
       principal: positiveAmountSchema,
       walletId: uuid,
       pocketId: uuid,
+      occurredAt: financeOccurredAtSchema,
     })
     .safeParse(Object.fromEntries(formData));
 
@@ -49,6 +51,7 @@ export async function createDebtAction(
     p_opening_principal: normalizeAmount(parsed.data.principal),
     p_wallet_id: parsed.data.walletId,
     p_pocket_id: parsed.data.pocketId,
+    p_occurred_at: parsed.data.occurredAt,
   });
 
   if (error) {
@@ -71,6 +74,7 @@ export async function recordDebtPaymentAction(
       categoryId: uuid,
       principal: positiveAmountSchema,
       interest: nonnegativeAmount,
+      occurredAt: financeOccurredAtSchema,
     })
     .safeParse(Object.fromEntries(formData));
 
@@ -83,6 +87,7 @@ export async function recordDebtPaymentAction(
     p_principal: normalizeAmount(parsed.data.principal),
     p_interest: normalizeAmount(parsed.data.interest),
     p_interest_category_id: parsed.data.categoryId,
+    p_occurred_at: parsed.data.occurredAt,
   });
 
   if (error) {
@@ -103,6 +108,7 @@ export async function recordAdditionalDebtPrincipalAction(
       walletId: uuid,
       pocketId: uuid,
       principal: positiveAmountSchema,
+      occurredAt: financeOccurredAtSchema,
     })
     .safeParse(Object.fromEntries(formData));
 
@@ -113,6 +119,7 @@ export async function recordAdditionalDebtPrincipalAction(
     p_wallet_id: parsed.data.walletId,
     p_pocket_id: parsed.data.pocketId,
     p_principal: normalizeAmount(parsed.data.principal),
+    p_occurred_at: parsed.data.occurredAt,
   });
 
   if (error) {

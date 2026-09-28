@@ -60,7 +60,7 @@ describe("UnifiedTransferForm", () => {
     );
     expect(source).toContain("value={amount}");
     expect(source).toContain('name="note"');
-    expect(source).toContain('name="occurredAt"');
+    expect(source).toContain("<FinanceOccurredAtField />");
   });
 
   it("dispatches to the existing pocket or wallet writer without another sheet", () => {

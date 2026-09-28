@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -37,7 +38,6 @@ export function WalletTransferForm({
     pocketsByWallet[otherWallets[0]?.id ?? ""]?.[0]?.id ?? "",
   );
   const toPockets = useMemo(() => pocketsByWallet[toWalletId] ?? [], [pocketsByWallet, toWalletId]);
-  const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <form
@@ -91,7 +91,7 @@ export function WalletTransferForm({
 
       <Field label="ชื่อรายการ (ถ้ามี)" htmlFor="title"><Input id="title" name="title" type="text" /></Field>
       <Field label="โน้ต (ถ้ามี)" htmlFor="note"><Input id="note" name="note" type="text" /></Field>
-      <Field label="วันที่" htmlFor="occurredAt"><Input id="occurredAt" name="occurredAt" type="date" defaultValue={today} required /></Field>
+      <FinanceOccurredAtField />
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
         <TagPicker name="tagIds" tags={tags} walletId={fromWallet.id} />

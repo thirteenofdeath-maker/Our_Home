@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
+import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
@@ -153,14 +154,7 @@ const shoppingExpenseSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText(200),
   note: optionalText(2000),
-  occurredAt: z
-    .string()
-    .min(1)
-    .refine(
-      (value) => !Number.isNaN(new Date(`${value}T12:00:00`).getTime()),
-      "วันที่ไม่ถูกต้อง",
-    )
-    .transform((value) => new Date(`${value}T12:00:00`).toISOString()),
+  occurredAt: financeOccurredAtSchema,
   tagIds: z.array(z.string().uuid()).max(20),
 });
 

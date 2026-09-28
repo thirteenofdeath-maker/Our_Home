@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getWallet } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -307,13 +308,6 @@ export async function skipOccurrenceAction(_prevState: ActionState, formData: Fo
 // transition happen atomically (docs/FINANCE.md Phase G "Atomic posting").
 // ---------------------------------------------------------------------
 
-const occurredAtSchema = z
-  .string()
-  .trim()
-  .min(1, "Choose a date")
-  .refine((value) => !Number.isNaN(Date.parse(value)), "Choose a valid date")
-  .transform((value) => new Date(`${value}T12:00:00`).toISOString());
-
 const postOccurrenceSchema = z.object({
   occurrenceId: z.string().uuid(),
   walletId: z.string().uuid(),
@@ -322,7 +316,7 @@ const postOccurrenceSchema = z.object({
   amount: positiveAmountSchema,
   title: optionalText,
   note: optionalText,
-  occurredAt: occurredAtSchema,
+  occurredAt: financeOccurredAtSchema,
   tagIds: tagIdsSchema,
 });
 

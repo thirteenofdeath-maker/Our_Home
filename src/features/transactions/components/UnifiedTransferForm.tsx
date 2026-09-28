@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { FinancePocketPickerSheet } from "@/features/finance/components/FinancePocketPicker";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
 import { createUnifiedTransferAction } from "@/features/transactions/actions";
@@ -40,7 +41,6 @@ export function UnifiedTransferForm({
     createUnifiedTransferAction,
     initialActionState,
   );
-  const today = new Date().toLocaleDateString("en-CA");
 
   function chooseFrom(endpoint: TransferEndpoint) {
     setFrom(endpoint);
@@ -118,16 +118,8 @@ export function UnifiedTransferForm({
         {!to ? (
           <p className="text-sm text-finance-muted">เลือกปลายทาง</p>
         ) : null}
-        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] [&>*]:min-w-0">
-          <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
-            วันที่
-            <Input
-              name="occurredAt"
-              type="date"
-              defaultValue={today}
-              required
-            />
-          </label>
+        <FinanceOccurredAtField />
+        <div>
           <label className="flex flex-col gap-1 text-sm font-medium text-finance-text">
             หมายเหตุ
             <Input

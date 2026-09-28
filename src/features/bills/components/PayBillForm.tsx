@@ -4,13 +4,13 @@ import { useActionState, useState } from "react";
 
 import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { bangkokDateKey } from "@/features/calendar/domain/calendar";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import {
   buildFinancePocketOptions,
   FinancePocketField,
 } from "@/features/finance/components/FinancePocketPicker";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import type { PocketWithBalance } from "@/features/pockets/types";
 import type { TagOption } from "@/features/tags/types";
 import type { Wallet } from "@/features/wallets/types";
@@ -79,15 +79,7 @@ export function PayBillForm({
           }
         />
       </Field>
-      <Field label="วันที่จ่าย" htmlFor="occurredAt">
-        <Input
-          id="occurredAt"
-          name="occurredAt"
-          type="date"
-          defaultValue={bangkokDateKey()}
-          required
-        />
-      </Field>
+      <FinanceOccurredAtField dateLabel="วันที่จ่าย" idPrefix="billPaid" />
       <Field label="ชื่อรายการ" htmlFor="title">
         <Input id="title" name="title" defaultValue={item.title ?? item.name} />
       </Field>

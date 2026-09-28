@@ -10,6 +10,7 @@ import {
   buildFinancePocketOptions,
   FinancePocketField,
 } from "@/features/finance/components/FinancePocketPicker";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import type { PocketWithBalance } from "@/features/pockets/types";
 import type { Wallet } from "@/features/wallets/types";
 import { initialActionState } from "@/lib/types/action-state";
@@ -117,6 +118,7 @@ export function DebtCreateForm({
         selectedPocketId={pocketId}
         onSelectPocket={setPocketId}
       />
+      <FinanceOccurredAtField idPrefix="debtOpened" />
       {state.error ? <p className="text-danger">{state.error}</p> : null}
       <SubmitButton>บันทึก</SubmitButton>
     </form>
@@ -168,6 +170,7 @@ export function DebtPaymentForm({
           walletId={selectedWalletId}
         />
       </Field>
+      <FinanceOccurredAtField dateLabel="วันที่ชำระ" idPrefix="debtPaid" />
       {state.error ? <p className="text-danger">{state.error}</p> : null}
       <SubmitButton>บันทึกการชำระ</SubmitButton>
     </form>
@@ -199,6 +202,7 @@ export function AdditionalDebtPrincipalForm({
         selectedPocketId={pocketId}
         onSelectPocket={setPocketId}
       />
+      <FinanceOccurredAtField idPrefix="debtPrincipalAdded" />
       {state.error ? <p className="text-danger">{state.error}</p> : null}
       <SubmitButton>บันทึกเงินต้นเพิ่ม</SubmitButton>
     </form>

@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import { FinancePocketField } from "@/features/finance/components/FinancePocketPicker";
 import { getIncomeExpenseSheetData } from "@/features/finance/quick-add-data";
 import type { Pocket } from "@/features/pockets/types";
@@ -162,9 +163,6 @@ export function TransactionForm({
   const activeCurrency =
     sheetData.pockets.find((pocket) => pocket.id === activePocketId)
       ?.currency ?? "THB";
-  const today =
-    postOccurrence?.dueDate ?? new Date().toLocaleDateString("en-CA");
-
   return (
     <form
       action={formAction}
@@ -305,15 +303,7 @@ export function TransactionForm({
         />
       </Field>
 
-      <Field label="วันที่" htmlFor="occurredAt">
-        <Input
-          id="occurredAt"
-          name="occurredAt"
-          type="date"
-          defaultValue={today}
-          required
-        />
-      </Field>
+      <FinanceOccurredAtField defaultValue={postOccurrence?.dueDate} />
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
         <TagPicker

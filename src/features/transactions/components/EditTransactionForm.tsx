@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CategoryPicker } from "@/features/categories/components/CategoryPicker";
 import type { CategoryNode } from "@/features/categories/types";
 import { FinanceOptionField } from "@/features/finance/components/FinanceOptionField";
+import { FinanceOccurredAtField } from "@/features/finance/components/FinanceOccurredAtField";
 import type { Pocket } from "@/features/pockets/types";
 import { TagPicker } from "@/features/tags/components/TagPicker";
 import type { TagOption } from "@/features/tags/types";
@@ -39,7 +40,6 @@ export function EditTransactionForm({
 }) {
   const [state, formAction] = useActionState(updateIncomeExpenseAction, initialActionState);
   const [pocketId, setPocketId] = useState(transaction.pocketId ?? pockets[0]?.id ?? "");
-  const occurredAtDefault = transaction.occurredAt.slice(0, 10);
   const amountDefault = (transaction.amount ?? "0.00").replace(/^-/, "");
 
   return (
@@ -82,9 +82,7 @@ export function EditTransactionForm({
         <Input id="note" name="note" type="text" defaultValue={transaction.note ?? ""} />
       </Field>
 
-      <Field label="วันที่" htmlFor="occurredAt">
-        <Input id="occurredAt" name="occurredAt" type="date" defaultValue={occurredAtDefault} required />
-      </Field>
+      <FinanceOccurredAtField defaultValue={transaction.occurredAt} />
 
       <Field label="แท็ก (ถ้ามี)" htmlFor="tagIds">
         <TagPicker name="tagIds" tags={tags} walletId={walletId} defaultSelected={currentTags} />
