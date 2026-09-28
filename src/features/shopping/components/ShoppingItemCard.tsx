@@ -111,7 +111,7 @@ export function ShoppingItemCard({
                 </Link>
               ) : (
                 <Link
-                  href={`/shopping/${item.id}/expense`}
+                  href={`/calendar/shopping/${item.id}/expense`}
                   className="text-finance-primary-strong"
                 >
                   สร้างรายจ่าย
