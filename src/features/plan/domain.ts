@@ -2,14 +2,6 @@ import { z } from "zod";
 
 export const planScopeSchema = z.enum(["PERSONAL", "HOUSEHOLD"]);
 export const planTaskPrioritySchema = z.enum(["LOW", "NORMAL", "HIGH"]);
-export const planNoteColorSchema = z.enum([
-  "SAGE",
-  "SKY",
-  "SAND",
-  "ROSE",
-  "LILAC",
-  "WHITE",
-]);
 export const planReminderRecurrenceSchema = z.enum([
   "NONE",
   "DAILY",
@@ -47,18 +39,6 @@ export const planTaskFormSchema = z
   .refine((value) => !value.dueTime || value.dueDate, {
     message: "เลือกวันที่ก่อนกำหนดเวลา",
     path: ["dueDate"],
-  });
-
-export const planNoteFormSchema = z
-  .object({
-    title: optionalText(160),
-    content: optionalText(20000),
-    scope: planScopeSchema,
-    color: planNoteColorSchema,
-  })
-  .refine((value) => Boolean(value.title || value.content), {
-    message: "ใส่หัวข้อหรือข้อความอย่างน้อยหนึ่งอย่าง",
-    path: ["content"],
   });
 
 export const planTaskStepSchema = z.object({
