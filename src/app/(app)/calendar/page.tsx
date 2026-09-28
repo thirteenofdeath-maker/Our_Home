@@ -28,13 +28,7 @@ import { listInventoryItems } from "@/features/inventory/api";
 import { InventoryItemCard } from "@/features/inventory/components/InventoryItemCard";
 import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
-import {
-  listPlanNotes,
-  listPlanReminders,
-  listPlanTasks,
-} from "@/features/plan/api";
-import { NoteForm } from "@/features/plan/components/NoteForm";
-import { NoteGrid } from "@/features/plan/components/NoteGrid";
+import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { PlanTabs, type PlanView } from "@/features/plan/components/PlanTabs";
 import { ReminderForm } from "@/features/plan/components/ReminderForm";
 import { ReminderList } from "@/features/plan/components/ReminderList";
@@ -51,7 +45,6 @@ import { listScheduledPetCareRecords } from "@/features/pets/api";
 function activeView(value: unknown): PlanView {
   return value === "tasks" ||
     value === "reminders" ||
-    value === "notes" ||
     value === "chores" ||
     value === "shopping" ||
     value === "inventory"
@@ -90,8 +83,6 @@ export default async function CalendarPage({
   const search = typeof query.q === "string" ? query.q : "";
   const taskStatus =
     query.status === "done" || query.status === "all" ? query.status : "open";
-  const showArchivedNotes = query.archived === "1";
-
   if (view === "chores" && household && household.myRole !== "observer") {
     await materializeChores(supabase, household.id, shiftDate(today, 14));
   }
@@ -102,26 +93,26 @@ export default async function CalendarPage({
     financeItems,
     allTasks,
     allReminders,
-    activeNotes,
-    archivedNotes,
     petCareRecords,
     chores,
     shopping,
     inventory,
     members,
   ] = await Promise.all([
-    listCalendarEvents(supabase, household?.id ?? null, user.id),
+    view === "calendar"
+      ? listCalendarEvents(supabase, household?.id ?? null, user.id)
+      : Promise.resolve([]),
     view === "calendar"
       ? listCalendarEvents(supabase, household?.id ?? null, user.id, true)
       : Promise.resolve([]),
     view === "calendar"
       ? listCalendarFinanceItems(supabase, `${month}-01`, `${endMonth}-01`)
       : Promise.resolve([]),
-    listPlanTasks(supabase),
-    listPlanReminders(supabase),
-    listPlanNotes(supabase),
-    view === "notes" && showArchivedNotes
-      ? listPlanNotes(supabase, { archived: true })
+    view === "calendar" || view === "tasks"
+      ? listPlanTasks(supabase)
+      : Promise.resolve([]),
+    view === "calendar" || view === "reminders"
+      ? listPlanReminders(supabase)
       : Promise.resolve([]),
     view === "calendar" && household
       ? listScheduledPetCareRecords(
@@ -131,11 +122,13 @@ export default async function CalendarPage({
           `${endMonth}-01T00:00:00+07:00`,
         )
       : Promise.resolve([]),
-    household
+    household && view === "chores"
       ? listChoreWorkspace(supabase, household.id)
       : Promise.resolve({ templates: [], assignees: [], occurrences: [] }),
-    household ? listShoppingItems(supabase, household.id) : Promise.resolve([]),
-    household
+    household && view === "shopping"
+      ? listShoppingItems(supabase, household.id)
+      : Promise.resolve([]),
+    household && view === "inventory"
       ? listInventoryItems(supabase, household.id)
       : Promise.resolve([]),
     household && (view === "chores" || view === "shopping")
@@ -157,34 +150,10 @@ export default async function CalendarPage({
       (taskStatus === "done" ? task.is_completed : !task.is_completed);
     return matchesSearch && matchesStatus;
   });
-  const notes = (showArchivedNotes ? archivedNotes : activeNotes).filter(
-    (note) =>
-      !search ||
-      [note.title, note.content]
-        .filter(Boolean)
-        .some((value) =>
-          value!.toLocaleLowerCase("th").includes(normalizedSearch),
-        ),
-  );
   const todayEventCount = events.filter(
     (event) => eventDate(event) === today,
   ).length;
-  const dueTaskCount = allTasks.filter(
-    (task) => !task.is_completed && task.due_date && task.due_date <= today,
-  ).length;
-  const upcomingReminderCount = allReminders.filter(
-    (reminder) => !reminder.is_completed,
-  ).length;
-  const openChores = chores.occurrences
-    .filter((item) => !item.completed_at)
-    .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
-  const attentionInventory = inventory.filter(
-    (item) =>
-      isLowStock(item) ||
-      isDateWithinDays(item.expiry_date, today, 30) ||
-      isDateWithinDays(item.warranty_expires_on, today, 30),
-  );
   const canEditHousehold = Boolean(
     household && household.myRole !== "observer",
   );
@@ -206,13 +175,157 @@ export default async function CalendarPage({
     .filter((item) => item.completed_at)
     .slice(0, 12);
   const purchasedShopping = shopping.filter((item) => item.purchased_at);
+  const todayTasks = allTasks.filter((task) => task.due_date === today);
+  const overdueTasks = allTasks.filter(
+    (task) => !task.is_completed && task.due_date && task.due_date < today,
+  );
+  const completedTasks = allTasks.filter((task) => task.is_completed);
+  const taskProgress = allTasks.length
+    ? `${Math.round((completedTasks.length / allTasks.length) * 100)}%`
+    : "0%";
+  const todayReminders = allReminders.filter(
+    (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) === today,
+  );
+  const overdueReminders = allReminders.filter(
+    (reminder) =>
+      !reminder.is_completed &&
+      toBangkokInput(reminder.reminds_at).slice(0, 10) < today,
+  );
+  const upcomingReminders = allReminders.filter(
+    (reminder) =>
+      !reminder.is_completed &&
+      toBangkokInput(reminder.reminds_at).slice(0, 10) > today,
+  );
+  const completedReminders = allReminders.filter(
+    (reminder) => reminder.is_completed,
+  );
+  const todayChores = chores.occurrences.filter(
+    (item) => item.due_date === today,
+  );
+  const completedChores = chores.occurrences.filter(
+    (item) => item.completed_at,
+  );
+  const shoppingWithBudget = pendingShopping.filter(
+    (item) => item.estimated_amount !== null,
+  );
+  const shoppingCurrencies = new Set(
+    shoppingWithBudget.map((item) => item.currency),
+  );
+  const shoppingBudget =
+    shoppingCurrencies.size === 1
+      ? new Intl.NumberFormat("th-TH", {
+          style: "currency",
+          currency: shoppingWithBudget[0]?.currency ?? "THB",
+          notation: "compact",
+          maximumFractionDigits: 1,
+        }).format(
+          shoppingWithBudget.reduce(
+            (sum, item) => sum + Number(item.estimated_amount),
+            0,
+          ),
+        )
+      : shoppingCurrencies.size > 1
+        ? "หลายสกุล"
+        : "—";
+  const assignedShopping = new Set(
+    pendingShopping
+      .map((item) => item.assigned_member_id)
+      .filter((id): id is string => Boolean(id)),
+  ).size;
+  const lowInventory = inventory.filter(isLowStock);
+  const expiringInventory = inventory.filter((item) =>
+    isDateWithinDays(item.expiry_date, today, 30),
+  );
+  const warrantyInventory = inventory.filter((item) =>
+    isDateWithinDays(item.warranty_expires_on, today, 30),
+  );
+  const financeDueToday = financeItems.filter(
+    (item) => item.date === today,
+  ).length;
+  const cover = {
+    calendar: {
+      eyebrow: "สรุปแผนงานวันนี้",
+      title: "แผนงานของเรา",
+      subtitle: "วางแผนให้บ้านเดินหน้าไปด้วยกัน",
+      metrics: [
+        { value: todayEventCount, label: "กิจกรรม" },
+        { value: todayTasks.length, label: "งานวันนี้" },
+        { value: todayReminders.length, label: "เตือนวันนี้" },
+        { value: financeDueToday, label: "ครบกำหนด" },
+      ],
+    },
+    tasks: {
+      eyebrow: "ติดตามสิ่งที่ต้องทำ",
+      title: "งานของเรา",
+      subtitle: "เห็นงานสำคัญและความคืบหน้าในที่เดียว",
+      metrics: [
+        { value: todayTasks.length, label: "วันนี้" },
+        { value: overdueTasks.length, label: "งานค้าง" },
+        { value: completedTasks.length, label: "เสร็จแล้ว" },
+        { value: taskProgress, label: "ความคืบหน้า" },
+      ],
+    },
+    reminders: {
+      eyebrow: "ไม่พลาดเรื่องสำคัญ",
+      title: "รายการเตือน",
+      subtitle: "เตรียมพร้อมก่อนทุกกำหนดหมาย",
+      metrics: [
+        { value: todayReminders.length, label: "วันนี้" },
+        { value: upcomingReminders.length, label: "ใกล้ถึง" },
+        { value: overdueReminders.length, label: "เลยกำหนด" },
+        { value: completedReminders.length, label: "เสร็จแล้ว" },
+      ],
+    },
+    chores: {
+      eyebrow: "ดูแลงานในบ้าน",
+      title: "งานบ้านของเรา",
+      subtitle: "แบ่งกันทำ บ้านก็เบาขึ้น",
+      metrics: [
+        { value: todayChores.length, label: "วันนี้" },
+        { value: overdueChores.length, label: "เลยกำหนด" },
+        { value: upcomingChores.length, label: "14 วัน" },
+        { value: completedChores.length, label: "เสร็จแล้ว" },
+      ],
+    },
+    shopping: {
+      eyebrow: "ของที่บ้านต้องใช้",
+      title: "รายการซื้อของ",
+      subtitle: "ซื้อด้วยกัน ไม่ลืมกัน",
+      metrics: [
+        { value: pendingShopping.length, label: "ต้องซื้อ" },
+        { value: purchasedShopping.length, label: "ซื้อแล้ว" },
+        { value: shoppingBudget, label: "งบประมาณ" },
+        { value: assignedShopping, label: "ผู้รับผิดชอบ" },
+      ],
+    },
+    inventory: {
+      eyebrow: "ของที่บ้านมีอยู่",
+      title: "คลังของในบ้าน",
+      subtitle: "รู้ก่อนหมด ไม่ซื้อซ้ำ",
+      metrics: [
+        { value: inventory.length, label: "ทั้งหมด" },
+        { value: lowInventory.length, label: "ใกล้หมด" },
+        { value: expiringInventory.length, label: "ใกล้หมดอายุ" },
+        { value: warrantyInventory.length, label: "ใกล้หมดประกัน" },
+      ],
+    },
+  } satisfies Record<
+    PlanView,
+    {
+      eyebrow: string;
+      title: string;
+      subtitle: string;
+      metrics: Array<{ value: number | string; label: string }>;
+    }
+  >;
+  const activeCover = cover[view];
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
       <section className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/plan-calendar.webp"
-          alt="พื้นที่วางแผนที่รวมปฏิทิน งาน รายการเตือน และโน้ต"
+          alt="พื้นที่วางแผนและดูแลเรื่องสำคัญของบ้าน"
           fill
           priority
           sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
@@ -224,29 +337,26 @@ export default async function CalendarPage({
         />
         <div className="relative max-w-[62%]">
           <p className="text-xs font-medium text-finance-primary-strong">
-            สรุปแผนงานวันนี้
+            {activeCover.eyebrow}
           </p>
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-finance-text">
-            แผนงานของเรา
+            {activeCover.title}
           </h1>
           <p className="mt-1 text-sm text-finance-muted">
-            วางแผนให้บ้านเดินหน้าไปด้วยกัน
+            {activeCover.subtitle}
           </p>
         </div>
-        <Link
-          href="/calendar/export"
-          className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm"
-          aria-label="ส่งออกปฏิทิน"
-        >
-          <AppIcon name="transfer" className="size-5 rotate-90" />
-        </Link>
+        {view === "calendar" ? (
+          <Link
+            href="/calendar/export"
+            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm"
+            aria-label="ส่งออกปฏิทิน"
+          >
+            <AppIcon name="transfer" className="size-5 rotate-90" />
+          </Link>
+        ) : null}
         <div className="absolute inset-x-4 bottom-4 grid grid-cols-4 gap-1.5">
-          {[
-            { value: todayEventCount, label: "กิจกรรม" },
-            { value: dueTaskCount, label: "งานค้าง" },
-            { value: upcomingReminderCount, label: "เตือน" },
-            { value: activeNotes.length, label: "โน้ต" },
-          ].map((item) => (
+          {activeCover.metrics.map((item) => (
             <div
               key={item.label}
               className="min-w-0 rounded-[0.9rem] bg-white/80 px-1 py-1.5 text-center backdrop-blur-sm"
@@ -262,14 +372,7 @@ export default async function CalendarPage({
         </div>
       </section>
 
-      <PlanTabs
-        active={view}
-        householdCounts={{
-          chores: openChores.length,
-          shopping: pendingShopping.length,
-          inventory: attentionInventory.length,
-        }}
-      />
+      <PlanTabs active={view} />
 
       {view === "calendar" ? (
         <>
@@ -347,36 +450,6 @@ export default async function CalendarPage({
         </>
       ) : null}
 
-      {view === "notes" ? (
-        <>
-          <PlanCreateButton
-            title="เพิ่มโน้ต"
-            form={<NoteForm hasHousehold={Boolean(household)} />}
-          />
-          <SearchBar
-            view="notes"
-            defaultValue={search}
-            archived={showArchivedNotes}
-          />
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-finance-text">
-              {showArchivedNotes ? "โน้ตที่เก็บถาวร" : "โน้ตทั้งหมด"}
-            </h2>
-            <Link
-              className="text-sm font-medium text-finance-primary-strong"
-              href={
-                showArchivedNotes
-                  ? "/calendar?view=notes"
-                  : "/calendar?view=notes&archived=1"
-              }
-            >
-              {showArchivedNotes ? "กลับไปโน้ต" : "คลังโน้ต"}
-            </Link>
-          </div>
-          <NoteGrid notes={notes} />
-        </>
-      ) : null}
-
       {(view === "chores" || view === "shopping" || view === "inventory") &&
       !household ? (
         <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
@@ -416,12 +489,6 @@ export default async function CalendarPage({
               ผู้สังเกตการณ์ดูตารางและประวัติได้ แต่ไม่สามารถเปลี่ยนแปลงงานบ้าน
             </ReadOnlyNotice>
           ) : null}
-
-          <ViewSummary
-            icon="chores"
-            title="งานบ้าน"
-            detail={`เลยกำหนด ${overdueChores.length} · งานถัดไป ${upcomingChores.length}`}
-          />
 
           {overdueChores.length ? (
             <section className="flex flex-col gap-3">
@@ -596,12 +663,6 @@ export default async function CalendarPage({
             </ReadOnlyNotice>
           )}
 
-          <ViewSummary
-            icon="shopping"
-            title="รายการซื้อของ"
-            detail={`ต้องซื้อ ${pendingShopping.length} · ซื้อแล้ว ${purchasedShopping.length}`}
-          />
-
           <section className="flex flex-col gap-3">
             <SectionHeading title="ต้องซื้อ" count={pendingShopping.length} />
             {pendingShopping.length ? (
@@ -652,12 +713,6 @@ export default async function CalendarPage({
             </ReadOnlyNotice>
           )}
 
-          <ViewSummary
-            icon="inventory"
-            title="คลังของในบ้าน"
-            detail={`ทั้งหมด ${inventory.length} · ควรดูแล ${attentionInventory.length}`}
-          />
-
           <section className="flex flex-col gap-3">
             <SectionHeading title="รายการทั้งหมด" count={inventory.length} />
             {inventory.length ? (
@@ -678,28 +733,6 @@ export default async function CalendarPage({
         </>
       ) : null}
     </div>
-  );
-}
-
-function ViewSummary({
-  icon,
-  title,
-  detail,
-}: {
-  icon: "chores" | "shopping" | "inventory";
-  title: string;
-  detail: string;
-}) {
-  return (
-    <section className="flex items-center gap-3 rounded-[1.35rem] bg-finance-primary-soft/45 p-4 shadow-sm">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong">
-        <AppIcon name={icon} className="size-5" />
-      </span>
-      <div className="min-w-0">
-        <h2 className="font-semibold text-finance-text">{title}</h2>
-        <p className="mt-0.5 text-sm text-finance-muted">{detail}</p>
-      </div>
-    </section>
   );
 }
 
@@ -742,21 +775,18 @@ function ReadOnlyNotice({ children }: { children: ReactNode }) {
 function SearchBar({
   view,
   defaultValue,
-  archived,
 }: {
-  view: "tasks" | "notes";
+  view: "tasks";
   defaultValue: string;
-  archived?: boolean;
 }) {
   return (
     <form action="/calendar" className="finance-ui-tone flex gap-2">
       <input type="hidden" name="view" value={view} />
-      {archived ? <input type="hidden" name="archived" value="1" /> : null}
       <input
         type="search"
         name="q"
         defaultValue={defaultValue}
-        placeholder={view === "tasks" ? "ค้นหางาน…" : "ค้นหาโน้ต…"}
+        placeholder="ค้นหางาน…"
         className="h-12 min-w-0 flex-1 rounded-[1rem] border border-finance-primary-soft bg-finance-surface-strong px-4 text-finance-text shadow-sm outline-none placeholder:text-finance-muted focus:border-finance-primary"
       />
       <button className="min-h-11 rounded-[1rem] bg-finance-primary px-4 text-sm font-medium text-finance-primary-foreground shadow-sm">
