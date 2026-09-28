@@ -32,7 +32,7 @@ function stringValue(form: FormData, key: string) {
 }
 
 function refresh() {
-  revalidatePath("/chores");
+  revalidatePath("/calendar");
   revalidatePath("/");
 }
 
