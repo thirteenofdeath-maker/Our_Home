@@ -6,39 +6,40 @@ const source = readFileSync(
   resolve(process.cwd(), "src/app/(app)/page.tsx"),
   "utf8",
 );
+const householdSource = readFileSync(
+  resolve(process.cwd(), "src/app/(app)/household/page.tsx"),
+  "utf8",
+);
 
 describe("Today dashboard composition", () => {
   it("is a read-model dashboard rather than a redirect to wallets", () => {
     expect(source).not.toContain('redirect("/wallets")');
     expect(source).toContain("greetingForBangkok(now)");
     expect(source).toContain("homeCoverMode(profile?.birthday, now)");
-    expect(source).toContain("วันนี้ต้องดู");
+    expect(source).toContain('title="งานวันนี้"');
+    expect(source).toContain('title="งานวันพรุ่งนี้"');
     expect(source).toContain("ปฏิทินครอบครัว");
-    expect(source).toContain('title="การเงิน"');
-    expect(source).toContain('title="สัตว์เลี้ยง"');
-    expect(source).toContain('title="ครอบครัว"');
-    expect(source).toContain('title="งานบ้าน"');
-    expect(source).toContain('title="รายการซื้อของ"');
-    expect(source).toContain('title="คลังของในบ้าน"');
-    expect(source).toContain("<QuickLink");
+    expect(source).toContain('title="กิจกรรมล่าสุด"');
+    expect(source).not.toContain("วันนี้ต้องดู");
+    expect(source).not.toContain("<QuickLink");
   });
 
-  it("turns today's mixed data into one short priority queue", () => {
-    expect(source).toContain("const overdueTasks");
-    expect(source).toContain("const todayFinance");
-    expect(source).toContain("const todayPetCare");
-    expect(source).toContain("const dueChores");
-    expect(source).toContain("const pendingShopping");
-    expect(source).toContain("const attentionInventory");
-    expect(source).toContain("const todayQueue = [");
+  it("turns today and tomorrow into complete categorized timelines", () => {
+    expect(source).toContain("const timelineForDate");
+    expect(source).toContain("const todayTimeline = timelineForDate(today)");
     expect(source).toContain(
-      "const visibleTodayQueue = todayQueue.slice(0, 8)",
+      "const tomorrowTimeline = timelineForDate(tomorrow)",
     );
-    expect(source).toContain("<DashboardMetric");
-    expect(source).toContain("remainingTodayItemCount");
-    expect(source).toContain('href="/chores"');
-    expect(source).toContain('href="/shopping"');
-    expect(source).toContain('href="/inventory"');
+    expect(source).toContain('category: "ปฏิทิน"');
+    expect(source).toContain('category: "แผนงาน"');
+    expect(source).toContain('category: "เตือนความจำ"');
+    expect(source).toContain('category: "การเงิน"');
+    expect(source).toContain('category: "สัตว์เลี้ยง"');
+    expect(source).toContain('category: "งานบ้าน"');
+    expect(source).toContain('role="progressbar"');
+    expect(source).toContain(
+      "เสร็จ ${completedCount} จาก ${trackableItems.length} งาน",
+    );
   });
 
   it("streams the cover before daily and secondary dashboard data", () => {
@@ -51,7 +52,9 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("async function HomeTodaySections");
     expect(source).toContain("async function HomeSecondarySections");
     expect(source).toContain("eventsPromise={eventsPromise}");
-    expect(source).toContain("financePromise={financePromise}");
+    expect(source).toContain(
+      "recentTransactionsPromise={recentTransactionsPromise}",
+    );
   });
 
   it("composes source modules without writing duplicate records", () => {
@@ -60,17 +63,29 @@ describe("Today dashboard composition", () => {
       "listPlanTasks",
       "listPlanReminders",
       "listCalendarFinanceItems",
-      "getFinanceSummary",
       "listRecentFinanceTransactions",
-      "listPetSummaries",
       "listRecentHouseholdPetCareRecords",
+      "listChoreWorkspace",
+    ]) {
+      expect(source).toContain(sourceFunction);
+    }
+    expect(source).not.toContain("listShoppingItems");
+    expect(source).not.toContain("listInventoryItems");
+    expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
+  });
+
+  it("moves household operations to the family dashboard", () => {
+    for (const sourceFunction of [
       "listChoreWorkspace",
       "listShoppingItems",
       "listInventoryItems",
     ]) {
-      expect(source).toContain(sourceFunction);
+      expect(householdSource).toContain(sourceFunction);
     }
-    expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
+    expect(householdSource).toContain('title="งานบ้าน"');
+    expect(householdSource).toContain('title="รายการซื้อของ"');
+    expect(householdSource).toContain('title="คลังของในบ้าน"');
+    expect(householdSource).toContain('aria-label="การจัดการบ้าน"');
   });
 
   it("uses real artwork for every time period without CSS image filters", () => {
