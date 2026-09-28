@@ -64,6 +64,13 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toMatch(/reduce\s*\([\s\S]{0,100}reportCurrencies/);
   });
 
+  it("distinguishes monthly net flow from actual wallet balances", () => {
+    expect(hub).toContain('label="สุทธิ"');
+    expect(hub).toContain("สุทธิ = รายรับ − รายจ่าย");
+    expect(hub).toContain("ไม่ใช่ยอดเงินในกระเป๋า");
+    expect(hub).not.toContain('label="คงเหลือ"');
+  });
+
   it("switches the whole dashboard between personal and household data", () => {
     expect(hub).toContain('ariaLabel="ขอบเขตข้อมูลการเงิน"');
     expect(hub).toContain('rawScope === "HOUSEHOLD"');
