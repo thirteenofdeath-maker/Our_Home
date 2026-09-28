@@ -3,7 +3,14 @@ import Link from "next/link";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { cn } from "@/lib/utils/cn";
 
-export type PlanView = "calendar" | "tasks" | "reminders" | "notes";
+export type PlanView =
+  | "calendar"
+  | "tasks"
+  | "reminders"
+  | "notes"
+  | "chores"
+  | "shopping"
+  | "inventory";
 
 const views: Array<{ value: PlanView; label: string }> = [
   { value: "calendar", label: "ปฏิทิน" },
@@ -13,20 +20,29 @@ const views: Array<{ value: PlanView; label: string }> = [
 ];
 
 const householdViews: Array<{
+  value: Extract<PlanView, "chores" | "shopping" | "inventory">;
   href: string;
   label: string;
   countKey: "chores" | "shopping" | "inventory";
   icon: AppIconName;
 }> = [
-  { href: "/chores", label: "งานบ้าน", countKey: "chores", icon: "chores" },
   {
-    href: "/shopping",
+    value: "chores",
+    href: "/calendar?view=chores",
+    label: "งานบ้าน",
+    countKey: "chores",
+    icon: "chores",
+  },
+  {
+    value: "shopping",
+    href: "/calendar?view=shopping",
     label: "ซื้อของ",
     countKey: "shopping",
     icon: "shopping",
   },
   {
-    href: "/inventory",
+    value: "inventory",
+    href: "/calendar?view=inventory",
     label: "คลังของ",
     countKey: "inventory",
     icon: "inventory",
@@ -96,7 +112,13 @@ export function PlanTabs({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-[0.9rem] px-1 text-center text-finance-text transition-colors hover:bg-finance-surface-strong/75"
+                aria-current={active === item.value ? "page" : undefined}
+                className={cn(
+                  "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-[0.9rem] px-1 text-center transition-colors",
+                  active === item.value
+                    ? "bg-finance-surface-strong text-finance-primary-strong shadow-sm"
+                    : "text-finance-text hover:bg-finance-surface-strong/75",
+                )}
               >
                 <span className="relative flex size-7 items-center justify-center text-finance-primary-strong">
                   <AppIcon name={item.icon} className="size-5" />
