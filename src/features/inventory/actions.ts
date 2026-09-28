@@ -114,7 +114,7 @@ export async function createInventoryItemAction(
       p_currency: parsed.data.currency,
     });
     if (error) throw error;
-    revalidatePath("/inventory");
+    revalidatePath("/calendar");
     revalidatePath("/");
     return { success: true };
   } catch (error) {
@@ -153,7 +153,7 @@ export async function updateInventoryItemAction(
       p_currency: parsed.data.currency,
     });
     if (error) throw error;
-    revalidatePath("/inventory");
+    revalidatePath("/calendar");
     revalidatePath(`/inventory/${itemId}`);
     revalidatePath("/");
     return { success: true };
@@ -185,7 +185,7 @@ export async function adjustInventoryQuantityAction(form: FormData) {
       p_delta: String(parsed.data.delta),
     });
     if (error) throw error;
-    revalidatePath("/inventory");
+    revalidatePath("/calendar");
     revalidatePath(`/inventory/${parsed.data.itemId}`);
   } catch (error) {
     logDatabaseErrorInDev("adjustInventoryQuantityAction failed", error);
@@ -201,9 +201,9 @@ export async function sendInventoryToShoppingAction(form: FormData) {
       p_item_id: itemId,
     });
     if (error) throw error;
-    revalidatePath("/inventory");
+    revalidatePath("/calendar");
     revalidatePath(`/inventory/${itemId}`);
-    revalidatePath("/shopping");
+    revalidatePath("/calendar");
   } catch (error) {
     logDatabaseErrorInDev("sendInventoryToShoppingAction failed", error);
   }
@@ -219,13 +219,13 @@ export async function archiveInventoryItemAction(form: FormData) {
       p_archived: true,
     });
     if (error) throw error;
-    revalidatePath("/inventory");
+    revalidatePath("/calendar");
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveInventoryItemAction failed", error);
     return;
   }
-  redirect("/inventory");
+  redirect("/calendar?view=inventory");
 }
 
 const documentType = z.enum(["RECEIPT", "MANUAL", "WARRANTY", "OTHER"]);
