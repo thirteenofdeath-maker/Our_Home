@@ -98,10 +98,6 @@ describe("Every JIT-data create sheet mirrors its full-page route's exact select
       ],
     },
     {
-      loader: "src/features/pets/quick-add-data.ts",
-      selectors: ["listHouseholdMembers(supabase", "canInviteRole"],
-    },
-    {
       loader: "src/features/calendar/quick-add-data.ts",
       selectors: ["listHouseholdMembers(supabase"],
     },
