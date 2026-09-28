@@ -20,6 +20,9 @@ export async function listCreditCardAccounts(
     walletId: row.wallet_id,
     pocketId: row.system_pocket_id,
     name: row.name,
+    issuer: row.issuer,
+    network: row.network,
+    lastFour: row.last_four,
     scope: row.scope,
     householdId: row.household_id,
     currency: row.currency,
@@ -28,8 +31,40 @@ export async function listCreditCardAccounts(
     liability: normalizeDatabaseMoney(row.liability),
     cardCredit: normalizeDatabaseMoney(row.card_credit),
     availableCredit: normalizeDatabaseMoney(row.available_credit),
+    statementClosingDay: row.statement_closing_day,
+    paymentDueDay: row.payment_due_day,
+    apr: row.apr === null ? null : normalizeDatabaseMoney(row.apr),
     archived: row.is_archived,
   }));
+}
+
+export async function updateCreditCardAccount(
+  supabase: SupabaseClient<Database>,
+  params: {
+    accountId: string;
+    name: string;
+    issuer: string | null;
+    network: string | null;
+    lastFour: string | null;
+    creditLimit: string;
+    statementClosingDay: number;
+    paymentDueDay: number;
+    apr: string | null;
+  },
+) {
+  const { data, error } = await supabase.rpc("update_credit_card_account", {
+    p_account_id: params.accountId,
+    p_name: params.name,
+    p_issuer: params.issuer,
+    p_network: params.network,
+    p_last_four: params.lastFour,
+    p_credit_limit: params.creditLimit,
+    p_statement_closing_day: params.statementClosingDay,
+    p_payment_due_day: params.paymentDueDay,
+    p_apr: params.apr,
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function createCreditCardPayment(

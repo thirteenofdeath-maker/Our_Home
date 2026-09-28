@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { listCreditCardAccounts } from "@/features/credit-cards/api";
+import { CreditCardCycleForm } from "@/features/credit-cards/components/CreditCardCycleForm";
 import {
   listArchivedPocketsForWallet,
   listPocketsWithBalances,
@@ -20,10 +22,16 @@ export default async function WalletManagementPage({
   const { supabase } = await requireUser();
   const wallet = await getWallet(supabase, walletId);
   if (!wallet) notFound();
-  const [pockets, archivedPockets] = await Promise.all([
+  const [pockets, archivedPockets, creditCardAccounts] = await Promise.all([
     listPocketsWithBalances(supabase, walletId),
     listArchivedPocketsForWallet(supabase, walletId),
+    wallet.wallet_type === "CREDIT_CARD"
+      ? listCreditCardAccounts(supabase, { includeArchived: true })
+      : Promise.resolve([]),
   ]);
+  const creditCardAccount = creditCardAccounts.find(
+    (account) => account.walletId === walletId,
+  );
 
   return (
     <div className="finance-scope -mx-4 flex flex-col gap-6 px-4 pb-8 pt-2">
@@ -32,6 +40,12 @@ export default async function WalletManagementPage({
         <h2 className="font-semibold">แก้ไขกระเป๋าเงิน</h2>
         <RenameWalletForm wallet={wallet} />
       </section>
+      {creditCardAccount ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-semibold">รอบบัตรเครดิต</h2>
+          <CreditCardCycleForm account={creditCardAccount} />
+        </section>
+      ) : null}
       <section className="flex flex-col gap-3">
         <h2 className="font-semibold">จัดการ Pocket</h2>
         <PocketManagerList

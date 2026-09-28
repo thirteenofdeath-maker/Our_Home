@@ -15,6 +15,8 @@ import {
   createCreditCardCashAdvance,
   createCreditCardCashback,
   createCreditCardPayment,
+  listCreditCardAccounts,
+  updateCreditCardAccount,
 } from "./api";
 
 const optionalText = z
@@ -90,4 +92,58 @@ export async function createCreditCardTransactionAction(
 
   revalidatePath(FINANCE_RETURN_TO);
   redirect(FINANCE_RETURN_TO);
+}
+
+const creditCardCycleSchema = z.object({
+  accountId: z.string().uuid(),
+  walletId: z.string().uuid(),
+  statementClosingDay: z.coerce.number().int().min(1).max(31),
+  paymentDueDay: z.coerce.number().int().min(1).max(31),
+});
+
+export async function updateCreditCardCycleAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = creditCardCycleSchema.safeParse({
+    accountId: formData.get("accountId"),
+    walletId: formData.get("walletId"),
+    statementClosingDay: formData.get("statementClosingDay"),
+    paymentDueDay: formData.get("paymentDueDay"),
+  });
+  if (!parsed.success) {
+    return { error: "กรอกวันตัดยอดและวันครบกำหนดตั้งแต่ 1–31" };
+  }
+
+  const { supabase } = await requireUser();
+  try {
+    const account = (
+      await listCreditCardAccounts(supabase, { includeArchived: true })
+    ).find(
+      (item) =>
+        item.accountId === parsed.data.accountId &&
+        item.walletId === parsed.data.walletId,
+    );
+    if (!account) return { error: "ไม่พบบัตรเครดิตนี้" };
+
+    await updateCreditCardAccount(supabase, {
+      accountId: account.accountId,
+      name: account.name,
+      issuer: account.issuer,
+      network: account.network,
+      lastFour: account.lastFour,
+      creditLimit: account.creditLimit,
+      statementClosingDay: parsed.data.statementClosingDay,
+      paymentDueDay: parsed.data.paymentDueDay,
+      apr: account.apr,
+    });
+  } catch (error) {
+    logDatabaseErrorInDev("updateCreditCardCycleAction failed", error);
+    return { error: "บันทึกรอบบัตรเครดิตไม่สำเร็จ" };
+  }
+
+  revalidatePath(`/wallets/${parsed.data.walletId}`);
+  revalidatePath(`/wallets/${parsed.data.walletId}/manage`);
+  revalidatePath(FINANCE_RETURN_TO);
+  return { success: true };
 }

@@ -1771,6 +1771,20 @@ export interface Database {
         };
         Returns: string;
       };
+      update_credit_card_account: {
+        Args: {
+          p_account_id: string;
+          p_name: string;
+          p_issuer: string | null;
+          p_network: string | null;
+          p_last_four: string | null;
+          p_credit_limit: string;
+          p_statement_closing_day: number;
+          p_payment_due_day: number;
+          p_apr: string | null;
+        };
+        Returns: string;
+      };
       get_credit_card_accounts: {
         Args: { p_include_archived?: boolean };
         Returns: Array<{
