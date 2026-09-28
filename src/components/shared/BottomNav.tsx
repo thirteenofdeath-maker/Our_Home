@@ -66,7 +66,7 @@ export function BottomNav() {
           onPointerDown={() => router.prefetch(item.href)}
           aria-current={active ? "page" : undefined}
           className={cn(
-            "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-[1rem] text-[10px] font-medium transition-colors",
+            "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-[1rem] text-[10px] font-medium transition-colors lg:landscape:h-16 lg:landscape:w-16 lg:landscape:gap-1",
             active
               ? isFinance
                 ? "bg-finance-primary-soft/70 text-finance-primary-strong"
@@ -86,13 +86,13 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30",
+        "fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 lg:landscape:inset-y-4 lg:landscape:left-4 lg:landscape:right-auto lg:landscape:bottom-4 lg:landscape:flex lg:landscape:w-20 lg:landscape:items-center",
         isFinance && "finance-scope",
       )}
     >
       <ul
         className={cn(
-          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)] lg:landscape:flex lg:landscape:max-w-none lg:landscape:flex-col lg:landscape:justify-center lg:landscape:gap-2 lg:landscape:overflow-visible lg:landscape:rounded-[1.75rem] lg:landscape:py-3",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

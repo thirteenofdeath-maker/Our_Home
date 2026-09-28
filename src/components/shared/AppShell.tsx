@@ -37,13 +37,22 @@ export function AppShell({
   // vertically (for example an iPad Pro at 1024px). Keep portrait screens in
   // the focused reading layout and only unlock the wide dashboard when the
   // viewport is both large and landscape.
-  const contentWidth =
-    pathname === "/"
-      ? "max-w-xl md:max-w-3xl lg:landscape:max-w-7xl"
-      : "max-w-xl";
+  const adaptiveDashboardRoutes = new Set([
+    "/",
+    "/finance",
+    "/calendar",
+    "/pets",
+    "/household",
+  ]);
+  const isAdaptiveDashboard = adaptiveDashboardRoutes.has(pathname);
+  const contentWidth = isAdaptiveDashboard
+    ? "max-w-xl md:max-w-3xl lg:landscape:max-w-[90rem]"
+    : "max-w-xl";
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div
+      className={`flex min-h-full flex-1 flex-col ${showBottomNav ? "lg:landscape:pl-24" : ""}`}
+    >
       <AppRoutePreloader />
       {/* The bottom padding must clear BOTH the floating BottomNav AND,
           on top of it, a bottom-right FAB where one exists — plus the
@@ -52,7 +61,7 @@ export function AppShell({
           BottomNav renders (even on a FAB-less deep page) rather than
           computed per-route, so no page can under-clear it by omission. */}
       <main
-        className={`mx-auto w-full ${contentWidth} flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2" : "pb-8 pt-1"}`}
+        className={`mx-auto w-full ${contentWidth} flex-1 px-4 ${showBottomNav ? "pb-[calc(env(safe-area-inset-bottom)+12rem)] pt-2 lg:landscape:pb-8 lg:landscape:pt-4" : "pb-8 pt-1"}`}
       >
         {children}
       </main>
