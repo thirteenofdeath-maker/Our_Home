@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -13,11 +13,13 @@ import { TransactionForm } from "@/features/transactions/components/TransactionF
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
-export default async function ShoppingExpensePage({
-  params,
-}: {
+type ShoppingExpensePageProps = {
   params: Promise<{ itemId: string }>;
-}) {
+};
+
+export async function ShoppingExpensePage({
+  params,
+}: ShoppingExpensePageProps) {
   const { itemId } = await params;
   const { supabase, user } = await requireUser();
   const [item, wallets, household] = await Promise.all([
@@ -104,4 +106,11 @@ export default async function ShoppingExpensePage({
       />
     </div>
   );
+}
+
+export default async function LegacyShoppingExpensePage({
+  params,
+}: ShoppingExpensePageProps) {
+  const { itemId } = await params;
+  redirect(`/calendar/shopping/${itemId}/expense`);
 }
