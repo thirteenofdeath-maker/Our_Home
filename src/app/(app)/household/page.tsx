@@ -131,7 +131,7 @@ export default async function HouseholdPage() {
                 </h2>
               </div>
               <p className="mt-1 text-sm text-finance-muted">
-                มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับโน้ต งาน และการเงินส่วนตัว
+                มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับงานและการเงินส่วนตัว
               </p>
             </div>
             <div className="rounded-[1.4rem] bg-finance-primary-soft p-4 shadow-card">
