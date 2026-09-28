@@ -10,27 +10,21 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import {
   addPlanTaskStep,
-  createPlanNote,
   createPlanReminder,
   createPlanTask,
   deletePlanTaskStep,
-  getPlanNote,
   getPlanReminder,
   getPlanTask,
   listPlanTaskSteps,
-  setPlanNoteArchived,
-  setPlanNotePinned,
   setPlanReminderArchived,
   setPlanReminderCompleted,
   setPlanTaskArchived,
   setPlanTaskCompleted,
   setPlanTaskStepCompleted,
-  updatePlanNote,
   updatePlanReminder,
   updatePlanTask,
 } from "./api";
 import {
-  planNoteFormSchema,
   planReminderFormSchema,
   planTaskFormSchema,
   planTaskStepSchema,
@@ -51,15 +45,6 @@ function parseTask(form: FormData) {
     dueDate: value(form, "dueDate"),
     dueTime: value(form, "dueTime"),
     priority: value(form, "priority") || "NORMAL",
-  });
-}
-
-function parseNote(form: FormData) {
-  return planNoteFormSchema.safeParse({
-    title: value(form, "title"),
-    content: value(form, "content"),
-    scope: value(form, "scope"),
-    color: value(form, "color") || "SAGE",
   });
 }
 
@@ -216,81 +201,6 @@ export async function deletePlanTaskStepAction(form: FormData) {
   if (!(await getPlanTask(supabase, taskId))) return;
   await deletePlanTaskStep(supabase, stepId);
   revalidatePath(`/calendar/tasks/${taskId}`);
-}
-
-export async function createPlanNoteAction(
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const parsed = parseNote(form);
-  if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
-  try {
-    const { supabase, user, householdId } = await householdForScope(
-      parsed.data.scope,
-    );
-    const id = randomUUID();
-    await createPlanNote(supabase, {
-      id,
-      createdBy: user.id,
-      householdId,
-      ...parsed.data,
-    });
-    revalidatePath("/calendar");
-    redirect(`/calendar/notes/${id}`);
-  } catch (error) {
-    if (error && typeof error === "object" && "digest" in error) throw error;
-    logDatabaseErrorInDev("createPlanNoteAction failed", error);
-    return { error: "บันทึกโน้ตไม่สำเร็จ" };
-  }
-}
-
-export async function updatePlanNoteAction(
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const id = value(form, "noteId");
-  const parsed = parseNote(form);
-  if (!id || !parsed.success) {
-    return {
-      error: parsed.success
-        ? "ไม่พบโน้ต"
-        : (parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง"),
-    };
-  }
-  try {
-    const { supabase } = await requireUser();
-    const current = await getPlanNote(supabase, id);
-    if (!current) return { error: "ไม่พบโน้ต" };
-    await updatePlanNote(supabase, id, parsed.data);
-    revalidatePath("/calendar");
-    revalidatePath(`/calendar/notes/${id}`);
-    return {};
-  } catch (error) {
-    logDatabaseErrorInDev("updatePlanNoteAction failed", error);
-    return { error: "แก้ไขโน้ตไม่สำเร็จ" };
-  }
-}
-
-export async function pinPlanNoteAction(form: FormData) {
-  const id = value(form, "noteId");
-  if (!id) return;
-  const { supabase } = await requireUser();
-  const note = await getPlanNote(supabase, id);
-  if (!note) return;
-  await setPlanNotePinned(supabase, note, value(form, "pinned") === "true");
-  revalidatePath("/calendar");
-  revalidatePath(`/calendar/notes/${id}`);
-}
-
-export async function archivePlanNoteAction(form: FormData) {
-  const id = value(form, "noteId");
-  if (!id) return;
-  const { supabase } = await requireUser();
-  if (!(await getPlanNote(supabase, id))) return;
-  await setPlanNoteArchived(supabase, id, value(form, "archived") === "true");
-  revalidatePath("/calendar");
-  redirect("/calendar?view=notes");
 }
 
 export async function createPlanReminderAction(
