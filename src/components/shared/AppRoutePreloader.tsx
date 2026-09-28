@@ -8,9 +8,9 @@ import { NAV_ITEMS } from "./BottomNav";
 const MAIN_APP_ROUTES = NAV_ITEMS.map((item) => item.href);
 const CORE_DOCUMENT_ROUTES = [
   ...MAIN_APP_ROUTES,
-  "/shopping",
-  "/chores",
-  "/inventory",
+  "/calendar?view=shopping",
+  "/calendar?view=chores",
+  "/calendar?view=inventory",
 ];
 
 /**
