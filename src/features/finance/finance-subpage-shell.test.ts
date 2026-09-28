@@ -198,8 +198,21 @@ describe("Finance subpage shell", () => {
 });
 
 describe("Finance cover across modules", () => {
+  it("does not stack the legacy Finance cover and tabs above the preview hub", () => {
+    currentPath = "/finance";
+    const html = renderToStaticMarkup(
+      // eslint-disable-next-line react/no-children-prop
+      createElement(FinanceLayout, {
+        children: createElement("div", null, "preview-hub"),
+      }),
+    );
+
+    expect(html).toContain("preview-hub");
+    expect(html).not.toContain(">การเงินของบ้าน</h1>");
+    expect(html).not.toContain('aria-label="เมนูการเงิน"');
+  });
+
   it.each([
-    "",
     "/transactions",
     "/budgets",
     "/goals",
