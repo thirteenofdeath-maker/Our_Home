@@ -16,6 +16,10 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="การเงิน"');
     expect(source).toContain('title="สัตว์เลี้ยง"');
+    expect(source).toContain("ภาพรวมบ้าน");
+    expect(source).toContain('title="งานบ้าน"');
+    expect(source).toContain('title="รายการซื้อของ"');
+    expect(source).toContain('title="คลังของในบ้าน"');
     expect(source).toContain("<QuickLink");
   });
 
@@ -29,6 +33,9 @@ describe("Today dashboard composition", () => {
       "listRecentFinanceTransactions",
       "listPetSummaries",
       "listRecentHouseholdPetCareRecords",
+      "listChoreWorkspace",
+      "listShoppingItems",
+      "listInventoryItems",
     ]) {
       expect(source).toContain(sourceFunction);
     }
