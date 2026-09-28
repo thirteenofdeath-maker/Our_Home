@@ -16,12 +16,14 @@ const planTabs = readFileSync(
 );
 
 describe("Plan cover summary", () => {
-  it("keeps the four plan totals in the cover instead of a section per tab", () => {
+  it("changes all four cover totals with the active plan view", () => {
     expect(source).not.toContain("PlanSummary");
-    expect(source).toContain("todayEventCount");
-    expect(source).toContain("dueTaskCount");
-    expect(source).toContain("upcomingReminderCount");
-    expect(source).toContain("activeNotes.length");
+    expect(source).toContain("const cover = {");
+    expect(source).toContain("const activeCover = cover[view]");
+    expect(source).toContain("activeCover.metrics.map");
+    expect(source).toContain('view === "calendar"');
+    expect(source).not.toContain("listPlanNotes");
+    expect(planTabs).not.toContain('value: "notes"');
   });
 
   it("keeps plan artwork in the page cover instead of inside the calendar", () => {
@@ -34,7 +36,7 @@ describe("Plan cover summary", () => {
     expect(source).toContain("listChoreWorkspace");
     expect(source).toContain("listShoppingItems");
     expect(source).toContain("listInventoryItems");
-    expect(source).toContain("householdCounts={{");
+    expect(source).toContain("<PlanTabs active={view} />");
     expect(source).not.toContain("<PlanModuleCard");
     expect(planTabs).toContain('aria-label="ศูนย์แผนงาน"');
     expect(planTabs).toContain("วางแผน");
