@@ -42,12 +42,13 @@ describe("Today dashboard composition", () => {
     expect(source).not.toMatch(/\.from\(|\.insert\(|\.update\(/u);
   });
 
-  it("uses a real multi-column desktop dashboard without changing the mobile stack", () => {
-    expect(source).toContain("lg:grid-cols-12");
-    expect(source).toContain("lg:col-span-7");
-    expect(source).toContain("lg:col-span-5");
-    expect(source).toContain("lg:col-span-12");
-    expect(source).toContain("md:grid-cols-3");
+  it("uses the multi-column dashboard only for large landscape viewports", () => {
+    expect(source).toContain("lg:landscape:grid-cols-12");
+    expect(source).toContain("lg:landscape:col-span-7");
+    expect(source).toContain("lg:landscape:col-span-5");
+    expect(source).toContain("lg:landscape:col-span-12");
+    expect(source).toContain("lg:landscape:grid-cols-3");
+    expect(source).not.toContain("md:grid-cols-3");
   });
 
   it("uses real artwork for every time period without CSS image filters", () => {
