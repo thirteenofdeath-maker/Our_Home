@@ -178,28 +178,30 @@ export default async function FinancePage({
             (item) => item.currency === currency,
           ) ?? { income: "0.00", expense: "0.00" };
           return (
-            <div
-              key={`summary-${currency}`}
-              className="grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card"
-            >
-              <FinanceSummaryItem
-                label="รายรับรวม"
-                value={formatCurrency(total.income, currency)}
-                tone="income"
-              />
-              <FinanceSummaryItem
-                label="รายจ่ายรวม"
-                value={formatCurrency(total.expense, currency)}
-                tone="expense"
-              />
-              <FinanceSummaryItem
-                label="คงเหลือ"
-                value={formatCurrency(
-                  subtractMoney(total.income, total.expense),
-                  currency,
-                )}
-                tone="default"
-              />
+            <div key={`summary-${currency}`} className="flex flex-col gap-2">
+              <div className="grid min-w-0 grid-cols-3 overflow-hidden rounded-[1.5rem] bg-finance-surface-strong p-4 shadow-card">
+                <FinanceSummaryItem
+                  label="รายรับรวม"
+                  value={formatCurrency(total.income, currency)}
+                  tone="income"
+                />
+                <FinanceSummaryItem
+                  label="รายจ่ายรวม"
+                  value={formatCurrency(total.expense, currency)}
+                  tone="expense"
+                />
+                <FinanceSummaryItem
+                  label="สุทธิ"
+                  value={formatCurrency(
+                    subtractMoney(total.income, total.expense),
+                    currency,
+                  )}
+                  tone="default"
+                />
+              </div>
+              <p className="px-2 text-center text-xs text-finance-muted">
+                สุทธิ = รายรับ − รายจ่าย · ไม่ใช่ยอดเงินในกระเป๋า
+              </p>
             </div>
           );
         })}
