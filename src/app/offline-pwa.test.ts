@@ -31,6 +31,10 @@ describe("offline-first PWA foundation", () => {
     expect(preloader).toContain("router.prefetch(route, {");
     expect(preloader).toContain('kind: "full"');
     expect(preloader).toContain("requestIdleCallback");
+    expect(preloader.indexOf("warmRouter();")).toBeLessThan(
+      preloader.indexOf("scheduleDocumentWarm()"),
+    );
+    expect(preloader).toContain("() => warmDocuments()");
     expect(preloader).not.toContain("router.refresh()");
     expect(preloader).not.toContain("onInvalidate");
     expect(preloader).not.toContain(
