@@ -22,18 +22,24 @@ const actions = readFileSync(
   "utf8",
 );
 const page = readFileSync(
-  resolve(process.cwd(), "src/app/(app)/shopping/page.tsx"),
+  resolve(process.cwd(), "src/app/(app)/calendar/page.tsx"),
   "utf8",
 );
 
 describe("shared shopping list contract", () => {
   it("allows household reads while keeping every table mutation behind RPCs", () => {
-    expect(migration).toContain("alter table public.shopping_items enable row level security");
-    expect(migration).toContain("using (public.is_household_member(household_id))");
+    expect(migration).toContain(
+      "alter table public.shopping_items enable row level security",
+    );
+    expect(migration).toContain(
+      "using (public.is_household_member(household_id))",
+    );
     expect(migration).toContain(
       "revoke all privileges on table public.shopping_items from public, anon, authenticated",
     );
-    expect(migration).toContain("grant select on table public.shopping_items to authenticated");
+    expect(migration).toContain(
+      "grant select on table public.shopping_items to authenticated",
+    );
   });
 
   it("excludes observers from writes and assignee choices", () => {
@@ -65,7 +71,9 @@ describe("shared shopping list contract", () => {
   });
 
   it("indexes every shopping foreign key used by relational checks", () => {
-    expect(indexMigration).toContain("shopping_items_assignee_household_fk_idx");
+    expect(indexMigration).toContain(
+      "shopping_items_assignee_household_fk_idx",
+    );
     expect(indexMigration).toContain("shopping_items_created_by_idx");
     expect(indexMigration).toContain("shopping_items_purchased_by_idx");
   });
