@@ -39,8 +39,11 @@ describe("Plan cover summary", () => {
     expect(planTabs).toContain('aria-label="ศูนย์แผนงาน"');
     expect(planTabs).toContain("วางแผน");
     expect(planTabs).toContain("ดูแลบ้าน");
-    expect(planTabs).toContain('href: "/chores"');
-    expect(planTabs).toContain('href: "/shopping"');
-    expect(planTabs).toContain('href: "/inventory"');
+    expect(planTabs).toContain('href: "/calendar?view=chores"');
+    expect(planTabs).toContain('href: "/calendar?view=shopping"');
+    expect(planTabs).toContain('href: "/calendar?view=inventory"');
+    expect(source).toContain('view === "chores"');
+    expect(source).toContain('view === "shopping"');
+    expect(source).toContain('view === "inventory"');
   });
 });
