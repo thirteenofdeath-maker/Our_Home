@@ -4,11 +4,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type {
   Database,
-  PlanNoteColor,
   PlanReminderRecurrence,
   PlanTaskPriority,
 } from "@/types/database";
-import type { PlanNote, PlanReminder, PlanTask, PlanTaskStep } from "./types";
+import type { PlanReminder, PlanTask, PlanTaskStep } from "./types";
 
 type Client = SupabaseClient<Database>;
 
@@ -187,98 +186,6 @@ export async function deletePlanTaskStep(supabase: Client, id: string) {
   const { error } = await supabase
     .from("plan_task_steps")
     .delete()
-    .eq("id", id);
-  if (error) throw error;
-}
-
-export async function listPlanNotes(
-  supabase: Client,
-  options: { archived?: boolean; query?: string } = {},
-) {
-  let request = supabase.from("plan_notes").select("*");
-  request = options.archived
-    ? request.not("archived_at", "is", null)
-    : request.is("archived_at", null);
-  request = request
-    .order("pinned_at", { ascending: false, nullsFirst: false })
-    .order("updated_at", { ascending: false });
-  const { data, error } = await request;
-  if (error) throw error;
-  const query = options.query?.trim().toLocaleLowerCase("th");
-  if (!query) return data ?? [];
-  return (data ?? []).filter((note) =>
-    [note.title, note.content]
-      .filter(Boolean)
-      .some((value) => value!.toLocaleLowerCase("th").includes(query)),
-  );
-}
-
-export async function getPlanNote(supabase: Client, id: string) {
-  const { data, error } = await supabase
-    .from("plan_notes")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function createPlanNote(
-  supabase: Client,
-  input: {
-    id: string;
-    createdBy: string;
-    householdId: string | null;
-    scope: "PERSONAL" | "HOUSEHOLD";
-    title: string | null;
-    content: string | null;
-    color: PlanNoteColor;
-  },
-) {
-  const { error } = await supabase.from("plan_notes").insert({
-    id: input.id,
-    created_by: input.createdBy,
-    household_id: input.householdId,
-    scope: input.scope,
-    title: input.title,
-    content: input.content,
-    color: input.color,
-  });
-  if (error) throw error;
-}
-
-export async function updatePlanNote(
-  supabase: Client,
-  id: string,
-  input: { title: string | null; content: string | null; color: PlanNoteColor },
-) {
-  const { error } = await supabase
-    .from("plan_notes")
-    .update(input)
-    .eq("id", id);
-  if (error) throw error;
-}
-
-export async function setPlanNotePinned(
-  supabase: Client,
-  note: PlanNote,
-  pinned: boolean,
-) {
-  const { error } = await supabase
-    .from("plan_notes")
-    .update({ pinned_at: pinned ? new Date().toISOString() : null })
-    .eq("id", note.id);
-  if (error) throw error;
-}
-
-export async function setPlanNoteArchived(
-  supabase: Client,
-  id: string,
-  archived: boolean,
-) {
-  const { error } = await supabase
-    .from("plan_notes")
-    .update({ archived_at: archived ? new Date().toISOString() : null })
     .eq("id", id);
   if (error) throw error;
 }
