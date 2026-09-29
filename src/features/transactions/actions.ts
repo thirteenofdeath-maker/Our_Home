@@ -11,7 +11,15 @@ import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
 import { normalizeAmount, positiveAmountSchema } from "@/lib/validation/money";
 
-import { createIncomeExpense, createPocketTransfer, createWalletTransfer, restoreTransaction, updateIncomeExpense, voidTransaction } from "./api";
+import {
+  createAttributedHouseholdExpense,
+  createIncomeExpense,
+  createPocketTransfer,
+  createWalletTransfer,
+  restoreTransaction,
+  updateIncomeExpense,
+  voidTransaction,
+} from "./api";
 
 /**
  * Tags submit as repeated hidden inputs sharing one field name
@@ -19,7 +27,9 @@ import { createIncomeExpense, createPocketTransfer, createWalletTransfer, restor
  * any realistic UI use to keep the RPC's validation loop (0032:
  * assign_transaction_tags) bounded.
  */
-const tagIdsSchema = z.array(z.string().uuid("Invalid tag")).max(20, "Too many tags");
+const tagIdsSchema = z
+  .array(z.string().uuid("Invalid tag"))
+  .max(20, "Too many tags");
 
 /**
  * `returnTo` lets the Finance Hub's quick-add links ("Finance -> add ->
@@ -33,7 +43,9 @@ const tagIdsSchema = z.array(z.string().uuid("Invalid tag")).max(20, "Too many t
 const returnToSchema = z
   .string()
   .nullish()
-  .transform((value) => (value === FINANCE_RETURN_TO ? FINANCE_RETURN_TO : null));
+  .transform((value) =>
+    value === FINANCE_RETURN_TO ? FINANCE_RETURN_TO : null,
+  );
 
 const optionalText = z
   .string()
@@ -55,7 +67,10 @@ const incomeExpenseSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function createIncomeExpenseAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createIncomeExpenseAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = incomeExpenseSchema.safeParse({
@@ -96,6 +111,57 @@ export async function createIncomeExpenseAction(_prevState: ActionState, formDat
   redirect(parsed.data.returnTo ?? `/wallets/${parsed.data.walletId}`);
 }
 
+const attributedHouseholdExpenseSchema = z.object({
+  householdId: z.string().uuid(),
+  walletId: z.string().uuid(),
+  pocketId: z.string().uuid(),
+  categoryId: z.string().uuid("Choose a category"),
+  amount: positiveAmountSchema,
+  title: optionalText,
+  note: optionalText,
+  occurredAt: financeOccurredAtSchema,
+});
+
+export async function createAttributedHouseholdExpenseAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase } = await requireUser();
+  const parsed = attributedHouseholdExpenseSchema.safeParse({
+    householdId: formData.get("householdId"),
+    walletId: formData.get("walletId"),
+    pocketId: formData.get("pocketId"),
+    categoryId: formData.get("categoryId"),
+    amount: formData.get("amount"),
+    title: formData.get("title"),
+    note: formData.get("note"),
+    occurredAt: formData.get("occurredAt"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  }
+
+  try {
+    await createAttributedHouseholdExpense(supabase, {
+      householdId: parsed.data.householdId,
+      householdCategoryId: parsed.data.categoryId,
+      walletId: parsed.data.walletId,
+      pocketId: parsed.data.pocketId,
+      amount: normalizeAmount(parsed.data.amount),
+      title: parsed.data.title,
+      note: parsed.data.note,
+      occurredAt: parsed.data.occurredAt,
+    });
+  } catch (err) {
+    logDatabaseErrorInDev("createAttributedHouseholdExpenseAction failed", err);
+    return { error: "บันทึกรายจ่ายครอบครัวไม่สำเร็จ" };
+  }
+
+  revalidatePath(`/wallets/${parsed.data.walletId}`);
+  revalidatePath(FINANCE_RETURN_TO);
+  redirect(`${FINANCE_RETURN_TO}?scope=HOUSEHOLD`);
+}
+
 const pocketTransferSchema = z.object({
   walletId: z.string().uuid(),
   fromPocketId: z.string().uuid(),
@@ -107,7 +173,10 @@ const pocketTransferSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function createPocketTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createPocketTransferAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = pocketTransferSchema.safeParse({
@@ -160,7 +229,10 @@ const walletTransferSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function createWalletTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createWalletTransferAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = walletTransferSchema.safeParse({
@@ -178,7 +250,10 @@ export async function createWalletTransferAction(_prevState: ActionState, formDa
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   if (parsed.data.fromWalletId === parsed.data.toWalletId) {
-    return { error: "Choose two different wallets (use a pocket transfer within one wallet instead)" };
+    return {
+      error:
+        "Choose two different wallets (use a pocket transfer within one wallet instead)",
+    };
   }
 
   try {
@@ -214,7 +289,10 @@ const unifiedTransferSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function createUnifiedTransferAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function createUnifiedTransferAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
   const parsed = unifiedTransferSchema.safeParse({
     fromWalletId: formData.get("fromWalletId"),
@@ -226,8 +304,10 @@ export async function createUnifiedTransferAction(_prevState: ActionState, formD
     occurredAt: formData.get("occurredAt"),
     tagIds: formData.getAll("tagIds"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
-  if (parsed.data.fromPocketId === parsed.data.toPocketId) return { error: "กรุณาเลือกต้นทางและปลายทางคนละช่อง" };
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+  if (parsed.data.fromPocketId === parsed.data.toPocketId)
+    return { error: "กรุณาเลือกต้นทางและปลายทางคนละช่อง" };
 
   try {
     const common = {
@@ -239,7 +319,10 @@ export async function createUnifiedTransferAction(_prevState: ActionState, formD
       tagIds: parsed.data.tagIds,
     };
     if (parsed.data.fromWalletId === parsed.data.toWalletId) {
-      await createPocketTransfer(supabase, { ...common, walletId: parsed.data.fromWalletId });
+      await createPocketTransfer(supabase, {
+        ...common,
+        walletId: parsed.data.fromWalletId,
+      });
     } else {
       await createWalletTransfer(supabase, {
         ...common,
@@ -284,7 +367,10 @@ const editIncomeExpenseSchema = z.object({
   tagIds: tagIdsSchema,
 });
 
-export async function updateIncomeExpenseAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function updateIncomeExpenseAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = editIncomeExpenseSchema.safeParse({
@@ -333,7 +419,10 @@ const voidTransactionSchema = z.object({
 
 // useActionState-shaped: voiding can genuinely fail (already voided, a
 // transfer, no longer authorized) and the user must see why.
-export async function voidTransactionAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function voidTransactionAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = voidTransactionSchema.safeParse({
@@ -346,7 +435,11 @@ export async function voidTransactionAction(_prevState: ActionState, formData: F
   }
 
   try {
-    await voidTransaction(supabase, parsed.data.transactionId, parsed.data.voidReason);
+    await voidTransaction(
+      supabase,
+      parsed.data.transactionId,
+      parsed.data.voidReason,
+    );
   } catch (err) {
     logDatabaseErrorInDev("voidTransactionAction failed", err);
     return { error: "ไม่สามารถยกเลิกรายการได้" };
@@ -366,7 +459,10 @@ const restoreTransactionSchema = z.object({
 
 // useActionState-shaped: restore can fail with a business reason (the
 // wallet/pocket is archived) that the user must see, not have swallowed.
-export async function restoreTransactionAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function restoreTransactionAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const { supabase } = await requireUser();
 
   const parsed = restoreTransactionSchema.safeParse({
@@ -381,7 +477,9 @@ export async function restoreTransactionAction(_prevState: ActionState, formData
     await restoreTransaction(supabase, parsed.data.transactionId);
   } catch (err) {
     logDatabaseErrorInDev("restoreTransactionAction failed", err);
-    return { error: "ไม่สามารถกู้คืนรายการได้ — กระเป๋าเงินหรือช่องอาจถูกเก็บถาวรอยู่" };
+    return {
+      error: "ไม่สามารถกู้คืนรายการได้ — กระเป๋าเงินหรือช่องอาจถูกเก็บถาวรอยู่",
+    };
   }
 
   revalidatePath(`/wallets/${parsed.data.walletId}`);

@@ -35,6 +35,12 @@ export async function getIncomeExpenseSheetData(
   ]);
   if (!wallet) throw new Error("ไม่พบกระเป๋าเงิน");
 
+  const compatibleWallets = wallets.filter(
+    (candidate) =>
+      candidate.scope === wallet.scope &&
+      candidate.owner_user_id === wallet.owner_user_id &&
+      candidate.household_id === wallet.household_id,
+  );
   const [pockets, categories, tags, pocketSets] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
     listCategoriesForWallet(supabase, { transactionType, wallet }),
@@ -43,7 +49,7 @@ export async function getIncomeExpenseSheetData(
       householdId: wallet.household_id,
     }),
     Promise.all(
-      wallets.map(async (candidate) => ({
+      compatibleWallets.map(async (candidate) => ({
         wallet: candidate,
         pockets: await listPocketsWithBalances(supabase, candidate.id),
       })),
@@ -51,7 +57,11 @@ export async function getIncomeExpenseSheetData(
   ]);
 
   return {
-    wallets: wallets.map(({ id, name, scope }) => ({ id, name, scope })),
+    wallets: compatibleWallets.map(({ id, name, scope }) => ({
+      id,
+      name,
+      scope,
+    })),
     pockets: pockets.filter((pocket) => pocket.pocket_type !== "CREDIT_CARD"),
     endpoints: pocketSets.flatMap(({ wallet: candidate, pockets: items }) =>
       items
@@ -67,6 +77,55 @@ export async function getIncomeExpenseSheetData(
     ),
     categories: buildCategoryTree(categories),
     tags,
+  };
+}
+
+export async function getAttributedHouseholdExpenseSheetData(
+  householdId: string,
+) {
+  const { supabase, user } = await requireUser();
+  const household = await getMyPrimaryHousehold(supabase, user.id);
+  if (!household || household.id !== householdId) {
+    throw new Error("ไม่พบครอบครัว");
+  }
+
+  const wallets = (await listMyWallets(supabase)).filter(
+    (wallet) =>
+      wallet.scope === "PERSONAL" &&
+      wallet.owner_user_id === user.id &&
+      wallet.wallet_type !== "CREDIT_CARD",
+  );
+  const [categories, pocketSets] = await Promise.all([
+    listCategoriesForWallet(supabase, {
+      transactionType: "EXPENSE",
+      wallet: {
+        scope: "HOUSEHOLD",
+        owner_user_id: null,
+        household_id: householdId,
+      },
+    }),
+    Promise.all(
+      wallets.map(async (wallet) => ({
+        wallet,
+        pockets: await listPocketsWithBalances(supabase, wallet.id),
+      })),
+    ),
+  ]);
+
+  return {
+    categories: buildCategoryTree(categories),
+    endpoints: pocketSets.flatMap(({ wallet, pockets }) =>
+      pockets
+        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
+        .map((pocket) => ({
+          walletId: wallet.id,
+          walletName: wallet.name,
+          pocketId: pocket.id,
+          pocketName: pocket.name,
+          currency: pocket.currency,
+          balance: pocket.balance,
+        })),
+    ),
   };
 }
 

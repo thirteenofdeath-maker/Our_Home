@@ -72,6 +72,37 @@ export async function createIncomeExpense(
   return data;
 }
 
+export async function createAttributedHouseholdExpense(
+  supabase: SupabaseClient<Database>,
+  params: {
+    householdId: string;
+    householdCategoryId: string;
+    walletId: string;
+    pocketId: string;
+    amount: string;
+    title?: string | null;
+    note?: string | null;
+    occurredAt?: string;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc(
+    "create_attributed_household_expense",
+    {
+      p_household_id: params.householdId,
+      p_household_category_id: params.householdCategoryId,
+      p_wallet_id: params.walletId,
+      p_pocket_id: params.pocketId,
+      p_amount: params.amount,
+      p_title: params.title ?? null,
+      p_note: params.note ?? null,
+      p_occurred_at: params.occurredAt,
+    },
+  );
+
+  if (error) throw error;
+  return data;
+}
+
 export async function createPocketTransfer(
   supabase: SupabaseClient<Database>,
   params: {

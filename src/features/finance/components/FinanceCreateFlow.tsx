@@ -11,6 +11,7 @@ import type { Pocket } from "@/features/pockets/types";
 import type { TagOption } from "@/features/tags/types";
 import { CreateInstallmentForm } from "@/features/installments/components/CreateInstallmentForm";
 import { getInstallmentSheetData } from "@/features/installments/quick-add-data";
+import { AttributedHouseholdExpenseForm } from "@/features/transactions/components/AttributedHouseholdExpenseForm";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
 import { UnifiedTransferForm } from "@/features/transactions/components/UnifiedTransferForm";
 import type { TransferEndpoint } from "@/features/transactions/domain/unified-transfer";
@@ -19,6 +20,7 @@ import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
 import { cn } from "@/lib/utils/cn";
 
 import {
+  getAttributedHouseholdExpenseSheetData,
   getCreditCardSheetData,
   getIncomeExpenseSheetData,
   getUnifiedTransferSheetData,
@@ -50,6 +52,10 @@ interface InstallmentData {
   household: CategoryNode[];
   hasHousehold: boolean;
 }
+interface AttributedExpenseData {
+  endpoints: TransferEndpoint[];
+  categories: CategoryNode[];
+}
 
 /**
  * The authoritative Finance quick-add UX: tap + → a compact CHOICE sheet
@@ -67,7 +73,13 @@ interface InstallmentData {
  * Income/Expense reuse TransactionForm. Transfer uses a unified client
  * orchestrator which dispatches to the existing pocket/wallet writers.
  */
-export function FinanceCreateFlow({ walletId }: { walletId: string }) {
+export function FinanceCreateFlow({
+  walletId,
+  householdId,
+}: {
+  walletId: string;
+  householdId?: string | null;
+}) {
   const [stage, setStage] = useState<Stage>("closed");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [ieData, setIeData] = useState<
@@ -79,6 +91,11 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
   const [installmentData, setInstallmentData] =
     useState<InstallmentData | null>(null);
   const [cardData, setCardData] = useState<CreditCardSheetData | null>(null);
+  const [expenseFunding, setExpenseFunding] = useState<
+    "HOUSEHOLD" | "PERSONAL"
+  >("HOUSEHOLD");
+  const [attributedExpenseData, setAttributedExpenseData] =
+    useState<AttributedExpenseData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   function transitionTo(next: () => void) {
@@ -107,6 +124,7 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
   function selectIncomeExpense(type: "INCOME" | "EXPENSE") {
     transitionTo(() => {
       setLoadError(null);
+      if (type === "EXPENSE") setExpenseFunding("HOUSEHOLD");
       setStage(type === "INCOME" ? "income" : "expense");
       setSheetOpen(true);
       if (ieData[type]) return;
@@ -114,6 +132,16 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
         .then((data) => setIeData((current) => ({ ...current, [type]: data })))
         .catch(() => setLoadError("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่"));
     });
+  }
+
+  function selectPersonalFunding() {
+    if (!householdId) return;
+    setExpenseFunding("PERSONAL");
+    setLoadError(null);
+    if (attributedExpenseData) return;
+    void getAttributedHouseholdExpenseSheetData(householdId)
+      .then(setAttributedExpenseData)
+      .catch(() => setLoadError("โหลดกระเป๋าส่วนตัวไม่สำเร็จ กรุณาลองใหม่"));
   }
 
   function selectTransfer() {
@@ -240,7 +268,42 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
             </div>
           ) : null}
 
-          {(stage === "income" || stage === "expense") &&
+          {stage === "expense" && householdId ? (
+            <div className="mb-4">
+              <p className="mb-1.5 text-sm font-medium text-finance-muted">
+                จ่ายจาก
+              </p>
+              <div className="grid grid-cols-2 gap-1 rounded-[1rem] bg-finance-surface-strong p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setExpenseFunding("HOUSEHOLD")}
+                  className={cn(
+                    "min-h-11 rounded-[0.8rem] px-2 text-sm font-medium",
+                    expenseFunding === "HOUSEHOLD"
+                      ? "bg-finance-primary-soft text-finance-primary-strong"
+                      : "text-finance-muted",
+                  )}
+                >
+                  กระเป๋าครอบครัว
+                </button>
+                <button
+                  type="button"
+                  onClick={selectPersonalFunding}
+                  className={cn(
+                    "min-h-11 rounded-[0.8rem] px-2 text-sm font-medium",
+                    expenseFunding === "PERSONAL"
+                      ? "bg-finance-primary-soft text-finance-primary-strong"
+                      : "text-finance-muted",
+                  )}
+                >
+                  ส่วนตัวของฉัน
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {(stage === "income" ||
+            (stage === "expense" && expenseFunding === "HOUSEHOLD")) &&
           activeIncomeExpenseData ? (
             <TransactionForm
               walletId={walletId}
@@ -252,6 +315,17 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
               tags={activeIncomeExpenseData.tags}
               returnTo={FINANCE_RETURN_TO}
               variant="sheet"
+            />
+          ) : null}
+
+          {stage === "expense" &&
+          householdId &&
+          expenseFunding === "PERSONAL" &&
+          attributedExpenseData ? (
+            <AttributedHouseholdExpenseForm
+              householdId={householdId}
+              endpoints={attributedExpenseData.endpoints}
+              categories={attributedExpenseData.categories}
             />
           ) : null}
 
@@ -270,7 +344,12 @@ export function FinanceCreateFlow({ walletId }: { walletId: string }) {
           {stage !== "choosing" &&
           !loadError &&
           ((stage === "income" && !ieData.INCOME) ||
-            (stage === "expense" && !ieData.EXPENSE) ||
+            (stage === "expense" &&
+              expenseFunding === "HOUSEHOLD" &&
+              !ieData.EXPENSE) ||
+            (stage === "expense" &&
+              expenseFunding === "PERSONAL" &&
+              !attributedExpenseData) ||
             (stage === "transfer" && !transferData) ||
             (stage === "card" && !cardData) ||
             (stage === "installment" && !installmentData)) ? (

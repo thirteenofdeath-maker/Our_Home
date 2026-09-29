@@ -1865,6 +1865,19 @@ export interface Database {
         };
         Returns: string;
       };
+      create_attributed_household_expense: {
+        Args: {
+          p_household_id: string;
+          p_household_category_id: string;
+          p_wallet_id: string;
+          p_pocket_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
       create_pocket_transfer: {
         Args: {
           p_wallet_id: string;
