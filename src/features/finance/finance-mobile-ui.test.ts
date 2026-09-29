@@ -37,7 +37,7 @@ describe("approved mobile Finance UI", () => {
       /defaultWallet|mainWallet|default_wallet|main_wallet/,
     );
     expect(hub.indexOf('title="สรุปรายรับรายจ่าย"')).toBeLessThan(
-      hub.indexOf("{initialWallet ? ("),
+      hub.indexOf("<FinanceCreateFlow"),
     );
   });
 
@@ -109,7 +109,7 @@ describe("approved mobile Finance UI", () => {
   it("starts the overview content with the income-expense summary", () => {
     const monthSwitcher = hub.indexOf("<FinanceMonthNavigator");
     const trendHeading = hub.indexOf('title="สรุปรายรับรายจ่าย"');
-    const addEntry = hub.indexOf("{initialWallet ? (");
+    const addEntry = hub.indexOf("<FinanceCreateFlow");
     const planning = hub.indexOf("วางแผนการเงิน");
 
     expect(monthSwitcher).toBeGreaterThan(trendHeading);
@@ -121,6 +121,18 @@ describe("approved mobile Finance UI", () => {
     expect(hub).not.toContain('title="รายการล่าสุด"');
     expect(hub).not.toContain('title="กระเป๋าเงิน"');
     expect(hub).not.toContain("ยอดเงินส่วนตัว");
+  });
+
+  it("keeps household quick-add available without a household wallet so a personal wallet can fund the expense", () => {
+    expect(hub).toContain(
+      'initialWallet || (scope === "HOUSEHOLD" && householdId)',
+    );
+    expect(hub).toContain("walletId={initialWallet?.id ?? null}");
+    expect(createFlow).toContain("walletId: string | null");
+    expect(createFlow).toContain("จ่ายจากกระเป๋าส่วนตัวให้ครอบครัว");
+    expect(createFlow).toContain(
+      'setExpenseFunding(walletId ? "HOUSEHOLD" : "PERSONAL")',
+    );
   });
 
   it("keeps decorative artwork in the shared cover instead of dashboard cards", () => {

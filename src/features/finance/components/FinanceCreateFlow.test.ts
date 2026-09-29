@@ -25,8 +25,9 @@ describe("FinanceCreateFlow — sheet state architecture", () => {
       /handleOwnDialogLifecycle\(event, onClose, false, controlledClose\)/,
     );
     expect(flow).toMatch(
-      /function selectTransfer\(\) \{\s*transitionTo\(\(\) => \{[\s\S]*?setStage\("transfer"\);\s*setSheetOpen\(true\);/,
+      /function selectTransfer\(\) \{[\s\S]*?transitionTo\(\(\) => \{[\s\S]*?setStage\("transfer"\);\s*setSheetOpen\(true\);/,
     );
+    expect(flow).toContain("if (!walletId) return");
     expect(flow).toMatch(
       /<BottomSheet[\s\S]*?onClose=\{showBack \? goBack : closeFlow\}/,
     );
@@ -188,5 +189,25 @@ describe("FinanceCreateFlow — Finance V2 visual language", () => {
 
   it('passes tone="finance" to its own BottomSheet — otherwise the dialog\'s own chrome (surface/handle/close button) would keep rendering the generic, theme-following tokens instead of the finance palette', () => {
     expect(flow).toMatch(/<BottomSheet[\s\S]*?tone="finance"/);
+  });
+
+  it("supports personal-funded household expenses even when no household wallet exists", () => {
+    expect(flow).toContain("walletId: string | null");
+    expect(flow).toContain(
+      'if (!walletId && !(type === "EXPENSE" && householdId)) return',
+    );
+    expect(flow).toContain(
+      'setExpenseFunding(walletId ? "HOUSEHOLD" : "PERSONAL")',
+    );
+    expect(flow).toContain(
+      "getAttributedHouseholdExpenseSheetData(householdId)",
+    );
+  });
+
+  it("uses an explicit add label on desktop while retaining the plus icon", () => {
+    expect(flow).toContain('className="app-fab finance-create-fab');
+    expect(flow).toContain('<AppIcon name="plus" />');
+    expect(flow).toContain("finance-create-fab-label");
+    expect(flow).toContain("เพิ่มรายการ");
   });
 });

@@ -236,12 +236,14 @@ export default async function FinancePage({
         </section>
 
         <div className="landscape-finance-side min-w-0">
-          {initialWallet ? (
+          {initialWallet || (scope === "HOUSEHOLD" && householdId) ? (
             <FinanceCreateFlow
-              walletId={initialWallet.id}
+              walletId={initialWallet?.id ?? null}
               householdId={scope === "HOUSEHOLD" ? householdId : null}
             />
-          ) : (
+          ) : null}
+
+          {!initialWallet ? (
             <div className="rounded-[1.25rem] bg-finance-surface-strong p-4 text-center shadow-sm">
               <p className="text-sm text-finance-muted">
                 เพิ่มกระเป๋าเงิน
@@ -255,7 +257,7 @@ export default async function FinancePage({
                 เพิ่มกระเป๋าเงิน
               </AddWalletTrigger>
             </div>
-          )}
+          ) : null}
 
           <section className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold text-finance-text">

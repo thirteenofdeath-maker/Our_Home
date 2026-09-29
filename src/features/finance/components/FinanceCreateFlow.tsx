@@ -77,7 +77,7 @@ export function FinanceCreateFlow({
   walletId,
   householdId,
 }: {
-  walletId: string;
+  walletId: string | null;
   householdId?: string | null;
 }) {
   const [stage, setStage] = useState<Stage>("closed");
@@ -122,11 +122,27 @@ export function FinanceCreateFlow({
   }
 
   function selectIncomeExpense(type: "INCOME" | "EXPENSE") {
+    if (!walletId && !(type === "EXPENSE" && householdId)) return;
+
     transitionTo(() => {
       setLoadError(null);
-      if (type === "EXPENSE") setExpenseFunding("HOUSEHOLD");
+      if (type === "EXPENSE") {
+        setExpenseFunding(walletId ? "HOUSEHOLD" : "PERSONAL");
+      }
       setStage(type === "INCOME" ? "income" : "expense");
       setSheetOpen(true);
+
+      if (!walletId && type === "EXPENSE" && householdId) {
+        if (attributedExpenseData) return;
+        void getAttributedHouseholdExpenseSheetData(householdId)
+          .then(setAttributedExpenseData)
+          .catch(() =>
+            setLoadError("โหลดกระเป๋าส่วนตัวไม่สำเร็จ กรุณาลองใหม่"),
+          );
+        return;
+      }
+
+      if (!walletId) return;
       if (ieData[type]) return;
       void getIncomeExpenseSheetData(walletId, type)
         .then((data) => setIeData((current) => ({ ...current, [type]: data })))
@@ -145,6 +161,7 @@ export function FinanceCreateFlow({
   }
 
   function selectTransfer() {
+    if (!walletId) return;
     transitionTo(() => {
       setLoadError(null);
       setStage("transfer");
@@ -157,6 +174,7 @@ export function FinanceCreateFlow({
   }
 
   function selectCard() {
+    if (!walletId) return;
     transitionTo(() => {
       setLoadError(null);
       setStage("card");
@@ -207,9 +225,10 @@ export function FinanceCreateFlow({
         type="button"
         aria-label="เพิ่มรายการการเงิน"
         onClick={openChoice}
-        className="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        className="app-fab finance-create-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
       >
         <AppIcon name="plus" />
+        <span className="finance-create-fab-label">เพิ่มรายการ</span>
       </button>
 
       <BottomSheet
@@ -230,45 +249,55 @@ export function FinanceCreateFlow({
               <p className="mb-1 text-sm text-finance-muted">
                 เลือกประเภทที่ต้องการ
               </p>
-              <ChoiceRow
-                icon="income"
-                label="รายรับ"
-                description="เงินเข้ากระเป๋า"
-                accent="income"
-                onClick={() => selectIncomeExpense("INCOME")}
-              />
+              {walletId ? (
+                <ChoiceRow
+                  icon="income"
+                  label="รายรับ"
+                  description="เงินเข้ากระเป๋า"
+                  accent="income"
+                  onClick={() => selectIncomeExpense("INCOME")}
+                />
+              ) : null}
               <ChoiceRow
                 icon="expense"
                 label="รายจ่าย"
-                description="บันทึกค่าใช้จ่าย"
+                description={
+                  walletId
+                    ? "บันทึกค่าใช้จ่าย"
+                    : "จ่ายจากกระเป๋าส่วนตัวให้ครอบครัว"
+                }
                 accent="expense"
                 onClick={() => selectIncomeExpense("EXPENSE")}
               />
-              <ChoiceRow
-                icon="transfer"
-                label="โอนเงิน"
-                description="ย้ายเงินระหว่างกระเป๋า"
-                accent="transfer"
-                onClick={selectTransfer}
-              />
-              <ChoiceRow
-                icon="wallet"
-                label="บัตรเครดิต"
-                description="ดูและจัดการบัตรใน Wallet"
-                accent="card"
-                onClick={selectCard}
-              />
-              <ChoiceRow
-                icon="calendar"
-                label="ผ่อนชำระ"
-                description="สร้างแผนผ่อนชำระใหม่"
-                accent="installment"
-                onClick={selectInstallment}
-              />
+              {walletId ? (
+                <>
+                  <ChoiceRow
+                    icon="transfer"
+                    label="โอนเงิน"
+                    description="ย้ายเงินระหว่างกระเป๋า"
+                    accent="transfer"
+                    onClick={selectTransfer}
+                  />
+                  <ChoiceRow
+                    icon="wallet"
+                    label="บัตรเครดิต"
+                    description="ดูและจัดการบัตรใน Wallet"
+                    accent="card"
+                    onClick={selectCard}
+                  />
+                  <ChoiceRow
+                    icon="calendar"
+                    label="ผ่อนชำระ"
+                    description="สร้างแผนผ่อนชำระใหม่"
+                    accent="installment"
+                    onClick={selectInstallment}
+                  />
+                </>
+              ) : null}
             </div>
           ) : null}
 
-          {stage === "expense" && householdId ? (
+          {stage === "expense" && householdId && walletId ? (
             <div className="mb-4">
               <p className="mb-1.5 text-sm font-medium text-finance-muted">
                 จ่ายจาก
@@ -304,6 +333,7 @@ export function FinanceCreateFlow({
 
           {(stage === "income" ||
             (stage === "expense" && expenseFunding === "HOUSEHOLD")) &&
+          walletId &&
           activeIncomeExpenseData ? (
             <TransactionForm
               walletId={walletId}
