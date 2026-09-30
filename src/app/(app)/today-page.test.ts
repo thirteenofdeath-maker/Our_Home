@@ -55,10 +55,13 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("openFinanceDue");
     expect(source).toContain("personalFinancePromise");
     expect(source).toContain("householdFinancePromise");
-    expect(source).toContain("การเงินวันนี้ · ส่วนตัว");
-    expect(source).toContain("การเงินวันนี้ · ครอบครัว");
-    expect(source).toContain('href: "/finance?scope=PERSONAL"');
-    expect(source).toContain('href: "/finance?scope=HOUSEHOLD"');
+    expect(source).toContain("FinanceScopeSummary");
+    expect(source).toContain('label="ส่วนตัว"');
+    expect(source).toContain('label="ครอบครัว"');
+    expect(source).toContain('href="/finance?scope=PERSONAL"');
+    expect(source).toContain('href="/finance?scope=HOUSEHOLD"');
+    expect(source).toContain("compactTodaySummary");
+    expect(source).toContain('detail: "ซื้อครบแล้ว"');
   });
 
   it("uses the scoped report read model so personal-funded household expenses appear once under household", () => {

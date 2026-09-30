@@ -285,6 +285,26 @@ type DailySummaryItem = {
   detail: string;
 };
 
+type CompactDailySummaryItem = Pick<
+  DailySummaryItem,
+  "key" | "href" | "icon" | "label" | "detail"
+>;
+
+type FinanceDailySummaryItem = {
+  key: string;
+  currency: string;
+  personal: {
+    income: string;
+    expense: string;
+    due: number;
+  };
+  household: {
+    income: string;
+    expense: string;
+    due: number;
+  } | null;
+};
+
 const FINANCE_COMPLETE_STATUSES = new Set([
   "PAID",
   "POSTED",
@@ -484,7 +504,7 @@ async function HomeTodaySections({
       ),
     ),
   ].toSorted();
-  const financeSummaryItems: DailySummaryItem[] = financeCurrencies.flatMap(
+  const financeSummaryItems: FinanceDailySummaryItem[] = financeCurrencies.map(
     (currency) => {
       const personal = personalFinance.days.find(
         (item) => item.currency === currency,
@@ -492,60 +512,84 @@ async function HomeTodaySections({
       const household = householdFinance?.days.find(
         (item) => item.currency === currency,
       ) ?? { income: "0.00", expense: "0.00" };
-      const items: DailySummaryItem[] = [
-        {
-          key: `finance-personal-${currency}`,
-          href: "/finance?scope=PERSONAL",
-          icon: "finance",
-          label: `การเงินวันนี้ · ส่วนตัว · ${currency}`,
-          value: `รับ ${formatCurrency(personal.income, currency)}`,
-          detail: `จ่าย ${formatCurrency(personal.expense, currency)} · ครบกำหนด ${personalFinanceDue}`,
+      return {
+        key: `finance-${currency}`,
+        currency,
+        personal: {
+          income: formatCurrency(personal.income, currency),
+          expense: formatCurrency(personal.expense, currency),
+          due: personalFinanceDue,
         },
-      ];
-      if (householdFinance) {
-        items.push({
-          key: `finance-household-${currency}`,
-          href: "/finance?scope=HOUSEHOLD",
-          icon: "finance",
-          label: `การเงินวันนี้ · ครอบครัว · ${currency}`,
-          value: `รับ ${formatCurrency(household.income, currency)}`,
-          detail: `จ่าย ${formatCurrency(household.expense, currency)} · ครบกำหนด ${householdFinanceDue}`,
-        });
-      }
-      return items;
+        household: householdFinance
+          ? {
+              income: formatCurrency(household.income, currency),
+              expense: formatCurrency(household.expense, currency),
+              due: householdFinanceDue,
+            }
+          : null,
+      };
     },
   );
   const todaySummary: DailySummaryItem[] = [
-    {
-      key: "inventory",
-      href: "/calendar?view=inventory",
-      icon: "inventory",
-      label: "คลังของ",
-      value: `${attentionInventory.length} รายการ`,
-      detail: attentionInventory.length
-        ? "ใกล้หมด ใกล้หมดอายุ หรือใกล้หมดประกัน"
-        : "ของในบ้านยังอยู่ในสถานะปกติ",
-    },
-    {
-      key: "shopping",
-      href: "/calendar?view=shopping",
-      icon: "shopping",
-      label: "รายการซื้อของ",
-      value: `${pendingShopping.length} รายการ`,
-      detail: pendingShopping.length ? "ยังรอซื้ออยู่" : "ซื้อครบแล้ว",
-    },
-    ...(financeSummaryItems.length
-      ? financeSummaryItems
-      : [
+    ...(attentionInventory.length
+      ? [
+          {
+            key: "inventory",
+            href: "/calendar?view=inventory",
+            icon: "inventory" as const,
+            label: "คลังของ",
+            value: `${attentionInventory.length} รายการ`,
+            detail: "ใกล้หมด ใกล้หมดอายุ หรือใกล้หมดประกัน",
+          },
+        ]
+      : []),
+    ...(pendingShopping.length
+      ? [
+          {
+            key: "shopping",
+            href: "/calendar?view=shopping",
+            icon: "shopping" as const,
+            label: "รายการซื้อของ",
+            value: `${pendingShopping.length} รายการ`,
+            detail: "ยังรอซื้ออยู่",
+          },
+        ]
+      : []),
+  ];
+  const compactTodaySummary: CompactDailySummaryItem[] = [
+    ...(attentionInventory.length === 0
+      ? [
+          {
+            key: "inventory-ok",
+            href: "/calendar?view=inventory",
+            icon: "inventory" as const,
+            label: "คลังของ",
+            detail: "สถานะปกติ",
+          },
+        ]
+      : []),
+    ...(pendingShopping.length === 0
+      ? [
+          {
+            key: "shopping-done",
+            href: "/calendar?view=shopping",
+            icon: "shopping" as const,
+            label: "รายการซื้อของ",
+            detail: "ซื้อครบแล้ว",
+          },
+        ]
+      : []),
+    ...(financeSummaryItems.length === 0
+      ? [
           {
             key: "finance-empty",
             href: "/finance",
             icon: "finance" as const,
             label: "การเงินวันนี้",
-            value: "ยังไม่มีรับ–จ่าย",
-            detail: `ส่วนตัว ${personalFinanceDue} · ครอบครัว ${householdFinanceDue} รายการครบกำหนด`,
+            detail: `ยังไม่มีรับ–จ่าย · ครบกำหนด ${personalFinanceDue + householdFinanceDue}`,
           },
-        ]),
+        ]
+      : []),
   ];
   const currentWeek = weekDates(today);
 
@@ -556,6 +600,8 @@ async function HomeTodaySections({
         dateLabel={thaiToday(today)}
         items={todayTimeline}
         summaryItems={todaySummary}
+        compactSummaryItems={compactTodaySummary}
+        financeSummaryItems={financeSummaryItems}
         emptyText="วันนี้ยังไม่มีงานหรือนัดหมาย"
       />
 
@@ -684,12 +730,16 @@ function TimelineCard({
   dateLabel,
   items,
   summaryItems = [],
+  compactSummaryItems = [],
+  financeSummaryItems = [],
   emptyText,
 }: {
   title: string;
   dateLabel: string;
   items: TimelineItem[];
   summaryItems?: DailySummaryItem[];
+  compactSummaryItems?: CompactDailySummaryItem[];
+  financeSummaryItems?: FinanceDailySummaryItem[];
   emptyText: string;
 }) {
   const trackableItems = items.filter((item) => item.completed !== null);
@@ -712,10 +762,36 @@ function TimelineCard({
         </span>
       </div>
 
+      <div className="mt-3">
+        <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+          <span className="text-finance-muted">
+            {trackableItems.length
+              ? `เสร็จ ${completedCount} จาก ${trackableItems.length} งาน`
+              : "ยังไม่มีงานที่ติดตามสถานะ"}
+          </span>
+          <span className="font-semibold tabular-nums text-finance-primary-strong">
+            {progress}%
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label={`ความคืบหน้า${title}`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          className="h-1.5 overflow-hidden rounded-full bg-finance-primary-soft/70"
+        >
+          <div
+            className="h-full rounded-full bg-finance-primary transition-[width]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
       {summaryItems.length ? (
         <div
-          aria-label={`สรุป${title}`}
-          className="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+          aria-label={`รายการที่ต้องจัดการ${title}`}
+          className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2"
         >
           {summaryItems.map((summary) => (
             <Link
@@ -742,31 +818,64 @@ function TimelineCard({
         </div>
       ) : null}
 
-      <div className="mt-4 rounded-[1rem] bg-finance-primary-soft/30 p-3">
-        <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-          <span className="text-finance-muted">
-            {trackableItems.length
-              ? `เสร็จ ${completedCount} จาก ${trackableItems.length} งาน`
-              : "ยังไม่มีงานที่ติดตามสถานะ"}
-          </span>
-          <span className="font-semibold tabular-nums text-finance-primary-strong">
-            {progress}%
-          </span>
-        </div>
-        <div
-          role="progressbar"
-          aria-label={`ความคืบหน้า${title}`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-          className="h-2 overflow-hidden rounded-full bg-finance-surface-strong"
+      {financeSummaryItems.map((summary) => (
+        <section
+          key={summary.key}
+          aria-label={`การเงินวันนี้ ${summary.currency}`}
+          className="mt-2 rounded-[1rem] bg-finance-primary-soft/45 p-3"
         >
+          <div className="flex items-center gap-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong">
+              <AppIcon name="finance" className="size-4" />
+            </span>
+            <p className="text-xs font-medium text-finance-muted">
+              การเงินวันนี้ · {summary.currency}
+            </p>
+          </div>
           <div
-            className="h-full rounded-full bg-finance-primary transition-[width]"
-            style={{ width: `${progress}%` }}
-          />
+            className={`mt-2 grid gap-2 ${summary.household ? "grid-cols-2" : "grid-cols-1"}`}
+          >
+            <FinanceScopeSummary
+              href="/finance?scope=PERSONAL"
+              label="ส่วนตัว"
+              summary={summary.personal}
+            />
+            {summary.household ? (
+              <FinanceScopeSummary
+                href="/finance?scope=HOUSEHOLD"
+                label="ครอบครัว"
+                summary={summary.household}
+              />
+            ) : null}
+          </div>
+        </section>
+      ))}
+
+      {compactSummaryItems.length ? (
+        <div
+          aria-label={`สถานะเรียบร้อย${title}`}
+          className="mt-2 grid min-w-0 grid-cols-1 gap-1.5 min-[380px]:grid-cols-2"
+        >
+          {compactSummaryItems.map((summary) => (
+            <Link
+              key={summary.key}
+              href={summary.href}
+              className="flex min-w-0 items-center gap-2 rounded-[0.9rem] bg-finance-primary-soft/25 px-3 py-2 text-xs transition-colors hover:bg-finance-primary-soft/55"
+            >
+              <AppIcon
+                name={summary.icon}
+                className="size-4 shrink-0 text-finance-primary-strong"
+              />
+              <span className="min-w-0 truncate font-medium text-finance-text">
+                {summary.label}
+              </span>
+              <span className="ml-auto shrink-0 text-finance-muted">
+                ✓ {summary.detail}
+              </span>
+            </Link>
+          ))}
         </div>
-      </div>
+      ) : null}
 
       {items.length ? (
         <ol className="mt-4">
@@ -819,6 +928,36 @@ function TimelineCard({
         </div>
       )}
     </Card>
+  );
+}
+
+function FinanceScopeSummary({
+  href,
+  label,
+  summary,
+}: {
+  href: string;
+  label: string;
+  summary: FinanceDailySummaryItem["personal"];
+}) {
+  return (
+    <Link
+      href={href}
+      className="min-w-0 rounded-[0.85rem] bg-finance-surface-strong/70 px-2.5 py-2 transition-colors hover:bg-finance-surface-strong"
+    >
+      <p className="text-xs font-semibold text-finance-text">{label}</p>
+      <p className="mt-1 truncate text-xs text-finance-muted">
+        รับ {summary.income}
+      </p>
+      <p className="truncate text-xs text-finance-muted">
+        จ่าย {summary.expense}
+      </p>
+      {summary.due ? (
+        <p className="mt-1 text-[11px] font-medium text-finance-primary-strong">
+          ครบกำหนด {summary.due}
+        </p>
+      ) : null}
+    </Link>
   );
 }
 
