@@ -20,6 +20,7 @@ import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
 import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
+import { choreCadenceLabel } from "@/features/chores/types";
 import {
   getMyPrimaryHousehold,
   listHouseholdMembers,
@@ -560,7 +561,10 @@ export default async function CalendarPage({
                         {template.title}
                       </h3>
                       <p className="mt-0.5 text-sm text-finance-muted">
-                        {template.cadence === "DAILY" ? "ทุกวัน" : "ทุกสัปดาห์"}{" "}
+                        {choreCadenceLabel(
+                          template.cadence,
+                          template.interval_count,
+                        )}{" "}
                         · {templateAssignees.length} คน
                       </p>
                     </div>

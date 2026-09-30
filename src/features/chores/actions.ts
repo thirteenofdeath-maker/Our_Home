@@ -18,7 +18,12 @@ const choreSchema = z.object({
   householdId: z.string().uuid(),
   title: z.string().trim().min(1, "กรุณาระบุชื่องานบ้าน").max(120),
   details: z.string().trim().max(1000),
-  cadence: z.enum(["DAILY", "WEEKLY"]),
+  cadence: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
+  intervalCount: z.coerce
+    .number()
+    .int()
+    .min(1, "รอบการทำซ้ำต้องเริ่มที่ 1")
+    .max(365, "รอบการทำซ้ำต้องไม่เกิน 365"),
   startsOn: z.iso.date(),
   dueTime: z.union([z.literal(""), z.string().regex(/^\d{2}:\d{2}$/)]),
   memberIds: z
@@ -42,6 +47,7 @@ function parseChoreForm(form: FormData) {
     title: stringValue(form, "title"),
     details: stringValue(form, "details"),
     cadence: stringValue(form, "cadence"),
+    intervalCount: stringValue(form, "intervalCount"),
     startsOn: stringValue(form, "startsOn"),
     dueTime: stringValue(form, "dueTime"),
     memberIds: form
@@ -90,6 +96,7 @@ export async function updateChoreAction(
       title: parsed.data.title,
       details: parsed.data.details,
       cadence: parsed.data.cadence,
+      intervalCount: parsed.data.intervalCount,
       startsOn: parsed.data.startsOn,
       dueTime: parsed.data.dueTime || null,
       memberIds: parsed.data.memberIds,

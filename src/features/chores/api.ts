@@ -57,6 +57,7 @@ export async function createChoreTemplate(
     title: string;
     details: string;
     cadence: ChoreCadence;
+    intervalCount: number;
     startsOn: string;
     dueTime: string | null;
     memberIds: string[];
@@ -67,6 +68,7 @@ export async function createChoreTemplate(
     p_title: input.title,
     p_details: input.details,
     p_cadence: input.cadence,
+    p_interval_count: input.intervalCount,
     p_starts_on: input.startsOn,
     p_due_time: input.dueTime,
     p_member_ids: input.memberIds,
@@ -81,6 +83,7 @@ export async function updateChoreTemplate(
     title: string;
     details: string;
     cadence: ChoreCadence;
+    intervalCount: number;
     startsOn: string;
     dueTime: string | null;
     memberIds: string[];
@@ -91,6 +94,7 @@ export async function updateChoreTemplate(
     p_title: input.title,
     p_details: input.details,
     p_cadence: input.cadence,
+    p_interval_count: input.intervalCount,
     p_starts_on: input.startsOn,
     p_due_time: input.dueTime,
     p_member_ids: input.memberIds,

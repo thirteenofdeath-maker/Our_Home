@@ -40,7 +40,7 @@ export type PlanNoteColor =
   "SAGE" | "SKY" | "SAND" | "ROSE" | "LILAC" | "WHITE";
 export type PlanReminderRecurrence =
   "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
-export type ChoreCadence = "DAILY" | "WEEKLY";
+export type ChoreCadence = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 export type InventoryCategory =
   "MEDICINE" | "PET_SUPPLY" | "HOUSEHOLD" | "FOOD" | "WARRANTY" | "OTHER";
 export type InventoryDocumentType = "RECEIPT" | "MANUAL" | "WARRANTY" | "OTHER";
@@ -326,6 +326,7 @@ export interface Database {
           title: string;
           details: string | null;
           cadence: ChoreCadence;
+          interval_count: number;
           starts_on: string;
           due_time: string | null;
           is_active: boolean;
@@ -1586,6 +1587,7 @@ export interface Database {
           p_title: string;
           p_details: string;
           p_cadence: ChoreCadence;
+          p_interval_count: number;
           p_starts_on: string;
           p_due_time: string | null;
           p_member_ids: string[];
@@ -1598,6 +1600,7 @@ export interface Database {
           p_title: string;
           p_details: string;
           p_cadence: ChoreCadence;
+          p_interval_count: number;
           p_starts_on: string;
           p_due_time: string | null;
           p_member_ids: string[];

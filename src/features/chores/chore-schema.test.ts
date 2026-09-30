@@ -10,6 +10,17 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const flexibleRecurrenceMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260930074858_flexible_chore_recurrence.sql",
+  ),
+  "utf8",
+);
+const form = readFileSync(
+  resolve(process.cwd(), "src/features/chores/components/ChoreForm.tsx"),
+  "utf8",
+);
 const page = readFileSync(
   resolve(process.cwd(), "src/app/(app)/calendar/page.tsx"),
   "utf8",
@@ -32,12 +43,26 @@ describe("rotating household chores contract", () => {
     );
   });
 
-  it("materializes deterministic daily or weekly rotations", () => {
-    expect(migration).toContain("v_existing_count % greatest");
-    expect(migration).toContain(
-      "when v_template.cadence = 'DAILY' then v_date + 1",
+  it("materializes deterministic rotations for every N days, weeks, months, or years", () => {
+    expect(flexibleRecurrenceMigration).toContain(
+      "cadence in ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY')",
     );
-    expect(migration).toContain("else v_date + 7");
+    expect(flexibleRecurrenceMigration).toContain(
+      "v_date + v_template.interval_count",
+    );
+    expect(flexibleRecurrenceMigration).toContain(
+      "public.recurring_next_due_date(",
+    );
+    expect(flexibleRecurrenceMigration).toContain(
+      "v_existing_count % greatest",
+    );
+  });
+
+  it("lets the form choose an interval and recurrence unit", () => {
+    expect(form).toContain('name="intervalCount"');
+    for (const cadence of ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]) {
+      expect(form).toContain(`value="${cadence}"`);
+    }
   });
 
   it("records original assignment, takeover and completion history", () => {

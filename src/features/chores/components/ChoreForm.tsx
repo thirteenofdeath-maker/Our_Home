@@ -64,17 +64,36 @@ export function ChoreForm({
           defaultValue={template?.details ?? ""}
         />
       </Field>
-      <TwoColumnFieldGrid>
-        <Field label="หมุนเวียน" htmlFor={`chore-cadence-${suffix}`}>
+      <Field label="ทำซ้ำทุก" htmlFor={`chore-interval-${suffix}`}>
+        <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2">
+          <Input
+            id={`chore-interval-${suffix}`}
+            name="intervalCount"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={365}
+            required
+            defaultValue={template?.interval_count ?? 1}
+            aria-label="จำนวนรอบ"
+          />
           <Select
             id={`chore-cadence-${suffix}`}
             name="cadence"
             defaultValue={template?.cadence ?? "DAILY"}
+            aria-label="หน่วยการทำซ้ำ"
           >
-            <option value="DAILY">ทุกวัน</option>
-            <option value="WEEKLY">ทุกสัปดาห์</option>
+            <option value="DAILY">วัน</option>
+            <option value="WEEKLY">สัปดาห์</option>
+            <option value="MONTHLY">เดือน</option>
+            <option value="YEARLY">ปี</option>
           </Select>
-        </Field>
+        </div>
+        <p className="mt-1.5 text-xs text-foreground-muted">
+          เช่น ทุก 2 วัน หรือทุก 3 เดือน
+        </p>
+      </Field>
+      <TwoColumnFieldGrid>
         <Field label="เวลา" htmlFor={`chore-time-${suffix}`}>
           <Input
             id={`chore-time-${suffix}`}
@@ -83,17 +102,17 @@ export function ChoreForm({
             defaultValue={template?.due_time?.slice(0, 5) ?? ""}
           />
         </Field>
+        <Field label="เริ่มวันที่" htmlFor={`chore-start-${suffix}`}>
+          <Input
+            id={`chore-start-${suffix}`}
+            name="startsOn"
+            type="date"
+            defaultValue={startDate}
+            min={today}
+            required
+          />
+        </Field>
       </TwoColumnFieldGrid>
-      <Field label="เริ่มวันที่" htmlFor={`chore-start-${suffix}`}>
-        <Input
-          id={`chore-start-${suffix}`}
-          name="startsOn"
-          type="date"
-          defaultValue={startDate}
-          min={today}
-          required
-        />
-      </Field>
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium text-foreground-muted">
           ลำดับผู้รับผิดชอบ
