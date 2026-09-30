@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Button } from "@/components/ui/Button";
+import { syncAppBadge } from "@/features/notifications/app-badge";
 import type { Database } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 
@@ -39,6 +40,10 @@ export function NotificationHistoryList({
   const [items, setItems] = useState(initialItems);
   const [busy, setBusy] = useState(false);
   const unreadCount = items.filter((item) => !item.read_at).length;
+
+  useEffect(() => {
+    void syncAppBadge(unreadCount);
+  }, [unreadCount]);
 
   async function markAllRead() {
     if (!unreadCount) return;

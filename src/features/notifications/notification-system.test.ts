@@ -42,6 +42,10 @@ const historyList = readFileSync(
   "src/features/notifications/components/NotificationHistoryList.tsx",
   "utf8",
 );
+const appBadge = readFileSync(
+  "src/features/notifications/app-badge.ts",
+  "utf8",
+);
 
 describe("push notification system", () => {
   it("handles Push delivery and deep-link clicks in the service worker", () => {
@@ -115,5 +119,12 @@ describe("push notification system", () => {
     expect(historyPage).toContain("/profile/notifications/settings");
     expect(historyList).toContain("อ่านทั้งหมด");
     expect(historyList).toContain(".update({ read_at: readAt })");
+  });
+
+  it("keeps the installed app icon badge in sync with unread history", () => {
+    expect(historyList).toContain("syncAppBadge(unreadCount)");
+    expect(appBadge).toContain("badgeNavigator.clearAppBadge()");
+    expect(appBadge).toContain("badgeNavigator.setAppBadge?.(unreadCount)");
+    expect(appBadge).toContain("badgeNavigator.setAppBadge?.(0)");
   });
 });
