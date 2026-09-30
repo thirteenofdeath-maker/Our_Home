@@ -854,7 +854,7 @@ function TimelineCard({
       {compactSummaryItems.length ? (
         <div
           aria-label={`สถานะเรียบร้อย${title}`}
-          className="mt-2 grid min-w-0 grid-cols-1 gap-1.5 min-[380px]:grid-cols-2"
+          className="mt-2 grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2"
         >
           {compactSummaryItems.map((summary) => (
             <Link
@@ -866,7 +866,7 @@ function TimelineCard({
                 name={summary.icon}
                 className="size-4 shrink-0 text-finance-primary-strong"
               />
-              <span className="min-w-0 truncate font-medium text-finance-text">
+              <span className="min-w-0 font-medium text-finance-text">
                 {summary.label}
               </span>
               <span className="ml-auto shrink-0 text-finance-muted">

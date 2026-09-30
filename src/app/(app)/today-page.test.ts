@@ -62,6 +62,8 @@ describe("Today dashboard composition", () => {
     expect(source).toContain('href="/finance?scope=HOUSEHOLD"');
     expect(source).toContain("compactTodaySummary");
     expect(source).toContain('detail: "ซื้อครบแล้ว"');
+    expect(source).toContain("grid-cols-1 gap-1.5 sm:grid-cols-2");
+    expect(source).not.toContain("min-[380px]:grid-cols-2");
   });
 
   it("uses the scoped report read model so personal-funded household expenses appear once under household", () => {
