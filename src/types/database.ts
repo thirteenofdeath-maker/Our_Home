@@ -1851,6 +1851,30 @@ export interface Database {
         };
         Returns: string;
       };
+      create_card_purchase: {
+        Args: {
+          p_card_account_id: string;
+          p_category_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+          p_tag_ids?: string[] | null;
+        };
+        Returns: string;
+      };
+      create_attributed_card_purchase: {
+        Args: {
+          p_card_account_id: string;
+          p_household_id: string;
+          p_household_category_id: string;
+          p_amount: string;
+          p_title?: string | null;
+          p_note?: string | null;
+          p_occurred_at?: string;
+        };
+        Returns: string;
+      };
       create_income_expense_transaction: {
         Args: {
           p_transaction_type: "INCOME" | "EXPENSE";

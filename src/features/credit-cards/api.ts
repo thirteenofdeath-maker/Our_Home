@@ -102,3 +102,56 @@ export async function createCreditCardCashAdvance(
   if (error) throw error;
   return data;
 }
+
+export async function createCreditCardPurchase(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    categoryId: string;
+    amount: string;
+    title?: string | null;
+    note?: string | null;
+    occurredAt: string;
+    tagIds?: string[];
+  },
+) {
+  const { data, error } = await supabase.rpc("create_card_purchase", {
+    p_card_account_id: params.cardAccountId,
+    p_category_id: params.categoryId,
+    p_amount: params.amount,
+    p_title: params.title ?? null,
+    p_note: params.note ?? null,
+    p_occurred_at: params.occurredAt,
+    p_tag_ids: params.tagIds?.length ? params.tagIds : null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function createAttributedCreditCardPurchase(
+  supabase: SupabaseClient<Database>,
+  params: {
+    cardAccountId: string;
+    householdId: string;
+    householdCategoryId: string;
+    amount: string;
+    title?: string | null;
+    note?: string | null;
+    occurredAt: string;
+  },
+) {
+  const { data, error } = await supabase.rpc(
+    "create_attributed_card_purchase",
+    {
+      p_card_account_id: params.cardAccountId,
+      p_household_id: params.householdId,
+      p_household_category_id: params.householdCategoryId,
+      p_amount: params.amount,
+      p_title: params.title ?? null,
+      p_note: params.note ?? null,
+      p_occurred_at: params.occurredAt,
+    },
+  );
+  if (error) throw error;
+  return data;
+}

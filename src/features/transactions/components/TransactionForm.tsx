@@ -160,9 +160,16 @@ export function TransactionForm({
   // default; this selection is never persisted as one. A Template's
   // saved Pocket default (already validated by the caller to belong to
   // this Wallet and be active) takes priority when present.
-  const activeCurrency =
-    sheetData.pockets.find((pocket) => pocket.id === activePocketId)
-      ?.currency ?? "THB";
+  const activePocket = sheetData.pockets.find(
+    (pocket) => pocket.id === activePocketId,
+  );
+  const activeCurrency = activePocket?.currency ?? "THB";
+  const activeEndpoint = endpoints?.find(
+    (endpoint) => endpoint.pocketId === activePocketId,
+  );
+  const isCreditCard =
+    activePocket?.pocket_type === "CREDIT_CARD" ||
+    Boolean(activeEndpoint?.creditCard);
   return (
     <form
       action={formAction}
@@ -267,6 +274,13 @@ export function TransactionForm({
           value={activePocketId}
           onChange={setActivePocketId}
         />
+      ) : null}
+
+      {transactionType === "EXPENSE" && isCreditCard ? (
+        <div className="rounded-[1rem] bg-finance-warning/10 px-3 py-2.5 text-xs text-finance-muted">
+          รายการนี้จะเพิ่มยอดค้างชำระบัตร โดยยังไม่หักเงินสด
+          และการจ่ายค่าบัตรภายหลังจะไม่ถูกนับเป็นรายจ่ายซ้ำ
+        </div>
       ) : null}
 
       <Field label="หมวดหมู่" htmlFor="categoryId">

@@ -51,9 +51,16 @@ export function AttributedHouseholdExpenseForm({
           ออกเงินส่วนตัวให้ครอบครัว
         </p>
         <p className="mt-0.5 text-xs text-finance-muted">
-          หักเงินจากกระเป๋าของคุณ แต่นับรายการนี้ในรายจ่ายครอบครัว
+          ใช้กระเป๋าหรือบัตรของคุณ แต่นับรายการนี้ในรายจ่ายครอบครัว
         </p>
       </div>
+
+      {selected?.creditCard ? (
+        <div className="rounded-[1rem] bg-finance-warning/10 px-3 py-2.5 text-xs text-finance-muted">
+          รายการนี้จะเพิ่มยอดค้างชำระบัตร โดยยังไม่หักเงินสด
+          และการจ่ายค่าบัตรภายหลังจะไม่ถูกนับเป็นรายจ่ายซ้ำ
+        </div>
+      ) : null}
 
       <Field label="จำนวนเงิน" htmlFor="attributed-household-amount">
         <div className="flex h-14 items-center rounded-[1rem] border border-border/70 bg-surface px-3 shadow-sm focus-within:border-primary focus-within:ring-3 focus-within:ring-primary-soft">

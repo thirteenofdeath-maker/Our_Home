@@ -37,10 +37,11 @@ describe("personal-funded household expense", () => {
     );
   });
 
-  it("loads only the caller's non-card personal wallets and the exact household categories", () => {
+  it("loads the caller's personal wallets, including credit cards, and the exact household categories", () => {
     expect(quickData).toContain('wallet.scope === "PERSONAL"');
     expect(quickData).toContain("wallet.owner_user_id === user.id");
-    expect(quickData).toContain('wallet.wallet_type !== "CREDIT_CARD"');
+    expect(quickData).not.toContain('wallet.wallet_type !== "CREDIT_CARD"');
+    expect(quickData).toContain("listCreditCardAccounts(supabase)");
     expect(quickData).toContain('scope: "HOUSEHOLD"');
     expect(quickData).toContain("household_id: householdId");
   });
@@ -53,6 +54,7 @@ describe("personal-funded household expense", () => {
     expect(actions).toContain("createAttributedHouseholdExpenseAction");
     expect(api).toContain('"create_attributed_household_expense"');
     expect(api).toContain("p_household_category_id");
+    expect(actions).toContain("createAttributedCreditCardPurchase");
   });
 
   it("returns to the household finance dashboard after a successful save", () => {

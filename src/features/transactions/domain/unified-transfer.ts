@@ -5,13 +5,23 @@ export interface TransferEndpoint {
   pocketName: string;
   currency: string;
   balance: string;
+  creditCard?: {
+    availableCredit: string;
+    liability: string;
+  };
 }
 
-export function determineTransferKind(from: TransferEndpoint, to: TransferEndpoint): "POCKET" | "WALLET" {
+export function determineTransferKind(
+  from: TransferEndpoint,
+  to: TransferEndpoint,
+): "POCKET" | "WALLET" {
   return from.walletId === to.walletId ? "POCKET" : "WALLET";
 }
 
-export function isValidTransferDestination(from: TransferEndpoint, to: TransferEndpoint): boolean {
+export function isValidTransferDestination(
+  from: TransferEndpoint,
+  to: TransferEndpoint,
+): boolean {
   return from.pocketId !== to.pocketId && from.currency === to.currency;
 }
 

@@ -41,7 +41,7 @@ export async function getIncomeExpenseSheetData(
       candidate.owner_user_id === wallet.owner_user_id &&
       candidate.household_id === wallet.household_id,
   );
-  const [pockets, categories, tags, pocketSets] = await Promise.all([
+  const [pockets, categories, tags, pocketSets, cards] = await Promise.all([
     listPocketsForWallet(supabase, walletId),
     listCategoriesForWallet(supabase, { transactionType, wallet }),
     listTags(supabase, {
@@ -54,7 +54,13 @@ export async function getIncomeExpenseSheetData(
         pockets: await listPocketsWithBalances(supabase, candidate.id),
       })),
     ),
+    transactionType === "EXPENSE"
+      ? listCreditCardAccounts(supabase)
+      : Promise.resolve([]),
   ]);
+  const cardByPocketId = new Map(cards.map((card) => [card.pocketId, card]));
+  const canUsePocket = (pocket: Pocket) =>
+    transactionType === "EXPENSE" || pocket.pocket_type !== "CREDIT_CARD";
 
   return {
     wallets: compatibleWallets.map(({ id, name, scope }) => ({
@@ -62,18 +68,25 @@ export async function getIncomeExpenseSheetData(
       name,
       scope,
     })),
-    pockets: pockets.filter((pocket) => pocket.pocket_type !== "CREDIT_CARD"),
+    pockets: pockets.filter(canUsePocket),
     endpoints: pocketSets.flatMap(({ wallet: candidate, pockets: items }) =>
-      items
-        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
-        .map((pocket) => ({
+      items.filter(canUsePocket).map((pocket) => {
+        const card = cardByPocketId.get(pocket.id);
+        return {
           walletId: candidate.id,
           walletName: candidate.name,
           pocketId: pocket.id,
           pocketName: pocket.name,
           currency: pocket.currency,
           balance: pocket.balance,
-        })),
+          creditCard: card
+            ? {
+                availableCredit: card.availableCredit,
+                liability: card.liability,
+              }
+            : undefined,
+        };
+      }),
     ),
     categories: buildCategoryTree(categories),
     tags,
@@ -90,12 +103,9 @@ export async function getAttributedHouseholdExpenseSheetData(
   }
 
   const wallets = (await listMyWallets(supabase)).filter(
-    (wallet) =>
-      wallet.scope === "PERSONAL" &&
-      wallet.owner_user_id === user.id &&
-      wallet.wallet_type !== "CREDIT_CARD",
+    (wallet) => wallet.scope === "PERSONAL" && wallet.owner_user_id === user.id,
   );
-  const [categories, pocketSets] = await Promise.all([
+  const [categories, pocketSets, cards] = await Promise.all([
     listCategoriesForWallet(supabase, {
       transactionType: "EXPENSE",
       wallet: {
@@ -110,21 +120,30 @@ export async function getAttributedHouseholdExpenseSheetData(
         pockets: await listPocketsWithBalances(supabase, wallet.id),
       })),
     ),
+    listCreditCardAccounts(supabase),
   ]);
+  const cardByPocketId = new Map(cards.map((card) => [card.pocketId, card]));
 
   return {
     categories: buildCategoryTree(categories),
     endpoints: pocketSets.flatMap(({ wallet, pockets }) =>
-      pockets
-        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
-        .map((pocket) => ({
+      pockets.map((pocket) => {
+        const card = cardByPocketId.get(pocket.id);
+        return {
           walletId: wallet.id,
           walletName: wallet.name,
           pocketId: pocket.id,
           pocketName: pocket.name,
           currency: pocket.currency,
           balance: pocket.balance,
-        })),
+          creditCard: card
+            ? {
+                availableCredit: card.availableCredit,
+                liability: card.liability,
+              }
+            : undefined,
+        };
+      }),
     ),
   };
 }

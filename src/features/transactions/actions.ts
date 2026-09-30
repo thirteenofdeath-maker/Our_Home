@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { FINANCE_RETURN_TO } from "@/features/finance/domain/finance";
+import {
+  createAttributedCreditCardPurchase,
+  createCreditCardPurchase,
+  listCreditCardAccounts,
+} from "@/features/credit-cards/api";
 import { financeOccurredAtSchema } from "@/features/finance/validation/occurred-at";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
@@ -90,17 +95,37 @@ export async function createIncomeExpenseAction(
   }
 
   try {
-    await createIncomeExpense(supabase, {
-      transactionType: parsed.data.transactionType,
-      walletId: parsed.data.walletId,
-      pocketId: parsed.data.pocketId,
-      categoryId: parsed.data.categoryId,
-      amount: normalizeAmount(parsed.data.amount),
-      title: parsed.data.title,
-      note: parsed.data.note,
-      occurredAt: parsed.data.occurredAt,
-      tagIds: parsed.data.tagIds,
-    });
+    const card = (await listCreditCardAccounts(supabase)).find(
+      (candidate) =>
+        candidate.walletId === parsed.data.walletId &&
+        candidate.pocketId === parsed.data.pocketId,
+    );
+    if (card) {
+      if (parsed.data.transactionType !== "EXPENSE") {
+        return { error: "บัตรเครดิตใช้บันทึกได้เฉพาะรายจ่าย" };
+      }
+      await createCreditCardPurchase(supabase, {
+        cardAccountId: card.accountId,
+        categoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+        tagIds: parsed.data.tagIds,
+      });
+    } else {
+      await createIncomeExpense(supabase, {
+        transactionType: parsed.data.transactionType,
+        walletId: parsed.data.walletId,
+        pocketId: parsed.data.pocketId,
+        categoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+        tagIds: parsed.data.tagIds,
+      });
+    }
   } catch (err) {
     logDatabaseErrorInDev("createIncomeExpenseAction failed", err);
     return { error: "Could not save transaction" };
@@ -142,16 +167,33 @@ export async function createAttributedHouseholdExpenseAction(
   }
 
   try {
-    await createAttributedHouseholdExpense(supabase, {
-      householdId: parsed.data.householdId,
-      householdCategoryId: parsed.data.categoryId,
-      walletId: parsed.data.walletId,
-      pocketId: parsed.data.pocketId,
-      amount: normalizeAmount(parsed.data.amount),
-      title: parsed.data.title,
-      note: parsed.data.note,
-      occurredAt: parsed.data.occurredAt,
-    });
+    const card = (await listCreditCardAccounts(supabase)).find(
+      (candidate) =>
+        candidate.walletId === parsed.data.walletId &&
+        candidate.pocketId === parsed.data.pocketId,
+    );
+    if (card) {
+      await createAttributedCreditCardPurchase(supabase, {
+        cardAccountId: card.accountId,
+        householdId: parsed.data.householdId,
+        householdCategoryId: parsed.data.categoryId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+      });
+    } else {
+      await createAttributedHouseholdExpense(supabase, {
+        householdId: parsed.data.householdId,
+        householdCategoryId: parsed.data.categoryId,
+        walletId: parsed.data.walletId,
+        pocketId: parsed.data.pocketId,
+        amount: normalizeAmount(parsed.data.amount),
+        title: parsed.data.title,
+        note: parsed.data.note,
+        occurredAt: parsed.data.occurredAt,
+      });
+    }
   } catch (err) {
     logDatabaseErrorInDev("createAttributedHouseholdExpenseAction failed", err);
     return { error: "บันทึกรายจ่ายครอบครัวไม่สำเร็จ" };

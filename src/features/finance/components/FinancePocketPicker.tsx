@@ -131,9 +131,28 @@ export function FinancePocketPickerSheet({
                         {option.walletName} · {option.currency}
                       </span>
                     </span>
-                    <span className="ml-3 shrink-0 tabular-nums text-finance-text">
-                      {formatCurrency(option.balance, option.currency)}
-                    </span>
+                    {option.creditCard ? (
+                      <span className="ml-3 shrink-0 text-right tabular-nums">
+                        <span className="block text-sm text-finance-text">
+                          วงเงินเหลือ{" "}
+                          {formatCurrency(
+                            option.creditCard.availableCredit,
+                            option.currency,
+                          )}
+                        </span>
+                        <span className="block text-xs text-finance-muted">
+                          ค้างชำระ{" "}
+                          {formatCurrency(
+                            option.creditCard.liability,
+                            option.currency,
+                          )}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="ml-3 shrink-0 tabular-nums text-finance-text">
+                        {formatCurrency(option.balance, option.currency)}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -206,7 +225,9 @@ export function FinancePocketField({
           </span>
           {selected ? (
             <span className="mt-1 text-xs tabular-nums text-finance-muted">
-              {formatCurrency(selected.balance, selected.currency)}
+              {selected.creditCard
+                ? `วงเงินเหลือ ${formatCurrency(selected.creditCard.availableCredit, selected.currency)} · ค้างชำระ ${formatCurrency(selected.creditCard.liability, selected.currency)}`
+                : formatCurrency(selected.balance, selected.currency)}
             </span>
           ) : null}
         </button>

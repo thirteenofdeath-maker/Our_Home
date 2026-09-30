@@ -120,7 +120,9 @@ export default async function NewTransactionPage({
         wallets={wallets.map(({ id, name, scope }) => ({ id, name, scope }))}
         transactionType={transactionType}
         pockets={pockets.filter(
-          (pocket) => pocket.pocket_type !== "CREDIT_CARD",
+          (pocket) =>
+            transactionType === "EXPENSE" ||
+            pocket.pocket_type !== "CREDIT_CARD",
         )}
         categories={buildCategoryTree(categories)}
         tags={tags}
