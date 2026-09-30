@@ -53,6 +53,24 @@ describe("Today dashboard composition", () => {
     expect(source).toContain('label: "รายการซื้อของ"');
     expect(source).toContain("การเงินวันนี้");
     expect(source).toContain("openFinanceDue");
+    expect(source).toContain("personalFinancePromise");
+    expect(source).toContain("householdFinancePromise");
+    expect(source).toContain("การเงินวันนี้ · ส่วนตัว");
+    expect(source).toContain("การเงินวันนี้ · ครอบครัว");
+    expect(source).toContain('href: "/finance?scope=PERSONAL"');
+    expect(source).toContain('href: "/finance?scope=HOUSEHOLD"');
+  });
+
+  it("uses the scoped report read model so personal-funded household expenses appear once under household", () => {
+    expect(source).toContain(
+      'getFinanceReport(\n    supabase,\n    "PERSONAL"',
+    );
+    expect(source).toContain(
+      'getFinanceReport(\n        supabase,\n        "HOUSEHOLD"',
+    );
+    expect(source).not.toContain("getFinanceSummary");
+    expect(source).toContain('item.scope === "PERSONAL"');
+    expect(source).toContain('item.scope === "HOUSEHOLD"');
   });
 
   it("streams the cover before daily and secondary dashboard data", () => {
@@ -76,7 +94,7 @@ describe("Today dashboard composition", () => {
       "listPlanTasks",
       "listPlanReminders",
       "listCalendarFinanceItems",
-      "getFinanceSummary",
+      "getFinanceReport",
       "listRecentFinanceTransactions",
       "listRecentHouseholdPetCareRecords",
       "listChoreWorkspace",

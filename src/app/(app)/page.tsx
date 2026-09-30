@@ -12,10 +12,7 @@ import {
 } from "@/features/calendar/domain/calendar";
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
-import {
-  getFinanceSummary,
-  listRecentFinanceTransactions,
-} from "@/features/finance/api";
+import { listRecentFinanceTransactions } from "@/features/finance/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { listInventoryItems } from "@/features/inventory/api";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
@@ -30,6 +27,8 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
+import { getFinanceReport } from "@/features/reports/api";
+import type { FinanceReport } from "@/features/reports/types";
 import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
 import {
@@ -150,10 +149,24 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     today,
     upcomingEnd,
   );
-  const financePromise = getFinanceSummary(supabase, {
-    start: `${today}T00:00:00+07:00`,
-    end: `${tomorrow}T00:00:00+07:00`,
-  });
+  const todayStart = `${today}T00:00:00+07:00`;
+  const tomorrowStart = `${tomorrow}T00:00:00+07:00`;
+  const personalFinancePromise = getFinanceReport(
+    supabase,
+    "PERSONAL",
+    null,
+    todayStart,
+    tomorrowStart,
+  );
+  const householdFinancePromise: Promise<FinanceReport | null> = householdId
+    ? getFinanceReport(
+        supabase,
+        "HOUSEHOLD",
+        householdId,
+        todayStart,
+        tomorrowStart,
+      )
+    : Promise.resolve(null);
   const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
     limit: 5,
   });
@@ -234,7 +247,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           choresPromise={choresPromise}
-          financePromise={financePromise}
+          personalFinancePromise={personalFinancePromise}
+          householdFinancePromise={householdFinancePromise}
           shoppingPromise={shoppingPromise}
           inventoryPromise={inventoryPromise}
         />
@@ -287,7 +301,8 @@ async function HomeTodaySections({
   dueFinancePromise,
   petCarePromise,
   choresPromise,
-  financePromise,
+  personalFinancePromise,
+  householdFinancePromise,
   shoppingPromise,
   inventoryPromise,
 }: {
@@ -299,7 +314,8 @@ async function HomeTodaySections({
   dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   choresPromise: ReturnType<typeof listChoreWorkspace>;
-  financePromise: ReturnType<typeof getFinanceSummary>;
+  personalFinancePromise: ReturnType<typeof getFinanceReport>;
+  householdFinancePromise: Promise<FinanceReport | null>;
   shoppingPromise: ReturnType<typeof listShoppingItems>;
   inventoryPromise: ReturnType<typeof listInventoryItems>;
 }) {
@@ -310,7 +326,8 @@ async function HomeTodaySections({
     dueFinance,
     petCare,
     chores,
-    finance,
+    personalFinance,
+    householdFinance,
     shopping,
     inventory,
   ] = await Promise.all([
@@ -320,7 +337,8 @@ async function HomeTodaySections({
     dueFinancePromise,
     petCarePromise,
     choresPromise,
-    financePromise,
+    personalFinancePromise,
+    householdFinancePromise,
     shoppingPromise,
     inventoryPromise,
   ]);
@@ -453,6 +471,50 @@ async function HomeTodaySections({
     (item) =>
       item.date === today && !FINANCE_COMPLETE_STATUSES.has(item.status),
   );
+  const personalFinanceDue = openFinanceDue.filter(
+    (item) => item.scope === "PERSONAL",
+  ).length;
+  const householdFinanceDue = openFinanceDue.filter(
+    (item) => item.scope === "HOUSEHOLD",
+  ).length;
+  const financeCurrencies = [
+    ...new Set(
+      [...personalFinance.days, ...(householdFinance?.days ?? [])].map(
+        (item) => item.currency,
+      ),
+    ),
+  ].toSorted();
+  const financeSummaryItems: DailySummaryItem[] = financeCurrencies.flatMap(
+    (currency) => {
+      const personal = personalFinance.days.find(
+        (item) => item.currency === currency,
+      ) ?? { income: "0.00", expense: "0.00" };
+      const household = householdFinance?.days.find(
+        (item) => item.currency === currency,
+      ) ?? { income: "0.00", expense: "0.00" };
+      const items: DailySummaryItem[] = [
+        {
+          key: `finance-personal-${currency}`,
+          href: "/finance?scope=PERSONAL",
+          icon: "finance",
+          label: `การเงินวันนี้ · ส่วนตัว · ${currency}`,
+          value: `รับ ${formatCurrency(personal.income, currency)}`,
+          detail: `จ่าย ${formatCurrency(personal.expense, currency)} · ครบกำหนด ${personalFinanceDue}`,
+        },
+      ];
+      if (householdFinance) {
+        items.push({
+          key: `finance-household-${currency}`,
+          href: "/finance?scope=HOUSEHOLD",
+          icon: "finance",
+          label: `การเงินวันนี้ · ครอบครัว · ${currency}`,
+          value: `รับ ${formatCurrency(household.income, currency)}`,
+          detail: `จ่าย ${formatCurrency(household.expense, currency)} · ครบกำหนด ${householdFinanceDue}`,
+        });
+      }
+      return items;
+    },
+  );
   const todaySummary: DailySummaryItem[] = [
     {
       key: "inventory",
@@ -472,15 +534,8 @@ async function HomeTodaySections({
       value: `${pendingShopping.length} รายการ`,
       detail: pendingShopping.length ? "ยังรอซื้ออยู่" : "ซื้อครบแล้ว",
     },
-    ...(finance.monthTotals.length
-      ? finance.monthTotals.map((total) => ({
-          key: `finance-${total.currency}`,
-          href: "/finance",
-          icon: "finance" as const,
-          label: `การเงินวันนี้ · ${total.currency}`,
-          value: `รับ ${formatCurrency(total.income, total.currency)}`,
-          detail: `จ่าย ${formatCurrency(total.expense, total.currency)} · ครบกำหนด ${openFinanceDue.length}`,
-        }))
+    ...(financeSummaryItems.length
+      ? financeSummaryItems
       : [
           {
             key: "finance-empty",
@@ -488,7 +543,7 @@ async function HomeTodaySections({
             icon: "finance" as const,
             label: "การเงินวันนี้",
             value: "ยังไม่มีรับ–จ่าย",
-            detail: `ครบกำหนด ${openFinanceDue.length} รายการ`,
+            detail: `ส่วนตัว ${personalFinanceDue} · ครอบครัว ${householdFinanceDue} รายการครบกำหนด`,
           },
         ]),
   ];
