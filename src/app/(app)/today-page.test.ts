@@ -59,6 +59,15 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("href: item.href");
   });
 
+  it("shows the assigned household member on every chore timeline", () => {
+    expect(source).toContain("listHouseholdMembers");
+    expect(source).toContain("householdMembersPromise");
+    expect(source).toContain("const choreMemberNames");
+    expect(source).toContain("choreAssigneeName(chore.assigned_member_id)");
+    expect(source).toContain("ผู้รับผิดชอบ:");
+    expect(source).toContain("line-clamp-2 text-xs text-finance-muted");
+  });
+
   it("keeps household alerts and finance summary inside today's card", () => {
     expect(source).toContain("const todaySummary");
     expect(source).toContain("summaryItems={todaySummary}");

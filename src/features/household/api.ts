@@ -37,7 +37,7 @@ export async function getMyPrimaryHousehold(
 export async function listHouseholdMembers(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  options: { includeObservers?: boolean } = {},
+  options: { includeObservers?: boolean; signAvatars?: boolean } = {},
 ): Promise<HouseholdMemberWithProfile[]> {
   const { data, error } = await supabase
     .from("household_members")
@@ -50,14 +50,17 @@ export async function listHouseholdMembers(
   const visibleMembers = members.filter(
     (member) => options.includeObservers || member.role !== "observer",
   );
-  const storedPaths = [
-    ...new Set(
-      visibleMembers.flatMap((member) => {
-        const value = member.profile?.avatar_url;
-        return value && !/^https?:\/\//.test(value) ? [value] : [];
-      }),
-    ),
-  ];
+  const storedPaths =
+    options.signAvatars === false
+      ? []
+      : [
+          ...new Set(
+            visibleMembers.flatMap((member) => {
+              const value = member.profile?.avatar_url;
+              return value && !/^https?:\/\//.test(value) ? [value] : [];
+            }),
+          ),
+        ];
   const signedByPath = new Map<string, string>();
   if (storedPaths.length) {
     const { data: signed, error: signedError } = await supabase.storage
@@ -81,9 +84,11 @@ export async function listHouseholdMembers(
         ? {
             ...member.profile,
             avatar_url:
-              avatar && !/^https?:\/\//.test(avatar)
-                ? (signedByPath.get(avatar) ?? null)
-                : (avatar ?? null),
+              options.signAvatars === false
+                ? (avatar ?? null)
+                : avatar && !/^https?:\/\//.test(avatar)
+                  ? (signedByPath.get(avatar) ?? null)
+                  : (avatar ?? null),
           }
         : null,
     };

@@ -13,7 +13,10 @@ import {
 import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
 import { listRecentFinanceTransactions } from "@/features/finance/api";
-import { getMyPrimaryHousehold } from "@/features/household/api";
+import {
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
 import { listInventoryItems } from "@/features/inventory/api";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
@@ -200,6 +203,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const choresPromise: ReturnType<typeof listChoreWorkspace> = householdId
     ? listChoreWorkspace(supabase, householdId)
     : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
+  const householdMembersPromise: ReturnType<typeof listHouseholdMembers> =
+    householdId
+      ? listHouseholdMembers(supabase, householdId, { signAvatars: false })
+      : Promise.resolve([]);
   const shoppingPromise: ReturnType<typeof listShoppingItems> = householdId
     ? listShoppingItems(supabase, householdId)
     : Promise.resolve([]);
@@ -260,6 +267,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           choresPromise={choresPromise}
+          householdMembersPromise={householdMembersPromise}
           personalFinancePromise={personalFinancePromise}
           householdFinancePromise={householdFinancePromise}
           shoppingPromise={shoppingPromise}
@@ -334,6 +342,7 @@ async function HomeTodaySections({
   dueFinancePromise,
   petCarePromise,
   choresPromise,
+  householdMembersPromise,
   personalFinancePromise,
   householdFinancePromise,
   shoppingPromise,
@@ -347,6 +356,7 @@ async function HomeTodaySections({
   dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   choresPromise: ReturnType<typeof listChoreWorkspace>;
+  householdMembersPromise: ReturnType<typeof listHouseholdMembers>;
   personalFinancePromise: ReturnType<typeof getFinanceReport>;
   householdFinancePromise: Promise<FinanceReport | null>;
   shoppingPromise: ReturnType<typeof listShoppingItems>;
@@ -359,6 +369,7 @@ async function HomeTodaySections({
     dueFinance,
     petCare,
     chores,
+    householdMembers,
     personalFinance,
     householdFinance,
     shopping,
@@ -370,6 +381,7 @@ async function HomeTodaySections({
     dueFinancePromise,
     petCarePromise,
     choresPromise,
+    householdMembersPromise,
     personalFinancePromise,
     householdFinancePromise,
     shoppingPromise,
@@ -378,6 +390,14 @@ async function HomeTodaySections({
   const choreTemplates = new Map(
     chores.templates.map((template) => [template.id, template]),
   );
+  const choreMemberNames = new Map(
+    householdMembers.map((member) => [
+      member.id,
+      member.profile?.display_name ?? member.profile?.email ?? "สมาชิก",
+    ]),
+  );
+  const choreAssigneeName = (memberId: string) =>
+    choreMemberNames.get(memberId) ?? "สมาชิก";
 
   const timelineForDate = (date: string): TimelineItem[] =>
     [
@@ -479,7 +499,7 @@ async function HomeTodaySections({
             category: "งานบ้าน",
             icon: "chores" as const,
             title: template?.title ?? "งานบ้าน",
-            detail: chore.completed_at ? "เสร็จแล้ว" : "รอดำเนินการ",
+            detail: `ผู้รับผิดชอบ: ${choreAssigneeName(chore.assigned_member_id)} · ${chore.completed_at ? "เสร็จแล้ว" : "รอดำเนินการ"}`,
             timeLabel: time ? `${time} น.` : "ทั้งวัน",
             sortKey: time ?? "00:03",
             completed: Boolean(chore.completed_at),
@@ -543,7 +563,7 @@ async function HomeTodaySections({
           category: "งานบ้าน",
           icon: "chores" as const,
           title: template?.title ?? "งานบ้าน",
-          detail: `เลยกำหนด · ค้าง ${overdueDays} วัน`,
+          detail: `ผู้รับผิดชอบ: ${choreAssigneeName(chore.assigned_member_id)} · ค้าง ${overdueDays} วัน`,
           timeLabel: `${overdueDays} วัน`,
           sortKey: `${chore.due_date}-${template?.due_time ?? "00:00"}`,
           completed: false,
@@ -1016,7 +1036,7 @@ function TimelineCard({
                     {item.title}
                   </p>
                 </div>
-                <p className="mt-1 truncate text-xs text-finance-muted">
+                <p className="mt-1 line-clamp-2 text-xs text-finance-muted">
                   {item.detail}
                 </p>
               </Link>
