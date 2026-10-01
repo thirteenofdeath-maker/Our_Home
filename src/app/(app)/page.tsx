@@ -47,6 +47,18 @@ function shiftDate(date: string, days: number) {
     .slice(0, 10);
 }
 
+function daysBetween(earlierDate: string, laterDate: string) {
+  const millisecondsPerDay = 86_400_000;
+  return Math.max(
+    1,
+    Math.round(
+      (Date.parse(`${laterDate}T00:00:00Z`) -
+        Date.parse(`${earlierDate}T00:00:00Z`)) /
+        millisecondsPerDay,
+    ),
+  );
+}
+
 function eventDate(event: {
   is_all_day: boolean;
   all_day_date: string | null;
@@ -139,6 +151,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const today = bangkokDateKey(now);
   const tomorrow = shiftDate(today, 1);
   const upcomingEnd = shiftDate(today, 8);
+  const overdueStart = shiftDate(today, -365);
   const householdId = household?.id ?? null;
 
   const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
@@ -146,7 +159,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const remindersPromise = listPlanReminders(supabase);
   const dueFinancePromise = listCalendarFinanceItems(
     supabase,
-    today,
+    overdueStart,
     upcomingEnd,
   );
   const todayStart = `${today}T00:00:00+07:00`;
@@ -480,6 +493,82 @@ async function HomeTodaySections({
 
   const todayTimeline = timelineForDate(today);
   const tomorrowTimeline = timelineForDate(tomorrow);
+  const overdueTimeline: TimelineItem[] = [
+    ...tasks
+      .filter(
+        (task) => !task.is_completed && task.due_date && task.due_date < today,
+      )
+      .map((task) => {
+        const overdueDays = daysBetween(task.due_date!, today);
+        return {
+          key: `overdue-task-${task.id}`,
+          href: `/calendar/tasks/${task.id}`,
+          category: "แผนงาน",
+          icon: "chores" as const,
+          title: task.title,
+          detail: `${task.list_name || planDateLabel(task.due_date, task.due_time)} · ค้าง ${overdueDays} วัน`,
+          timeLabel: `${overdueDays} วัน`,
+          sortKey: `${task.due_date}-${task.due_time ?? "00:00"}`,
+          completed: false,
+        };
+      }),
+    ...reminders
+      .filter((reminder) => {
+        const reminderDate = toBangkokInput(reminder.reminds_at).slice(0, 10);
+        return !reminder.is_completed && reminderDate < today;
+      })
+      .map((reminder) => {
+        const reminderDate = toBangkokInput(reminder.reminds_at).slice(0, 10);
+        const overdueDays = daysBetween(reminderDate, today);
+        return {
+          key: `overdue-reminder-${reminder.id}`,
+          href: `/calendar/reminders/${reminder.id}`,
+          category: "เตือนความจำ",
+          icon: "bell" as const,
+          title: reminder.title,
+          detail: `${reminderDateLabel(reminder.reminds_at)} · ค้าง ${overdueDays} วัน`,
+          timeLabel: `${overdueDays} วัน`,
+          sortKey: toBangkokInput(reminder.reminds_at),
+          completed: false,
+        };
+      }),
+    ...chores.occurrences
+      .filter((chore) => !chore.completed_at && chore.due_date < today)
+      .map((chore) => {
+        const template = choreTemplates.get(chore.template_id);
+        const overdueDays = daysBetween(chore.due_date, today);
+        return {
+          key: `overdue-chore-${chore.id}`,
+          href: "/calendar?view=chores",
+          category: "งานบ้าน",
+          icon: "chores" as const,
+          title: template?.title ?? "งานบ้าน",
+          detail: `เลยกำหนด · ค้าง ${overdueDays} วัน`,
+          timeLabel: `${overdueDays} วัน`,
+          sortKey: `${chore.due_date}-${template?.due_time ?? "00:00"}`,
+          completed: false,
+        };
+      }),
+    ...dueFinance
+      .filter(
+        (item) =>
+          item.date < today && !FINANCE_COMPLETE_STATUSES.has(item.status),
+      )
+      .map((item) => {
+        const overdueDays = daysBetween(item.date, today);
+        return {
+          key: `overdue-finance-${item.source}-${item.sourceId}`,
+          href: item.href,
+          category: "การเงิน",
+          icon: "finance" as const,
+          title: item.title,
+          detail: `เลยกำหนด · ค้าง ${overdueDays} วัน`,
+          timeLabel: `${overdueDays} วัน`,
+          sortKey: `${item.date}-00:00`,
+          completed: false,
+        };
+      }),
+  ].toSorted((a, b) => a.sortKey.localeCompare(b.sortKey));
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
   const attentionInventory = inventory.filter(
     (item) =>
@@ -603,6 +692,14 @@ async function HomeTodaySections({
         compactSummaryItems={compactTodaySummary}
         financeSummaryItems={financeSummaryItems}
         emptyText="วันนี้ยังไม่มีงานหรือนัดหมาย"
+      />
+
+      <TimelineCard
+        title="งานค้าง"
+        dateLabel="รายการที่เลยกำหนดและยังไม่เสร็จ"
+        items={overdueTimeline}
+        emptyText="ไม่มีงานค้าง"
+        showProgress={false}
       />
 
       <TimelineCard
@@ -733,6 +830,7 @@ function TimelineCard({
   compactSummaryItems = [],
   financeSummaryItems = [],
   emptyText,
+  showProgress = true,
 }: {
   title: string;
   dateLabel: string;
@@ -741,6 +839,7 @@ function TimelineCard({
   compactSummaryItems?: CompactDailySummaryItem[];
   financeSummaryItems?: FinanceDailySummaryItem[];
   emptyText: string;
+  showProgress?: boolean;
 }) {
   const trackableItems = items.filter((item) => item.completed !== null);
   const completedCount = trackableItems.filter((item) => item.completed).length;
@@ -762,31 +861,33 @@ function TimelineCard({
         </span>
       </div>
 
-      <div className="mt-3">
-        <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
-          <span className="text-finance-muted">
-            {trackableItems.length
-              ? `เสร็จ ${completedCount} จาก ${trackableItems.length} งาน`
-              : "ยังไม่มีงานที่ติดตามสถานะ"}
-          </span>
-          <span className="font-semibold tabular-nums text-finance-primary-strong">
-            {progress}%
-          </span>
-        </div>
-        <div
-          role="progressbar"
-          aria-label={`ความคืบหน้า${title}`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-          className="h-1.5 overflow-hidden rounded-full bg-finance-primary-soft/70"
-        >
+      {showProgress ? (
+        <div className="mt-3">
+          <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+            <span className="text-finance-muted">
+              {trackableItems.length
+                ? `เสร็จ ${completedCount} จาก ${trackableItems.length} งาน`
+                : "ยังไม่มีงานที่ติดตามสถานะ"}
+            </span>
+            <span className="font-semibold tabular-nums text-finance-primary-strong">
+              {progress}%
+            </span>
+          </div>
           <div
-            className="h-full rounded-full bg-finance-primary transition-[width]"
-            style={{ width: `${progress}%` }}
-          />
+            role="progressbar"
+            aria-label={`ความคืบหน้า${title}`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+            className="h-1.5 overflow-hidden rounded-full bg-finance-primary-soft/70"
+          >
+            <div
+              className="h-full rounded-full bg-finance-primary transition-[width]"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {summaryItems.length ? (
         <div

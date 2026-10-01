@@ -21,6 +21,7 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("greetingForBangkok(now)");
     expect(source).toContain("homeCoverMode(profile?.birthday, now)");
     expect(source).toContain('title="งานวันนี้"');
+    expect(source).toContain('title="งานค้าง"');
     expect(source).toContain('title="งานวันพรุ่งนี้"');
     expect(source).toContain("ปฏิทินครอบครัว");
     expect(source).toContain('title="กิจกรรมล่าสุด"');
@@ -44,6 +45,18 @@ describe("Today dashboard composition", () => {
     expect(source).toContain(
       "เสร็จ ${completedCount} จาก ${trackableItems.length} งาน",
     );
+  });
+
+  it("shows one overdue dashboard for unfinished tasks, reminders, chores, and finance", () => {
+    expect(source).toContain("const overdueTimeline");
+    expect(source).toContain("task.due_date < today");
+    expect(source).toContain("reminderDate < today");
+    expect(source).toContain("chore.due_date < today");
+    expect(source).toContain("item.date < today");
+    expect(source).toContain("daysBetween");
+    expect(source).toContain("showProgress={false}");
+    expect(source).toContain('href: "/calendar?view=chores"');
+    expect(source).toContain("href: item.href");
   });
 
   it("keeps household alerts and finance summary inside today's card", () => {
