@@ -6,11 +6,13 @@ export const AVATAR_MIME_EXTENSIONS = {
   "image/png": "png",
   "image/webp": "webp",
 } as const;
-export const MAX_AVATAR_BYTES = 15 * 1024 * 1024;
+/** Keep the complete multipart request safely below the hosting payload limit. */
+export const MAX_AVATAR_BYTES = 3.5 * 1024 * 1024;
+export const MAX_AVATAR_SOURCE_BYTES = 15 * 1024 * 1024;
 
 export function validateAvatarFile(file: Pick<File, "size" | "type">): string | null {
-  if (!(file.type in AVATAR_MIME_EXTENSIONS)) return "Use a JPEG, PNG, or WebP image";
-  if (file.size > MAX_AVATAR_BYTES) return "Avatar must be 15 MB or smaller";
+  if (!(file.type in AVATAR_MIME_EXTENSIONS)) return "รองรับเฉพาะรูป JPEG, PNG หรือ WebP";
+  if (file.size > MAX_AVATAR_BYTES) return "รูปโปรไฟล์มีขนาดใหญ่เกินไป กรุณาเลือกใหม่";
   return null;
 }
 

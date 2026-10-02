@@ -30,7 +30,13 @@ export function validatePetPhoto(file: Pick<File, "size" | "type">): string | nu
 }
 
 export function validatePetPhotoSource(file: Pick<File, "size" | "type">): string | null {
-  if (!(file.type in PET_PHOTO_MIME_EXTENSIONS)) return "รองรับเฉพาะรูป JPEG, PNG หรือ WebP";
+  if (![
+    ...Object.keys(PET_PHOTO_MIME_EXTENSIONS),
+    "image/heic",
+    "image/heif",
+    "image/heic-sequence",
+    "image/heif-sequence",
+  ].includes(file.type.toLowerCase())) return "รองรับเฉพาะรูป JPEG, PNG, WebP, HEIC หรือ HEIF";
   if (file.size > MAX_PET_PHOTO_SOURCE_BYTES) return "รูปต้นฉบับต้องมีขนาดไม่เกิน 15 MB";
   return null;
 }

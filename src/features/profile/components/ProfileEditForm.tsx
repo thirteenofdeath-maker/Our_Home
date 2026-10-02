@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { type FormEvent, useActionState, useState, useTransition } from "react";
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -10,6 +10,7 @@ import { bangkokDateKey } from "@/lib/date/bangkok";
 import type { ProfileGender } from "@/types/database";
 
 import { updateProfileAction } from "../actions";
+import { prepareAvatarForUpload } from "../domain/avatar-compression";
 import { Avatar } from "./Avatar";
 
 export function ProfileEditForm(props: {
@@ -25,9 +26,39 @@ export function ProfileEditForm(props: {
     updateProfileAction,
     initialActionState,
   );
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [preparingAvatar, setPreparingAvatar] = useState(false);
+  const [actionPending, startAction] = useTransition();
   const today = bangkokDateKey();
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (preparingAvatar || actionPending) return;
+    const form = event.currentTarget;
+    if (!form.reportValidity()) return;
+    const formData = new FormData(form);
+    const selectedAvatar = formData.get("avatar");
+    setClientError(null);
+
+    try {
+      if (selectedAvatar instanceof File && selectedAvatar.size > 0) {
+        setPreparingAvatar(true);
+        formData.set("avatar", await prepareAvatarForUpload(selectedAvatar));
+      }
+    } catch (error) {
+      setClientError(
+        error instanceof Error ? error.message : "ไม่สามารถเตรียมรูปได้",
+      );
+      return;
+    } finally {
+      setPreparingAvatar(false);
+    }
+
+    startAction(() => action(formData));
+  }
+
   return (
-    <form action={action} className="flex min-w-0 max-w-full flex-col gap-4">
+    <form onSubmit={submit} className="flex min-w-0 max-w-full flex-col gap-4">
       <input type="hidden" name="householdId" value={props.householdId} />
       <div className="flex min-w-0 max-w-full items-center gap-4">
         <Avatar
@@ -41,10 +72,10 @@ export function ProfileEditForm(props: {
             id="avatar"
             name="avatar"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*,.heic,.heif"
           />
           <span className="text-xs text-foreground-muted">
-            JPEG, PNG หรือ WebP ไม่เกิน 15 MB
+            JPEG, PNG, WebP, HEIC หรือ HEIF ไม่เกิน 15 MB · ระบบย่อรูปให้อัตโนมัติ
           </span>
         </Field>
       </div>
@@ -90,12 +121,14 @@ export function ProfileEditForm(props: {
         </span>
       </label>
       <MemberColorInput defaultValue={props.memberColor} />
-      {state.error ? (
+      {clientError || state.error ? (
         <p aria-live="polite" className="text-sm text-danger">
-          {state.error}
+          {clientError ?? state.error}
         </p>
       ) : null}
-      <SubmitButton size="lg">บันทึกโปรไฟล์</SubmitButton>
+      <SubmitButton size="lg" disabled={preparingAvatar || actionPending}>
+        {preparingAvatar ? "กำลังย่อรูป..." : "บันทึกโปรไฟล์"}
+      </SubmitButton>
     </form>
   );
 }

@@ -55,7 +55,7 @@ export function PetForm({
 
   return <form onSubmit={submit} className="finance-ui-tone flex flex-col gap-4">
     {pet ? <input type="hidden" name="petId" value={pet.id} /> : null}
-    <Field label="รูป" htmlFor="photo"><Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span className="text-xs text-foreground-muted">JPEG, PNG หรือ WebP ต้นฉบับไม่เกิน 15 MB · ระบบย่อรูปให้อัตโนมัติ</span></Field>
+    <Field label="รูป" htmlFor="photo"><Input id="photo" name="photo" type="file" accept="image/*,.heic,.heif" /><span className="text-xs text-foreground-muted">JPEG, PNG, WebP, HEIC หรือ HEIF ไม่เกิน 15 MB · ระบบย่อรูปให้อัตโนมัติ</span></Field>
     <Field label="ชื่อ" htmlFor="name"><Input id="name" name="name" defaultValue={pet?.name} required maxLength={80} /></Field>
     <Field label="ประเภทสัตว์" htmlFor="species"><Select id="species" name="species" defaultValue={pet?.species ?? ""} required><option value="" disabled>เลือกประเภท</option><option value="CAT">แมว</option><option value="DOG">สุนัข</option><option value="RABBIT">กระต่าย</option><option value="BIRD">นก</option><option value="FISH">ปลา</option><option value="OTHER">อื่น ๆ</option></Select></Field>
     <Field label="สายพันธุ์" htmlFor="breed"><Input id="breed" name="breed" defaultValue={pet?.breed ?? ""} maxLength={100} /></Field>

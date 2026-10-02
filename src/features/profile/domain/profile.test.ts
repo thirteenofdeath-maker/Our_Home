@@ -4,6 +4,7 @@ import {
   avatarPath,
   initials,
   MAX_AVATAR_BYTES,
+  MAX_AVATAR_SOURCE_BYTES,
   validateAvatarFile,
 } from "./profile";
 
@@ -20,9 +21,12 @@ describe("profile avatar rules", () => {
     expect(validateAvatarFile({ type: "image/gif", size: 100 })).toMatch(/JPEG/);
   });
 
-  it("rejects files over 15 MB", () => {
-    expect(MAX_AVATAR_BYTES).toBe(15 * 1024 * 1024);
-    expect(validateAvatarFile({ type: "image/png", size: MAX_AVATAR_BYTES + 1 })).toMatch(/15 MB/);
+  it("keeps the prepared upload below the platform request limit", () => {
+    expect(MAX_AVATAR_BYTES).toBe(3.5 * 1024 * 1024);
+    expect(MAX_AVATAR_SOURCE_BYTES).toBe(15 * 1024 * 1024);
+    expect(
+      validateAvatarFile({ type: "image/png", size: MAX_AVATAR_BYTES + 1 }),
+    ).toMatch(/ใหญ่เกินไป/);
   });
 });
 
