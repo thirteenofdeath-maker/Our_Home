@@ -11,4 +11,11 @@ describe("choreCadenceLabel", () => {
   ] as const)("formats %s recurrence", (cadence, interval, expected) => {
     expect(choreCadenceLabel(cadence, interval)).toBe(expected);
   });
+
+  it("uses the anchored weekday and month date for common schedules", () => {
+    expect(choreCadenceLabel("WEEKLY", 1, "2026-10-04")).toBe("ทุกวันอาทิตย์");
+    expect(choreCadenceLabel("MONTHLY", 1, "2026-10-15")).toBe(
+      "ทุกวันที่ 15 ของเดือน",
+    );
+  });
 });

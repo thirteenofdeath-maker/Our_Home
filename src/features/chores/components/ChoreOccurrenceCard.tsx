@@ -14,12 +14,14 @@ export function ChoreOccurrenceCard({
   members,
   currentMemberId,
   canParticipate,
+  showDate = true,
 }: {
   occurrence: ChoreOccurrence;
   template: ChoreTemplate;
   members: HouseholdMemberWithProfile[];
   currentMemberId: string | null;
   canParticipate: boolean;
+  showDate?: boolean;
 }) {
   const completed = Boolean(occurrence.completed_at);
   const assignedName = memberName(members, occurrence.assigned_member_id);
@@ -41,12 +43,17 @@ export function ChoreOccurrenceCard({
             <div>
               <h3 className="font-semibold">{template.title}</h3>
               <p className="mt-0.5 text-sm text-foreground-muted">
-                {new Intl.DateTimeFormat("th-TH", {
-                  dateStyle: "medium",
-                }).format(new Date(`${occurrence.due_date}T12:00:00+07:00`))}
+                {showDate
+                  ? new Intl.DateTimeFormat("th-TH", {
+                      dateStyle: "medium",
+                    }).format(new Date(`${occurrence.due_date}T12:00:00+07:00`))
+                  : null}
+                {showDate && template.due_time ? " · " : null}
                 {template.due_time
-                  ? ` · ${template.due_time.slice(0, 5)} น.`
-                  : ""}
+                  ? `${template.due_time.slice(0, 5)} น.`
+                  : showDate
+                    ? null
+                    : "ทั้งวัน"}
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary-strong">

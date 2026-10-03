@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   Field,
@@ -15,6 +15,11 @@ import { initialActionState } from "@/lib/types/action-state";
 import type { Database } from "@/types/database";
 
 import { createChoreAction, updateChoreAction } from "../actions";
+import {
+  CHORE_WEEKDAYS,
+  choreScheduleDefaults,
+  type ChoreScheduleMode,
+} from "../schedule";
 
 export function ChoreForm({
   householdId,
@@ -37,6 +42,10 @@ export function ChoreForm({
   const suffix = template?.id ?? "new";
   const startDate =
     template && template.starts_on > today ? template.starts_on : today;
+  const scheduleDefaults = choreScheduleDefaults(template, startDate);
+  const [scheduleMode, setScheduleMode] = useState<ChoreScheduleMode>(
+    scheduleDefaults.mode,
+  );
 
   return (
     <form action={action} className="flex min-w-0 flex-col gap-4">
@@ -64,35 +73,95 @@ export function ChoreForm({
           defaultValue={template?.details ?? ""}
         />
       </Field>
-      <Field label="ทำซ้ำทุก" htmlFor={`chore-interval-${suffix}`}>
-        <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2">
-          <Input
-            id={`chore-interval-${suffix}`}
-            name="intervalCount"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={365}
-            required
-            defaultValue={template?.interval_count ?? 1}
-            aria-label="จำนวนรอบ"
-          />
-          <Select
-            id={`chore-cadence-${suffix}`}
-            name="cadence"
-            defaultValue={template?.cadence ?? "DAILY"}
-            aria-label="หน่วยการทำซ้ำ"
-          >
-            <option value="DAILY">วัน</option>
-            <option value="WEEKLY">สัปดาห์</option>
-            <option value="MONTHLY">เดือน</option>
-            <option value="YEARLY">ปี</option>
-          </Select>
-        </div>
-        <p className="mt-1.5 text-xs text-foreground-muted">
-          เช่น ทุก 2 วัน หรือทุก 3 เดือน
-        </p>
+      <Field label="ทำซ้ำ" htmlFor={`chore-schedule-mode-${suffix}`}>
+        <Select
+          id={`chore-schedule-mode-${suffix}`}
+          name="scheduleMode"
+          value={scheduleMode}
+          onChange={(event) =>
+            setScheduleMode(event.target.value as ChoreScheduleMode)
+          }
+        >
+          <option value="EVERY_DAY">ทุกวัน</option>
+          <option value="WEEKDAY">ทุกวัน…ของสัปดาห์</option>
+          <option value="MONTH_DAY">ทุกวันที่…ของเดือน</option>
+          <option value="CUSTOM">กำหนดช่วงเอง</option>
+        </Select>
       </Field>
+      {scheduleMode === "WEEKDAY" ? (
+        <Field label="วันประจำสัปดาห์" htmlFor={`chore-weekday-${suffix}`}>
+          <Select
+            id={`chore-weekday-${suffix}`}
+            name="weekday"
+            defaultValue={scheduleDefaults.weekday}
+          >
+            {CHORE_WEEKDAYS.map((label, weekday) => (
+              <option key={label} value={weekday}>
+                ทุก{label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : (
+        <input type="hidden" name="weekday" value={scheduleDefaults.weekday} />
+      )}
+      {scheduleMode === "MONTH_DAY" ? (
+        <Field label="วันที่ประจำเดือน" htmlFor={`chore-month-day-${suffix}`}>
+          <Select
+            id={`chore-month-day-${suffix}`}
+            name="monthDay"
+            defaultValue={scheduleDefaults.monthDay}
+          >
+            {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+              <option key={day} value={day}>
+                ทุกวันที่ {day} ของเดือน
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : (
+        <input
+          type="hidden"
+          name="monthDay"
+          value={scheduleDefaults.monthDay}
+        />
+      )}
+      {scheduleMode === "CUSTOM" ? (
+        <Field label="ทำซ้ำทุก" htmlFor={`chore-interval-${suffix}`}>
+          <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2">
+            <Input
+              id={`chore-interval-${suffix}`}
+              name="intervalCount"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={365}
+              required
+              defaultValue={template?.interval_count ?? 2}
+              aria-label="จำนวนรอบ"
+            />
+            <Select
+              id={`chore-cadence-${suffix}`}
+              name="cadence"
+              defaultValue={template?.cadence ?? "DAILY"}
+              aria-label="หน่วยการทำซ้ำ"
+            >
+              <option value="DAILY">วัน</option>
+              <option value="WEEKLY">สัปดาห์</option>
+              <option value="MONTHLY">เดือน</option>
+              <option value="YEARLY">ปี</option>
+            </Select>
+          </div>
+          <p className="mt-1.5 text-xs text-foreground-muted">
+            เช่น ทุก 2 วัน หรือทุก 3 เดือน
+          </p>
+        </Field>
+      ) : (
+        <>
+          <input type="hidden" name="intervalCount" value="1" />
+          <input type="hidden" name="cadence" value="DAILY" />
+        </>
+      )}
       <TwoColumnFieldGrid>
         <Field label="เวลา" htmlFor={`chore-time-${suffix}`}>
           <Input

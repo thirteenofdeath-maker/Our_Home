@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { logDatabaseErrorInDev } from "@/lib/supabase/log-error";
 import type { ActionState } from "@/lib/types/action-state";
+import { resolveChoreSchedule } from "./schedule";
 import {
   claimChore,
   completeChore,
@@ -18,6 +19,7 @@ const choreSchema = z.object({
   householdId: z.string().uuid(),
   title: z.string().trim().min(1, "กรุณาระบุชื่องานบ้าน").max(120),
   details: z.string().trim().max(1000),
+  scheduleMode: z.enum(["EVERY_DAY", "WEEKDAY", "MONTH_DAY", "CUSTOM"]),
   cadence: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
   intervalCount: z.coerce
     .number()
@@ -25,6 +27,8 @@ const choreSchema = z.object({
     .min(1, "รอบการทำซ้ำต้องเริ่มที่ 1")
     .max(365, "รอบการทำซ้ำต้องไม่เกิน 365"),
   startsOn: z.iso.date(),
+  weekday: z.coerce.number().int().min(0).max(6),
+  monthDay: z.coerce.number().int().min(1).max(31),
   dueTime: z.union([z.literal(""), z.string().regex(/^\d{2}:\d{2}$/)]),
   memberIds: z
     .array(z.string().uuid())
@@ -46,9 +50,12 @@ function parseChoreForm(form: FormData) {
     householdId: stringValue(form, "householdId"),
     title: stringValue(form, "title"),
     details: stringValue(form, "details"),
+    scheduleMode: stringValue(form, "scheduleMode"),
     cadence: stringValue(form, "cadence"),
     intervalCount: stringValue(form, "intervalCount"),
     startsOn: stringValue(form, "startsOn"),
+    weekday: stringValue(form, "weekday"),
+    monthDay: stringValue(form, "monthDay"),
     dueTime: stringValue(form, "dueTime"),
     memberIds: form
       .getAll("memberIds")
@@ -65,8 +72,17 @@ export async function createChoreAction(
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
+    const schedule = resolveChoreSchedule({
+      mode: parsed.data.scheduleMode,
+      startsOn: parsed.data.startsOn,
+      weekday: parsed.data.weekday,
+      monthDay: parsed.data.monthDay,
+      customCadence: parsed.data.cadence,
+      customIntervalCount: parsed.data.intervalCount,
+    });
     await createChoreTemplate(supabase, {
       ...parsed.data,
+      ...schedule,
       dueTime: parsed.data.dueTime || null,
     });
     refresh();
@@ -91,13 +107,19 @@ export async function updateChoreAction(
   }
   try {
     const { supabase } = await requireUser();
+    const schedule = resolveChoreSchedule({
+      mode: parsed.data.scheduleMode,
+      startsOn: parsed.data.startsOn,
+      weekday: parsed.data.weekday,
+      monthDay: parsed.data.monthDay,
+      customCadence: parsed.data.cadence,
+      customIntervalCount: parsed.data.intervalCount,
+    });
     await updateChoreTemplate(supabase, {
       templateId,
       title: parsed.data.title,
       details: parsed.data.details,
-      cadence: parsed.data.cadence,
-      intervalCount: parsed.data.intervalCount,
-      startsOn: parsed.data.startsOn,
+      ...schedule,
       dueTime: parsed.data.dueTime || null,
       memberIds: parsed.data.memberIds,
     });

@@ -20,6 +20,11 @@ import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
 import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
+import {
+  choreDayHeading,
+  choreFullDate,
+  groupChoresByDate,
+} from "@/features/chores/schedule";
 import { choreCadenceLabel } from "@/features/chores/types";
 import {
   getMyPrimaryHousehold,
@@ -172,6 +177,8 @@ export default async function CalendarPage({
   const overdueChores = chores.occurrences
     .filter((item) => !item.completed_at && item.due_date < today)
     .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
+  const upcomingChoreGroups = groupChoresByDate(upcomingChores);
+  const overdueChoreGroups = groupChoresByDate(overdueChores);
   const choreHistory = chores.occurrences
     .filter((item) => item.completed_at)
     .slice(0, 12);
@@ -498,19 +505,30 @@ export default async function CalendarPage({
                 count={overdueChores.length}
                 danger
               />
-              {overdueChores.map((occurrence) => {
-                const template = choreTemplates.get(occurrence.template_id);
-                return template ? (
-                  <ChoreOccurrenceCard
-                    key={occurrence.id}
-                    occurrence={occurrence}
-                    template={template}
-                    members={members}
-                    currentMemberId={currentMemberId}
-                    canParticipate={canEditHousehold}
-                  />
-                ) : null;
-              })}
+              {overdueChoreGroups.map((group) => (
+                <ChoreDayGroupHeader
+                  key={group.date}
+                  date={group.date}
+                  today={today}
+                  count={group.chores.length}
+                  danger
+                >
+                  {group.chores.map((occurrence) => {
+                    const template = choreTemplates.get(occurrence.template_id);
+                    return template ? (
+                      <ChoreOccurrenceCard
+                        key={occurrence.id}
+                        occurrence={occurrence}
+                        template={template}
+                        members={members}
+                        currentMemberId={currentMemberId}
+                        canParticipate={canEditHousehold}
+                        showDate={false}
+                      />
+                    ) : null;
+                  })}
+                </ChoreDayGroupHeader>
+              ))}
             </section>
           ) : null}
 
@@ -521,19 +539,29 @@ export default async function CalendarPage({
               suffix="14 วัน"
             />
             {upcomingChores.length ? (
-              upcomingChores.map((occurrence) => {
-                const template = choreTemplates.get(occurrence.template_id);
-                return template ? (
-                  <ChoreOccurrenceCard
-                    key={occurrence.id}
-                    occurrence={occurrence}
-                    template={template}
-                    members={members}
-                    currentMemberId={currentMemberId}
-                    canParticipate={canEditHousehold}
-                  />
-                ) : null;
-              })
+              upcomingChoreGroups.map((group) => (
+                <ChoreDayGroupHeader
+                  key={group.date}
+                  date={group.date}
+                  today={today}
+                  count={group.chores.length}
+                >
+                  {group.chores.map((occurrence) => {
+                    const template = choreTemplates.get(occurrence.template_id);
+                    return template ? (
+                      <ChoreOccurrenceCard
+                        key={occurrence.id}
+                        occurrence={occurrence}
+                        template={template}
+                        members={members}
+                        currentMemberId={currentMemberId}
+                        canParticipate={canEditHousehold}
+                        showDate={false}
+                      />
+                    ) : null;
+                  })}
+                </ChoreDayGroupHeader>
+              ))
             ) : (
               <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
                 ยังไม่มีตารางงานบ้าน กด + เพื่อเริ่มจัดงาน
@@ -564,6 +592,7 @@ export default async function CalendarPage({
                         {choreCadenceLabel(
                           template.cadence,
                           template.interval_count,
+                          template.starts_on,
                         )}{" "}
                         · {templateAssignees.length} คน
                       </p>
@@ -764,6 +793,47 @@ function SectionHeading({
       <span className="text-sm text-finance-muted">
         {count} รายการ{suffix ? ` · ${suffix}` : ""}
       </span>
+    </div>
+  );
+}
+
+function ChoreDayGroupHeader({
+  date,
+  today,
+  count,
+  danger = false,
+  children,
+}: {
+  date: string;
+  today: string;
+  count: number;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5 border-l-2 border-finance-primary-soft pl-3">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 rounded-[1.15rem] bg-finance-primary-soft/70 px-4 py-3",
+          danger && "border border-danger/20 bg-danger/10",
+        )}
+      >
+        <div>
+          <h3
+            className={cn(
+              "font-semibold text-finance-text",
+              danger && "text-danger",
+            )}
+          >
+            {choreDayHeading(date, today)}
+          </h3>
+          <p className="text-xs text-finance-muted">{choreFullDate(date)}</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-finance-surface-strong px-3 py-1 text-xs font-medium text-finance-text shadow-sm">
+          {count} งาน
+        </span>
+      </div>
+      <div className="flex flex-col gap-2.5">{children}</div>
     </div>
   );
 }

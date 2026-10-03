@@ -58,7 +58,12 @@ describe("rotating household chores contract", () => {
     );
   });
 
-  it("lets the form choose an interval and recurrence unit", () => {
+  it("offers plain-language daily, weekday, month-day, and custom schedules", () => {
+    for (const mode of ["EVERY_DAY", "WEEKDAY", "MONTH_DAY", "CUSTOM"]) {
+      expect(form).toContain(`value="${mode}"`);
+    }
+    expect(form).toContain('name="weekday"');
+    expect(form).toContain('name="monthDay"');
     expect(form).toContain('name="intervalCount"');
     for (const cadence of ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]) {
       expect(form).toContain(`value="${cadence}"`);
