@@ -18,10 +18,12 @@ export function InventoryItemCard({
   item,
   canEdit,
   today,
+  showCategory = true,
 }: {
   item: InventoryItem;
   canEdit: boolean;
   today: string;
+  showCategory?: boolean;
 }) {
   const low = isLowStock(item);
   const quantity = Number(item.quantity);
@@ -40,10 +42,13 @@ export function InventoryItemCard({
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-sm text-finance-muted">
-            {INVENTORY_CATEGORY_LABEL[item.category]}
-            {item.location ? ` · ${item.location}` : ""}
-          </p>
+          {showCategory || item.location ? (
+            <p className="mt-1 text-sm text-finance-muted">
+              {showCategory ? INVENTORY_CATEGORY_LABEL[item.category] : null}
+              {showCategory && item.location ? " · " : null}
+              {item.location ?? null}
+            </p>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-finance-muted">
             {item.expiry_date ? (
               <span

@@ -33,7 +33,12 @@ import {
 import { listInventoryItems } from "@/features/inventory/api";
 import { InventoryItemCard } from "@/features/inventory/components/InventoryItemCard";
 import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
-import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
+import {
+  groupInventoryByCategory,
+  INVENTORY_CATEGORY_LABEL,
+  isDateWithinDays,
+  isLowStock,
+} from "@/features/inventory/types";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { PlanTabs, type PlanView } from "@/features/plan/components/PlanTabs";
 import { ReminderForm } from "@/features/plan/components/ReminderForm";
@@ -168,6 +173,7 @@ export default async function CalendarPage({
     (event) => eventDate(event) === today,
   ).length;
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
+  const inventoryGroups = groupInventoryByCategory(inventory);
   const canEditHousehold = Boolean(
     household && household.myRole !== "observer",
   );
@@ -771,16 +777,45 @@ export default async function CalendarPage({
             </ReadOnlyNotice>
           )}
 
-          <section className="flex flex-col gap-3">
-            <SectionHeading title="รายการทั้งหมด" count={inventory.length} />
+          <section className="flex flex-col gap-4">
+            <SectionHeading
+              title="รายการตามหมวดหมู่"
+              count={inventory.length}
+            />
             {inventory.length ? (
-              inventory.map((item) => (
-                <InventoryItemCard
-                  key={item.id}
-                  item={item}
-                  canEdit={canEditHousehold}
-                  today={today}
-                />
+              inventoryGroups.map(({ category, items }) => (
+                <section
+                  key={category}
+                  aria-labelledby={`inventory-category-${category}`}
+                  className="flex flex-col gap-2.5"
+                >
+                  <div className="flex items-center gap-2 px-1">
+                    <span
+                      aria-hidden="true"
+                      className="size-2.5 rounded-full bg-finance-primary"
+                    />
+                    <h3
+                      id={`inventory-category-${category}`}
+                      className="font-semibold text-finance-text"
+                    >
+                      {INVENTORY_CATEGORY_LABEL[category]}
+                    </h3>
+                    <span className="ml-auto rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-medium text-finance-primary-strong">
+                      {items.length} รายการ
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-3 border-l-2 border-finance-primary-soft pl-2 sm:pl-3">
+                    {items.map((item) => (
+                      <InventoryItemCard
+                        key={item.id}
+                        item={item}
+                        canEdit={canEditHousehold}
+                        today={today}
+                        showCategory={false}
+                      />
+                    ))}
+                  </div>
+                </section>
               ))
             ) : (
               <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">

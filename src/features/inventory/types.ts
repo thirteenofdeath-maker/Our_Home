@@ -20,6 +20,22 @@ export const INVENTORY_CATEGORY_LABEL: Record<InventoryCategory, string> = {
   OTHER: "อื่นๆ",
 };
 
+export const INVENTORY_CATEGORY_ORDER: InventoryCategory[] = [
+  "PET_SUPPLY",
+  "HOUSEHOLD",
+  "FOOD",
+  "MEDICINE",
+  "WARRANTY",
+  "OTHER",
+];
+
+export function groupInventoryByCategory(items: InventoryItem[]) {
+  return INVENTORY_CATEGORY_ORDER.flatMap((category) => {
+    const categoryItems = items.filter((item) => item.category === category);
+    return categoryItems.length ? [{ category, items: categoryItems }] : [];
+  });
+}
+
 export const INVENTORY_DOCUMENT_LABEL: Record<InventoryDocumentType, string> = {
   RECEIPT: "ใบเสร็จ",
   MANUAL: "คู่มือ",
