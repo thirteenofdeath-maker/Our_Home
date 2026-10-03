@@ -41,13 +41,9 @@ describe("current internal URL contract", () => {
   });
 
   it("keeps the plan cache and profile back navigation on current sections", () => {
-    const preloader = read("src/components/shared/AppRoutePreloader.tsx");
     const worker = read("public/sw.js");
     const profile = read("src/app/(app)/profile/edit/page.tsx");
 
-    expect(preloader).toContain('"/calendar?view=shopping"');
-    expect(preloader).toContain('"/calendar?view=chores"');
-    expect(preloader).toContain('"/calendar?view=inventory"');
     expect(worker).toContain('"/calendar"');
     expect(worker).not.toContain('"/shopping"');
     expect(worker).not.toContain('"/chores"');

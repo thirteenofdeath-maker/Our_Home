@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -18,13 +19,12 @@ const FINANCE_GENERIC_FAB_ROUTES = new Set([
   "/finance/export",
 ]);
 
-export function AppShell({
-  children,
-  financeQuickAdd,
-}: {
-  children: ReactNode;
-  financeQuickAdd: ReactNode;
-}) {
+const GlobalQuickAdd = dynamic(
+  () => import("./GlobalQuickAdd").then((module) => module.GlobalQuickAdd),
+  { ssr: false },
+);
+
+export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // BottomNav now persists across the ENTIRE authenticated app — every
   // route under (app), at any depth, in any section — with exactly one
@@ -49,7 +49,7 @@ export function AppShell({
         {children}
       </main>
       {showBottomNav ? <BottomNav /> : null}
-      {FINANCE_GENERIC_FAB_ROUTES.has(pathname) ? financeQuickAdd : null}
+      {FINANCE_GENERIC_FAB_ROUTES.has(pathname) ? <GlobalQuickAdd /> : null}
     </div>
   );
 }

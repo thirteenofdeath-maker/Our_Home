@@ -89,9 +89,19 @@ export default async function CalendarPage({
   const search = typeof query.q === "string" ? query.q : "";
   const taskStatus =
     query.status === "done" || query.status === "all" ? query.status : "open";
-  if (view === "chores" && household && household.myRole !== "observer") {
-    await materializeChores(supabase, household.id, shiftDate(today, 14));
-  }
+  const choresPromise =
+    household && view === "chores"
+      ? (async () => {
+          if (household.myRole !== "observer") {
+            await materializeChores(
+              supabase,
+              household.id,
+              shiftDate(today, 14),
+            );
+          }
+          return listChoreWorkspace(supabase, household.id);
+        })()
+      : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
 
   const [
     events,
@@ -128,9 +138,7 @@ export default async function CalendarPage({
           `${endMonth}-01T00:00:00+07:00`,
         )
       : Promise.resolve([]),
-    household && view === "chores"
-      ? listChoreWorkspace(supabase, household.id)
-      : Promise.resolve({ templates: [], assignees: [], occurrences: [] }),
+    choresPromise,
     household && view === "shopping"
       ? listShoppingItems(supabase, household.id)
       : Promise.resolve([]),

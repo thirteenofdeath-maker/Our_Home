@@ -13,6 +13,9 @@ vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
   useRouter: () => ({ prefetch: vi.fn() }),
 }));
+vi.mock("next/dynamic", () => ({
+  default: () => () => "fab",
+}));
 
 import { AppShell } from "./AppShell";
 
@@ -25,7 +28,6 @@ function renderShell(pathname: string): string {
   /* eslint-disable react/no-children-prop */
   return renderToStaticMarkup(
     createElement(AppShell, {
-      financeQuickAdd: createElement("div", null, "fab"),
       children: createElement("p", null, "content"),
     }),
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
@@ -47,7 +47,6 @@ export const NAV_ITEMS = [
  */
 export function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const section = appSectionForPath(pathname);
   // The highlighted tab must always describe the page currently on screen.
   // An earlier optimistic state could survive an interrupted navigation or a
@@ -63,7 +62,6 @@ export function BottomNav() {
         <Link
           href={item.href}
           prefetch={true}
-          onPointerDown={() => router.prefetch(item.href)}
           aria-current={active ? "page" : undefined}
           className={cn(
             "bottom-nav-link flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-[1rem] text-[10px] font-medium transition-colors",

@@ -20,7 +20,7 @@ describe("offline-first PWA foundation", () => {
     expect(worker).toContain("requestedUrl.pathname === responseUrl.pathname");
   });
 
-  it("warms and serves the five main app pages cache-first", () => {
+  it("keeps offline support without warming every data-heavy page on mount", () => {
     const worker = read("public/sw.js");
     const preloader = read("src/components/shared/AppRoutePreloader.tsx");
     const shell = read("src/components/shared/AppShell.tsx");
@@ -28,19 +28,13 @@ describe("offline-first PWA foundation", () => {
 
     expect(worker).toContain("WARM_APP_ROUTES");
     expect(worker).toContain("cacheFirstMainPage(event, request)");
-    expect(preloader).toContain("router.prefetch(route, {");
-    expect(preloader).toContain('kind: "full"');
-    expect(preloader).toContain("requestIdleCallback");
-    expect(preloader.indexOf("warmRouter();")).toBeLessThan(
-      preloader.indexOf("scheduleDocumentWarm()"),
-    );
-    expect(preloader).toContain("() => warmDocuments()");
+    expect(preloader).toContain("router.prefetch(route)");
+    expect(preloader).not.toContain('kind: "full"');
+    expect(preloader).not.toContain("warmRouter");
+    expect(preloader).not.toContain("warmDocuments");
     expect(preloader).not.toContain("router.refresh()");
     expect(preloader).not.toContain("onInvalidate");
-    expect(preloader).not.toContain(
-      'window.addEventListener("focus", warmAll)',
-    );
-    expect(preloader).toContain('type: "WARM_APP_ROUTES"');
+    expect(preloader).not.toContain('type: "WARM_APP_ROUTES"');
     expect(shell).toContain("<AppRoutePreloader />");
     expect(navigation).toContain("prefetch={true}");
   });

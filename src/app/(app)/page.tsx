@@ -138,10 +138,33 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const { supabase, user } = await requireUser();
   const now = new Date();
   const themeOverride = parseTimeTheme((await searchParams).timeTheme);
+  const today = bangkokDateKey(now);
+  const tomorrow = shiftDate(today, 1);
+  const upcomingEnd = shiftDate(today, 8);
+  const overdueStart = shiftDate(today, -365);
+  const todayStart = `${today}T00:00:00+07:00`;
+  const tomorrowStart = `${tomorrow}T00:00:00+07:00`;
 
   const walletsPromise = listMyWallets(supabase);
   const householdPromise = getMyPrimaryHousehold(supabase, user.id);
   const profilePromise = getCurrentProfile(supabase, user.id);
+  const tasksPromise = listPlanTasks(supabase);
+  const remindersPromise = listPlanReminders(supabase);
+  const dueFinancePromise = listCalendarFinanceItems(
+    supabase,
+    overdueStart,
+    upcomingEnd,
+  );
+  const personalFinancePromise = getFinanceReport(
+    supabase,
+    "PERSONAL",
+    null,
+    todayStart,
+    tomorrowStart,
+  );
+  const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
+    limit: 5,
+  });
   const [wallets, household] = await Promise.all([
     walletsPromise,
     householdPromise,
@@ -151,29 +174,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     redirect("/onboarding");
   }
 
-  const today = bangkokDateKey(now);
-  const tomorrow = shiftDate(today, 1);
-  const upcomingEnd = shiftDate(today, 8);
-  const overdueStart = shiftDate(today, -365);
   const householdId = household?.id ?? null;
 
   const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
-  const tasksPromise = listPlanTasks(supabase);
-  const remindersPromise = listPlanReminders(supabase);
-  const dueFinancePromise = listCalendarFinanceItems(
-    supabase,
-    overdueStart,
-    upcomingEnd,
-  );
-  const todayStart = `${today}T00:00:00+07:00`;
-  const tomorrowStart = `${tomorrow}T00:00:00+07:00`;
-  const personalFinancePromise = getFinanceReport(
-    supabase,
-    "PERSONAL",
-    null,
-    todayStart,
-    tomorrowStart,
-  );
   const householdFinancePromise: Promise<FinanceReport | null> = householdId
     ? getFinanceReport(
         supabase,
@@ -183,9 +186,6 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         tomorrowStart,
       )
     : Promise.resolve(null);
-  const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
-    limit: 5,
-  });
   const petCarePromise: ReturnType<typeof listScheduledPetCareRecords> =
     householdId
       ? listScheduledPetCareRecords(

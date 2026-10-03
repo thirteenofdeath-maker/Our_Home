@@ -22,9 +22,11 @@ describe("native-like main navigation performance", () => {
     expect(join).toBeGreaterThan(reads);
   });
 
-  it("starts the home profile read before the onboarding gate", () => {
+  it("starts independent home reads before the onboarding gate", () => {
     const home = read("src/app/(app)/page.tsx");
     const profileStart = home.indexOf("const profilePromise =");
+    const tasksStart = home.indexOf("const tasksPromise =");
+    const financeStart = home.indexOf("const personalFinancePromise =");
     const onboardingGate = home.indexOf('redirect("/onboarding")');
     const profileJoin = home.indexOf(
       "const profile = await profilePromise;",
@@ -32,6 +34,9 @@ describe("native-like main navigation performance", () => {
     );
 
     expect(profileStart).toBeGreaterThan(-1);
+    expect(tasksStart).toBeGreaterThan(profileStart);
+    expect(financeStart).toBeGreaterThan(tasksStart);
+    expect(financeStart).toBeLessThan(onboardingGate);
     expect(onboardingGate).toBeGreaterThan(profileStart);
     expect(profileJoin).toBeGreaterThan(onboardingGate);
   });
@@ -65,12 +70,24 @@ describe("native-like main navigation performance", () => {
     expect(index).toContain("where archived_at is null");
   });
 
-  it("does not load wallets in the authenticated layout for unrelated pages", () => {
+  it("lazy-loads finance quick-add only on routes that use it", () => {
     const layout = read("src/app/(app)/layout.tsx");
+    const shell = read("src/components/shared/AppShell.tsx");
     const quickAdd = read("src/components/shared/GlobalQuickAdd.tsx");
     expect(layout).not.toContain("listMyWallets");
-    expect(layout).toContain("<GlobalQuickAdd />");
+    expect(layout).not.toContain("GlobalQuickAdd");
+    expect(shell).toContain('import dynamic from "next/dynamic"');
+    expect(shell).toContain('import("./GlobalQuickAdd")');
+    expect(shell).toContain("{ ssr: false }");
     expect(quickAdd).toContain("getGlobalQuickAddBootstrapData");
+  });
+
+  it("does not flood mobile startup with full-route background requests", () => {
+    const preloader = read("src/components/shared/AppRoutePreloader.tsx");
+    expect(preloader).toContain("router.prefetch(route)");
+    expect(preloader).not.toContain('kind: "full"');
+    expect(preloader).not.toContain("WARM_APP_ROUTES");
+    expect(preloader).not.toContain("warmRouter");
   });
 
   it("batches signed storage URLs", () => {
