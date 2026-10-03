@@ -46,6 +46,10 @@ const appBadge = readFileSync(
   "src/features/notifications/app-badge.ts",
   "utf8",
 );
+const notificationBell = readFileSync(
+  "src/features/notifications/components/NotificationBell.tsx",
+  "utf8",
+);
 
 describe("push notification system", () => {
   it("handles Push delivery and deep-link clicks in the service worker", () => {
@@ -126,5 +130,14 @@ describe("push notification system", () => {
     expect(appBadge).toContain("badgeNavigator.clearAppBadge()");
     expect(appBadge).toContain("badgeNavigator.setAppBadge?.(unreadCount)");
     expect(appBadge).toContain("badgeNavigator.setAppBadge?.(0)");
+  });
+
+  it("shows an unread count on the home notification bell without blocking the page", () => {
+    expect(notificationBell).toContain('.from("notification_history")');
+    expect(notificationBell).toContain('{ count: "exact", head: true }');
+    expect(notificationBell).toContain('.is("read_at", null)');
+    expect(notificationBell).toContain('count > 9 ? "9+"');
+    expect(notificationBell).toContain("syncAppBadge(nextCount)");
+    expect(notificationBell).toContain('window.addEventListener("focus"');
   });
 });

@@ -34,6 +34,7 @@ import { getFinanceReport } from "@/features/reports/api";
 import type { FinanceReport } from "@/features/reports/types";
 import { listShoppingItems } from "@/features/shopping/api";
 import { listMyWallets } from "@/features/wallets/api";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import {
   greetingForBangkok,
   homeCoverMode,
@@ -235,13 +236,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           aria-hidden="true"
           className="time-cover-overlay absolute inset-0"
         />
-        <Link
-          href="/profile/notifications"
-          aria-label="ดูประวัติการแจ้งเตือน"
-          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm transition-transform active:scale-95"
-        >
-          <AppIcon name="bell" className="size-5" />
-        </Link>
+        <NotificationBell />
         <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
           {thaiToday(today)}
         </p>
