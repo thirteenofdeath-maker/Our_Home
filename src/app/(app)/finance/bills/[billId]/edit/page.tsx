@@ -4,7 +4,10 @@ import { BillForm } from "@/features/bills/components/BillForm";
 import { listCategories } from "@/features/categories/api";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -32,11 +35,10 @@ export default async function EditBillPage({
       ? listTags(supabase, { scope: "HOUSEHOLD", householdId: h.id })
       : Promise.resolve([]),
   ]);
-  const pairs = await Promise.all(
-    wallets.map(
-      async (w) =>
-        [w.id, await listPocketsWithBalances(supabase, w.id)] as const,
-    ),
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">
@@ -44,7 +46,7 @@ export default async function EditBillPage({
       <BillForm
         bill={bill}
         wallets={wallets}
-        pocketsByWallet={Object.fromEntries(pairs)}
+        pocketsByWallet={pocketsByWallet}
         categories={{
           PERSONAL: buildCategoryTree(pc),
           HOUSEHOLD: buildCategoryTree(hc),

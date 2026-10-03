@@ -44,12 +44,19 @@ export async function listInventoryDocuments(
     .eq("item_id", itemId)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return Promise.all(
-    (data ?? []).map(async (document) => {
-      const signed = await supabase.storage
-        .from("inventory-documents")
-        .createSignedUrl(document.storage_path, 3600);
-      return { ...document, url: signed.data?.signedUrl ?? "" };
-    }),
+  const documents = data ?? [];
+  if (documents.length === 0) return [];
+  const { data: signed } = await supabase.storage
+    .from("inventory-documents")
+    .createSignedUrls(
+      documents.map((document) => document.storage_path),
+      3600,
+    );
+  const urls = new Map(
+    (signed ?? []).map((item) => [item.path, item.signedUrl ?? ""]),
   );
+  return documents.map((document) => ({
+    ...document,
+    url: urls.get(document.storage_path) ?? "",
+  }));
 }

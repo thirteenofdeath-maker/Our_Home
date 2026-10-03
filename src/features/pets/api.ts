@@ -79,6 +79,24 @@ export async function listPets(
   return hydratePets(supabase, householdId, data ?? []);
 }
 
+export async function listPetsByArchiveState(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+) {
+  const { data, error } = await supabase
+    .from("pets")
+    .select("*")
+    .eq("household_id", householdId)
+    .order("created_at")
+    .order("id");
+  if (error) throw error;
+  const pets = await hydratePets(supabase, householdId, data ?? []);
+  return {
+    active: pets.filter((pet) => pet.archived_at === null),
+    archived: pets.filter((pet) => pet.archived_at !== null),
+  };
+}
+
 export async function listPetSummaries(
   supabase: SupabaseClient<Database>,
   householdId: string,

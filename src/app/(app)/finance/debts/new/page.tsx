@@ -1,6 +1,9 @@
 import { DebtCreateForm } from "@/features/debts/components/DebtForms";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 export default async function Page() {
@@ -9,13 +12,10 @@ export default async function Page() {
     getMyPrimaryHousehold(supabase, user.id),
     listMyWallets(supabase),
   ]);
-  const p = Object.fromEntries(
-    await Promise.all(
-      w.map(
-        async (x) =>
-          [x.id, await listPocketsWithBalances(supabase, x.id)] as const,
-      ),
-    ),
+  const walletIds = w.map((wallet) => wallet.id);
+  const p = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">

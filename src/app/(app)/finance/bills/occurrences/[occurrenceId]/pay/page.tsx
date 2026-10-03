@@ -3,7 +3,10 @@ import { getBillOccurrence } from "@/features/bills/api";
 import { PayBillForm } from "@/features/bills/components/PayBillForm";
 import { listCategories } from "@/features/categories/api";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -24,11 +27,10 @@ export default async function PayPage({
   const eligible = wallets.filter(
     (w) => w.scope === item.scope && w.currency === item.currency,
   );
-  const pairs = await Promise.all(
-    eligible.map(
-      async (w) =>
-        [w.id, await listPocketsWithBalances(supabase, w.id)] as const,
-    ),
+  const walletIds = eligible.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">
@@ -36,7 +38,7 @@ export default async function PayPage({
       <PayBillForm
         item={item}
         wallets={eligible}
-        pocketsByWallet={Object.fromEntries(pairs)}
+        pocketsByWallet={pocketsByWallet}
         categories={buildCategoryTree(categories)}
         tags={tags}
       />

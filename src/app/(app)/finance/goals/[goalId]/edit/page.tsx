@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { getGoal } from "@/features/goals/api";
 import { GoalForm } from "@/features/goals/components/GoalForm";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 export default async function Page({
@@ -18,11 +21,10 @@ export default async function Page({
   ]);
   const g = await getGoal(supabase, goalId, h?.id);
   if (!g) notFound();
-  const pairs = await Promise.all(
-    wallets.map(
-      async (w) =>
-        [w.id, await listPocketsWithBalances(supabase, w.id)] as const,
-    ),
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pockets = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">
@@ -30,7 +32,7 @@ export default async function Page({
       <GoalForm
         goal={g}
         wallets={wallets}
-        pockets={Object.fromEntries(pairs)}
+        pockets={pockets}
         hasHousehold={Boolean(h)}
       />
     </div>

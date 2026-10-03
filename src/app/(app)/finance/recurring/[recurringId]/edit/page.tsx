@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 
 import { listCategories } from "@/features/categories/api";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
-import { listPocketsForWallet } from "@/features/pockets/api";
-import type { Pocket } from "@/features/pockets/types";
+import {
+  groupPocketsByWallet,
+  listPocketsForWallets,
+} from "@/features/pockets/api";
 import { EditRecurringForm } from "@/features/recurring/components/EditRecurringForm";
 import { getRecurringTransaction } from "@/features/recurring/api";
 import { listTags } from "@/features/tags/api";
@@ -23,18 +25,30 @@ export default async function EditRecurringPage({
 
   const [allWallets, categories, tags] = await Promise.all([
     listMyWallets(supabase),
-    listCategories(supabase, { transactionType: rule.transactionType, scope: rule.scope }),
+    listCategories(supabase, {
+      transactionType: rule.transactionType,
+      scope: rule.scope,
+    }),
     listTags(supabase, { scope: rule.scope, householdId: rule.householdId }),
   ]);
   const wallets = allWallets.filter((w) => w.scope === rule.scope);
 
-  const pocketsByWalletEntries = await Promise.all(wallets.map(async (w) => [w.id, await listPocketsForWallet(supabase, w.id)] as const));
-  const pocketsByWallet: Record<string, Pocket[]> = Object.fromEntries(pocketsByWalletEntries);
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsForWallets(supabase, walletIds),
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">แก้ไขรายการประจำ</h1>
-      <EditRecurringForm rule={rule} wallets={wallets} pocketsByWallet={pocketsByWallet} categories={buildCategoryTree(categories)} tags={tags} />
+      <EditRecurringForm
+        rule={rule}
+        wallets={wallets}
+        pocketsByWallet={pocketsByWallet}
+        categories={buildCategoryTree(categories)}
+        tags={tags}
+      />
     </div>
   );
 }

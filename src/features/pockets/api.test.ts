@@ -161,27 +161,24 @@ describe("Pocket-owned account settings", () => {
 });
 
 describe("listPocketsWithBalances", () => {
-  it("gives every pocket its own derived balance with no special-cased pocket", async () => {
+  it("loads all balances for a wallet in one RPC with no special-cased pocket", async () => {
     const everyday = pocket({});
     const food = pocket({
       id: "33333333-3333-4333-8333-333333333333",
       name: "Food",
     });
-    const query = {
-      select() {
-        return this;
-      },
-      eq() {
-        return this;
-      },
-      order: async () => ({ data: [everyday, food], error: null }),
-    };
+    const calls: Array<{ name: string; args: unknown }> = [];
     const supabase = {
-      from: () => query,
-      rpc: async (_name: string, args: { p_pocket_id: string }) => ({
-        data: args.p_pocket_id === food.id ? 0 : "75.00",
-        error: null,
-      }),
+      rpc: async (name: string, args: unknown) => {
+        calls.push({ name, args });
+        return {
+          data: [
+            { ...everyday, balance: "75.00" },
+            { ...food, balance: 0 },
+          ],
+          error: null,
+        };
+      },
     };
 
     const result = await listPocketsWithBalances(supabase as never, walletId);
@@ -193,6 +190,12 @@ describe("listPocketsWithBalances", () => {
       "75.00",
     );
     expect(result.every((item) => !("is_default" in item))).toBe(true);
+    expect(calls).toEqual([
+      {
+        name: "list_pockets_with_balances",
+        args: { p_wallet_ids: [walletId], p_include_archived: false },
+      },
+    ]);
   });
 });
 

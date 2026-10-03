@@ -5,8 +5,10 @@ import { listCategoriesForWallet } from "@/features/categories/api";
 import { listCreditCardAccounts } from "@/features/credit-cards/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import {
+  groupPocketsByWallet,
   listPocketsForWallet,
-  listPocketsWithBalances,
+  listPocketsForWallets,
+  listPocketsWithBalancesForWallets,
 } from "@/features/pockets/api";
 import type { Pocket } from "@/features/pockets/types";
 import { listTags } from "@/features/tags/api";
@@ -41,19 +43,16 @@ export async function getIncomeExpenseSheetData(
       candidate.owner_user_id === wallet.owner_user_id &&
       candidate.household_id === wallet.household_id,
   );
-  const [pockets, categories, tags, pocketSets, cards] = await Promise.all([
-    listPocketsForWallet(supabase, walletId),
+  const compatibleWalletIds = compatibleWallets.map(
+    (candidate) => candidate.id,
+  );
+  const [categories, tags, allPockets, cards] = await Promise.all([
     listCategoriesForWallet(supabase, { transactionType, wallet }),
     listTags(supabase, {
       scope: wallet.scope,
       householdId: wallet.household_id,
     }),
-    Promise.all(
-      compatibleWallets.map(async (candidate) => ({
-        wallet: candidate,
-        pockets: await listPocketsWithBalances(supabase, candidate.id),
-      })),
-    ),
+    listPocketsWithBalancesForWallets(supabase, compatibleWalletIds),
     transactionType === "EXPENSE"
       ? listCreditCardAccounts(supabase)
       : Promise.resolve([]),
@@ -68,25 +67,30 @@ export async function getIncomeExpenseSheetData(
       name,
       scope,
     })),
-    pockets: pockets.filter(canUsePocket),
-    endpoints: pocketSets.flatMap(({ wallet: candidate, pockets: items }) =>
-      items.filter(canUsePocket).map((pocket) => {
-        const card = cardByPocketId.get(pocket.id);
-        return {
-          walletId: candidate.id,
-          walletName: candidate.name,
-          pocketId: pocket.id,
-          pocketName: pocket.name,
-          currency: pocket.currency,
-          balance: pocket.balance,
-          creditCard: card
-            ? {
-                availableCredit: card.availableCredit,
-                liability: card.liability,
-              }
-            : undefined,
-        };
-      }),
+    pockets: allPockets
+      .filter((pocket) => pocket.wallet_id === walletId)
+      .filter(canUsePocket),
+    endpoints: compatibleWallets.flatMap((candidate) =>
+      allPockets
+        .filter((item) => item.wallet_id === candidate.id)
+        .filter(canUsePocket)
+        .map((pocket) => {
+          const card = cardByPocketId.get(pocket.id);
+          return {
+            walletId: candidate.id,
+            walletName: candidate.name,
+            pocketId: pocket.id,
+            pocketName: pocket.name,
+            currency: pocket.currency,
+            balance: pocket.balance,
+            creditCard: card
+              ? {
+                  availableCredit: card.availableCredit,
+                  liability: card.liability,
+                }
+              : undefined,
+          };
+        }),
     ),
     categories: buildCategoryTree(categories),
     tags,
@@ -105,7 +109,8 @@ export async function getAttributedHouseholdExpenseSheetData(
   const wallets = (await listMyWallets(supabase)).filter(
     (wallet) => wallet.scope === "PERSONAL" && wallet.owner_user_id === user.id,
   );
-  const [categories, pocketSets, cards] = await Promise.all([
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const [categories, allPockets, cards] = await Promise.all([
     listCategoriesForWallet(supabase, {
       transactionType: "EXPENSE",
       wallet: {
@@ -114,36 +119,33 @@ export async function getAttributedHouseholdExpenseSheetData(
         household_id: householdId,
       },
     }),
-    Promise.all(
-      wallets.map(async (wallet) => ({
-        wallet,
-        pockets: await listPocketsWithBalances(supabase, wallet.id),
-      })),
-    ),
+    listPocketsWithBalancesForWallets(supabase, walletIds),
     listCreditCardAccounts(supabase),
   ]);
   const cardByPocketId = new Map(cards.map((card) => [card.pocketId, card]));
 
   return {
     categories: buildCategoryTree(categories),
-    endpoints: pocketSets.flatMap(({ wallet, pockets }) =>
-      pockets.map((pocket) => {
-        const card = cardByPocketId.get(pocket.id);
-        return {
-          walletId: wallet.id,
-          walletName: wallet.name,
-          pocketId: pocket.id,
-          pocketName: pocket.name,
-          currency: pocket.currency,
-          balance: pocket.balance,
-          creditCard: card
-            ? {
-                availableCredit: card.availableCredit,
-                liability: card.liability,
-              }
-            : undefined,
-        };
-      }),
+    endpoints: wallets.flatMap((wallet) =>
+      allPockets
+        .filter((pocket) => pocket.wallet_id === wallet.id)
+        .map((pocket) => {
+          const card = cardByPocketId.get(pocket.id);
+          return {
+            walletId: wallet.id,
+            walletName: wallet.name,
+            pocketId: pocket.id,
+            pocketName: pocket.name,
+            currency: pocket.currency,
+            balance: pocket.balance,
+            creditCard: card
+              ? {
+                  availableCredit: card.availableCredit,
+                  liability: card.liability,
+                }
+              : undefined,
+          };
+        }),
     ),
   };
 }
@@ -181,26 +183,22 @@ export async function getWalletTransferSheetData(walletId: string) {
       w.household_id === wallet.household_id,
   );
 
-  const [fromPockets, pocketsByWalletEntries, tags] = await Promise.all([
-    listPocketsForWallet(supabase, walletId),
-    Promise.all(
-      otherWallets.map(
-        async (w) =>
-          [w.id, await listPocketsForWallet(supabase, w.id)] as const,
-      ),
-    ),
+  const walletIds = [
+    wallet.id,
+    ...otherWallets.map((candidate) => candidate.id),
+  ];
+  const [allPockets, tags] = await Promise.all([
+    listPocketsForWallets(supabase, walletIds),
     listTags(supabase, {
       scope: wallet.scope,
       householdId: wallet.household_id,
     }),
   ]);
-  const pocketsByWallet: Record<string, Pocket[]> = Object.fromEntries(
-    pocketsByWalletEntries,
-  );
+  const pocketsByWallet = groupPocketsByWallet(walletIds, allPockets);
 
   return {
     fromWallet: wallet,
-    fromPockets,
+    fromPockets: pocketsByWallet[wallet.id] ?? [],
     otherWallets,
     pocketsByWallet,
     tags,
@@ -218,27 +216,23 @@ export async function getUnifiedTransferSheetData(walletId: string) {
       candidate.owner_user_id === wallet.owner_user_id &&
       candidate.household_id === wallet.household_id,
   );
-  const pocketsByWallet = await Promise.all(
-    wallets.map(
-      async (candidate) =>
-        [
-          candidate,
-          await listPocketsWithBalances(supabase, candidate.id),
-        ] as const,
-    ),
+  const walletIds = wallets.map((candidate) => candidate.id);
+  const allPockets = await listPocketsWithBalancesForWallets(
+    supabase,
+    walletIds,
   );
-  const endpoints: TransferEndpoint[] = pocketsByWallet.flatMap(
-    ([candidate, pockets]) =>
-      pockets
-        .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
-        .map((pocket) => ({
-          walletId: candidate.id,
-          walletName: candidate.name,
-          pocketId: pocket.id,
-          pocketName: pocket.name,
-          currency: pocket.currency,
-          balance: pocket.balance,
-        })),
+  const endpoints: TransferEndpoint[] = wallets.flatMap((candidate) =>
+    allPockets
+      .filter((pocket) => pocket.wallet_id === candidate.id)
+      .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
+      .map((pocket) => ({
+        walletId: candidate.id,
+        walletName: candidate.name,
+        pocketId: pocket.id,
+        pocketName: pocket.name,
+        currency: pocket.currency,
+        balance: pocket.balance,
+      })),
   );
   const tags = await listTags(supabase, {
     scope: wallet.scope,
@@ -258,20 +252,17 @@ export async function getCreditCardSheetData(walletId: string) {
       candidate.owner_user_id === wallet.owner_user_id &&
       candidate.household_id === wallet.household_id,
   );
-  const [pocketSets, allCards] = await Promise.all([
-    Promise.all(
-      wallets.map(async (candidate) => ({
-        wallet: candidate,
-        pockets: await listPocketsWithBalances(supabase, candidate.id),
-      })),
-    ),
+  const walletIdList = wallets.map((candidate) => candidate.id);
+  const [allPockets, allCards] = await Promise.all([
+    listPocketsWithBalancesForWallets(supabase, walletIdList),
     listCreditCardAccounts(supabase),
   ]);
   const walletIds = new Set(wallets.map((candidate) => candidate.id));
   return {
     cards: allCards.filter((card) => walletIds.has(card.walletId)),
-    endpoints: pocketSets.flatMap(({ wallet: candidate, pockets }) =>
-      pockets
+    endpoints: wallets.flatMap((candidate) =>
+      allPockets
+        .filter((pocket) => pocket.wallet_id === candidate.id)
         .filter((pocket) => pocket.pocket_type !== "CREDIT_CARD")
         .map((pocket) => ({
           walletId: candidate.id,

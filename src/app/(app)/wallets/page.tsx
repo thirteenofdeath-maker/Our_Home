@@ -7,7 +7,10 @@ import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { FinanceHeader } from "@/features/finance/components/FinanceHeader";
 import { FinanceModuleTabs } from "@/features/finance/components/FinanceModuleTabs";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listArchivedWallets, listMyWallets } from "@/features/wallets/api";
 import { WalletForm } from "@/features/wallets/components/WalletForm";
 import { WalletVisualCard } from "@/features/wallets/components/WalletVisualCard";
@@ -27,12 +30,15 @@ export default async function WalletsPage({
     listArchivedWallets(supabase),
     getMyPrimaryHousehold(supabase, user.id),
   ]);
-  const withBalance = await Promise.all(
-    wallets.map(async (wallet) => ({
-      wallet,
-      pockets: await listPocketsWithBalances(supabase, wallet.id),
-    })),
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
+  const withBalance = wallets.map((wallet) => ({
+    wallet,
+    pockets: pocketsByWallet[wallet.id] ?? [],
+  }));
   const scope =
     rawScope === "HOUSEHOLD" && household ? "HOUSEHOLD" : "PERSONAL";
   const visible = withBalance.filter((item) => item.wallet.scope === scope);

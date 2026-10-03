@@ -93,7 +93,31 @@ describe("native-like main navigation performance", () => {
   it("batches signed storage URLs", () => {
     const household = read("src/features/household/api.ts");
     const pets = read("src/features/pets/api.ts");
+    const attachments = read("src/features/attachments/api.ts");
+    const inventory = read("src/features/inventory/api.ts");
     expect(household).toContain("createSignedUrls(storedPaths");
     expect(pets.match(/createSignedUrls\(/g)).toHaveLength(2);
+    expect(attachments).toContain("createSignedUrls(");
+    expect(inventory).toContain("createSignedUrls(");
+  });
+
+  it("loads wallet balances in one RLS-aware batch", () => {
+    const pockets = read("src/features/pockets/api.ts");
+    const migration = read(
+      "supabase/migrations/20261003123010_batch_pocket_balances.sql",
+    );
+    expect(pockets).toContain('supabase.rpc("list_pockets_with_balances"');
+    expect(pockets).not.toContain('supabase.rpc("get_pocket_balance"');
+    expect(migration).toContain("security invoker");
+    expect(migration).toContain("t.deleted_at is null");
+  });
+
+  it("avoids per-pet reads on the pets and household dashboards", () => {
+    const petsPage = read("src/app/(app)/pets/page.tsx");
+    const householdPage = read("src/app/(app)/household/page.tsx");
+    expect(petsPage).toContain("listPetsByArchiveState(");
+    expect(petsPage).not.toContain("active.map(async");
+    expect(householdPage).toContain("listRecentHouseholdPetCareRecords(");
+    expect(householdPage).not.toContain("pets.map(");
   });
 });

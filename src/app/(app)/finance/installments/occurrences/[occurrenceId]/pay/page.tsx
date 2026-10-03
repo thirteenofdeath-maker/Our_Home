@@ -5,7 +5,10 @@ import {
 } from "@/features/installments/api";
 import { PayInstallmentForm } from "@/features/installments/components/PayInstallmentForm";
 import { listMyWallets } from "@/features/wallets/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { requireUser } from "@/lib/auth/require-user";
 export default async function Page({
   params,
@@ -21,11 +24,10 @@ export default async function Page({
   const wallets = (await listMyWallets(supabase)).filter(
     (w) => w.scope === p.scope && w.currency === p.currency,
   );
-  const pairs = await Promise.all(
-    wallets.map(
-      async (w) =>
-        [w.id, await listPocketsWithBalances(supabase, w.id)] as const,
-    ),
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +39,7 @@ export default async function Page({
         amount={o.expectedAmount}
         categoryId={p.categoryId}
         wallets={wallets}
-        pockets={Object.fromEntries(pairs)}
+        pockets={pocketsByWallet}
       />
     </div>
   );

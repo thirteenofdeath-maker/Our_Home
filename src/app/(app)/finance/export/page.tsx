@@ -1,6 +1,6 @@
 import { listCategories } from "@/features/categories/api";
 import { FinanceExportForm } from "@/features/exports/FinanceExportForm";
-import { listPocketsForWallet } from "@/features/pockets/api";
+import { listPocketsForWallets } from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -8,19 +8,22 @@ import { requireUser } from "@/lib/auth/require-user";
 export default async function ExportPage() {
   const { supabase } = await requireUser();
   const wallets = await listMyWallets(supabase);
-  const [pocketGroups, incomeCategories, expenseCategories, personalTags, householdTags] =
-    await Promise.all([
-      Promise.all(
-        wallets.map(async (wallet) => ({
-          wallet,
-          pockets: await listPocketsForWallet(supabase, wallet.id),
-        })),
-      ),
-      listCategories(supabase, { transactionType: "INCOME" }),
-      listCategories(supabase, { transactionType: "EXPENSE" }),
-      listTags(supabase, { scope: "PERSONAL" }),
-      listTags(supabase, { scope: "HOUSEHOLD" }),
-    ]);
+  const [
+    pockets,
+    incomeCategories,
+    expenseCategories,
+    personalTags,
+    householdTags,
+  ] = await Promise.all([
+    listPocketsForWallets(
+      supabase,
+      wallets.map((wallet) => wallet.id),
+    ),
+    listCategories(supabase, { transactionType: "INCOME" }),
+    listCategories(supabase, { transactionType: "EXPENSE" }),
+    listTags(supabase, { scope: "PERSONAL" }),
+    listTags(supabase, { scope: "HOUSEHOLD" }),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,13 +34,15 @@ export default async function ExportPage() {
           label: wallet.name,
           description: wallet.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว",
         }))}
-        pockets={pocketGroups.flatMap(({ wallet, pockets }) =>
-          pockets.map((pocket) => ({
-            id: pocket.id,
-            walletId: wallet.id,
-            label: pocket.name,
-            description: `${wallet.name} · ${pocket.currency}`,
-          })),
+        pockets={wallets.flatMap((wallet) =>
+          pockets
+            .filter((pocket) => pocket.wallet_id === wallet.id)
+            .map((pocket) => ({
+              id: pocket.id,
+              walletId: wallet.id,
+              label: pocket.name,
+              description: `${wallet.name} · ${pocket.currency}`,
+            })),
         )}
         categories={[
           ...incomeCategories.map((category) => ({

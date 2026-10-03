@@ -58,7 +58,7 @@ describe("Every JIT-data create sheet mirrors its full-page route's exact select
       loader: "src/features/goals/quick-add-data.ts",
       selectors: [
         "listMyWallets(supabase)",
-        "listPocketsWithBalances(supabase",
+        "listPocketsWithBalancesForWallets(supabase",
       ],
     },
     {
@@ -69,14 +69,14 @@ describe("Every JIT-data create sheet mirrors its full-page route's exact select
       loader: "src/features/debts/quick-add-data.ts",
       selectors: [
         "listMyWallets(supabase)",
-        "listPocketsWithBalances(supabase",
+        "listPocketsWithBalancesForWallets(supabase",
       ],
     },
     {
       loader: "src/features/bills/quick-add-data.ts",
       selectors: [
         "listMyWallets(supabase)",
-        "listPocketsWithBalances(supabase",
+        "listPocketsWithBalancesForWallets(supabase",
         "listCategories(supabase",
         "listTags(supabase",
       ],
@@ -85,6 +85,7 @@ describe("Every JIT-data create sheet mirrors its full-page route's exact select
       loader: "src/features/recurring/quick-add-data.ts",
       selectors: [
         "listMyWallets(supabase)",
+        "listPocketsForWallets(supabase",
         "listCategories(supabase",
         "listTags(supabase",
       ],
@@ -93,6 +94,7 @@ describe("Every JIT-data create sheet mirrors its full-page route's exact select
       loader: "src/features/templates/quick-add-data.ts",
       selectors: [
         "listMyWallets(supabase)",
+        "listPocketsForWallets(supabase",
         "listCategories(supabase",
         "listTags(supabase",
       ],

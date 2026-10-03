@@ -72,7 +72,7 @@ describe("UnifiedTransferForm", () => {
 
   it("loads only active wallets and pockets and includes ledger-derived balances", () => {
     expect(data).toContain("listMyWallets(supabase)");
-    expect(data).toContain("listPocketsWithBalances(supabase, candidate.id)");
+    expect(data).toContain("listPocketsWithBalancesForWallets(");
   });
 
   it("uses the shared selected and unselected Pocket colors", () => {

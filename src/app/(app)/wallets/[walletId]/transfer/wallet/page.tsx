@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { listPocketsForWallet } from "@/features/pockets/api";
-import type { Pocket } from "@/features/pockets/types";
+import {
+  groupPocketsByWallet,
+  listPocketsForWallets,
+} from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { WalletTransferForm } from "@/features/transactions/components/WalletTransferForm";
 import { getWallet, listMyWallets } from "@/features/wallets/api";
@@ -31,22 +33,34 @@ export default async function WalletTransferPage({
       w.household_id === wallet.household_id,
   );
 
-  const [fromPockets, pocketsByWalletEntries, tags] = await Promise.all([
-    listPocketsForWallet(supabase, walletId),
-    Promise.all(otherWallets.map(async (w) => [w.id, await listPocketsForWallet(supabase, w.id)] as const)),
-    listTags(supabase, { scope: wallet.scope, householdId: wallet.household_id }),
+  const walletIds = [
+    wallet.id,
+    ...otherWallets.map((candidate) => candidate.id),
+  ];
+  const [allPockets, tags] = await Promise.all([
+    listPocketsForWallets(supabase, walletIds),
+    listTags(supabase, {
+      scope: wallet.scope,
+      householdId: wallet.household_id,
+    }),
   ]);
-  const pocketsByWallet: Record<string, Pocket[]> = Object.fromEntries(pocketsByWalletEntries);
+  const pocketsByWallet = groupPocketsByWallet(walletIds, allPockets);
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="โอนไปกระเป๋าเงินอื่น" backHref={`/wallets/${walletId}/transfer`} />
+      <PageHeader
+        title="โอนไปกระเป๋าเงินอื่น"
+        backHref={`/wallets/${walletId}/transfer`}
+      />
       {otherWallets.length === 0 ? (
-        <EmptyState title="ไม่มีกระเป๋าเงินปลายทาง" description="เพิ่มกระเป๋าเงินอีกใบก่อนโอนเงินระหว่างกระเป๋า" />
+        <EmptyState
+          title="ไม่มีกระเป๋าเงินปลายทาง"
+          description="เพิ่มกระเป๋าเงินอีกใบก่อนโอนเงินระหว่างกระเป๋า"
+        />
       ) : (
         <WalletTransferForm
           fromWallet={wallet}
-          fromPockets={fromPockets}
+          fromPockets={pocketsByWallet[wallet.id] ?? []}
           otherWallets={otherWallets}
           pocketsByWallet={pocketsByWallet}
           tags={tags}

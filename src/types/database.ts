@@ -1705,6 +1705,14 @@ export interface Database {
         Args: { p_pocket_id: string };
         Returns: string | number;
       };
+      list_pockets_with_balances: {
+        Args: { p_wallet_ids: string[]; p_include_archived?: boolean };
+        Returns: Array<
+          Database["public"]["Tables"]["pockets"]["Row"] & {
+            balance: string | number;
+          }
+        >;
+      };
       get_wallet_balance: {
         Args: { p_wallet_id: string };
         Returns: string | number;

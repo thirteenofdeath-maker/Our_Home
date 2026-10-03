@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { getDebt } from "@/features/debts/api";
 import { AdditionalDebtPrincipalForm } from "@/features/debts/components/DebtForms";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 export default async function Page({
@@ -18,18 +21,10 @@ export default async function Page({
   const wallets = (await listMyWallets(supabase)).filter(
     (x) => x.scope === d.scope && x.currency === d.currency && !x.is_archived,
   );
-  const pockets = Object.fromEntries(
-    await Promise.all(
-      wallets.map(
-        async (x) =>
-          [
-            x.id,
-            (await listPocketsWithBalances(supabase, x.id)).filter(
-              (p) => !p.is_archived,
-            ),
-          ] as const,
-      ),
-    ),
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pockets = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
   );
   return (
     <div className="flex flex-col gap-4">

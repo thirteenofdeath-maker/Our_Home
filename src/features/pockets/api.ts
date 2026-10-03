@@ -13,14 +13,24 @@ export async function listPocketsForWallet(
   walletId: string,
   options: { includeArchived?: boolean } = {},
 ): Promise<Pocket[]> {
-  let query = supabase
-    .from("pockets")
-    .select("*")
-    .eq("wallet_id", walletId);
-  if (!options.includeArchived) query = query.eq("is_archived", false);
-  const { data, error } = await query.order("sort_order", { ascending: true });
+  return (await listPocketsForWallets(supabase, [walletId], options)).filter(
+    (pocket) => pocket.wallet_id === walletId,
+  );
+}
 
-  if (error) logDatabaseErrorInDev("listPocketsForWallet failed", error);
+export async function listPocketsForWallets(
+  supabase: SupabaseClient<Database>,
+  walletIds: string[],
+  options: { includeArchived?: boolean } = {},
+): Promise<Pocket[]> {
+  if (walletIds.length === 0) return [];
+  let query = supabase.from("pockets").select("*").in("wallet_id", walletIds);
+  if (!options.includeArchived) query = query.eq("is_archived", false);
+  const { data, error } = await query
+    .order("wallet_id", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (error) logDatabaseErrorInDev("listPocketsForWallets failed", error);
   return data ?? [];
 }
 
@@ -29,20 +39,38 @@ export async function listPocketsWithBalances(
   walletId: string,
   options: { includeArchived?: boolean } = {},
 ): Promise<PocketWithBalance[]> {
-  const pockets = await listPocketsForWallet(supabase, walletId, options);
+  return (
+    await listPocketsWithBalancesForWallets(supabase, [walletId], options)
+  ).filter((pocket) => pocket.wallet_id === walletId);
+}
 
-  return Promise.all(
-    pockets.map(async (pocket) => {
-      const { data, error } = await supabase.rpc("get_pocket_balance", {
-        p_pocket_id: pocket.id,
-      });
-      if (error) logDatabaseErrorInDev("getPocketBalance failed", error);
-      return {
-        ...pocket,
-        balance: data === null ? "0.00" : normalizeDatabaseMoney(data),
-      };
-    }),
+export async function listPocketsWithBalancesForWallets(
+  supabase: SupabaseClient<Database>,
+  walletIds: string[],
+  options: { includeArchived?: boolean } = {},
+): Promise<PocketWithBalance[]> {
+  if (walletIds.length === 0) return [];
+  const { data, error } = await supabase.rpc("list_pockets_with_balances", {
+    p_wallet_ids: walletIds,
+    p_include_archived: options.includeArchived ?? false,
+  });
+  if (error)
+    logDatabaseErrorInDev("listPocketsWithBalancesForWallets failed", error);
+  return (data ?? []).map((pocket) => ({
+    ...pocket,
+    balance: normalizeDatabaseMoney(pocket.balance),
+  }));
+}
+
+export function groupPocketsByWallet<T extends Pocket>(
+  walletIds: string[],
+  pockets: T[],
+): Record<string, T[]> {
+  const grouped = Object.fromEntries(
+    walletIds.map((walletId) => [walletId, [] as T[]]),
   );
+  for (const pocket of pockets) grouped[pocket.wallet_id]?.push(pocket);
+  return grouped;
 }
 
 export async function createPocket(

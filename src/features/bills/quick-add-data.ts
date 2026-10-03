@@ -3,8 +3,10 @@
 import { listCategories } from "@/features/categories/api";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
 import { getMyPrimaryHousehold } from "@/features/household/api";
-import { listPocketsWithBalances } from "@/features/pockets/api";
-import type { PocketWithBalance } from "@/features/pockets/types";
+import {
+  groupPocketsByWallet,
+  listPocketsWithBalancesForWallets,
+} from "@/features/pockets/api";
 import { listTags } from "@/features/tags/api";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -33,15 +35,11 @@ export async function getBillSheetData() {
       ? listTags(supabase, { scope: "HOUSEHOLD", householdId: household.id })
       : Promise.resolve([]),
   ]);
-  const pocketsByWallet: Record<string, PocketWithBalance[]> =
-    Object.fromEntries(
-      await Promise.all(
-        wallets.map(
-          async (w) =>
-            [w.id, await listPocketsWithBalances(supabase, w.id)] as const,
-        ),
-      ),
-    );
+  const walletIds = wallets.map((wallet) => wallet.id);
+  const pocketsByWallet = groupPocketsByWallet(
+    walletIds,
+    await listPocketsWithBalancesForWallets(supabase, walletIds),
+  );
   return {
     wallets,
     pocketsByWallet,

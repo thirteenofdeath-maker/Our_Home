@@ -5,7 +5,10 @@ import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { canInviteRole } from "@/features/household/domain/member";
-import { listPetCareRecords, listPets } from "@/features/pets/api";
+import {
+  listPetCareRecords,
+  listPetsByArchiveState,
+} from "@/features/pets/api";
 import { AddPetFab } from "@/features/pets/components/AddPetFab";
 import {
   PetCard,
@@ -27,22 +30,16 @@ export default async function PetsPage({
   const household = await getMyPrimaryHousehold(supabase, user.id);
   if (!household) return <Card>สร้างครอบครัวก่อนเพิ่มสัตว์เลี้ยง</Card>;
 
-  const [active, archived] = await Promise.all([
-    listPets(supabase, household.id),
-    listPets(supabase, household.id, true),
-  ]);
-  const recordsByPet = new Map(
-    await Promise.all(
-      active.map(
-        async (pet) =>
-          [pet.id, await listPetCareRecords(supabase, pet.id)] as const,
-      ),
-    ),
+  const { active, archived } = await listPetsByArchiveState(
+    supabase,
+    household.id,
   );
   const canManage = canInviteRole(household.myRole, "member");
   const featured =
     active.find((pet) => pet.id === selectedPetId) ?? active[0] ?? null;
-  const records = featured ? (recordsByPet.get(featured.id) ?? []) : [];
+  const records = featured
+    ? await listPetCareRecords(supabase, featured.id)
+    : [];
   const age = featured ? ageFromBirthday(featured.birthday) : null;
   const latestWeight = records.find(
     (record) => record.record_type === "WEIGHT",

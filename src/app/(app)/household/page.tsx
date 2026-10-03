@@ -14,7 +14,7 @@ import {
 } from "@/features/household/domain/member";
 import { requireUser } from "@/lib/auth/require-user";
 import { listRecentFinanceTransactions } from "@/features/finance/api";
-import { listPetCareRecords, listPets } from "@/features/pets/api";
+import { listRecentHouseholdPetCareRecords } from "@/features/pets/api";
 import { PET_CARE_RECORD_LABEL } from "@/features/pets/domain/care-record";
 import Link from "next/link";
 import Image from "next/image";
@@ -37,21 +37,15 @@ export default async function HouseholdPage() {
     );
   }
 
-  const [members, pets, recentTransactions] = await Promise.all([
+  const [members, petRecords, recentTransactions] = await Promise.all([
     listHouseholdMembers(supabase, household.id, { includeObservers: true }),
-    listPets(supabase, household.id),
+    listRecentHouseholdPetCareRecords(supabase, household.id, 5),
     listRecentFinanceTransactions(supabase, {
       limit: 5,
       scope: "HOUSEHOLD",
       householdId: household.id,
     }),
   ]);
-  const petRecords = (
-    await Promise.all(pets.map((pet) => listPetCareRecords(supabase, pet.id)))
-  )
-    .flat()
-    .toSorted((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 5);
   // Same permission rule that already gates the "เพิ่มสมาชิก" AddMemberForm
   // on /household/members (canInviteRole(role, "member") is true for
   // owner/admin) — reused here, not a new authorization rule. The full
