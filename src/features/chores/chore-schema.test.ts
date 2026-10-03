@@ -70,6 +70,13 @@ describe("rotating household chores contract", () => {
     }
   });
 
+  it("submits assignees in the order shown and lets owners move them", () => {
+    expect(form).toContain('type="hidden" name="memberIds"');
+    expect(form).toContain("moveAssignee(current, member.id, -1)");
+    expect(form).toContain("moveAssignee(current, member.id, 1)");
+    expect(form).toContain("แตะเพื่อเพิ่มต่อท้าย");
+  });
+
   it("records original assignment, takeover and completion history", () => {
     expect(migration).toContain("original_assigned_member_id");
     expect(migration).toContain("taken_over_by");

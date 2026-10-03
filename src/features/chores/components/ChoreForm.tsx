@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import {
   Field,
@@ -20,6 +20,11 @@ import {
   choreScheduleDefaults,
   type ChoreScheduleMode,
 } from "../schedule";
+import {
+  initialAssigneeOrder,
+  moveAssignee,
+  toggleAssignee,
+} from "../assignee-order";
 
 export function ChoreForm({
   householdId,
@@ -45,6 +50,17 @@ export function ChoreForm({
   const scheduleDefaults = choreScheduleDefaults(template, startDate);
   const [scheduleMode, setScheduleMode] = useState<ChoreScheduleMode>(
     scheduleDefaults.mode,
+  );
+  const [orderedMemberIds, setOrderedMemberIds] = useState(() =>
+    initialAssigneeOrder(members, selectedMemberIds),
+  );
+  const memberById = useMemo(
+    () => new Map(members.map((member) => [member.id, member])),
+    [members],
+  );
+  const selectedMemberIdSet = new Set(orderedMemberIds);
+  const unselectedMembers = members.filter(
+    (member) => !selectedMemberIdSet.has(member.id),
   );
 
   return (
@@ -187,28 +203,91 @@ export function ChoreForm({
           ลำดับผู้รับผิดชอบ
         </legend>
         <p className="text-xs text-foreground-muted">
-          ระบบจะหมุนตามลำดับรายชื่อด้านล่าง
+          ระบบจะเริ่มจากลำดับ 1 แล้วหมุนเวียนลงมาตามรายชื่อ
         </p>
-        {members.map((member, index) => (
-          <label
-            key={member.id}
-            className="flex min-h-12 items-center gap-3 rounded-control border border-border/70 bg-surface px-4"
-          >
-            <input
-              type="checkbox"
-              name="memberIds"
-              value={member.id}
-              defaultChecked={
-                selectedMemberIds ? selectedMemberIds.includes(member.id) : true
-              }
-              className="size-5 accent-primary"
-            />
-            <span className="flex-1">{member.label}</span>
-            <span className="text-xs text-foreground-muted">
-              ลำดับ {index + 1}
-            </span>
-          </label>
-        ))}
+        {orderedMemberIds.map((memberId, index) => {
+          const member = memberById.get(memberId);
+          if (!member) return null;
+          return (
+            <div
+              key={member.id}
+              className="flex min-h-14 items-center gap-3 rounded-control border border-primary/25 bg-surface px-3"
+            >
+              <input type="hidden" name="memberIds" value={member.id} />
+              <input
+                type="checkbox"
+                checked
+                onChange={() =>
+                  setOrderedMemberIds((current) =>
+                    toggleAssignee(current, member.id, false),
+                  )
+                }
+                aria-label={`นำ ${member.label} ออกจากรอบ`}
+                className="size-5 shrink-0 accent-primary"
+              />
+              <span className="min-w-0 flex-1 truncate">{member.label}</span>
+              <span className="shrink-0 text-xs text-foreground-muted">
+                ลำดับ {index + 1}
+              </span>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOrderedMemberIds((current) =>
+                      moveAssignee(current, member.id, -1),
+                    )
+                  }
+                  disabled={index === 0}
+                  aria-label={`เลื่อน ${member.label} ขึ้น`}
+                  className="flex size-9 items-center justify-center rounded-full border border-border bg-surface-strong text-lg text-foreground disabled:opacity-30"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOrderedMemberIds((current) =>
+                      moveAssignee(current, member.id, 1),
+                    )
+                  }
+                  disabled={index === orderedMemberIds.length - 1}
+                  aria-label={`เลื่อน ${member.label} ลง`}
+                  className="flex size-9 items-center justify-center rounded-full border border-border bg-surface-strong text-lg text-foreground disabled:opacity-30"
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {unselectedMembers.length ? (
+          <div className="mt-2 flex flex-col gap-2">
+            <p className="text-xs font-medium text-foreground-muted">
+              ยังไม่อยู่ในรอบ
+            </p>
+            {unselectedMembers.map((member) => (
+              <label
+                key={member.id}
+                className="flex min-h-12 items-center gap-3 rounded-control border border-dashed border-border bg-surface/65 px-4"
+              >
+                <input
+                  type="checkbox"
+                  checked={false}
+                  onChange={() =>
+                    setOrderedMemberIds((current) =>
+                      toggleAssignee(current, member.id, true),
+                    )
+                  }
+                  className="size-5 accent-primary"
+                />
+                <span className="flex-1">{member.label}</span>
+                <span className="text-xs text-foreground-muted">
+                  แตะเพื่อเพิ่มต่อท้าย
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : null}
       </fieldset>
       {state.error ? (
         <p aria-live="polite" className="text-sm text-danger">
