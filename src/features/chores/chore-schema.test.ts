@@ -77,6 +77,18 @@ describe("rotating household chores contract", () => {
     expect(form).toContain("แตะเพื่อเพิ่มต่อท้าย");
   });
 
+  it("keeps schedule editing near the top instead of below all occurrences", () => {
+    const managerIndex = page.indexOf("จัดการตารางหมุนเวียน");
+    const overdueIndex = page.indexOf('title="เลยกำหนด"');
+    const upcomingIndex = page.indexOf('title="งานถัดไป"');
+
+    expect(managerIndex).toBeGreaterThan(-1);
+    expect(managerIndex).toBeLessThan(overdueIndex);
+    expect(managerIndex).toBeLessThan(upcomingIndex);
+    expect(page).toContain("<details");
+    expect(page).toContain("max-h-[min(50dvh,28rem)]");
+  });
+
   it("records original assignment, takeover and completion history", () => {
     expect(migration).toContain("original_assigned_member_id");
     expect(migration).toContain("taken_over_by");
