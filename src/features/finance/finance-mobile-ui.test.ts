@@ -20,7 +20,7 @@ describe("approved mobile Finance UI", () => {
     expect(hub).toContain("<FinanceCreateFlow");
     expect(hub).not.toContain("triggerVariant");
     expect(createFlow).not.toContain("triggerVariant");
-    expect(createFlow).toContain("fixed z-20 flex size-14");
+    expect(createFlow).toContain("APP_FAB_CLASSNAME");
     expect(createFlow).not.toContain("min-h-16 w-full");
     expect(createFlow).toContain("<BottomSheet");
     expect(hub).not.toContain(

@@ -36,7 +36,7 @@ describe("credit-card quick add", () => {
 
   it("uses one icon-only FAB and one textual sheet back control", () => {
     expect(flow).toContain('aria-label="เพิ่มรายการการเงิน"');
-    expect(flow).toContain("fixed z-20 flex size-14");
+    expect(flow).toContain("APP_FAB_CLASSNAME");
     expect(flow).not.toContain('name="chevron"');
     expect(flow).toContain('closeLabel="ย้อนกลับ"');
     expect(flow).not.toContain('aria-label="ย้อนกลับไปเลือกประเภท"');

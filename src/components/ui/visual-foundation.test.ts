@@ -38,6 +38,8 @@ describe("mobile visual foundation", () => {
     const css = read("src/app/globals.css");
     expect(css).toContain(".app-fab");
     expect(css).toContain("calc((100vw - 36rem) / 2 + 1.25rem)");
+    const fab = read("src/components/ui/fab.ts");
+    expect(fab).toContain("app-fab");
 
     for (const path of [
       "src/features/finance/components/FinanceCreateFlow.tsx",
@@ -45,7 +47,7 @@ describe("mobile visual foundation", () => {
       "src/features/pets/components/AddPetFab.tsx",
       "src/app/(app)/household/page.tsx",
     ]) {
-      expect(read(path), path).toContain("app-fab");
+      expect(read(path), path).toContain("APP_FAB_CLASSNAME");
     }
   });
 

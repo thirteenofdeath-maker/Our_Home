@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import type { HouseholdMemberWithProfile } from "@/features/household/types";
@@ -36,9 +37,9 @@ export function ShoppingItemCard({
 
   return (
     <Card
-      className={`rounded-[1.35rem] bg-finance-surface-strong ${purchased ? "opacity-80" : ""}`}
+      className={`rounded-[1.15rem] bg-finance-surface-strong p-3 ${purchased ? "opacity-80" : ""}`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         {canEdit ? (
           <form action={toggleShoppingItemAction}>
             <input type="hidden" name="itemId" value={item.id} />
@@ -51,102 +52,109 @@ export function ShoppingItemCard({
                   ? "นำกลับเข้ารายการที่ต้องซื้อ"
                   : "ทำเครื่องหมายว่าซื้อแล้ว"
               }
-              className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {purchased ? "✓" : ""}
             </button>
           </form>
         ) : (
           <span
-            className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
+            className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
           >
             {purchased ? "✓" : ""}
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3
-                className={`font-semibold text-finance-text ${purchased ? "line-through" : ""}`}
-              >
-                {item.name}
-              </h3>
-              <p className="mt-0.5 text-sm text-finance-muted">
-                {quantityLabel(item)}
-                {item.store ? ` · ${item.store}` : ""}
-              </p>
-            </div>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <h3
+              className={`truncate font-semibold text-finance-text ${purchased ? "line-through" : ""}`}
+            >
+              {item.name}
+            </h3>
             {item.estimated_amount ? (
-              <span className="shrink-0 rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-medium text-finance-primary-strong">
+              <span className="shrink-0 text-sm font-semibold tabular-nums text-finance-primary-strong">
                 {formatCurrency(item.estimated_amount, item.currency)}
               </span>
             ) : null}
           </div>
+          <p className="mt-0.5 truncate text-sm text-finance-muted">
+            {quantityLabel(item)}
+            {item.store ? ` · ${item.store}` : ""}
+            {" · "}
+            {assignee
+              ? (assignee.profile?.display_name ??
+                assignee.profile?.email ??
+                "สมาชิก")
+              : "ยังไม่มอบหมาย"}
+            {purchased
+              ? ` · ซื้อแล้ว${purchaser ? `โดย ${purchaser.profile?.display_name ?? "สมาชิก"}` : ""}`
+              : ""}
+          </p>
           {item.note ? (
-            <p className="mt-2 text-sm text-finance-muted">{item.note}</p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-finance-muted">
-            <span className="rounded-full bg-finance-primary-soft/55 px-2.5 py-1">
-              {assignee
-                ? `รับผิดชอบ: ${assignee.profile?.display_name ?? assignee.profile?.email ?? "สมาชิก"}`
-                : "ยังไม่มอบหมาย"}
+            <span className="mt-1.5 inline-flex max-w-full truncate rounded-full bg-finance-primary-soft/55 px-2 py-0.5 text-xs text-finance-muted">
+              {item.note}
             </span>
-            {purchased ? (
-              <span>
-                ซื้อแล้ว
-                {purchaser
-                  ? `โดย ${purchaser.profile?.display_name ?? "สมาชิก"}`
-                  : ""}
-              </span>
-            ) : null}
-          </div>
-          {canEdit ? (
-            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/70 pt-3 text-sm font-medium">
-              {item.expense_transaction_id ? (
-                <Link
-                  href={`/finance/transactions/${item.expense_transaction_id}`}
-                  className="text-finance-primary-strong"
-                >
-                  ดูรายจ่าย
-                </Link>
-              ) : (
-                <Link
-                  href={`/calendar/shopping/${item.id}/expense`}
-                  className="text-finance-primary-strong"
-                >
-                  สร้างรายจ่าย
-                </Link>
-              )}
-              <FormSheetButton
-                triggerClassName="text-finance-primary-strong"
-                ariaLabel={`แก้ไข ${item.name}`}
-                sheetTitle="แก้ไขรายการซื้อ"
-                form={
-                  <ShoppingItemForm
-                    householdId={item.household_id}
-                    members={members.map((member) => ({
-                      id: member.id,
-                      label:
-                        member.profile?.display_name ??
-                        member.profile?.email ??
-                        "สมาชิก",
-                    }))}
-                    item={item}
-                  />
-                }
-                tone="finance"
-              >
-                แก้ไข
-              </FormSheetButton>
-              <form action={archiveShoppingItemAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <button type="submit" className="text-finance-muted">
-                  นำออกจากรายการ
-                </button>
-              </form>
-            </div>
           ) : null}
         </div>
+        {canEdit ? (
+          <div className="flex shrink-0 items-center gap-1.5">
+            {item.expense_transaction_id ? (
+              <Link
+                href={`/finance/transactions/${item.expense_transaction_id}`}
+                className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
+              >
+                ดูรายจ่าย
+              </Link>
+            ) : (
+              <Link
+                href={`/calendar/shopping/${item.id}/expense`}
+                className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
+              >
+                สร้างรายจ่าย
+              </Link>
+            )}
+            <details className="group relative">
+              <summary
+                className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full text-finance-muted marker:hidden [&::-webkit-details-marker]:hidden"
+                aria-label={`จัดการ ${item.name}`}
+              >
+                <AppIcon name="more" className="size-5" />
+              </summary>
+              <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
+                <FormSheetButton
+                  triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
+                  ariaLabel={`แก้ไข ${item.name}`}
+                  sheetTitle="แก้ไขรายการซื้อ"
+                  form={
+                    <ShoppingItemForm
+                      householdId={item.household_id}
+                      members={members.map((member) => ({
+                        id: member.id,
+                        label:
+                          member.profile?.display_name ??
+                          member.profile?.email ??
+                          "สมาชิก",
+                      }))}
+                      item={item}
+                    />
+                  }
+                  tone="finance"
+                >
+                  แก้ไข
+                </FormSheetButton>
+                <form action={archiveShoppingItemAction}>
+                  <input type="hidden" name="itemId" value={item.id} />
+                  <button
+                    type="submit"
+                    className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+                  >
+                    นำออกจากรายการ
+                  </button>
+                </form>
+              </div>
+            </details>
+          </div>
+        ) : null}
       </div>
     </Card>
   );

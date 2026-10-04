@@ -2,6 +2,7 @@
 
 import { AsyncFormSheetButton } from "@/components/ui/AsyncFormSheetButton";
 import { AppIcon } from "@/components/ui/AppIcon";
+import { APP_FAB_CLASSNAME } from "@/components/ui/fab";
 import { getPetSheetData } from "../quick-add-data";
 import { PetForm } from "./PetForm";
 
@@ -14,7 +15,7 @@ export function AddPetFab() {
   return (
     <AsyncFormSheetButton
       ariaLabel="เพิ่มสัตว์เลี้ยง"
-      triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+      triggerClassName={APP_FAB_CLASSNAME}
       sheetTitle="เพิ่มสัตว์เลี้ยง"
       tone="finance"
       loadData={getPetSheetData}

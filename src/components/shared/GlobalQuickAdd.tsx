@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { AppIcon } from "@/components/ui/AppIcon";
+import { APP_FAB_CLASSNAME } from "@/components/ui/fab";
+import { cn } from "@/lib/utils/cn";
 import {
   financeExpenseHref,
   financeIncomeHref,
@@ -59,7 +61,7 @@ function QuickAddLoadingFab() {
       type="button"
       disabled
       aria-label="กำลังเตรียมปุ่มเพิ่มรายการการเงิน"
-      className="app-fab finance-scope fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground opacity-70 shadow-[0_8px_24px_rgb(0_0_0_/_0.24)]"
+      className={cn(APP_FAB_CLASSNAME, "finance-scope opacity-70")}
     >
       <AppIcon name="plus" />
     </button>
@@ -91,7 +93,7 @@ function CreateFirstWalletFab({
     <div className="finance-scope contents">
       <FormSheetButton
         ariaLabel="เพิ่มรายการการเงิน"
-        triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        triggerClassName={APP_FAB_CLASSNAME}
         sheetTitle="สร้างกระเป๋าเงิน"
         form={
           hasHousehold === null ? (

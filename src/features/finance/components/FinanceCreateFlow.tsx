@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { BottomSheet, CLOSE_TRANSITION_MS } from "@/components/ui/BottomSheet";
+import { APP_FAB_CLASSNAME } from "@/components/ui/fab";
 import type { CategoryNode } from "@/features/categories/types";
 import { CreditCardTransactionForm } from "@/features/credit-cards/components/CreditCardTransactionForm";
 import type { CreditCardSheetData } from "@/features/credit-cards/types";
@@ -225,7 +226,7 @@ export function FinanceCreateFlow({
         type="button"
         aria-label="เพิ่มรายการการเงิน"
         onClick={openChoice}
-        className="app-fab finance-create-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
+        className={`${APP_FAB_CLASSNAME} finance-create-fab`}
       >
         <AppIcon name="plus" />
         <span className="finance-create-fab-label">เพิ่มรายการ</span>

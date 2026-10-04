@@ -113,9 +113,7 @@ describe("AppShell visibility", () => {
     // exists (every single-create FAB now composes FormSheetButton/
     // AsyncFormSheetButton directly) — FinanceCreateFlow's own FAB uses
     // the same shared offset every other converted FAB copies verbatim.
-    const fabSource = read(
-      "src/features/finance/components/FinanceCreateFlow.tsx",
-    );
+    const fabSource = read("src/components/ui/fab.ts");
     const fabOffsetMatch = fabSource.match(
       /bottom-\[calc\(env\(safe-area-inset-bottom\)\+([\d.]+)rem\)\]/,
     );

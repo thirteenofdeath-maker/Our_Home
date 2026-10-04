@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
+import { APP_FAB_CLASSNAME } from "@/components/ui/fab";
 import { listCalendarEvents } from "@/features/calendar/api";
 import { AddCalendarEventFab } from "@/features/calendar/components/AddCalendarEventFab";
 import { MonthCalendar } from "@/features/calendar/components/MonthCalendar";
@@ -25,7 +26,7 @@ import {
   choreFullDate,
   groupChoresByDate,
 } from "@/features/chores/schedule";
-import { choreCadenceLabel } from "@/features/chores/types";
+import { choreCadenceLabel, type ChoreTemplate } from "@/features/chores/types";
 import {
   getMyPrimaryHousehold,
   listHouseholdMembers,
@@ -192,6 +193,10 @@ export default async function CalendarPage({
   );
   const currentMemberId =
     members.find((member) => member.user_id === user.id)?.id ?? null;
+  const choreFormMembers = members.map((member) => ({
+    id: member.id,
+    label: member.profile?.display_name ?? member.profile?.email ?? "สมาชิก",
+  }));
   const choreTemplates = new Map(
     chores.templates.map((template) => [template.id, template]),
   );
@@ -506,13 +511,7 @@ export default async function CalendarPage({
                 <ChoreForm
                   householdId={household.id}
                   today={today}
-                  members={members.map((member) => ({
-                    id: member.id,
-                    label:
-                      member.profile?.display_name ??
-                      member.profile?.email ??
-                      "สมาชิก",
-                  }))}
+                  members={choreFormMembers}
                 />
               }
             />
@@ -543,77 +542,49 @@ export default async function CalendarPage({
                   />
                 </span>
               </summary>
-              <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft p-3">
-                {chores.templates.map((template) => {
-                  const templateAssignees = chores.assignees.filter(
-                    (item) => item.template_id === template.id,
-                  );
-                  return (
-                    <Card
-                      key={template.id}
-                      className="flex items-center justify-between gap-3 rounded-[1.2rem] bg-finance-surface"
-                    >
-                      <div className="min-w-0">
-                        <h3 className="truncate font-semibold text-finance-text">
-                          {template.title}
-                        </h3>
-                        <p className="mt-0.5 text-sm text-finance-muted">
-                          {choreCadenceLabel(
-                            template.cadence,
-                            template.interval_count,
-                            template.starts_on,
-                          )}{" "}
-                          · {templateAssignees.length} คน
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                        <FormSheetButton
-                          ariaLabel={`แก้ไข ${template.title}`}
-                          triggerClassName="rounded-full border border-finance-primary-soft bg-finance-surface-strong px-3 py-2 text-sm font-medium text-finance-primary-strong"
-                          sheetTitle="แก้ไขตารางงานบ้าน"
-                          form={
-                            <ChoreForm
-                              householdId={household.id}
-                              today={today}
-                              members={members.map((member) => ({
-                                id: member.id,
-                                label:
-                                  member.profile?.display_name ??
-                                  member.profile?.email ??
-                                  "สมาชิก",
-                              }))}
-                              template={template}
-                              selectedMemberIds={templateAssignees.map(
-                                (item) => item.member_id,
-                              )}
-                            />
-                          }
-                          tone="finance"
-                        >
-                          แก้ไข
-                        </FormSheetButton>
-                        <form action={toggleChoreTemplateAction}>
-                          <input
-                            type="hidden"
-                            name="templateId"
-                            value={template.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="active"
-                            value={String(!template.is_active)}
-                          />
-                          <button
-                            type="submit"
-                            className="rounded-full bg-finance-primary-soft px-3 py-2 text-sm font-medium text-finance-primary-strong"
-                          >
-                            {template.is_active ? "พักตาราง" : "เปิดตาราง"}
-                          </button>
-                        </form>
-                      </div>
-                    </Card>
-                  );
-                })}
+              <div className="space-y-2 border-t border-finance-primary-soft p-3">
+                {chores.templates.slice(0, 2).map((template) => (
+                  <ChoreTemplateManagerCard
+                    key={template.id}
+                    template={template}
+                    householdId={household.id}
+                    today={today}
+                    members={choreFormMembers}
+                    selectedMemberIds={chores.assignees
+                      .filter((item) => item.template_id === template.id)
+                      .map((item) => item.member_id)}
+                  />
+                ))}
+                {chores.templates.length > 2 ? (
+                  <details className="group/more">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full bg-finance-primary-soft/60 px-4 text-sm font-medium text-finance-primary-strong marker:hidden [&::-webkit-details-marker]:hidden">
+                      <span className="group-open/more:hidden">
+                        ดูทั้งหมดอีก {chores.templates.length - 2} ตาราง
+                      </span>
+                      <span className="hidden group-open/more:inline">
+                        ซ่อนตารางเพิ่มเติม
+                      </span>
+                      <AppIcon
+                        name="chevron"
+                        className="size-4 transition-transform group-open/more:rotate-90"
+                      />
+                    </summary>
+                    <div className="mt-2 max-h-[min(45dvh,24rem)] space-y-2 overflow-y-auto">
+                      {chores.templates.slice(2).map((template) => (
+                        <ChoreTemplateManagerCard
+                          key={template.id}
+                          template={template}
+                          householdId={household.id}
+                          today={today}
+                          members={choreFormMembers}
+                          selectedMemberIds={chores.assignees
+                            .filter((item) => item.template_id === template.id)
+                            .map((item) => item.member_id)}
+                        />
+                      ))}
+                    </div>
+                  </details>
+                ) : null}
               </div>
             </details>
           ) : null}
@@ -926,6 +897,80 @@ function ReadOnlyNotice({ children }: { children: ReactNode }) {
   );
 }
 
+function ChoreTemplateManagerCard({
+  template,
+  householdId,
+  today,
+  members,
+  selectedMemberIds,
+}: {
+  template: ChoreTemplate;
+  householdId: string;
+  today: string;
+  members: Array<{ id: string; label: string }>;
+  selectedMemberIds: string[];
+}) {
+  return (
+    <Card className="flex items-center justify-between gap-2 rounded-[1rem] bg-finance-surface p-3 shadow-none">
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-finance-text">
+          {template.title}
+        </h3>
+        <p className="mt-0.5 truncate text-sm text-finance-muted">
+          {choreCadenceLabel(
+            template.cadence,
+            template.interval_count,
+            template.starts_on,
+          )}{" "}
+          · {selectedMemberIds.length} คน
+          {!template.is_active ? " · พักอยู่" : ""}
+        </p>
+      </div>
+      <details className="group/menu relative shrink-0">
+        <summary
+          className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong marker:hidden shadow-sm [&::-webkit-details-marker]:hidden"
+          aria-label={`จัดการตาราง ${template.title}`}
+        >
+          <AppIcon name="more" className="size-5" />
+        </summary>
+        <div className="absolute right-0 top-11 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
+          <FormSheetButton
+            ariaLabel={`แก้ไข ${template.title}`}
+            triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
+            sheetTitle="แก้ไขตารางงานบ้าน"
+            form={
+              <ChoreForm
+                householdId={householdId}
+                today={today}
+                members={members}
+                template={template}
+                selectedMemberIds={selectedMemberIds}
+              />
+            }
+            tone="finance"
+          >
+            แก้ไข
+          </FormSheetButton>
+          <form action={toggleChoreTemplateAction}>
+            <input type="hidden" name="templateId" value={template.id} />
+            <input
+              type="hidden"
+              name="active"
+              value={String(!template.is_active)}
+            />
+            <button
+              type="submit"
+              className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+            >
+              {template.is_active ? "พักตาราง" : "เปิดตาราง"}
+            </button>
+          </form>
+        </div>
+      </details>
+    </Card>
+  );
+}
+
 function SearchBar({
   view,
   defaultValue,
@@ -954,7 +999,7 @@ function PlanCreateButton({ title, form }: { title: string; form: ReactNode }) {
   return (
     <FormSheetButton
       ariaLabel={title}
-      triggerClassName="app-fab fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(79_112_88_/_0.3)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary"
+      triggerClassName={APP_FAB_CLASSNAME}
       sheetTitle={title}
       form={form}
       tone="finance"

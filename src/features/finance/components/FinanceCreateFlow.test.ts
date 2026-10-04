@@ -205,7 +205,8 @@ describe("FinanceCreateFlow — Finance V2 visual language", () => {
   });
 
   it("uses an explicit add label on desktop while retaining the plus icon", () => {
-    expect(flow).toContain('className="app-fab finance-create-fab');
+    expect(flow).toContain("APP_FAB_CLASSNAME");
+    expect(flow).toContain("finance-create-fab");
     expect(flow).toContain('<AppIcon name="plus" />');
     expect(flow).toContain("finance-create-fab-label");
     expect(flow).toContain("เพิ่มรายการ");
