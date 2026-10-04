@@ -783,40 +783,49 @@ export default async function CalendarPage({
               count={inventory.length}
             />
             {inventory.length ? (
-              inventoryGroups.map(({ category, items }) => (
-                <section
-                  key={category}
-                  aria-labelledby={`inventory-category-${category}`}
-                  className="flex flex-col gap-2.5"
-                >
-                  <div className="flex items-center gap-2 px-1">
-                    <span
-                      aria-hidden="true"
-                      className="size-2.5 rounded-full bg-finance-primary"
-                    />
-                    <h3
-                      id={`inventory-category-${category}`}
-                      className="font-semibold text-finance-text"
-                    >
-                      {INVENTORY_CATEGORY_LABEL[category]}
-                    </h3>
-                    <span className="ml-auto rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-medium text-finance-primary-strong">
-                      {items.length} รายการ
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-3 border-l-2 border-finance-primary-soft pl-2 sm:pl-3">
-                    {items.map((item) => (
-                      <InventoryItemCard
-                        key={item.id}
-                        item={item}
-                        canEdit={canEditHousehold}
-                        today={today}
-                        showCategory={false}
+              inventoryGroups.map(({ category, items }, index) => {
+                const lowStockCount = items.filter(isLowStock).length;
+                return (
+                  <details
+                    key={category}
+                    open={index === 0}
+                    className="group overflow-hidden rounded-[1.35rem] bg-finance-surface-strong shadow-card"
+                  >
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 marker:hidden">
+                      <span
+                        aria-hidden="true"
+                        className="size-2.5 rounded-full bg-finance-primary"
                       />
-                    ))}
-                  </div>
-                </section>
-              ))
+                      <h3 className="font-semibold text-finance-text">
+                        {INVENTORY_CATEGORY_LABEL[category]}
+                      </h3>
+                      {lowStockCount ? (
+                        <span className="rounded-full bg-[#fce5db] px-2 py-0.5 text-xs font-medium text-[#a9513d]">
+                          ควรเติม {lowStockCount}
+                        </span>
+                      ) : null}
+                      <span className="ml-auto text-sm tabular-nums text-finance-muted">
+                        {items.length} รายการ
+                      </span>
+                      <AppIcon
+                        name="chevron"
+                        className="size-4 shrink-0 text-finance-muted transition-transform group-open:rotate-90"
+                      />
+                    </summary>
+                    <div className="flex flex-col gap-3 border-t border-border/60 bg-finance-background/35 p-2.5 sm:p-3">
+                      {items.map((item) => (
+                        <InventoryItemCard
+                          key={item.id}
+                          item={item}
+                          canEdit={canEditHousehold}
+                          today={today}
+                          showCategory={false}
+                        />
+                      ))}
+                    </div>
+                  </details>
+                );
+              })
             ) : (
               <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
                 ยังไม่มีของในคลัง กด + เพื่อเริ่มบันทึก
