@@ -542,7 +542,7 @@ export default async function CalendarPage({
                   />
                 </span>
               </summary>
-              <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft p-3">
+              <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft bg-finance-background/70 p-3">
                 {chores.templates.map((template) => (
                   <ChoreTemplateManagerCard
                     key={template.id}
@@ -764,7 +764,7 @@ export default async function CalendarPage({
                         className="size-4 shrink-0 text-finance-muted transition-transform group-open:rotate-90"
                       />
                     </summary>
-                    <div className="flex flex-col gap-2 border-t border-border/60 bg-finance-background/35 p-2">
+                    <div className="flex flex-col gap-2.5 border-t border-border/60 bg-finance-primary-soft/25 p-2.5">
                       {items.map((item) => (
                         <InventoryItemCard
                           key={item.id}
@@ -881,7 +881,7 @@ function ChoreTemplateManagerCard({
   selectedMemberIds: string[];
 }) {
   return (
-    <Card className="flex items-center justify-between gap-2 rounded-[1rem] bg-finance-surface p-3 shadow-none">
+    <Card className="flex items-center justify-between gap-2 rounded-[1rem] border border-border/70 bg-finance-surface-strong p-3 shadow-sm">
       <div className="min-w-0">
         <h3 className="truncate font-semibold text-finance-text">
           {template.title}

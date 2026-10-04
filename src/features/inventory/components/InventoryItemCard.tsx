@@ -29,7 +29,7 @@ export function InventoryItemCard({
   const low = isLowStock(item);
   const quantity = Number(item.quantity);
   return (
-    <Card className="rounded-[0.9rem] bg-finance-surface p-2.5 shadow-none">
+    <Card className="rounded-[0.9rem] border border-border/65 bg-finance-surface-strong p-2.5 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
         <Link href={`/calendar/inventory/${item.id}`} className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
