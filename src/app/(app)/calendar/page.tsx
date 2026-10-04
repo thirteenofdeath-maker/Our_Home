@@ -823,7 +823,7 @@ export default async function CalendarPage({
                         className="size-4 shrink-0 text-finance-muted transition-transform group-open:rotate-90"
                       />
                     </summary>
-                    <div className="flex flex-col gap-3 border-t border-border/60 bg-finance-background/35 p-2.5 sm:p-3">
+                    <div className="flex flex-col gap-2 border-t border-border/60 bg-finance-background/35 p-2">
                       {items.map((item) => (
                         <InventoryItemCard
                           key={item.id}
