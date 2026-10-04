@@ -52,14 +52,14 @@ export function ShoppingItemCard({
                   ? "นำกลับเข้ารายการที่ต้องซื้อ"
                   : "ทำเครื่องหมายว่าซื้อแล้ว"
               }
-              className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-finance-primary/50 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] text-xs font-semibold ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-finance-primary/55 text-finance-primary-strong"} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {purchased ? "✓" : ""}
             </button>
           </form>
         ) : (
           <span
-            className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
+            className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
           >
             {purchased ? "✓" : ""}
           </span>
@@ -117,10 +117,10 @@ export function ShoppingItemCard({
                 )}
                 <details className="group relative">
                   <summary
-                    className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full text-finance-muted marker:hidden [&::-webkit-details-marker]:hidden"
+                    className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full border border-finance-primary/20 bg-finance-primary-soft/70 text-finance-primary-strong marker:hidden [&::-webkit-details-marker]:hidden"
                     aria-label={`จัดการ ${item.name}`}
                   >
-                    <AppIcon name="more" className="size-5" />
+                    <AppIcon name="more" className="size-5" strokeWidth={2.8} />
                   </summary>
                   <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
                     <FormSheetButton

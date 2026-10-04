@@ -898,10 +898,10 @@ function ChoreTemplateManagerCard({
       </div>
       <details className="group/menu relative shrink-0">
         <summary
-          className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong marker:hidden shadow-sm [&::-webkit-details-marker]:hidden"
+          className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full border border-finance-primary/25 bg-finance-primary-soft text-finance-primary-strong marker:hidden shadow-sm [&::-webkit-details-marker]:hidden"
           aria-label={`จัดการตาราง ${template.title}`}
         >
-          <AppIcon name="more" className="size-5" />
+          <AppIcon name="more" className="size-5" strokeWidth={2.8} />
         </summary>
         <div className="absolute right-0 top-11 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
           <FormSheetButton
