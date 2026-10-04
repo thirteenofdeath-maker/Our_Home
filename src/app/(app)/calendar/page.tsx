@@ -542,8 +542,8 @@ export default async function CalendarPage({
                   />
                 </span>
               </summary>
-              <div className="space-y-2 border-t border-finance-primary-soft p-3">
-                {chores.templates.slice(0, 2).map((template) => (
+              <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft p-3">
+                {chores.templates.map((template) => (
                   <ChoreTemplateManagerCard
                     key={template.id}
                     template={template}
@@ -555,36 +555,6 @@ export default async function CalendarPage({
                       .map((item) => item.member_id)}
                   />
                 ))}
-                {chores.templates.length > 2 ? (
-                  <details className="group/more">
-                    <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full bg-finance-primary-soft/60 px-4 text-sm font-medium text-finance-primary-strong marker:hidden [&::-webkit-details-marker]:hidden">
-                      <span className="group-open/more:hidden">
-                        ดูทั้งหมดอีก {chores.templates.length - 2} ตาราง
-                      </span>
-                      <span className="hidden group-open/more:inline">
-                        ซ่อนตารางเพิ่มเติม
-                      </span>
-                      <AppIcon
-                        name="chevron"
-                        className="size-4 transition-transform group-open/more:rotate-90"
-                      />
-                    </summary>
-                    <div className="mt-2 max-h-[min(45dvh,24rem)] space-y-2 overflow-y-auto">
-                      {chores.templates.slice(2).map((template) => (
-                        <ChoreTemplateManagerCard
-                          key={template.id}
-                          template={template}
-                          householdId={household.id}
-                          today={today}
-                          members={choreFormMembers}
-                          selectedMemberIds={chores.assignees
-                            .filter((item) => item.template_id === template.id)
-                            .map((item) => item.member_id)}
-                        />
-                      ))}
-                    </div>
-                  </details>
-                ) : null}
               </div>
             </details>
           ) : null}

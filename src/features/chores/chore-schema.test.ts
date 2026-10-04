@@ -86,8 +86,8 @@ describe("rotating household chores contract", () => {
     expect(managerIndex).toBeLessThan(overdueIndex);
     expect(managerIndex).toBeLessThan(upcomingIndex);
     expect(page).toContain("<details");
-    expect(page).toContain("ดูทั้งหมดอีก");
-    expect(page).toContain("max-h-[min(45dvh,24rem)]");
+    expect(page).not.toContain("ดูทั้งหมดอีก");
+    expect(page).toContain("max-h-[min(50dvh,28rem)]");
   });
 
   it("records original assignment, takeover and completion history", () => {

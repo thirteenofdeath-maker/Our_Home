@@ -100,23 +100,25 @@ export function InventoryItemCard({
                   +
                 </button>
               </form>
-              {low ? (
-                <form action={sendInventoryToShoppingAction}>
-                  <input type="hidden" name="itemId" value={item.id} />
-                  <button
-                    type="submit"
-                    className="flex size-8 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong"
-                    aria-label={`ส่ง ${item.name} ไปรายการซื้อ`}
-                    title="ส่งไปรายการซื้อ"
-                  >
-                    <AppIcon name="shopping" className="size-4" />
-                  </button>
-                </form>
-              ) : null}
             </>
           ) : null}
         </div>
       </div>
+      {canEdit && low ? (
+        <div className="mt-2 flex justify-end border-t border-border/50 pt-2">
+          <form action={sendInventoryToShoppingAction}>
+            <input type="hidden" name="itemId" value={item.id} />
+            <button
+              type="submit"
+              className="flex min-h-8 items-center gap-1.5 rounded-full bg-finance-primary-soft px-3 text-xs font-medium text-finance-primary-strong"
+              aria-label={`ส่ง ${item.name} ไปรายการซื้อ`}
+            >
+              <AppIcon name="shopping" className="size-3.5" />
+              ส่งไปซื้อ
+            </button>
+          </form>
+        </div>
+      ) : null}
     </Card>
   );
 }

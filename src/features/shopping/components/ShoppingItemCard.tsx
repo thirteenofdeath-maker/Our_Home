@@ -39,7 +39,7 @@ export function ShoppingItemCard({
     <Card
       className={`rounded-[1.15rem] bg-finance-surface-strong p-3 ${purchased ? "opacity-80" : ""}`}
     >
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-start gap-2.5">
         {canEdit ? (
           <form action={toggleShoppingItemAction}>
             <input type="hidden" name="itemId" value={item.id} />
@@ -90,71 +90,75 @@ export function ShoppingItemCard({
               ? ` · ซื้อแล้ว${purchaser ? `โดย ${purchaser.profile?.display_name ?? "สมาชิก"}` : ""}`
               : ""}
           </p>
-          {item.note ? (
-            <span className="mt-1.5 inline-flex max-w-full truncate rounded-full bg-finance-primary-soft/55 px-2 py-0.5 text-xs text-finance-muted">
-              {item.note}
-            </span>
-          ) : null}
-        </div>
-        {canEdit ? (
-          <div className="flex shrink-0 items-center gap-1.5">
-            {item.expense_transaction_id ? (
-              <Link
-                href={`/finance/transactions/${item.expense_transaction_id}`}
-                className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
-              >
-                ดูรายจ่าย
-              </Link>
+          <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+            {item.note ? (
+              <span className="min-w-0 truncate rounded-full bg-finance-primary-soft/55 px-2 py-0.5 text-xs text-finance-muted">
+                {item.note}
+              </span>
             ) : (
-              <Link
-                href={`/calendar/shopping/${item.id}/expense`}
-                className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
-              >
-                สร้างรายจ่าย
-              </Link>
+              <span />
             )}
-            <details className="group relative">
-              <summary
-                className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full text-finance-muted marker:hidden [&::-webkit-details-marker]:hidden"
-                aria-label={`จัดการ ${item.name}`}
-              >
-                <AppIcon name="more" className="size-5" />
-              </summary>
-              <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
-                <FormSheetButton
-                  triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
-                  ariaLabel={`แก้ไข ${item.name}`}
-                  sheetTitle="แก้ไขรายการซื้อ"
-                  form={
-                    <ShoppingItemForm
-                      householdId={item.household_id}
-                      members={members.map((member) => ({
-                        id: member.id,
-                        label:
-                          member.profile?.display_name ??
-                          member.profile?.email ??
-                          "สมาชิก",
-                      }))}
-                      item={item}
-                    />
-                  }
-                  tone="finance"
-                >
-                  แก้ไข
-                </FormSheetButton>
-                <form action={archiveShoppingItemAction}>
-                  <input type="hidden" name="itemId" value={item.id} />
-                  <button
-                    type="submit"
-                    className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+            {canEdit ? (
+              <div className="flex shrink-0 items-center gap-1.5">
+                {item.expense_transaction_id ? (
+                  <Link
+                    href={`/finance/transactions/${item.expense_transaction_id}`}
+                    className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
                   >
-                    นำออกจากรายการ
-                  </button>
-                </form>
+                    ดูรายจ่าย
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/calendar/shopping/${item.id}/expense`}
+                    className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
+                  >
+                    สร้างรายจ่าย
+                  </Link>
+                )}
+                <details className="group relative">
+                  <summary
+                    className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full text-finance-muted marker:hidden [&::-webkit-details-marker]:hidden"
+                    aria-label={`จัดการ ${item.name}`}
+                  >
+                    <AppIcon name="more" className="size-5" />
+                  </summary>
+                  <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
+                    <FormSheetButton
+                      triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
+                      ariaLabel={`แก้ไข ${item.name}`}
+                      sheetTitle="แก้ไขรายการซื้อ"
+                      form={
+                        <ShoppingItemForm
+                          householdId={item.household_id}
+                          members={members.map((member) => ({
+                            id: member.id,
+                            label:
+                              member.profile?.display_name ??
+                              member.profile?.email ??
+                              "สมาชิก",
+                          }))}
+                          item={item}
+                        />
+                      }
+                      tone="finance"
+                    >
+                      แก้ไข
+                    </FormSheetButton>
+                    <form action={archiveShoppingItemAction}>
+                      <input type="hidden" name="itemId" value={item.id} />
+                      <button
+                        type="submit"
+                        className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+                      >
+                        นำออกจากรายการ
+                      </button>
+                    </form>
+                  </div>
+                </details>
               </div>
-            </details>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     </Card>
   );
