@@ -783,12 +783,11 @@ export default async function CalendarPage({
               count={inventory.length}
             />
             {inventory.length ? (
-              inventoryGroups.map(({ category, items }, index) => {
+              inventoryGroups.map(({ category, items }) => {
                 const lowStockCount = items.filter(isLowStock).length;
                 return (
                   <details
                     key={category}
-                    open={index === 0}
                     className="group overflow-hidden rounded-[1.35rem] bg-finance-surface-strong shadow-card"
                   >
                     <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 marker:hidden">
