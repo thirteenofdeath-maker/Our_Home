@@ -127,3 +127,13 @@ export async function setChoreTemplateActive(
   });
   if (error) throw error;
 }
+
+export async function deleteChoreTemplate(
+  supabase: Client,
+  templateId: string,
+) {
+  const { error } = await supabase.rpc("delete_chore_template", {
+    p_template_id: templateId,
+  });
+  if (error) throw error;
+}

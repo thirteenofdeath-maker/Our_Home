@@ -20,6 +20,7 @@ import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
+import { DeleteChoreTemplateButton } from "@/features/chores/components/DeleteChoreTemplateButton";
 import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
 import {
   choreDayHeading,
@@ -935,6 +936,10 @@ function ChoreTemplateManagerCard({
               {template.is_active ? "พักตาราง" : "เปิดตาราง"}
             </button>
           </form>
+          <DeleteChoreTemplateButton
+            templateId={template.id}
+            title={template.title}
+          />
         </div>
       </details>
     </Card>

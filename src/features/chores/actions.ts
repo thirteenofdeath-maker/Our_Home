@@ -11,6 +11,7 @@ import {
   claimChore,
   completeChore,
   createChoreTemplate,
+  deleteChoreTemplate,
   setChoreTemplateActive,
   updateChoreTemplate,
 } from "./api";
@@ -165,5 +166,24 @@ export async function toggleChoreTemplateAction(form: FormData) {
     refresh();
   } catch (error) {
     logDatabaseErrorInDev("toggleChoreTemplateAction failed", error);
+  }
+}
+
+export async function deleteChoreTemplateAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const templateId = stringValue(form, "templateId");
+  if (!z.string().uuid().safeParse(templateId).success) {
+    return { error: "ไม่พบตารางงานบ้าน" };
+  }
+  try {
+    const { supabase } = await requireUser();
+    await deleteChoreTemplate(supabase, templateId);
+    refresh();
+    return { success: true };
+  } catch (error) {
+    logDatabaseErrorInDev("deleteChoreTemplateAction failed", error);
+    return { error: "ลบตารางงานบ้านไม่สำเร็จ" };
   }
 }

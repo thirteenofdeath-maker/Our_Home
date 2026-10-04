@@ -98,63 +98,69 @@ export function ShoppingItemCard({
             ) : (
               <span />
             )}
-            {canEdit ? (
+            {canEdit || item.expense_transaction_id ? (
               <div className="flex shrink-0 items-center gap-1.5">
                 {item.expense_transaction_id ? (
                   <Link
-                    href={`/finance/transactions/${item.expense_transaction_id}`}
+                    href="/finance?scope=HOUSEHOLD"
                     className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
                   >
-                    ดูรายจ่าย
+                    ดูในการเงินครอบครัว
                   </Link>
-                ) : (
+                ) : canEdit ? (
                   <Link
                     href={`/calendar/shopping/${item.id}/expense`}
                     className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
                   >
                     สร้างรายจ่าย
                   </Link>
-                )}
-                <details className="group relative">
-                  <summary
-                    className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full border border-finance-primary/20 bg-finance-primary-soft/70 text-finance-primary-strong marker:hidden [&::-webkit-details-marker]:hidden"
-                    aria-label={`จัดการ ${item.name}`}
-                  >
-                    <AppIcon name="more" className="size-5" strokeWidth={2.8} />
-                  </summary>
-                  <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
-                    <FormSheetButton
-                      triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
-                      ariaLabel={`แก้ไข ${item.name}`}
-                      sheetTitle="แก้ไขรายการซื้อ"
-                      form={
-                        <ShoppingItemForm
-                          householdId={item.household_id}
-                          members={members.map((member) => ({
-                            id: member.id,
-                            label:
-                              member.profile?.display_name ??
-                              member.profile?.email ??
-                              "สมาชิก",
-                          }))}
-                          item={item}
-                        />
-                      }
-                      tone="finance"
+                ) : null}
+                {canEdit ? (
+                  <details className="group relative">
+                    <summary
+                      className="flex size-8 cursor-pointer list-none items-center justify-center rounded-full border border-finance-primary/20 bg-finance-primary-soft/70 text-finance-primary-strong marker:hidden [&::-webkit-details-marker]:hidden"
+                      aria-label={`จัดการ ${item.name}`}
                     >
-                      แก้ไข
-                    </FormSheetButton>
-                    <form action={archiveShoppingItemAction}>
-                      <input type="hidden" name="itemId" value={item.id} />
-                      <button
-                        type="submit"
-                        className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+                      <AppIcon
+                        name="more"
+                        className="size-5"
+                        strokeWidth={2.8}
+                      />
+                    </summary>
+                    <div className="absolute right-0 top-10 z-10 flex min-w-40 flex-col overflow-hidden rounded-[1rem] bg-finance-surface-strong p-1.5 text-sm font-medium shadow-card ring-1 ring-border/70">
+                      <FormSheetButton
+                        triggerClassName="rounded-[0.75rem] px-3 py-2 text-left text-finance-primary-strong"
+                        ariaLabel={`แก้ไข ${item.name}`}
+                        sheetTitle="แก้ไขรายการซื้อ"
+                        form={
+                          <ShoppingItemForm
+                            householdId={item.household_id}
+                            members={members.map((member) => ({
+                              id: member.id,
+                              label:
+                                member.profile?.display_name ??
+                                member.profile?.email ??
+                                "สมาชิก",
+                            }))}
+                            item={item}
+                          />
+                        }
+                        tone="finance"
                       >
-                        นำออกจากรายการ
-                      </button>
-                    </form>
-                  </div>
-                </details>
+                        แก้ไข
+                      </FormSheetButton>
+                      <form action={archiveShoppingItemAction}>
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <button
+                          type="submit"
+                          className="w-full rounded-[0.75rem] px-3 py-2 text-left text-finance-muted"
+                        >
+                          นำออกจากรายการ
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                ) : null}
               </div>
             ) : null}
           </div>

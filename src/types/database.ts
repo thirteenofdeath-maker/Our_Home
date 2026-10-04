@@ -1619,6 +1619,10 @@ export interface Database {
         Args: { p_template_id: string; p_active: boolean };
         Returns: undefined;
       };
+      delete_chore_template: {
+        Args: { p_template_id: string };
+        Returns: undefined;
+      };
       create_pet: {
         Args: {
           p_id: string;

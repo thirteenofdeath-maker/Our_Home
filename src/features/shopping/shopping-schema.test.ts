@@ -17,6 +17,13 @@ const indexMigration = readFileSync(
   ),
   "utf8",
 );
+const householdExpenseMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20261004232000_household_shopping_expenses_and_chore_delete.sql",
+  ),
+  "utf8",
+);
 const actions = readFileSync(
   resolve(process.cwd(), "src/features/shopping/actions.ts"),
   "utf8",
@@ -51,11 +58,26 @@ describe("shared shopping list contract", () => {
   });
 
   it("creates the expense and marks the item purchased atomically", () => {
-    expect(migration).toMatch(
-      /v_transaction_id := public\.create_income_expense_transaction[\s\S]*update public\.shopping_items[\s\S]*expense_transaction_id = v_transaction_id/,
+    expect(householdExpenseMigration).toMatch(
+      /create or replace function public\.create_shopping_item_expense[\s\S]*update public\.shopping_items[\s\S]*expense_transaction_id = v_transaction_id/,
     );
     expect(actions).toContain('supabase.rpc("create_shopping_item_expense"');
     expect(migration).toContain("expense_transaction_id uuid unique");
+  });
+
+  it("always classifies shopping purchases as household expenses", () => {
+    expect(householdExpenseMigration).toContain(
+      "v_wallet.household_id is distinct from v_item.household_id",
+    );
+    expect(householdExpenseMigration).toContain(
+      "public.create_attributed_household_expense(",
+    );
+    expect(householdExpenseMigration).toContain(
+      "public.create_attributed_card_purchase(",
+    );
+    expect(householdExpenseMigration).toContain(
+      "public.create_card_purchase(",
+    );
   });
 
   it("supports responsibility, store, quantity and budget metadata", () => {

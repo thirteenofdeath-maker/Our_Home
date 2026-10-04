@@ -17,6 +17,13 @@ const flexibleRecurrenceMigration = readFileSync(
   ),
   "utf8",
 );
+const deleteMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20261004232000_household_shopping_expenses_and_chore_delete.sql",
+  ),
+  "utf8",
+);
 const form = readFileSync(
   resolve(process.cwd(), "src/features/chores/components/ChoreForm.tsx"),
   "utf8",
@@ -94,5 +101,18 @@ describe("rotating household chores contract", () => {
     expect(migration).toContain("original_assigned_member_id");
     expect(migration).toContain("taken_over_by");
     expect(migration).toContain("completed_by = auth.uid()");
+  });
+
+  it("lets owners and administrators permanently remove a chore schedule", () => {
+    expect(deleteMigration).toContain(
+      "create or replace function public.delete_chore_template",
+    );
+    expect(deleteMigration).toContain(
+      "array['owner','admin']::public.household_role[]",
+    );
+    expect(deleteMigration).toContain(
+      "delete from public.chore_templates where id = p_template_id",
+    );
+    expect(page).toContain("DeleteChoreTemplateButton");
   });
 });

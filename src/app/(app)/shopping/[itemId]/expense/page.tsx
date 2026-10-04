@@ -5,11 +5,11 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { listCategoriesForWallet } from "@/features/categories/api";
 import { buildCategoryTree } from "@/features/categories/domain/tree";
-import { listPocketsForWallet } from "@/features/pockets/api";
+import { listCreditCardAccounts } from "@/features/credit-cards/api";
+import { listPocketsWithBalancesForWallets } from "@/features/pockets/api";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { getShoppingItem } from "@/features/shopping/api";
-import { listTags } from "@/features/tags/api";
-import { TransactionForm } from "@/features/transactions/components/TransactionForm";
+import { ShoppingExpenseForm } from "@/features/shopping/components/ShoppingExpenseForm";
 import { listMyWallets } from "@/features/wallets/api";
 import { requireUser } from "@/lib/auth/require-user";
 
@@ -36,9 +36,12 @@ export async function ShoppingExpensePage({
   )
     notFound();
 
-  const wallet =
-    wallets.find((entry) => entry.currency === item.currency) ?? wallets[0];
-  if (!wallet) {
+  const eligibleWallets = wallets.filter(
+    (wallet) =>
+      (wallet.scope === "PERSONAL" && wallet.owner_user_id === user.id) ||
+      (wallet.scope === "HOUSEHOLD" && wallet.household_id === household.id),
+  );
+  if (!eligibleWallets.length) {
     return (
       <div className="flex flex-col gap-4 pb-8">
         <PageHeader title="สร้างรายจ่าย" backHref="/calendar?view=shopping" />
@@ -52,18 +55,43 @@ export async function ShoppingExpensePage({
     );
   }
 
-  const [pockets, categories, tags] = await Promise.all([
-    listPocketsForWallet(supabase, wallet.id),
+  const [pockets, categories, cards] = await Promise.all([
+    listPocketsWithBalancesForWallets(
+      supabase,
+      eligibleWallets.map((wallet) => wallet.id),
+    ),
     listCategoriesForWallet(supabase, {
       transactionType: "EXPENSE",
-      wallet,
+      wallet: {
+        scope: "HOUSEHOLD",
+        owner_user_id: null,
+        household_id: household.id,
+      },
     }),
-    listTags(supabase, {
-      scope: wallet.scope,
-      householdId: wallet.household_id,
-    }),
+    listCreditCardAccounts(supabase),
   ]);
-  const currencyMatches = wallet.currency === item.currency;
+  const cardByPocketId = new Map(cards.map((card) => [card.pocketId, card]));
+  const endpoints = eligibleWallets.flatMap((wallet) =>
+    pockets
+      .filter((pocket) => pocket.wallet_id === wallet.id)
+      .map((pocket) => {
+        const card = cardByPocketId.get(pocket.id);
+        return {
+          walletId: wallet.id,
+          walletName: `${wallet.name} · ${wallet.scope === "HOUSEHOLD" ? "ครอบครัว" : "ส่วนตัว"}`,
+          pocketId: pocket.id,
+          pocketName: pocket.name,
+          currency: pocket.currency,
+          balance: pocket.balance,
+          creditCard: card
+            ? {
+                availableCredit: card.availableCredit,
+                liability: card.liability,
+              }
+            : undefined,
+        };
+      }),
+  );
   const details = [
     `${Number(item.quantity)}${item.unit ? ` ${item.unit}` : ""}`,
     item.store,
@@ -81,28 +109,14 @@ export async function ShoppingExpensePage({
         <p className="font-semibold text-finance-text">{item.name}</p>
         <p className="mt-1 text-sm text-finance-muted">{details}</p>
       </Card>
-      <TransactionForm
-        walletId={wallet.id}
-        wallets={wallets.map(({ id, name, scope }) => ({ id, name, scope }))}
-        transactionType="EXPENSE"
-        pockets={pockets.filter(
-          (pocket) => pocket.pocket_type !== "CREDIT_CARD",
-        )}
+      <ShoppingExpenseForm
+        shoppingItemId={item.id}
+        endpoints={endpoints}
         categories={buildCategoryTree(categories)}
-        tags={tags}
-        defaultAmount={
-          currencyMatches ? String(item.estimated_amount ?? "") : undefined
-        }
+        itemCurrency={item.currency}
+        defaultAmount={String(item.estimated_amount ?? "")}
         defaultTitle={item.name}
         defaultNote={details || item.note}
-        staleNotices={
-          !currencyMatches && item.estimated_amount
-            ? [
-                `งบประมาณเป็น ${item.currency} แต่กระเป๋าที่ใช้เป็น ${wallet.currency} กรุณาระบุยอดที่ถูกต้อง`,
-              ]
-            : undefined
-        }
-        shoppingItemId={item.id}
       />
     </div>
   );
