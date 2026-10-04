@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
-import { AppIcon } from "@/components/ui/AppIcon";
+import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
 import { listCalendarEvents } from "@/features/calendar/api";
 import { AddCalendarEventFab } from "@/features/calendar/components/AddCalendarEventFab";
@@ -52,6 +52,16 @@ import { requireUser } from "@/lib/auth/require-user";
 import { shiftDate } from "@/lib/date/bangkok";
 import { cn } from "@/lib/utils/cn";
 import { listScheduledPetCareRecords } from "@/features/pets/api";
+import type { InventoryCategory } from "@/types/database";
+
+const INVENTORY_CATEGORY_ICON: Record<InventoryCategory, AppIconName> = {
+  PET_SUPPLY: "pets",
+  HOUSEHOLD: "household",
+  FOOD: "shopping",
+  MEDICINE: "plus",
+  WARRANTY: "info",
+  OTHER: "inventory",
+};
 
 function activeView(value: unknown): PlanView {
   return value === "tasks" ||
@@ -791,10 +801,12 @@ export default async function CalendarPage({
                     className="group overflow-hidden rounded-[1.35rem] bg-finance-surface-strong shadow-card"
                   >
                     <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 marker:hidden">
-                      <span
-                        aria-hidden="true"
-                        className="size-2.5 rounded-full bg-finance-primary"
-                      />
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
+                        <AppIcon
+                          name={INVENTORY_CATEGORY_ICON[category]}
+                          className="size-4.5"
+                        />
+                      </span>
                       <h3 className="font-semibold text-finance-text">
                         {INVENTORY_CATEGORY_LABEL[category]}
                       </h3>
