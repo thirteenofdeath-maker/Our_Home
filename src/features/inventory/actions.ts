@@ -192,9 +192,14 @@ export async function adjustInventoryQuantityAction(form: FormData) {
   }
 }
 
-export async function sendInventoryToShoppingAction(form: FormData) {
+export async function sendInventoryToShoppingAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
   const itemId = value(form, "itemId");
-  if (!z.string().uuid().safeParse(itemId).success) return;
+  if (!z.string().uuid().safeParse(itemId).success) {
+    return { error: "ข้อมูลรายการไม่ถูกต้อง" };
+  }
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase.rpc("send_inventory_item_to_shopping", {
@@ -203,9 +208,11 @@ export async function sendInventoryToShoppingAction(form: FormData) {
     if (error) throw error;
     revalidatePath("/calendar");
     revalidatePath(`/calendar/inventory/${itemId}`);
-    revalidatePath("/calendar");
+    revalidatePath("/");
+    return { success: true };
   } catch (error) {
     logDatabaseErrorInDev("sendInventoryToShoppingAction failed", error);
+    return { error: "ส่งไปยังรายการซื้อไม่สำเร็จ กรุณาลองใหม่" };
   }
 }
 

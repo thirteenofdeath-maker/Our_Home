@@ -13,10 +13,10 @@ import {
 import {
   archiveInventoryItemAction,
   deleteInventoryDocumentAction,
-  sendInventoryToShoppingAction,
 } from "@/features/inventory/actions";
 import { InventoryDocumentForm } from "@/features/inventory/components/InventoryDocumentForm";
 import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
+import { SendInventoryToShoppingButton } from "@/features/inventory/components/SendInventoryToShoppingButton";
 import {
   INVENTORY_CATEGORY_LABEL,
   INVENTORY_DOCUMENT_LABEL,
@@ -121,12 +121,10 @@ export async function InventoryDetailPage({
           >
             แก้ไข
           </FormSheetButton>
-          <form action={sendInventoryToShoppingAction}>
-            <input type="hidden" name="itemId" value={item.id} />
-            <button className="rounded-full bg-finance-primary px-4 py-2.5 text-sm font-medium text-finance-primary-foreground">
-              ส่งไปรายการซื้อ
-            </button>
-          </form>
+          <SendInventoryToShoppingButton
+            itemId={item.id}
+            itemName={item.name}
+          />
           {item.shopping_item_id ? (
             <Link
               href="/calendar?view=shopping"

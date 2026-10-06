@@ -16,6 +16,24 @@ const atomicQuantitySql = readFileSync(
   ),
   "utf8",
 );
+const inventoryActions = readFileSync(
+  resolve(process.cwd(), "src/features/inventory/actions.ts"),
+  "utf8",
+);
+const sendToShoppingButton = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/features/inventory/components/SendInventoryToShoppingButton.tsx",
+  ),
+  "utf8",
+);
+const inventoryItemCard = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/features/inventory/components/InventoryItemCard.tsx",
+  ),
+  "utf8",
+);
 
 describe("household inventory schema", () => {
   it("keeps observers read-only and mutations behind role-aware RPCs", () => {
@@ -54,6 +72,25 @@ describe("household inventory schema", () => {
     );
     expect(atomicQuantitySql).toContain(
       "revoke execute on function public.adjust_inventory_quantity(uuid,numeric) from public, anon",
+    );
+  });
+
+  it("reports send-to-shopping progress and result instead of failing silently", () => {
+    expect(inventoryActions).toMatch(
+      /sendInventoryToShoppingAction\([\s\S]*Promise<ActionState>/,
+    );
+    expect(inventoryActions).toContain("return { success: true }");
+    expect(inventoryActions).toContain(
+      "ส่งไปยังรายการซื้อไม่สำเร็จ กรุณาลองใหม่",
+    );
+    expect(sendToShoppingButton).toContain("useActionState(");
+    expect(sendToShoppingButton).toContain("กำลังส่ง…");
+    expect(sendToShoppingButton).toContain("เพิ่มในรายการซื้อแล้ว");
+    expect(sendToShoppingButton).toContain("/calendar?view=shopping");
+    expect(sendToShoppingButton).toContain('aria-live="polite"');
+    expect(inventoryItemCard).toContain("<SendInventoryToShoppingButton");
+    expect(inventoryItemCard).not.toContain(
+      "<form action={sendInventoryToShoppingAction}>",
     );
   });
 });

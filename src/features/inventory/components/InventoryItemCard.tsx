@@ -1,11 +1,7 @@
 import Link from "next/link";
 
-import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
-import {
-  sendInventoryToShoppingAction,
-  adjustInventoryQuantityAction,
-} from "../actions";
+import { adjustInventoryQuantityAction } from "../actions";
 import {
   INVENTORY_CATEGORY_LABEL,
   inventoryDateLabel,
@@ -14,6 +10,7 @@ import {
   isLowStock,
   type InventoryItem,
 } from "../types";
+import { SendInventoryToShoppingButton } from "./SendInventoryToShoppingButton";
 
 export function InventoryItemCard({
   item,
@@ -106,17 +103,10 @@ export function InventoryItemCard({
       </div>
       {canEdit && low ? (
         <div className="mt-2 flex justify-end border-t border-border/50 pt-2">
-          <form action={sendInventoryToShoppingAction}>
-            <input type="hidden" name="itemId" value={item.id} />
-            <button
-              type="submit"
-              className="flex min-h-8 items-center gap-1.5 rounded-full bg-finance-primary-soft px-3 text-xs font-medium text-finance-primary-strong"
-              aria-label={`ส่ง ${item.name} ไปรายการซื้อ`}
-            >
-              <AppIcon name="shopping" className="size-3.5" />
-              ส่งไปซื้อ
-            </button>
-          </form>
+          <SendInventoryToShoppingButton
+            itemId={item.id}
+            itemName={item.name}
+          />
         </div>
       ) : null}
     </Card>
