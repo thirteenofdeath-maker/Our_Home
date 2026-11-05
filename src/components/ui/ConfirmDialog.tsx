@@ -63,7 +63,14 @@ export function ConfirmDialog({
   children?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction] = useActionState(action, initialActionState);
+  const [state, formAction] = useActionState(
+    async (previous: ActionState, formData: FormData) => {
+      const result = await action(previous, formData);
+      if (result.success) setOpen(false);
+      return result;
+    },
+    initialActionState,
+  );
   const ref = useRef<HTMLDialogElement>(null);
   const [entered, setEntered] = useState(false);
 
@@ -93,7 +100,14 @@ export function ConfirmDialog({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={triggerClassName ?? buttonClassName(triggerVariant, "md", "w-auto px-3 text-xs")}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={
+          triggerClassName ??
+          buttonClassName(triggerVariant, "md", "w-auto px-3 text-xs")
+        }
+      >
         {triggerLabel}
       </button>
       <dialog
@@ -107,7 +121,9 @@ export function ConfirmDialog({
           "fixed inset-0 m-auto hidden h-fit w-[calc(100%-2.5rem)] max-w-sm open:flex flex-col rounded-card border-0 bg-surface p-5 shadow-card backdrop:bg-black/40",
           "transition-[transform,opacity] duration-[160ms] ease-out motion-reduce:transition-opacity motion-reduce:duration-100",
           "backdrop:transition-opacity backdrop:duration-[160ms] motion-reduce:backdrop:duration-100",
-          entered ? "scale-100 opacity-100 backdrop:opacity-100" : "scale-95 opacity-0 backdrop:opacity-0",
+          entered
+            ? "scale-100 opacity-100 backdrop:opacity-100"
+            : "scale-95 opacity-0 backdrop:opacity-0",
           "motion-reduce:scale-100",
         )}
       >
@@ -116,11 +132,19 @@ export function ConfirmDialog({
           {Object.entries(hiddenFields).map(([name, value]) => (
             <input key={name} type="hidden" name={name} value={value} />
           ))}
-          {description ? <p className="text-sm text-foreground-muted">{description}</p> : null}
+          {description ? (
+            <p className="text-sm text-foreground-muted">{description}</p>
+          ) : null}
           {children}
-          {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+          {state.error ? (
+            <p className="text-sm text-danger">{state.error}</p>
+          ) : null}
           <div className="flex gap-2">
-            <button type="button" onClick={close} className={buttonClassName("secondary", "md", "flex-1")}>
+            <button
+              type="button"
+              onClick={close}
+              className={buttonClassName("secondary", "md", "flex-1")}
+            >
               ยกเลิก
             </button>
             <SubmitButton variant="danger" className="flex-1">

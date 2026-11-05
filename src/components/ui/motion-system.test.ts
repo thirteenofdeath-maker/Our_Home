@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 // Any file that composes BottomSheet must never define its own
 // transition/transform/duration classes — that would be a second,
@@ -10,7 +11,9 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 // A bare "duration-" match would also catch BottomSheet's own file if
 // misused, so this only ever runs against BottomSheet's *consumers*.
 function hasOwnAnimationClasses(source: string): boolean {
-  return /transition-\[|duration-\[\d+ms\]|\[transform:translate3d/.test(source);
+  return /transition-\[|duration-\[\d+ms\]|\[transform:translate3d/.test(
+    source,
+  );
 }
 
 describe("One shared motion system — every action/process sheet reuses BottomSheet's animation, never a second implementation", () => {
@@ -22,16 +25,28 @@ describe("One shared motion system — every action/process sheet reuses BottomS
     ];
     for (const path of consumers) {
       const source = read(path);
-      expect(source, `${path} should import BottomSheet`).toMatch(/import\s*\{\s*BottomSheet[\s,}]/);
-      expect(source, `${path} should render <BottomSheet`).toContain("<BottomSheet");
-      expect(hasOwnAnimationClasses(source), `${path} should not define its own transition/transform animation`).toBe(false);
+      expect(source, `${path} should import BottomSheet`).toMatch(
+        /import\s*\{\s*BottomSheet[\s,}]/,
+      );
+      expect(source, `${path} should render <BottomSheet`).toContain(
+        "<BottomSheet",
+      );
+      expect(
+        hasOwnAnimationClasses(source),
+        `${path} should not define its own transition/transform animation`,
+      ).toBe(false);
     }
   });
 
   it("CategoryPicker and TagPicker reuse CLOSE_TRANSITION_MS for their own pick/add stage transitions — never a second, independent timing value", () => {
-    for (const path of ["src/features/categories/components/CategoryPicker.tsx", "src/features/tags/components/TagPicker.tsx"]) {
+    for (const path of [
+      "src/features/categories/components/CategoryPicker.tsx",
+      "src/features/tags/components/TagPicker.tsx",
+    ]) {
       const source = read(path);
-      expect(source, path).toMatch(/import\s*\{\s*BottomSheet,\s*CLOSE_TRANSITION_MS\s*\}/);
+      expect(source, path).toMatch(
+        /import\s*\{\s*BottomSheet,\s*CLOSE_TRANSITION_MS\s*\}/,
+      );
       expect(source, path).not.toMatch(/CLOSE_TRANSITION_MS\s*=\s*\d+/);
     }
   });
@@ -59,9 +74,17 @@ describe("One shared motion system — every action/process sheet reuses BottomS
     ];
     for (const [path, marker] of pagesConvertedToFormSheets) {
       const source = read(path);
-      expect(source, `${path} should render <${marker}`).toContain(`<${marker}`);
-      expect(source, `${path} should not still reference FloatingActionButton`).not.toContain("FloatingActionButton");
-      expect(hasOwnAnimationClasses(source), `${path} should not define its own sheet animation`).toBe(false);
+      expect(source, `${path} should render <${marker}`).toContain(
+        `<${marker}`,
+      );
+      expect(
+        source,
+        `${path} should not still reference FloatingActionButton`,
+      ).not.toContain("FloatingActionButton");
+      expect(
+        hasOwnAnimationClasses(source),
+        `${path} should not define its own sheet animation`,
+      ).toBe(false);
     }
   });
 
@@ -69,10 +92,14 @@ describe("One shared motion system — every action/process sheet reuses BottomS
     const source = read("src/components/shared/GlobalQuickAdd.tsx");
     expect(hasOwnAnimationClasses(source)).toBe(false);
     const flow = read("src/features/finance/components/FinanceCreateFlow.tsx");
-    expect(flow).toMatch(/import\s*\{\s*BottomSheet,\s*CLOSE_TRANSITION_MS\s*\}/);
+    expect(flow).toMatch(
+      /import\s*\{\s*BottomSheet,\s*CLOSE_TRANSITION_MS\s*\}/,
+    );
     expect(hasOwnAnimationClasses(flow)).toBe(false);
     const formSheetButton = read("src/components/ui/FormSheetButton.tsx");
-    expect(formSheetButton).toContain('import { BottomSheet } from "@/components/ui/BottomSheet"');
+    expect(formSheetButton).toContain(
+      'import { BottomSheet } from "@/components/ui/BottomSheet"',
+    );
     expect(hasOwnAnimationClasses(formSheetButton)).toBe(false);
   });
 
@@ -91,7 +118,10 @@ describe("One shared motion system — every action/process sheet reuses BottomS
       "src/features/categories/components/CategoryPicker.tsx",
       "src/features/tags/components/TagPicker.tsx",
     ]) {
-      expect(read(path), `${path} must not redeclare a duration-[Nms] class`).not.toMatch(/duration-\[\d+ms\]/);
+      expect(
+        read(path),
+        `${path} must not redeclare a duration-[Nms] class`,
+      ).not.toMatch(/duration-\[\d+ms\]/);
     }
   });
 });
@@ -111,7 +141,8 @@ describe("Destructive confirmations use their own single, centered motion — ne
     expect(source).not.toContain("<BottomSheet");
     expect(source).not.toMatch(/\[transform:translate3d\(0,\s*100%,\s*0\)\]/);
     expect(source).toMatch(/scale-95/);
-    expect(source).toContain("useActionState(action, initialActionState)");
+    expect(source).toContain("await action(previous, formData)");
+    expect(source).toContain("if (result.success) setOpen(false)");
     expect(source).toContain("state.error");
   });
 
@@ -126,24 +157,49 @@ describe("Destructive confirmations use their own single, centered motion — ne
     const confirmDialog = read("src/components/ui/ConfirmDialog.tsx");
     expect(confirmDialog).toMatch(/duration-\[\d+ms\]/);
     for (const path of consumers) {
-      expect(read(path), `${path} must not redeclare a duration-[Nms] class`).not.toMatch(/duration-\[\d+ms\]/);
+      expect(
+        read(path),
+        `${path} must not redeclare a duration-[Nms] class`,
+      ).not.toMatch(/duration-\[\d+ms\]/);
     }
   });
 
   it("every destructive/high-consequence confirmation reuses ConfirmDialog with its OWN existing Server Action — never a new one", () => {
     const consumers: Array<[string, string]> = [
-      ["src/features/wallets/components/WalletLifecycleControls.tsx", "deleteWalletAction"],
-      ["src/features/wallets/components/WalletLifecycleControls.tsx", "archiveWalletAction"],
-      ["src/features/transactions/components/VoidTransactionForm.tsx", "voidTransactionAction"],
+      [
+        "src/features/wallets/components/WalletLifecycleControls.tsx",
+        "deleteWalletAction",
+      ],
+      [
+        "src/features/wallets/components/WalletLifecycleControls.tsx",
+        "archiveWalletAction",
+      ],
+      [
+        "src/features/transactions/components/VoidTransactionForm.tsx",
+        "voidTransactionAction",
+      ],
       ["src/features/bills/components/SkipBillForm.tsx", "skipBillAction"],
-      ["src/features/recurring/components/SkipOccurrenceForm.tsx", "skipOccurrenceAction"],
-      ["src/features/pockets/components/PocketManagerList.tsx", "deletePocketAction"],
+      [
+        "src/features/recurring/components/SkipOccurrenceForm.tsx",
+        "skipOccurrenceAction",
+      ],
+      [
+        "src/features/pockets/components/PocketManagerList.tsx",
+        "deletePocketAction",
+      ],
     ];
     for (const [path, actionName] of consumers) {
       const source = read(path);
-      expect(source, `${path} should import ConfirmDialog`).toContain("ConfirmDialog");
-      expect(source, `${path} should still invoke ${actionName}`).toContain(actionName);
-      expect(hasOwnAnimationClasses(source), `${path} should not define its own dialog animation`).toBe(false);
+      expect(source, `${path} should import ConfirmDialog`).toContain(
+        "ConfirmDialog",
+      );
+      expect(source, `${path} should still invoke ${actionName}`).toContain(
+        actionName,
+      );
+      expect(
+        hasOwnAnimationClasses(source),
+        `${path} should not define its own dialog animation`,
+      ).toBe(false);
     }
   });
 });
@@ -158,7 +214,9 @@ describe("Navigation itself never slides — only Create/Add sheets do", () => {
   });
 
   it("FinanceModuleTabs (header module nav) has no slide/transform transition of its own", () => {
-    const source = read("src/features/finance/components/FinanceModuleTabs.tsx");
+    const source = read(
+      "src/features/finance/components/FinanceModuleTabs.tsx",
+    );
     expect(hasOwnAnimationClasses(source)).toBe(false);
   });
 });
