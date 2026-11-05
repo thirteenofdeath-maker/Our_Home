@@ -380,404 +380,414 @@ export default async function CalendarPage({
       />
 
       <PlanTabs active={view} />
-      {view === "calendar" ? (
-        <>
-          <AddCalendarEventFab />
-          <MonthCalendar
-            month={month}
-            selected={selected}
-            today={today}
-            events={events}
-            tasks={allTasks}
-            reminders={allReminders}
-            petCareRecords={petCareRecords}
-          />
-          {archivedEvents.length ? (
-            <section>
-              <h2 className="mb-2 font-semibold">กิจกรรมที่เก็บเข้าคลัง</h2>
-              <div className="flex flex-col gap-2">
-                {archivedEvents.map((event) => (
-                  <Link
-                    className="text-primary"
-                    key={event.id}
-                    href={`/calendar/${event.id}`}
-                  >
-                    {event.title}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </>
-      ) : null}
-
-      {view === "tasks" ? (
-        <>
-          <PlanCreateButton
-            title="เพิ่มงาน"
-            form={<TaskForm hasHousehold={Boolean(household)} />}
-          />
-          <SearchBar view="tasks" defaultValue={search} />
-          <nav
-            aria-label="สถานะงาน"
-            className="flex gap-2 overflow-x-auto rounded-full bg-finance-surface-strong p-1 shadow-sm"
-          >
-            {[
-              { value: "open", label: "ต้องทำ" },
-              { value: "done", label: "เสร็จแล้ว" },
-              { value: "all", label: "ทั้งหมด" },
-            ].map((item) => (
-              <Link
-                key={item.value}
-                href={`/calendar?view=tasks&status=${item.value}`}
-                className={cn(
-                  "flex min-h-10 flex-1 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium",
-                  taskStatus === item.value
-                    ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
-                    : "text-finance-muted",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <TaskList tasks={filteredTasks} />
-        </>
-      ) : null}
-
-      {view === "reminders" ? (
-        <>
-          <PlanCreateButton
-            title="เพิ่มรายการเตือน"
-            form={<ReminderForm hasHousehold={Boolean(household)} />}
-          />
-          <ReminderList reminders={allReminders} />
-        </>
-      ) : null}
-
-      {(view === "chores" || view === "shopping" || view === "inventory") &&
-      !household ? (
-        <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
-          <p className="font-medium text-finance-text">
-            สร้างบ้านก่อนเริ่มจัดการเรื่องภายในบ้านร่วมกัน
-          </p>
-          <Link
-            className="mt-3 inline-block text-sm font-medium text-finance-primary-strong"
-            href="/household/new"
-          >
-            สร้างบ้าน
-          </Link>
-        </Card>
-      ) : null}
-
-      {view === "chores" && household ? (
-        <>
-          {canManageChores ? (
-            <PlanCreateButton
-              title="เพิ่มตารางงานบ้าน"
-              form={
-                <ChoreForm
-                  householdId={household.id}
-                  today={today}
-                  members={choreFormMembers}
-                />
-              }
+      <div key={view} className="plan-content-transition contents">
+        {view === "calendar" ? (
+          <>
+            <AddCalendarEventFab />
+            <MonthCalendar
+              month={month}
+              selected={selected}
+              today={today}
+              events={events}
+              tasks={allTasks}
+              reminders={allReminders}
+              petCareRecords={petCareRecords}
             />
-          ) : household.myRole === "observer" ? (
-            <ReadOnlyNotice>
-              ผู้สังเกตการณ์ดูตารางและประวัติได้ แต่ไม่สามารถเปลี่ยนแปลงงานบ้าน
-            </ReadOnlyNotice>
-          ) : null}
+            {archivedEvents.length ? (
+              <section>
+                <h2 className="mb-2 font-semibold">กิจกรรมที่เก็บเข้าคลัง</h2>
+                <div className="flex flex-col gap-2">
+                  {archivedEvents.map((event) => (
+                    <Link
+                      className="text-primary"
+                      key={event.id}
+                      href={`/calendar/${event.id}`}
+                    >
+                      {event.title}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
+        ) : null}
 
-          {canManageChores && chores.templates.length ? (
-            <details className="group overflow-hidden rounded-[1.5rem] bg-finance-surface-strong shadow-sm">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-finance-text [&::-webkit-details-marker]:hidden">
-                <span className="min-w-0">
-                  <span className="block font-semibold">
-                    จัดการตารางหมุนเวียน
-                  </span>
-                  <span className="block text-xs text-finance-muted">
-                    แก้ไขรอบงานและลำดับผู้รับผิดชอบ
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <span className="rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-semibold text-finance-primary-strong">
-                    {chores.templates.length} ตาราง
-                  </span>
-                  <AppIcon
-                    name="chevron"
-                    className="size-4 text-finance-muted transition-transform group-open:rotate-90"
-                  />
-                </span>
-              </summary>
-              <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft bg-finance-background/70 p-3">
-                {chores.templates.map((template) => (
-                  <ChoreTemplateManagerCard
-                    key={template.id}
-                    template={template}
+        {view === "tasks" ? (
+          <>
+            <PlanCreateButton
+              title="เพิ่มงาน"
+              form={<TaskForm hasHousehold={Boolean(household)} />}
+            />
+            <SearchBar view="tasks" defaultValue={search} />
+            <nav
+              aria-label="สถานะงาน"
+              className="flex gap-2 overflow-x-auto rounded-full bg-finance-surface-strong p-1 shadow-sm"
+            >
+              {[
+                { value: "open", label: "ต้องทำ" },
+                { value: "done", label: "เสร็จแล้ว" },
+                { value: "all", label: "ทั้งหมด" },
+              ].map((item) => (
+                <Link
+                  key={item.value}
+                  href={`/calendar?view=tasks&status=${item.value}`}
+                  className={cn(
+                    "flex min-h-10 flex-1 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium",
+                    taskStatus === item.value
+                      ? "bg-finance-primary text-finance-primary-foreground shadow-sm"
+                      : "text-finance-muted",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <TaskList tasks={filteredTasks} />
+          </>
+        ) : null}
+
+        {view === "reminders" ? (
+          <>
+            <PlanCreateButton
+              title="เพิ่มรายการเตือน"
+              form={<ReminderForm hasHousehold={Boolean(household)} />}
+            />
+            <ReminderList reminders={allReminders} />
+          </>
+        ) : null}
+
+        {(view === "chores" || view === "shopping" || view === "inventory") &&
+        !household ? (
+          <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
+            <p className="font-medium text-finance-text">
+              สร้างบ้านก่อนเริ่มจัดการเรื่องภายในบ้านร่วมกัน
+            </p>
+            <Link
+              className="mt-3 inline-block text-sm font-medium text-finance-primary-strong"
+              href="/household/new"
+            >
+              สร้างบ้าน
+            </Link>
+          </Card>
+        ) : null}
+
+        {view === "chores" && household ? (
+          <>
+            {canManageChores ? (
+              <PlanCreateButton
+                title="เพิ่มตารางงานบ้าน"
+                form={
+                  <ChoreForm
                     householdId={household.id}
                     today={today}
                     members={choreFormMembers}
-                    selectedMemberIds={chores.assignees
-                      .filter((item) => item.template_id === template.id)
-                      .map((item) => item.member_id)}
                   />
-                ))}
-              </div>
-            </details>
-          ) : null}
-
-          {overdueChoreCount > 0 ? (
-            <section className="flex flex-col gap-3">
-              <SectionHeading
-                title="เลยกำหนด"
-                count={overdueChoreCount}
-                danger
-                action={
-                  canManageChores ? (
-                    <ClearOverdueChoresButton
-                      householdId={household.id}
-                      beforeDate={today}
-                      count={overdueChoreCount}
-                    />
-                  ) : null
                 }
               />
-              {overdueChoreGroups.map((group) => (
-                <ChoreDayGroupHeader
-                  key={group.date}
-                  date={group.date}
-                  today={today}
-                  count={group.chores.length}
+            ) : household.myRole === "observer" ? (
+              <ReadOnlyNotice>
+                ผู้สังเกตการณ์ดูตารางและประวัติได้
+                แต่ไม่สามารถเปลี่ยนแปลงงานบ้าน
+              </ReadOnlyNotice>
+            ) : null}
+
+            {canManageChores && chores.templates.length ? (
+              <details className="group overflow-hidden rounded-[1.5rem] bg-finance-surface-strong shadow-sm">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-finance-text [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0">
+                    <span className="block font-semibold">
+                      จัดการตารางหมุนเวียน
+                    </span>
+                    <span className="block text-xs text-finance-muted">
+                      แก้ไขรอบงานและลำดับผู้รับผิดชอบ
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-finance-primary-soft px-2.5 py-1 text-xs font-semibold text-finance-primary-strong">
+                      {chores.templates.length} ตาราง
+                    </span>
+                    <AppIcon
+                      name="chevron"
+                      className="size-4 text-finance-muted transition-transform group-open:rotate-90"
+                    />
+                  </span>
+                </summary>
+                <div className="max-h-[min(50dvh,28rem)] space-y-2 overflow-y-auto border-t border-finance-primary-soft bg-finance-background/70 p-3">
+                  {chores.templates.map((template) => (
+                    <ChoreTemplateManagerCard
+                      key={template.id}
+                      template={template}
+                      householdId={household.id}
+                      today={today}
+                      members={choreFormMembers}
+                      selectedMemberIds={chores.assignees
+                        .filter((item) => item.template_id === template.id)
+                        .map((item) => item.member_id)}
+                    />
+                  ))}
+                </div>
+              </details>
+            ) : null}
+
+            {overdueChoreCount > 0 ? (
+              <section className="flex flex-col gap-3">
+                <SectionHeading
+                  title="เลยกำหนด"
+                  count={overdueChoreCount}
                   danger
-                >
-                  {group.chores.map((occurrence) => {
-                    const template = choreTemplates.get(occurrence.template_id);
-                    return template ? (
-                      <ChoreOccurrenceCard
-                        key={occurrence.id}
-                        occurrence={occurrence}
-                        template={template}
-                        members={members}
-                        currentMemberId={currentMemberId}
-                        canParticipate={canEditHousehold}
-                        showDate={false}
+                  action={
+                    canManageChores ? (
+                      <ClearOverdueChoresButton
+                        householdId={household.id}
+                        beforeDate={today}
+                        count={overdueChoreCount}
                       />
-                    ) : null;
-                  })}
-                </ChoreDayGroupHeader>
-              ))}
-            </section>
-          ) : null}
-
-          <section className="flex flex-col gap-3">
-            <SectionHeading
-              title="งานถัดไป"
-              count={upcomingChores.length}
-              suffix="14 วัน"
-            />
-            {upcomingChores.length ? (
-              upcomingChoreGroups.map((group) => (
-                <ChoreDayGroupHeader
-                  key={group.date}
-                  date={group.date}
-                  today={today}
-                  count={group.chores.length}
-                >
-                  {group.chores.map((occurrence) => {
-                    const template = choreTemplates.get(occurrence.template_id);
-                    return template ? (
-                      <ChoreOccurrenceCard
-                        key={occurrence.id}
-                        occurrence={occurrence}
-                        template={template}
-                        members={members}
-                        currentMemberId={currentMemberId}
-                        canParticipate={canEditHousehold}
-                        showDate={false}
-                      />
-                    ) : null;
-                  })}
-                </ChoreDayGroupHeader>
-              ))
-            ) : (
-              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
-                ยังไม่มีตารางงานบ้าน กด + เพื่อเริ่มจัดงาน
-              </Card>
-            )}
-          </section>
-
-          {choreHistory.length ? (
-            <section className="flex flex-col gap-3">
-              <SectionHeading
-                title="ประวัติล่าสุด"
-                count={choreHistory.length}
-              />
-              {choreHistory.map((occurrence) => {
-                const template = choreTemplates.get(occurrence.template_id);
-                return template ? (
-                  <ChoreOccurrenceCard
-                    key={occurrence.id}
-                    occurrence={occurrence}
-                    template={template}
-                    members={members}
-                    currentMemberId={currentMemberId}
-                    canParticipate={canEditHousehold}
-                  />
-                ) : null;
-              })}
-            </section>
-          ) : null}
-        </>
-      ) : null}
-
-      {view === "shopping" && household ? (
-        <>
-          {canEditHousehold ? (
-            <form id="shopping-receipt" action="/calendar/shopping/expense">
-              <button className="rounded-xl bg-finance-primary px-4 py-2 text-sm font-medium text-finance-primary-foreground">
-                ลงบิลรายการที่เลือก
-              </button>
-            </form>
-          ) : null}
-          {canEditHousehold ? (
-            <PlanCreateButton
-              title="เพิ่มของที่ต้องซื้อ"
-              form={
-                <ShoppingItemForm
-                  householdId={household.id}
-                  members={members.map((member) => ({
-                    id: member.id,
-                    label:
-                      member.profile?.display_name ??
-                      member.profile?.email ??
-                      "สมาชิก",
-                  }))}
+                    ) : null
+                  }
                 />
-              }
-            />
-          ) : (
-            <ReadOnlyNotice>
-              ผู้สังเกตการณ์ดูรายการได้ แต่ไม่สามารถเพิ่มหรือเปลี่ยนแปลงรายการ
-            </ReadOnlyNotice>
-          )}
-
-          <section className="flex flex-col gap-3">
-            <SectionHeading title="ต้องซื้อ" count={summary.shopping.pending} />
-            {pendingShopping.length ? (
-              pendingShopping.map((item) => (
-                <ShoppingItemCard
-                  key={item.id}
-                  item={item}
-                  members={members}
-                  canEdit={canEditHousehold}
-                />
-              ))
-            ) : (
-              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
-                {summary.shopping.pending
-                  ? "ไม่มีรายการต้องซื้อในหน้านี้"
-                  : "ซื้อครบแล้ว บ้านพร้อมมาก 🎉"}
-              </Card>
-            )}
-          </section>
-
-          {purchasedShopping.length ? (
-            <section className="flex flex-col gap-3">
-              <SectionHeading
-                title="ซื้อแล้ว"
-                count={summary.shopping.purchased}
-              />
-              {purchasedShopping.map((item) => (
-                <ShoppingItemCard
-                  key={item.id}
-                  item={item}
-                  members={members}
-                  canEdit={canEditHousehold}
-                />
-              ))}
-            </section>
-          ) : null}
-        </>
-      ) : null}
-
-      {view === "inventory" && household ? (
-        <>
-          {canEditHousehold ? (
-            <PlanCreateButton
-              title="เพิ่มของในคลัง"
-              form={<InventoryItemForm householdId={household.id} />}
-            />
-          ) : (
-            <ReadOnlyNotice>
-              ผู้สังเกตการณ์ดูคลังได้ แต่ไม่สามารถเปลี่ยนแปลงข้อมูล
-            </ReadOnlyNotice>
-          )}
-
-          <section className="flex flex-col gap-4">
-            <SectionHeading
-              title="รายการตามหมวดหมู่"
-              count={summary.inventory.total}
-            />
-            {inventory.length ? (
-              inventoryGroups.map(({ category, items }) => {
-                const lowStockCount = items.filter(isLowStock).length;
-                return (
-                  <details
-                    key={category}
-                    className="group overflow-hidden rounded-[1.35rem] bg-finance-surface-strong shadow-card"
+                {overdueChoreGroups.map((group) => (
+                  <ChoreDayGroupHeader
+                    key={group.date}
+                    date={group.date}
+                    today={today}
+                    count={group.chores.length}
+                    danger
                   >
-                    <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 marker:hidden">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
-                        <AppIcon
-                          name={INVENTORY_CATEGORY_ICON[category]}
-                          className="size-4.5"
+                    {group.chores.map((occurrence) => {
+                      const template = choreTemplates.get(
+                        occurrence.template_id,
+                      );
+                      return template ? (
+                        <ChoreOccurrenceCard
+                          key={occurrence.id}
+                          occurrence={occurrence}
+                          template={template}
+                          members={members}
+                          currentMemberId={currentMemberId}
+                          canParticipate={canEditHousehold}
+                          showDate={false}
                         />
-                      </span>
-                      <h3 className="font-semibold text-finance-text">
-                        {INVENTORY_CATEGORY_LABEL[category]}
-                      </h3>
-                      {lowStockCount ? (
-                        <span className="rounded-full bg-[#fce5db] px-2 py-0.5 text-xs font-medium text-[#a9513d]">
-                          ควรเติม {lowStockCount}
-                        </span>
-                      ) : null}
-                      <span className="ml-auto text-sm tabular-nums text-finance-muted">
-                        {items.length} รายการ
-                      </span>
-                      <AppIcon
-                        name="chevron"
-                        className="size-4 shrink-0 text-finance-muted transition-transform group-open:rotate-90"
-                      />
-                    </summary>
-                    <div className="flex flex-col gap-2.5 border-t border-border/60 bg-finance-primary-soft/25 p-2.5">
-                      {items.map((item) => (
-                        <InventoryItemCard
-                          key={item.id}
-                          item={item}
-                          canEdit={canEditHousehold}
-                          today={today}
-                          showCategory={false}
+                      ) : null;
+                    })}
+                  </ChoreDayGroupHeader>
+                ))}
+              </section>
+            ) : null}
+
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="งานถัดไป"
+                count={upcomingChores.length}
+                suffix="14 วัน"
+              />
+              {upcomingChores.length ? (
+                upcomingChoreGroups.map((group) => (
+                  <ChoreDayGroupHeader
+                    key={group.date}
+                    date={group.date}
+                    today={today}
+                    count={group.chores.length}
+                  >
+                    {group.chores.map((occurrence) => {
+                      const template = choreTemplates.get(
+                        occurrence.template_id,
+                      );
+                      return template ? (
+                        <ChoreOccurrenceCard
+                          key={occurrence.id}
+                          occurrence={occurrence}
+                          template={template}
+                          members={members}
+                          currentMemberId={currentMemberId}
+                          canParticipate={canEditHousehold}
+                          showDate={false}
                         />
-                      ))}
-                    </div>
-                  </details>
-                );
-              })
+                      ) : null;
+                    })}
+                  </ChoreDayGroupHeader>
+                ))
+              ) : (
+                <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                  ยังไม่มีตารางงานบ้าน กด + เพื่อเริ่มจัดงาน
+                </Card>
+              )}
+            </section>
+
+            {choreHistory.length ? (
+              <section className="flex flex-col gap-3">
+                <SectionHeading
+                  title="ประวัติล่าสุด"
+                  count={choreHistory.length}
+                />
+                {choreHistory.map((occurrence) => {
+                  const template = choreTemplates.get(occurrence.template_id);
+                  return template ? (
+                    <ChoreOccurrenceCard
+                      key={occurrence.id}
+                      occurrence={occurrence}
+                      template={template}
+                      members={members}
+                      currentMemberId={currentMemberId}
+                      canParticipate={canEditHousehold}
+                    />
+                  ) : null;
+                })}
+              </section>
+            ) : null}
+          </>
+        ) : null}
+
+        {view === "shopping" && household ? (
+          <>
+            {canEditHousehold ? (
+              <form id="shopping-receipt" action="/calendar/shopping/expense">
+                <button className="rounded-xl bg-finance-primary px-4 py-2 text-sm font-medium text-finance-primary-foreground">
+                  ลงบิลรายการที่เลือก
+                </button>
+              </form>
+            ) : null}
+            {canEditHousehold ? (
+              <PlanCreateButton
+                title="เพิ่มของที่ต้องซื้อ"
+                form={
+                  <ShoppingItemForm
+                    householdId={household.id}
+                    members={members.map((member) => ({
+                      id: member.id,
+                      label:
+                        member.profile?.display_name ??
+                        member.profile?.email ??
+                        "สมาชิก",
+                    }))}
+                  />
+                }
+              />
             ) : (
-              <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
-                ยังไม่มีของในคลัง กด + เพื่อเริ่มบันทึก
-              </Card>
+              <ReadOnlyNotice>
+                ผู้สังเกตการณ์ดูรายการได้ แต่ไม่สามารถเพิ่มหรือเปลี่ยนแปลงรายการ
+              </ReadOnlyNotice>
             )}
-          </section>
-        </>
-      ) : null}
-      {view === "chores" ? (
-        <PageNavigation page={page} hasNext={hasMoreOverdue} query={query} />
-      ) : null}
-      {pagedItems ? (
-        <PageNavigation page={page} hasNext={hasNext} query={query} />
-      ) : null}
+
+            <section className="flex flex-col gap-3">
+              <SectionHeading
+                title="ต้องซื้อ"
+                count={summary.shopping.pending}
+              />
+              {pendingShopping.length ? (
+                pendingShopping.map((item) => (
+                  <ShoppingItemCard
+                    key={item.id}
+                    item={item}
+                    members={members}
+                    canEdit={canEditHousehold}
+                  />
+                ))
+              ) : (
+                <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                  {summary.shopping.pending
+                    ? "ไม่มีรายการต้องซื้อในหน้านี้"
+                    : "ซื้อครบแล้ว บ้านพร้อมมาก 🎉"}
+                </Card>
+              )}
+            </section>
+
+            {purchasedShopping.length ? (
+              <section className="flex flex-col gap-3">
+                <SectionHeading
+                  title="ซื้อแล้ว"
+                  count={summary.shopping.purchased}
+                />
+                {purchasedShopping.map((item) => (
+                  <ShoppingItemCard
+                    key={item.id}
+                    item={item}
+                    members={members}
+                    canEdit={canEditHousehold}
+                  />
+                ))}
+              </section>
+            ) : null}
+          </>
+        ) : null}
+
+        {view === "inventory" && household ? (
+          <>
+            {canEditHousehold ? (
+              <PlanCreateButton
+                title="เพิ่มของในคลัง"
+                form={<InventoryItemForm householdId={household.id} />}
+              />
+            ) : (
+              <ReadOnlyNotice>
+                ผู้สังเกตการณ์ดูคลังได้ แต่ไม่สามารถเปลี่ยนแปลงข้อมูล
+              </ReadOnlyNotice>
+            )}
+
+            <section className="flex flex-col gap-4">
+              <SectionHeading
+                title="รายการตามหมวดหมู่"
+                count={summary.inventory.total}
+              />
+              {inventory.length ? (
+                inventoryGroups.map(({ category, items }) => {
+                  const lowStockCount = items.filter(isLowStock).length;
+                  return (
+                    <details
+                      key={category}
+                      className="group overflow-hidden rounded-[1.35rem] bg-finance-surface-strong shadow-card"
+                    >
+                      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 marker:hidden">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
+                          <AppIcon
+                            name={INVENTORY_CATEGORY_ICON[category]}
+                            className="size-4.5"
+                          />
+                        </span>
+                        <h3 className="font-semibold text-finance-text">
+                          {INVENTORY_CATEGORY_LABEL[category]}
+                        </h3>
+                        {lowStockCount ? (
+                          <span className="rounded-full bg-[#fce5db] px-2 py-0.5 text-xs font-medium text-[#a9513d]">
+                            ควรเติม {lowStockCount}
+                          </span>
+                        ) : null}
+                        <span className="ml-auto text-sm tabular-nums text-finance-muted">
+                          {items.length} รายการ
+                        </span>
+                        <AppIcon
+                          name="chevron"
+                          className="size-4 shrink-0 text-finance-muted transition-transform group-open:rotate-90"
+                        />
+                      </summary>
+                      <div className="flex flex-col gap-2.5 border-t border-border/60 bg-finance-primary-soft/25 p-2.5">
+                        {items.map((item) => (
+                          <InventoryItemCard
+                            key={item.id}
+                            item={item}
+                            canEdit={canEditHousehold}
+                            today={today}
+                            showCategory={false}
+                          />
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })
+              ) : (
+                <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                  ยังไม่มีของในคลัง กด + เพื่อเริ่มบันทึก
+                </Card>
+              )}
+            </section>
+          </>
+        ) : null}
+        {view === "chores" ? (
+          <PageNavigation page={page} hasNext={hasMoreOverdue} query={query} />
+        ) : null}
+        {pagedItems ? (
+          <PageNavigation page={page} hasNext={hasNext} query={query} />
+        ) : null}
+      </div>
     </div>
   );
 }

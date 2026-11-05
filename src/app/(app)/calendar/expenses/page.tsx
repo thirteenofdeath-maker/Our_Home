@@ -122,109 +122,116 @@ export default async function HouseholdExpensesPage({
         subtitle="ติดตามรายจ่ายของบ้านไปด้วยกัน"
       />
       <PlanTabs active="expenses" />
-      <Card className="grid gap-3 rounded-[1.5rem] time-tinted-panel">
-        <div className="flex items-center justify-between gap-2">
+      <div key="expenses" className="plan-content-transition contents">
+        <Card className="grid gap-3 rounded-[1.5rem] time-tinted-panel">
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              aria-label="เดือนก่อน"
+              className="px-3 py-2"
+              href={`?month=${shiftMonth(month, -1)}`}
+            >
+              ‹
+            </Link>
+            <h2 className="font-semibold">{monthLabel}</h2>
+            <Link
+              aria-label="เดือนถัดไป"
+              className="px-3 py-2"
+              href={`?month=${shiftMonth(month, 1)}`}
+            >
+              ›
+            </Link>
+          </div>
+          <p className="text-sm text-finance-muted">จ่ายรวมเดือนนี้</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {formatCurrency(totalExpenseAmount(expenses), "THB")}
+          </p>
+          {Object.entries(expenseCategories).map(([category, label]) => {
+            const entries = expenses.filter(
+              (expense) => expense.category === category,
+            );
+            return entries.length ? (
+              <div
+                key={category}
+                className="flex justify-between gap-3 text-sm"
+              >
+                <span>{label}</span>
+                <span>
+                  {formatCurrency(totalExpenseAmount(entries), "THB")}
+                </span>
+              </div>
+            ) : null;
+          })}
+        </Card>
+        <div className="flex flex-wrap items-center gap-3">
+          {canEdit ? (
+            <FormSheetButton
+              sheetTitle="เพิ่มค่าใช้จ่าย"
+              tone="finance"
+              ariaLabel="เพิ่มค่าใช้จ่าย"
+              triggerClassName={APP_FAB_CLASSNAME}
+              form={<ExpenseForm {...formProps} />}
+            >
+              <AppIcon name="plus" />
+            </FormSheetButton>
+          ) : null}
           <Link
-            aria-label="เดือนก่อน"
-            className="px-3 py-2"
-            href={`?month=${shiftMonth(month, -1)}`}
+            href="/calendar?view=shopping"
+            className="px-2 py-2 text-sm font-medium text-finance-primary-strong"
           >
-            ‹
-          </Link>
-          <h2 className="font-semibold">{monthLabel}</h2>
-          <Link
-            aria-label="เดือนถัดไป"
-            className="px-3 py-2"
-            href={`?month=${shiftMonth(month, 1)}`}
-          >
-            ›
+            รายการซื้อของ
           </Link>
         </div>
-        <p className="text-sm text-finance-muted">จ่ายรวมเดือนนี้</p>
-        <p className="text-2xl font-semibold tabular-nums">
-          {formatCurrency(totalExpenseAmount(expenses), "THB")}
-        </p>
-        {Object.entries(expenseCategories).map(([category, label]) => {
-          const entries = expenses.filter(
-            (expense) => expense.category === category,
-          );
-          return entries.length ? (
-            <div key={category} className="flex justify-between gap-3 text-sm">
-              <span>{label}</span>
-              <span>{formatCurrency(totalExpenseAmount(entries), "THB")}</span>
-            </div>
-          ) : null;
-        })}
-      </Card>
-      <div className="flex flex-wrap items-center gap-3">
-        {canEdit ? (
-          <FormSheetButton
-            sheetTitle="เพิ่มค่าใช้จ่าย"
-            tone="finance"
-            ariaLabel="เพิ่มค่าใช้จ่าย"
-            triggerClassName={APP_FAB_CLASSNAME}
-            form={<ExpenseForm {...formProps} />}
-          >
-            <AppIcon name="plus" />
-          </FormSheetButton>
-        ) : null}
-        <Link
-          href="/calendar?view=shopping"
-          className="px-2 py-2 text-sm font-medium text-finance-primary-strong"
-        >
-          รายการซื้อของ
-        </Link>
+        <section aria-label="รายการค่าใช้จ่าย" className="grid gap-2">
+          {expenses.length === 0 ? (
+            <Card>เดือนนี้ยังไม่มีค่าใช้จ่ายบ้าน</Card>
+          ) : null}
+          {expenses.map((expense) => {
+            const payer = memberOptions.find(
+              (member) => member.id === expense.payer_id,
+            );
+            const highlighted = query.expense === expense.id;
+            return (
+              <Card
+                key={expense.id}
+                className={
+                  highlighted ? "border-2 border-finance-primary" : undefined
+                }
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="break-words font-semibold">{expense.title}</p>
+                    <p className="mt-1 text-xs text-finance-muted">
+                      {expense.paid_on} ·{" "}
+                      {
+                        expenseCategories[
+                          expense.category as keyof typeof expenseCategories
+                        ]
+                      }{" "}
+                      · {payer?.label ?? "อดีตสมาชิก"}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold tabular-nums">
+                      {formatCurrency(expense.amount, "THB")}
+                    </p>
+                    {canEdit ? (
+                      <FormSheetButton
+                        sheetTitle="แก้ไขค่าใช้จ่าย"
+                        tone="finance"
+                        triggerClassName="mt-1 text-sm text-finance-primary-strong"
+                        ariaLabel={`แก้ไข ${expense.title}`}
+                        form={<ExpenseForm {...formProps} expense={expense} />}
+                      >
+                        แก้ไข
+                      </FormSheetButton>
+                    ) : null}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </section>
       </div>
-      <section aria-label="รายการค่าใช้จ่าย" className="grid gap-2">
-        {expenses.length === 0 ? (
-          <Card>เดือนนี้ยังไม่มีค่าใช้จ่ายบ้าน</Card>
-        ) : null}
-        {expenses.map((expense) => {
-          const payer = memberOptions.find(
-            (member) => member.id === expense.payer_id,
-          );
-          const highlighted = query.expense === expense.id;
-          return (
-            <Card
-              key={expense.id}
-              className={
-                highlighted ? "border-2 border-finance-primary" : undefined
-              }
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="break-words font-semibold">{expense.title}</p>
-                  <p className="mt-1 text-xs text-finance-muted">
-                    {expense.paid_on} ·{" "}
-                    {
-                      expenseCategories[
-                        expense.category as keyof typeof expenseCategories
-                      ]
-                    }{" "}
-                    · {payer?.label ?? "อดีตสมาชิก"}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="font-semibold tabular-nums">
-                    {formatCurrency(expense.amount, "THB")}
-                  </p>
-                  {canEdit ? (
-                    <FormSheetButton
-                      sheetTitle="แก้ไขค่าใช้จ่าย"
-                      tone="finance"
-                      triggerClassName="mt-1 text-sm text-finance-primary-strong"
-                      ariaLabel={`แก้ไข ${expense.title}`}
-                      form={<ExpenseForm {...formProps} expense={expense} />}
-                    >
-                      แก้ไข
-                    </FormSheetButton>
-                  ) : null}
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </section>
     </div>
   );
 }
