@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PlanHeader } from "@/features/plan/components/PlanHeader";
+import { AppIcon } from "@/components/ui/AppIcon";
+import { APP_FAB_CLASSNAME } from "@/components/ui/fab";
 import { Card } from "@/components/ui/Card";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { monthKey, shiftMonth } from "@/features/calendar/domain/calendar";
@@ -34,8 +36,13 @@ export default async function HouseholdExpensesPage({
 
   if (!household) {
     return (
-      <div className="grid gap-4 pb-8">
-        <PageHeader title="ค่าใช้จ่ายบ้าน" backHref="/calendar" />
+      <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+        <PlanHeader
+          eyebrow="ดูแลค่าใช้จ่ายในบ้าน"
+          title="ค่าใช้จ่ายบ้าน"
+          subtitle="ติดตามรายจ่ายของบ้านไปด้วยกัน"
+        />
+        <PlanTabs active="expenses" />
         <Card>
           <Link href="/household/new">
             สร้างบ้านเพื่อเริ่มบันทึกค่าใช้จ่ายร่วมกัน
@@ -57,8 +64,12 @@ export default async function HouseholdExpensesPage({
   );
   if (readyExpenses === null) {
     return (
-      <div className="finance-scope grid gap-4 pb-8">
-        <PageHeader title="ค่าใช้จ่ายบ้าน" backHref="/calendar" />
+      <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+        <PlanHeader
+          eyebrow="ดูแลค่าใช้จ่ายในบ้าน"
+          title="ค่าใช้จ่ายบ้าน"
+          subtitle="ติดตามรายจ่ายของบ้านไปด้วยกัน"
+        />
         <PlanTabs active="expenses" />
         <ExpenseSetupNotice />
       </div>
@@ -104,8 +115,12 @@ export default async function HouseholdExpensesPage({
   }).format(new Date(`${month}-01T12:00:00Z`));
 
   return (
-    <div className="finance-scope mx-auto grid w-full max-w-2xl gap-4 pb-8">
-      <PageHeader title="ค่าใช้จ่ายบ้าน" backHref="/calendar" />
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+      <PlanHeader
+        eyebrow="ดูแลค่าใช้จ่ายในบ้าน"
+        title="ค่าใช้จ่ายบ้าน"
+        subtitle="ติดตามรายจ่ายของบ้านไปด้วยกัน"
+      />
       <PlanTabs active="expenses" />
       <Card className="grid gap-3 rounded-[1.5rem] time-tinted-panel">
         <div className="flex items-center justify-between gap-2">
@@ -146,10 +161,11 @@ export default async function HouseholdExpensesPage({
           <FormSheetButton
             sheetTitle="เพิ่มค่าใช้จ่าย"
             tone="finance"
-            triggerClassName="rounded-xl bg-finance-primary px-4 py-2.5 font-medium text-finance-primary-foreground"
+            ariaLabel="เพิ่มค่าใช้จ่าย"
+            triggerClassName={APP_FAB_CLASSNAME}
             form={<ExpenseForm {...formProps} />}
           >
-            + เพิ่มค่าใช้จ่าย
+            <AppIcon name="plus" />
           </FormSheetButton>
         ) : null}
         <Link

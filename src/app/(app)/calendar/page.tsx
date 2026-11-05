@@ -2,7 +2,7 @@ import { PageNavigation } from "@/components/ui/PageNavigation";
 import { getWorkspaceSummary } from "@/features/plan/workspace-summary";
 import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
-import Image from "next/image";
+import { PlanHeader } from "@/features/plan/components/PlanHeader";
 import type { ReactNode } from "react";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
@@ -364,60 +364,20 @@ export default async function CalendarPage({
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
-      <section className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
-        <Image
-          src="/art/plan-calendar.webp"
-          alt="พื้นที่วางแผนและดูแลเรื่องสำคัญของบ้าน"
-          fill
-          priority
-          sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
-          className="app-cover-image time-cover-image object-cover object-center"
-        />
-        <div
-          aria-hidden="true"
-          className="time-cover-overlay absolute inset-0"
-        />
-        <div className="relative max-w-[62%]">
-          <p className="text-xs font-medium text-finance-primary-strong">
-            {activeCover.eyebrow}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold leading-tight text-finance-text">
-            {activeCover.title}
-          </h1>
-          <p className="mt-1 text-sm text-finance-muted">
-            {activeCover.subtitle}
-          </p>
-        </div>
-        {view === "calendar" ? (
-          <Link
-            href="/calendar/export"
-            className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm"
-            aria-label="ส่งออกปฏิทิน"
-          >
-            <AppIcon name="transfer" className="size-5 rotate-90" />
-          </Link>
-        ) : null}
-        <div
-          className="absolute inset-x-4 bottom-4 grid gap-1.5"
-          style={{
-            gridTemplateColumns: `repeat(${activeCover.metrics.length}, minmax(0, 1fr))`,
-          }}
-        >
-          {activeCover.metrics.map((item) => (
-            <div
-              key={item.label}
-              className="min-w-0 rounded-[0.9rem] bg-white/80 px-1 py-1.5 text-center backdrop-blur-sm"
+      <PlanHeader
+        {...activeCover}
+        rightAction={
+          view === "calendar" ? (
+            <Link
+              href="/calendar/export"
+              className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong shadow-sm backdrop-blur-sm"
+              aria-label="ส่งออกปฏิทิน"
             >
-              <p className="text-base font-semibold tabular-nums text-finance-text">
-                {item.value}
-              </p>
-              <p className="truncate text-[10px] text-finance-muted">
-                {item.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
+              <AppIcon name="transfer" className="size-5 rotate-90" />
+            </Link>
+          ) : null
+        }
+      />
 
       <PlanTabs active={view} />
       {view === "calendar" ? (

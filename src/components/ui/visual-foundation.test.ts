@@ -70,7 +70,7 @@ describe("mobile visual foundation", () => {
     for (const path of [
       "src/app/(app)/page.tsx",
       "src/features/finance/components/FinanceHeader.tsx",
-      "src/app/(app)/calendar/page.tsx",
+      "src/features/plan/components/PlanHeader.tsx",
       "src/app/(app)/pets/page.tsx",
       "src/app/(app)/household/page.tsx",
     ]) {
