@@ -384,7 +384,12 @@ export default async function CalendarPage({
             <AppIcon name="transfer" className="size-5 rotate-90" />
           </Link>
         ) : null}
-        <div className="absolute inset-x-4 bottom-4 grid grid-cols-4 gap-1.5">
+        <div
+          className="absolute inset-x-4 bottom-4 grid gap-1.5"
+          style={{
+            gridTemplateColumns: `repeat(${activeCover.metrics.length}, minmax(0, 1fr))`,
+          }}
+        >
           {activeCover.metrics.map((item) => (
             <div
               key={item.label}
@@ -402,13 +407,6 @@ export default async function CalendarPage({
       </section>
 
       <PlanTabs active={view} />
-      <Link
-        href="/calendar/expenses"
-        className="self-start rounded-xl bg-finance-surface-strong px-4 py-2 text-sm font-medium text-finance-primary-strong"
-      >
-        ค่าใช้จ่ายบ้าน
-      </Link>
-
       {view === "calendar" ? (
         <>
           <AddCalendarEventFab />

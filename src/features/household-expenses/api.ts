@@ -6,6 +6,15 @@ import { shiftMonth } from "@/features/calendar/domain/calendar";
 import type { Database } from "@/types/database";
 import type { HouseholdExpense } from "./domain";
 
+// A preview can be built before its database migration is deployed.
+// Keep this distinct from a ready ledger containing no entries.
+function isMissingExpenseTable(error: { code: string; message: string }) {
+  return (
+    ["42P01", "PGRST205"].includes(error.code) &&
+    error.message.includes("household_expenses")
+  );
+}
+
 export async function listHouseholdExpenses(
   supabase: SupabaseClient<Database>,
   householdId: string,
@@ -23,7 +32,10 @@ export async function listHouseholdExpenses(
       .order("paid_on", { ascending: false })
       .order("id", { ascending: false })
       .range(offset, offset + pageSize - 1);
-    if (error) throw error;
+    if (error) {
+      if (isMissingExpenseTable(error)) return null;
+      throw error;
+    }
     rows.push(...data);
     if (data.length < pageSize) return rows;
   }

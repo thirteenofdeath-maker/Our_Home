@@ -17,6 +17,7 @@ import {
 } from "@/features/household/api";
 import { listHouseholdExpenses } from "@/features/household-expenses/api";
 import { totalExpenseAmount } from "@/features/household-expenses/domain";
+import { ExpenseSetupNotice } from "@/features/household-expenses/ExpenseSetupNotice";
 import { ExpenseForm } from "@/features/household-expenses/ExpenseForm";
 import { listInventoryItems } from "@/features/inventory/api";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
@@ -644,6 +645,7 @@ async function HomeExpenseSummary({
     expensesPromise,
     membersPromise,
   ]);
+  if (expenses === null) return <ExpenseSetupNotice />;
   return (
     <Card className="landscape-span-full flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -709,7 +711,7 @@ async function HomeSecondarySections({
       href="/calendar/expenses"
       linkLabel="ดูทั้งหมด"
     >
-      {expenses.slice(0, 5).map((item) => (
+      {(expenses ?? []).slice(0, 5).map((item) => (
         <TodayItem
           key={item.id}
           href={`/calendar/expenses?expense=${item.id}`}
@@ -727,7 +729,7 @@ async function HomeSecondarySections({
           detail={petCareDateLabel(record.created_at)}
         />
       ))}
-      {expenses.length === 0 && recentPetCare.length === 0 ? (
+      {(expenses?.length ?? 0) === 0 && recentPetCare.length === 0 ? (
         <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
       ) : null}
     </TodaySection>

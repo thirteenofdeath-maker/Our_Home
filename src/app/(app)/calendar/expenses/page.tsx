@@ -15,6 +15,8 @@ import {
   expenseCategories,
   totalExpenseAmount,
 } from "@/features/household-expenses/domain";
+import { PlanTabs } from "@/features/plan/components/PlanTabs";
+import { ExpenseSetupNotice } from "@/features/household-expenses/ExpenseSetupNotice";
 import { ExpenseForm } from "@/features/household-expenses/ExpenseForm";
 import { requireUser } from "@/lib/auth/require-user";
 import { bangkokDateKey } from "@/lib/date/bangkok";
@@ -48,6 +50,20 @@ export default async function HouseholdExpensesPage({
       ? query.month
       : undefined,
   );
+  const readyExpenses = await listHouseholdExpenses(
+    supabase,
+    household.id,
+    month,
+  );
+  if (readyExpenses === null) {
+    return (
+      <div className="finance-scope grid gap-4 pb-8">
+        <PageHeader title="ค่าใช้จ่ายบ้าน" backHref="/calendar" />
+        <PlanTabs active="expenses" />
+        <ExpenseSetupNotice />
+      </div>
+    );
+  }
   if (query.expense) {
     if (!z.uuid().safeParse(query.expense).success) notFound();
     const { data, error } = await supabase
@@ -61,10 +77,13 @@ export default async function HouseholdExpensesPage({
     month = data.paid_on.slice(0, 7);
   }
 
-  const [expenses, members] = await Promise.all([
-    listHouseholdExpenses(supabase, household.id, month),
+  const [loadedExpenses, members] = await Promise.all([
+    query.expense
+      ? listHouseholdExpenses(supabase, household.id, month)
+      : Promise.resolve(readyExpenses),
     listHouseholdMembers(supabase, household.id),
   ]);
+  const expenses = loadedExpenses ?? [];
   const memberOptions = members
     .filter((member) => member.role !== "observer")
     .map((member) => ({
@@ -87,6 +106,7 @@ export default async function HouseholdExpensesPage({
   return (
     <div className="finance-scope mx-auto grid w-full max-w-2xl gap-4 pb-8">
       <PageHeader title="ค่าใช้จ่ายบ้าน" backHref="/calendar" />
+      <PlanTabs active="expenses" />
       <Card className="grid gap-3 rounded-[1.5rem] time-tinted-panel">
         <div className="flex items-center justify-between gap-2">
           <Link

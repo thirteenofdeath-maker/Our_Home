@@ -11,6 +11,8 @@ import {
   ExpenseForm,
   MarkReceiptPurchasedForm,
 } from "@/features/household-expenses/ExpenseForm";
+import { listHouseholdExpenses } from "@/features/household-expenses/api";
+import { ExpenseSetupNotice } from "@/features/household-expenses/ExpenseSetupNotice";
 import { requireUser } from "@/lib/auth/require-user";
 import { bangkokDateKey } from "@/lib/date/bangkok";
 
@@ -27,6 +29,23 @@ export default async function ShoppingReceiptPage({
   const { supabase, user } = await requireUser();
   const household = await getMyPrimaryHousehold(supabase, user.id);
   if (!household || household.myRole === "observer") notFound();
+
+  const ready = await listHouseholdExpenses(
+    supabase,
+    household.id,
+    bangkokDateKey().slice(0, 7),
+  );
+  if (ready === null) {
+    return (
+      <div className="finance-scope grid gap-4 pb-8">
+        <PageHeader
+          title="ลงค่าใช้จ่ายจากบิล"
+          backHref="/calendar?view=shopping"
+        />
+        <ExpenseSetupNotice />
+      </div>
+    );
+  }
 
   const [{ data: items, error }, members] = await Promise.all([
     supabase
