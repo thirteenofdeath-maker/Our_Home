@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -133,12 +134,12 @@ export async function InventoryDetailPage({
               ดูรายการซื้อ
             </Link>
           ) : null}
-          <form action={archiveInventoryItemAction}>
+          <ActionForm action={archiveInventoryItemAction}>
             <input type="hidden" name="itemId" value={item.id} />
             <button className="rounded-full border border-border px-4 py-2.5 text-sm text-finance-muted">
               นำออกจากคลัง
             </button>
-          </form>
+          </ActionForm>
         </div>
       ) : null}
       <section className="flex flex-col gap-3">
@@ -194,11 +195,11 @@ export async function InventoryDetailPage({
                   </p>
                 </div>
                 {canEdit ? (
-                  <form action={deleteInventoryDocumentAction}>
+                  <ActionForm action={deleteInventoryDocumentAction}>
                     <input type="hidden" name="id" value={document.id} />
                     <input type="hidden" name="itemId" value={item.id} />
                     <button className="text-xs text-danger">ลบ</button>
-                  </form>
+                  </ActionForm>
                 ) : null}
               </div>
             </Card>

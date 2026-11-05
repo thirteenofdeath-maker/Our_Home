@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -32,7 +33,7 @@ const schema = z.object({
   birthday: z
     .string()
     .refine(
-      (value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value),
+      (value) => value === "" || z.iso.date().safeParse(value).success,
       "Invalid birthday",
     )
     .refine(
@@ -81,6 +82,7 @@ export async function updateProfileAction(
     uploadedPath = avatarPath(
       user.id,
       file.type as keyof typeof AVATAR_MIME_EXTENSIONS,
+      randomUUID(),
     );
     try {
       await uploadAvatar(supabase, uploadedPath, file);

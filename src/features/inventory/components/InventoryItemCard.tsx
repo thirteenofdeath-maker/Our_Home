@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
@@ -74,7 +75,7 @@ export function InventoryItemCard({
           </span>
           {canEdit ? (
             <>
-              <form action={adjustInventoryQuantityAction}>
+              <ActionForm action={adjustInventoryQuantityAction}>
                 <input type="hidden" name="itemId" value={item.id} />
                 <input type="hidden" name="delta" value="-1" />
                 <button
@@ -85,8 +86,8 @@ export function InventoryItemCard({
                 >
                   −
                 </button>
-              </form>
-              <form action={adjustInventoryQuantityAction}>
+              </ActionForm>
+              <ActionForm action={adjustInventoryQuantityAction}>
                 <input type="hidden" name="itemId" value={item.id} />
                 <input type="hidden" name="delta" value="1" />
                 <button
@@ -96,7 +97,7 @@ export function InventoryItemCard({
                 >
                   +
                 </button>
-              </form>
+              </ActionForm>
             </>
           ) : null}
         </div>

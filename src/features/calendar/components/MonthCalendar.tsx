@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { AppIcon } from "@/components/ui/AppIcon";
@@ -243,7 +244,7 @@ export function MonthCalendar({
             key={task.id}
             className="flex items-start gap-3 rounded-[1.25rem] bg-finance-surface-strong"
           >
-            <form action={togglePlanTaskAction}>
+            <ActionForm action={togglePlanTaskAction}>
               <input type="hidden" name="taskId" value={task.id} />
               <input
                 type="hidden"
@@ -261,7 +262,7 @@ export function MonthCalendar({
               >
                 {task.is_completed ? "✓" : ""}
               </button>
-            </form>
+            </ActionForm>
             <Link
               className="min-w-0 flex-1"
               href={`/calendar/tasks/${task.id}`}

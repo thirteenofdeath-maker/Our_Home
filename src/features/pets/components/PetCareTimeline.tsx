@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { buttonClassName } from "@/components/ui/Button";
@@ -117,7 +118,7 @@ export function PetCareTimeline({
                   >
                     แก้ไข
                   </FormSheetButton>
-                  <form action={archivePetCareRecordAction}>
+                  <ActionForm action={archivePetCareRecordAction}>
                     <input type="hidden" name="recordId" value={record.id} />
                     <input type="hidden" name="petId" value={petId} />
                     <button
@@ -130,7 +131,7 @@ export function PetCareTimeline({
                     >
                       เก็บเข้าคลัง
                     </button>
-                  </form>
+                  </ActionForm>
                 </>
               ) : null}
             </div>

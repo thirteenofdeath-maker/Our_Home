@@ -1,4 +1,5 @@
 import "server-only";
+import { readPages } from "@/lib/supabase/read-pages";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -17,6 +18,9 @@ export async function listPlanTasks(
     includeArchived?: boolean;
     completed?: boolean;
     query?: string;
+    from?: string;
+    to?: string;
+    page?: { offset: number; size: number };
   } = {},
 ) {
   let request = supabase
@@ -32,15 +36,28 @@ export async function listPlanTasks(
   if (typeof options.completed === "boolean") {
     request = request.eq("is_completed", options.completed);
   }
-  const { data, error } = await request;
-  if (error) throw error;
-  const query = options.query?.trim().toLocaleLowerCase("th");
-  if (!query) return data ?? [];
-  return (data ?? []).filter((task) =>
-    [task.title, task.details, task.list_name]
-      .filter(Boolean)
-      .some((value) => value!.toLocaleLowerCase("th").includes(query)),
-  );
+  if (options.from) request = request.gte("due_date", options.from);
+  if (options.to) request = request.lt("due_date", options.to);
+  if (options.query?.trim()) {
+    const pattern = JSON.stringify(
+      "%" + options.query.trim().replace(/[\\%_]/g, "\\$&") + "%",
+    );
+    request = request.or(
+      ["title", "details", "list_name"]
+        .map((field) => `${field}.ilike.${pattern}`)
+        .join(","),
+    );
+  }
+  request = request.order("id");
+  if (options.page) {
+    const { data, error } = await request.range(
+      options.page.offset,
+      options.page.offset + options.page.size - 1,
+    );
+    if (error) throw error;
+    return data ?? [];
+  }
+  return readPages((from, to) => request.range(from, to));
 }
 
 export async function getPlanTask(supabase: Client, id: string) {
@@ -192,7 +209,13 @@ export async function deletePlanTaskStep(supabase: Client, id: string) {
 
 export async function listPlanReminders(
   supabase: Client,
-  options: { includeArchived?: boolean; completed?: boolean } = {},
+  options: {
+    includeArchived?: boolean;
+    completed?: boolean;
+    from?: string;
+    to?: string;
+    page?: { offset: number; size: number };
+  } = {},
 ) {
   let request = supabase
     .from("plan_reminders")
@@ -206,9 +229,20 @@ export async function listPlanReminders(
   if (typeof options.completed === "boolean") {
     request = request.eq("is_completed", options.completed);
   }
-  const { data, error } = await request;
-  if (error) throw error;
-  return data ?? [];
+  if (options.from)
+    request = request.gte("reminds_at", `${options.from}T00:00:00+07:00`);
+  if (options.to)
+    request = request.lt("reminds_at", `${options.to}T00:00:00+07:00`);
+  request = request.order("id");
+  if (options.page) {
+    const { data, error } = await request.range(
+      options.page.offset,
+      options.page.offset + options.page.size - 1,
+    );
+    if (error) throw error;
+    return data ?? [];
+  }
+  return readPages((from, to) => request.range(from, to));
 }
 
 export async function getPlanReminder(supabase: Client, id: string) {

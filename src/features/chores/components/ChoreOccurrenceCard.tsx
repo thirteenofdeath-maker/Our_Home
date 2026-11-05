@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import { Card } from "@/components/ui/Card";
 import type { HouseholdMemberWithProfile } from "@/features/household/types";
 import { claimChoreAction, completeChoreAction } from "../actions";
@@ -80,7 +81,7 @@ export function ChoreOccurrenceCard({
           {!completed && canParticipate ? (
             <div className="mt-3 flex gap-3 border-t border-border/70 pt-3 text-sm font-medium">
               {occurrence.assigned_member_id !== currentMemberId ? (
-                <form action={claimChoreAction}>
+                <ActionForm action={claimChoreAction}>
                   <input
                     type="hidden"
                     name="occurrenceId"
@@ -89,9 +90,9 @@ export function ChoreOccurrenceCard({
                   <button type="submit" className="text-primary">
                     รับงานแทน
                   </button>
-                </form>
+                </ActionForm>
               ) : null}
-              <form action={completeChoreAction}>
+              <ActionForm action={completeChoreAction}>
                 <input
                   type="hidden"
                   name="occurrenceId"
@@ -100,7 +101,7 @@ export function ChoreOccurrenceCard({
                 <button type="submit" className="text-primary">
                   ทำเสร็จแล้ว
                 </button>
-              </form>
+              </ActionForm>
             </div>
           ) : null}
           {completed ? (

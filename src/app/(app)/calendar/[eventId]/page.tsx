@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -73,7 +74,7 @@ export default async function CalendarEventPage({
           >
             แก้ไข
           </Link>
-          <form action={archiveCalendarEventAction}>
+          <ActionForm action={archiveCalendarEventAction}>
             <input type="hidden" name="eventId" value={event.id} />
             <input
               type="hidden"
@@ -83,7 +84,7 @@ export default async function CalendarEventPage({
             <button className={buttonClassName("primary", "md")} type="submit">
               {event.archived_at ? "นำกลับมาใช้งาน" : "เก็บเข้าคลัง"}
             </button>
-          </form>
+          </ActionForm>
         </div>
       ) : null}
     </div>

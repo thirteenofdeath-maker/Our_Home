@@ -31,7 +31,7 @@ export const positiveAmountSchema = z
     "Enter a valid amount (up to 2 decimal places)",
   )
   .refine(
-    (value) => !/^0(\.0{1,2})?$/.test(value),
+    (value) => !/^0+(\.0{1,2})?$/.test(value),
     "Amount must be greater than zero",
   );
 
