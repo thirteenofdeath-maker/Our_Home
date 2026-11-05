@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { readPages } from "@/lib/supabase/read-pages";
+import { bangkokDateKey } from "@/lib/date/bangkok";
 import type { ChoreCadence, Database } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -21,32 +23,90 @@ export async function materializeChores(
 export async function listChoreWorkspace(
   supabase: Client,
   householdId: string,
+  overduePage?: { offset: number; size: number },
 ) {
-  const [templates, assignees, occurrences] = await Promise.all([
-    supabase
-      .from("chore_templates")
-      .select("*")
-      .eq("household_id", householdId)
-      .order("created_at"),
-    supabase
-      .from("chore_template_assignees")
-      .select("*")
-      .eq("household_id", householdId)
-      .order("position"),
-    supabase
+  const today = bangkokDateKey();
+  const loadOpen = (from: number, to: number) => {
+    let query = supabase
       .from("chore_occurrences")
       .select("*")
       .eq("household_id", householdId)
-      .order("due_date", { ascending: false })
-      .limit(120),
-  ]);
+      .is("completed_at", null)
+      .order("due_date")
+      .order("id");
+    if (overduePage) query = query.lt("due_date", today);
+    return query.range(from, to);
+  };
+  const [templates, assignees, open, recent, current, upcoming] =
+    await Promise.all([
+      supabase
+        .from("chore_templates")
+        .select("*")
+        .eq("household_id", householdId)
+        .order("created_at"),
+      supabase
+        .from("chore_template_assignees")
+        .select("*")
+        .eq("household_id", householdId)
+        .order("position"),
+      overduePage
+        ? (async () => {
+            const { data, error } = await loadOpen(
+              overduePage.offset,
+              overduePage.offset + overduePage.size - 1,
+            );
+            if (error) throw error;
+            return data ?? [];
+          })()
+        : readPages(loadOpen),
+      supabase
+        .from("chore_occurrences")
+        .select("*")
+        .eq("household_id", householdId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .order("id")
+        .limit(12),
+      readPages((from, to) =>
+        supabase
+          .from("chore_occurrences")
+          .select("*")
+          .eq("household_id", householdId)
+          .not("completed_at", "is", null)
+          .gte("due_date", bangkokDateKey())
+          .order("due_date")
+          .order("id")
+          .range(from, to),
+      ),
+      overduePage
+        ? readPages((from, to) =>
+            supabase
+              .from("chore_occurrences")
+              .select("*")
+              .eq("household_id", householdId)
+              .is("completed_at", null)
+              .gte("due_date", today)
+              .order("due_date")
+              .order("id")
+              .range(from, to),
+          )
+        : Promise.resolve([]),
+    ]);
   if (templates.error) throw templates.error;
   if (assignees.error) throw assignees.error;
-  if (occurrences.error) throw occurrences.error;
+  if (recent.error) throw recent.error;
+  const occurrences = [
+    ...new Map(
+      [...open, ...(recent.data ?? []), ...current, ...upcoming].map((item) => [
+        item.id,
+        item,
+      ]),
+    ).values(),
+  ].toSorted((a, b) => b.due_date.localeCompare(a.due_date));
   return {
     templates: templates.data ?? [],
     assignees: assignees.data ?? [],
-    occurrences: occurrences.data ?? [],
+    occurrences,
   };
 }
 

@@ -1,9 +1,6 @@
 import { z } from "zod";
 import type { CalendarEventScope } from "@/types/database";
-import {
-  BANGKOK_TIME_ZONE,
-  bangkokDateKey,
-} from "@/lib/date/bangkok";
+import { BANGKOK_TIME_ZONE, bangkokDateKey } from "@/lib/date/bangkok";
 
 export const CALENDAR_TIME_ZONE = BANGKOK_TIME_ZONE;
 export { bangkokDateKey };
@@ -35,7 +32,7 @@ export const calendarFormSchema = z
         path: ["participantIds"],
       });
     if (value.isAllDay) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value.allDayDate))
+      if (!z.iso.date().safeParse(value.allDayDate).success)
         ctx.addIssue({
           code: "custom",
           message: "Date is required",
@@ -67,6 +64,12 @@ export const calendarFormSchema = z
 
 export function parseBangkokLocal(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  const [date, time] = value.split("T");
+  if (
+    !z.iso.date().safeParse(date).success ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)
+  )
+    return null;
   const d = new Date(`${value}:00+07:00`);
   return Number.isNaN(d.valueOf()) ? null : d;
 }

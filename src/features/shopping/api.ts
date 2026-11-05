@@ -1,4 +1,5 @@
 import "server-only";
+import { readPages } from "@/lib/supabase/read-pages";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -8,16 +9,27 @@ import type { ShoppingItem } from "./types";
 export async function listShoppingItems(
   supabase: SupabaseClient<Database>,
   householdId: string,
+  page?: { offset: number; size: number },
 ): Promise<ShoppingItem[]> {
-  const { data, error } = await supabase
-    .from("shopping_items")
-    .select("*")
-    .eq("household_id", householdId)
-    .is("archived_at", null)
-    .order("purchased_at", { ascending: true, nullsFirst: true })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  const load = (from: number, to: number) =>
+    supabase
+      .from("shopping_items")
+      .select("*")
+      .eq("household_id", householdId)
+      .is("archived_at", null)
+      .order("purchased_at", { ascending: true, nullsFirst: true })
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to);
+  if (page) {
+    const { data, error } = await load(
+      page.offset,
+      page.offset + page.size - 1,
+    );
+    if (error) throw error;
+    return data ?? [];
+  }
+  return readPages(load);
 }
 
 export async function getShoppingItem(

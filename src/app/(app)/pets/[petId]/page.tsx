@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -121,7 +122,7 @@ export default async function PetDetailPage({
           >
             แก้ไข
           </Link>
-          <form action={archivePetAction}>
+          <ActionForm action={archivePetAction}>
             <input type="hidden" name="petId" value={pet.id} />
             <input
               type="hidden"
@@ -131,7 +132,7 @@ export default async function PetDetailPage({
             <button className={buttonClassName("primary", "md")} type="submit">
               {pet.archived_at ? "นำกลับมาใช้งาน" : "เก็บเข้าคลัง"}
             </button>
-          </form>
+          </ActionForm>
         </div>
       ) : null}
     </div>

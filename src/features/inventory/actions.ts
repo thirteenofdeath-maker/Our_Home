@@ -177,7 +177,7 @@ export async function adjustInventoryQuantityAction(form: FormData) {
       itemId: value(form, "itemId"),
       delta: value(form, "delta"),
     });
-  if (!parsed.success) return;
+  if (!parsed.success) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase.rpc("adjust_inventory_quantity", {
@@ -189,7 +189,9 @@ export async function adjustInventoryQuantityAction(form: FormData) {
     revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
   } catch (error) {
     logDatabaseErrorInDev("adjustInventoryQuantityAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 export async function sendInventoryToShoppingAction(
@@ -218,7 +220,8 @@ export async function sendInventoryToShoppingAction(
 
 export async function archiveInventoryItemAction(form: FormData) {
   const itemId = value(form, "itemId");
-  if (!z.string().uuid().safeParse(itemId).success) return;
+  if (!z.string().uuid().safeParse(itemId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase.rpc("set_inventory_item_archived", {
@@ -230,7 +233,7 @@ export async function archiveInventoryItemAction(form: FormData) {
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveInventoryItemAction failed", error);
-    return;
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   }
   redirect("/calendar?view=inventory");
 }
@@ -301,7 +304,7 @@ export async function deleteInventoryDocumentAction(form: FormData) {
   const parsed = z
     .object({ id: z.string().uuid(), itemId: z.string().uuid() })
     .safeParse({ id: value(form, "id"), itemId: value(form, "itemId") });
-  if (!parsed.success) return;
+  if (!parsed.success) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     const { data } = await supabase
@@ -321,5 +324,7 @@ export async function deleteInventoryDocumentAction(form: FormData) {
     revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
   } catch (error) {
     logDatabaseErrorInDev("deleteInventoryDocumentAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }

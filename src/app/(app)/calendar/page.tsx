@@ -1,3 +1,6 @@
+import { PageNavigation } from "@/components/ui/PageNavigation";
+import { getWorkspaceSummary } from "@/features/plan/workspace-summary";
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -12,6 +15,7 @@ import { MonthCalendar } from "@/features/calendar/components/MonthCalendar";
 import {
   bangkokDateKey,
   monthKey,
+  monthDays,
   selectedDateForMonth,
   shiftMonth,
   toBangkokInput,
@@ -42,7 +46,6 @@ import { InventoryItemForm } from "@/features/inventory/components/InventoryItem
 import {
   groupInventoryByCategory,
   INVENTORY_CATEGORY_LABEL,
-  isDateWithinDays,
   isLowStock,
 } from "@/features/inventory/types";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
@@ -108,6 +111,17 @@ export default async function CalendarPage({
   const selected = selectedDateForMonth(month, requested, now);
   const endMonth = shiftMonth(month, 1);
   const search = typeof query.q === "string" ? query.q : "";
+  const page = Math.min(
+    100000,
+    Math.max(1, Number.parseInt(String(query.page ?? "1"), 10) || 1),
+  );
+  const pageSize = 30;
+  const pageRequest = { offset: (page - 1) * pageSize, size: pageSize + 1 };
+  const gridDays = monthDays(month);
+  const calendarWindow = {
+    from: gridDays[0].date,
+    to: shiftDate(gridDays[gridDays.length - 1].date, 1),
+  };
   const taskStatus =
     query.status === "done" || query.status === "all" ? query.status : "open";
   const choresPromise =
@@ -120,7 +134,7 @@ export default async function CalendarPage({
               shiftDate(today, 14),
             );
           }
-          return listChoreWorkspace(supabase, household.id);
+          return listChoreWorkspace(supabase, household.id, pageRequest);
         })()
       : Promise.resolve({ templates: [], assignees: [], occurrences: [] });
 
@@ -134,18 +148,44 @@ export default async function CalendarPage({
     shopping,
     inventory,
     members,
+    summary,
   ] = await Promise.all([
     view === "calendar"
-      ? listCalendarEvents(supabase, household?.id ?? null, user.id)
+      ? listCalendarEvents(
+          supabase,
+          household?.id ?? null,
+          user.id,
+          false,
+          calendarWindow,
+        )
       : Promise.resolve([]),
     view === "calendar"
-      ? listCalendarEvents(supabase, household?.id ?? null, user.id, true)
+      ? listCalendarEvents(
+          supabase,
+          household?.id ?? null,
+          user.id,
+          true,
+          calendarWindow,
+        )
       : Promise.resolve([]),
     view === "calendar" || view === "tasks"
-      ? listPlanTasks(supabase)
+      ? listPlanTasks(
+          supabase,
+          view === "calendar"
+            ? calendarWindow
+            : {
+                query: search,
+                completed:
+                  taskStatus === "all" ? undefined : taskStatus === "done",
+                page: pageRequest,
+              },
+        )
       : Promise.resolve([]),
     view === "calendar" || view === "reminders"
-      ? listPlanReminders(supabase)
+      ? listPlanReminders(
+          supabase,
+          view === "calendar" ? calendarWindow : { page: pageRequest },
+        )
       : Promise.resolve([]),
     view === "calendar" && household
       ? listScheduledPetCareRecords(
@@ -157,35 +197,36 @@ export default async function CalendarPage({
       : Promise.resolve([]),
     choresPromise,
     household && view === "shopping"
-      ? listShoppingItems(supabase, household.id)
+      ? listShoppingItems(supabase, household.id, pageRequest)
       : Promise.resolve([]),
     household && view === "inventory"
-      ? listInventoryItems(supabase, household.id)
+      ? listInventoryItems(supabase, household.id, pageRequest)
       : Promise.resolve([]),
     household && (view === "chores" || view === "shopping")
       ? listHouseholdMembers(supabase, household.id)
       : Promise.resolve([]),
+    getWorkspaceSummary(supabase, household?.id ?? null, today),
   ]);
+
+  const pagedItems =
+    view === "tasks"
+      ? allTasks
+      : view === "reminders"
+        ? allReminders
+        : view === "shopping"
+          ? shopping
+          : view === "inventory"
+            ? inventory
+            : null;
+  const hasNext = Boolean(pagedItems && pagedItems.length > pageSize);
+  if (pagedItems && hasNext) pagedItems.pop();
 
   const overdueChoreCount =
     household && view === "chores"
       ? await countOverdueChores(supabase, household.id, today)
       : 0;
 
-  const normalizedSearch = search.toLocaleLowerCase("th");
-  const filteredTasks = allTasks.filter((task) => {
-    const matchesSearch =
-      !search ||
-      [task.title, task.details, task.list_name]
-        .filter(Boolean)
-        .some((value) =>
-          value!.toLocaleLowerCase("th").includes(normalizedSearch),
-        );
-    const matchesStatus =
-      taskStatus === "all" ||
-      (taskStatus === "done" ? task.is_completed : !task.is_completed);
-    return matchesSearch && matchesStatus;
-  });
+  const filteredTasks = allTasks;
   const todayEventCount = events.filter(
     (event) => eventDate(event) === today,
   ).length;
@@ -213,75 +254,35 @@ export default async function CalendarPage({
     .filter((item) => !item.completed_at && item.due_date < today)
     .toSorted((a, b) => a.due_date.localeCompare(b.due_date));
   const upcomingChoreGroups = groupChoresByDate(upcomingChores);
-  const overdueChoreGroups = groupChoresByDate(overdueChores);
+  const hasMoreOverdue = overdueChores.length > pageSize;
+  const overdueChoreGroups = groupChoresByDate(
+    overdueChores.slice(0, pageSize),
+  );
   const choreHistory = chores.occurrences
     .filter((item) => item.completed_at)
+    .toSorted((a, b) => b.completed_at!.localeCompare(a.completed_at!))
     .slice(0, 12);
   const purchasedShopping = shopping.filter((item) => item.purchased_at);
-  const todayTasks = allTasks.filter((task) => task.due_date === today);
-  const overdueTasks = allTasks.filter(
-    (task) => !task.is_completed && task.due_date && task.due_date < today,
-  );
-  const completedTasks = allTasks.filter((task) => task.is_completed);
-  const taskProgress = allTasks.length
-    ? `${Math.round((completedTasks.length / allTasks.length) * 100)}%`
-    : "0%";
-  const todayReminders = allReminders.filter(
-    (reminder) => toBangkokInput(reminder.reminds_at).slice(0, 10) === today,
-  );
-  const overdueReminders = allReminders.filter(
-    (reminder) =>
-      !reminder.is_completed &&
-      toBangkokInput(reminder.reminds_at).slice(0, 10) < today,
-  );
-  const upcomingReminders = allReminders.filter(
-    (reminder) =>
-      !reminder.is_completed &&
-      toBangkokInput(reminder.reminds_at).slice(0, 10) > today,
-  );
-  const completedReminders = allReminders.filter(
-    (reminder) => reminder.is_completed,
-  );
   const todayChores = chores.occurrences.filter(
     (item) => item.due_date === today,
   );
   const completedChores = chores.occurrences.filter(
-    (item) => item.completed_at,
-  );
-  const shoppingWithBudget = pendingShopping.filter(
-    (item) => item.estimated_amount !== null,
-  );
-  const shoppingCurrencies = new Set(
-    shoppingWithBudget.map((item) => item.currency),
+    (item) => item.completed_at && item.completion_kind === "DONE",
   );
   const shoppingBudget =
-    shoppingCurrencies.size === 1
+    summary.shopping.currencies === 1
       ? new Intl.NumberFormat("th-TH", {
           style: "currency",
-          currency: shoppingWithBudget[0]?.currency ?? "THB",
+          currency: summary.shopping.currency ?? "THB",
           notation: "compact",
           maximumFractionDigits: 1,
-        }).format(
-          shoppingWithBudget.reduce(
-            (sum, item) => sum + Number(item.estimated_amount),
-            0,
-          ),
-        )
-      : shoppingCurrencies.size > 1
+        }).format(Number(summary.shopping.budget ?? 0))
+      : summary.shopping.currencies > 1
         ? "หลายสกุล"
         : "—";
-  const assignedShopping = new Set(
-    pendingShopping
-      .map((item) => item.assigned_member_id)
-      .filter((id): id is string => Boolean(id)),
-  ).size;
-  const lowInventory = inventory.filter(isLowStock);
-  const expiringInventory = inventory.filter((item) =>
-    isDateWithinDays(item.expiry_date, today, 30),
-  );
-  const warrantyInventory = inventory.filter((item) =>
-    isDateWithinDays(item.warranty_expires_on, today, 30),
-  );
+  const taskProgress = summary.tasks.total
+    ? `${Math.round((summary.tasks.done / summary.tasks.total) * 100)}%`
+    : "0%";
   const cover = {
     calendar: {
       eyebrow: "สรุปแผนงานวันนี้",
@@ -289,8 +290,8 @@ export default async function CalendarPage({
       subtitle: "วางแผนให้บ้านเดินหน้าไปด้วยกัน",
       metrics: [
         { value: todayEventCount, label: "กิจกรรม" },
-        { value: todayTasks.length, label: "งานวันนี้" },
-        { value: todayReminders.length, label: "เตือนวันนี้" },
+        { value: summary.tasks.today, label: "งานวันนี้" },
+        { value: summary.reminders.today, label: "เตือนวันนี้" },
       ],
     },
     tasks: {
@@ -298,9 +299,9 @@ export default async function CalendarPage({
       title: "งานของเรา",
       subtitle: "เห็นงานสำคัญและความคืบหน้าในที่เดียว",
       metrics: [
-        { value: todayTasks.length, label: "วันนี้" },
-        { value: overdueTasks.length, label: "งานค้าง" },
-        { value: completedTasks.length, label: "เสร็จแล้ว" },
+        { value: summary.tasks.today, label: "วันนี้" },
+        { value: summary.tasks.overdue, label: "งานค้าง" },
+        { value: summary.tasks.done, label: "เสร็จแล้ว" },
         { value: taskProgress, label: "ความคืบหน้า" },
       ],
     },
@@ -309,10 +310,10 @@ export default async function CalendarPage({
       title: "รายการเตือน",
       subtitle: "เตรียมพร้อมก่อนทุกกำหนดหมาย",
       metrics: [
-        { value: todayReminders.length, label: "วันนี้" },
-        { value: upcomingReminders.length, label: "ใกล้ถึง" },
-        { value: overdueReminders.length, label: "เลยกำหนด" },
-        { value: completedReminders.length, label: "เสร็จแล้ว" },
+        { value: summary.reminders.today, label: "วันนี้" },
+        { value: summary.reminders.upcoming, label: "ใกล้ถึง" },
+        { value: summary.reminders.overdue, label: "เลยกำหนด" },
+        { value: summary.reminders.done, label: "เสร็จแล้ว" },
       ],
     },
     chores: {
@@ -331,10 +332,10 @@ export default async function CalendarPage({
       title: "รายการซื้อของ",
       subtitle: "ซื้อด้วยกัน ไม่ลืมกัน",
       metrics: [
-        { value: pendingShopping.length, label: "ต้องซื้อ" },
-        { value: purchasedShopping.length, label: "ซื้อแล้ว" },
+        { value: summary.shopping.pending, label: "ต้องซื้อ" },
+        { value: summary.shopping.purchased, label: "ซื้อแล้ว" },
         { value: shoppingBudget, label: "งบประมาณ" },
-        { value: assignedShopping, label: "ผู้รับผิดชอบ" },
+        { value: summary.shopping.assigned, label: "ผู้รับผิดชอบ" },
       ],
     },
     inventory: {
@@ -342,10 +343,10 @@ export default async function CalendarPage({
       title: "คลังของในบ้าน",
       subtitle: "รู้ก่อนหมด ไม่ซื้อซ้ำ",
       metrics: [
-        { value: inventory.length, label: "ทั้งหมด" },
-        { value: lowInventory.length, label: "ใกล้หมด" },
-        { value: expiringInventory.length, label: "ใกล้หมดอายุ" },
-        { value: warrantyInventory.length, label: "ใกล้หมดประกัน" },
+        { value: summary.inventory.total, label: "ทั้งหมด" },
+        { value: summary.inventory.low, label: "ใกล้หมด" },
+        { value: summary.inventory.expiry, label: "ใกล้หมดอายุ" },
+        { value: summary.inventory.warranty, label: "ใกล้หมดประกัน" },
       ],
     },
   } satisfies Record<
@@ -700,7 +701,7 @@ export default async function CalendarPage({
           )}
 
           <section className="flex flex-col gap-3">
-            <SectionHeading title="ต้องซื้อ" count={pendingShopping.length} />
+            <SectionHeading title="ต้องซื้อ" count={summary.shopping.pending} />
             {pendingShopping.length ? (
               pendingShopping.map((item) => (
                 <ShoppingItemCard
@@ -712,7 +713,9 @@ export default async function CalendarPage({
               ))
             ) : (
               <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
-                ซื้อครบแล้ว บ้านพร้อมมาก 🎉
+                {summary.shopping.pending
+                  ? "ไม่มีรายการต้องซื้อในหน้านี้"
+                  : "ซื้อครบแล้ว บ้านพร้อมมาก 🎉"}
               </Card>
             )}
           </section>
@@ -721,7 +724,7 @@ export default async function CalendarPage({
             <section className="flex flex-col gap-3">
               <SectionHeading
                 title="ซื้อแล้ว"
-                count={purchasedShopping.length}
+                count={summary.shopping.purchased}
               />
               {purchasedShopping.map((item) => (
                 <ShoppingItemCard
@@ -752,7 +755,7 @@ export default async function CalendarPage({
           <section className="flex flex-col gap-4">
             <SectionHeading
               title="รายการตามหมวดหมู่"
-              count={inventory.length}
+              count={summary.inventory.total}
             />
             {inventory.length ? (
               inventoryGroups.map(({ category, items }) => {
@@ -806,6 +809,12 @@ export default async function CalendarPage({
             )}
           </section>
         </>
+      ) : null}
+      {view === "chores" ? (
+        <PageNavigation page={page} hasNext={hasMoreOverdue} query={query} />
+      ) : null}
+      {pagedItems ? (
+        <PageNavigation page={page} hasNext={hasNext} query={query} />
       ) : null}
     </div>
   );
@@ -947,7 +956,7 @@ function ChoreTemplateManagerCard({
           >
             แก้ไข
           </FormSheetButton>
-          <form action={toggleChoreTemplateAction}>
+          <ActionForm action={toggleChoreTemplateAction}>
             <input type="hidden" name="templateId" value={template.id} />
             <input
               type="hidden"
@@ -960,7 +969,7 @@ function ChoreTemplateManagerCard({
             >
               {template.is_active ? "พักตาราง" : "เปิดตาราง"}
             </button>
-          </form>
+          </ActionForm>
           <DeleteChoreTemplateButton
             templateId={template.id}
             title={template.title}

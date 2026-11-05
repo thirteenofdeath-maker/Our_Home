@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
@@ -21,7 +22,7 @@ export function TaskList({ tasks }: { tasks: PlanTask[] }) {
           key={task.id}
           className="flex min-w-0 items-start gap-3 rounded-[1.25rem] bg-finance-surface-strong p-4"
         >
-          <form action={togglePlanTaskAction}>
+          <ActionForm action={togglePlanTaskAction}>
             <input type="hidden" name="taskId" value={task.id} />
             <input
               type="hidden"
@@ -44,7 +45,7 @@ export function TaskList({ tasks }: { tasks: PlanTask[] }) {
             >
               {task.is_completed ? "✓" : ""}
             </button>
-          </form>
+          </ActionForm>
           <Link href={`/calendar/tasks/${task.id}`} className="min-w-0 flex-1">
             <div className="flex min-w-0 items-start justify-between gap-2">
               <p

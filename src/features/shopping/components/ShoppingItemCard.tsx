@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { AppIcon } from "@/components/ui/AppIcon";
@@ -43,7 +44,7 @@ export function ShoppingItemCard({
     >
       <div className="flex items-start gap-2.5">
         {canEdit ? (
-          <form action={toggleShoppingItemAction}>
+          <ActionForm action={toggleShoppingItemAction}>
             <input type="hidden" name="itemId" value={item.id} />
             <input type="hidden" name="purchased" value={String(!purchased)} />
             <button
@@ -58,7 +59,7 @@ export function ShoppingItemCard({
             >
               {purchased ? "✓" : ""}
             </button>
-          </form>
+          </ActionForm>
         ) : (
           <span
             className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] ${purchased ? "border-finance-primary bg-finance-primary text-finance-primary-foreground" : "border-border"}`}
@@ -164,7 +165,7 @@ export function ShoppingItemCard({
                       >
                         แก้ไข
                       </FormSheetButton>
-                      <form action={archiveShoppingItemAction}>
+                      <ActionForm action={archiveShoppingItemAction}>
                         <input type="hidden" name="itemId" value={item.id} />
                         <button
                           type="submit"
@@ -172,7 +173,7 @@ export function ShoppingItemCard({
                         >
                           นำออกจากรายการ
                         </button>
-                      </form>
+                      </ActionForm>
                     </div>
                   </details>
                 ) : null}

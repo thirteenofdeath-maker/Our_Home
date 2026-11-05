@@ -93,3 +93,34 @@ describe("calendar initial selection", () => {
     );
   });
 });
+
+describe("calendar date rollover regression", () => {
+  it.each([
+    "2026-02-30T12:00",
+    "2026-04-31T12:00",
+    "2026-13-01T12:00",
+    "2026-01-01T24:00",
+    "2026-01-01T12:60",
+  ])("rejects impossible local datetime %s", (value) => {
+    expect(parseBangkokLocal(value)).toBeNull();
+    expect(
+      calendarFormSchema.safeParse({ ...timed, startsLocal: value }).success,
+    ).toBe(false);
+  });
+  it("validates the actual all-day calendar date", () => {
+    expect(
+      calendarFormSchema.safeParse({
+        ...timed,
+        isAllDay: true,
+        allDayDate: "2026-02-30",
+      }).success,
+    ).toBe(false);
+    expect(
+      calendarFormSchema.safeParse({
+        ...timed,
+        isAllDay: true,
+        allDayDate: "2028-02-29",
+      }).success,
+    ).toBe(true);
+  });
+});

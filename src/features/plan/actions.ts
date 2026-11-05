@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import { requireUser } from "@/lib/auth/require-user";
@@ -122,25 +122,40 @@ export async function updatePlanTaskAction(
 }
 
 export async function togglePlanTaskAction(form: FormData) {
-  const id = value(form, "taskId");
-  const completed = value(form, "completed") === "true";
-  if (!id) return;
-  const { supabase } = await requireUser();
-  const task = await getPlanTask(supabase, id);
-  if (!task) return;
-  await setPlanTaskCompleted(supabase, task, completed);
-  revalidatePath("/calendar");
-  revalidatePath(`/calendar/tasks/${id}`);
+  try {
+    const id = value(form, "taskId");
+    const completed = value(form, "completed") === "true";
+    if (!id) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    const task = await getPlanTask(supabase, id);
+    if (!task) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await setPlanTaskCompleted(supabase, task, completed);
+    revalidatePath("/calendar");
+    revalidatePath(`/calendar/tasks/${id}`);
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("togglePlanTaskAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }
 
 export async function archivePlanTaskAction(form: FormData) {
-  const id = value(form, "taskId");
-  if (!id) return;
-  const { supabase } = await requireUser();
-  if (!(await getPlanTask(supabase, id))) return;
-  await setPlanTaskArchived(supabase, id, value(form, "archived") === "true");
-  revalidatePath("/calendar");
-  redirect("/calendar?view=tasks");
+  try {
+    const id = value(form, "taskId");
+    if (!id) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    if (!(await getPlanTask(supabase, id)))
+      return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await setPlanTaskArchived(supabase, id, value(form, "archived") === "true");
+    revalidatePath("/calendar");
+    redirect("/calendar?view=tasks");
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("archivePlanTaskAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }
 
 export async function addPlanTaskStepAction(
@@ -176,31 +191,47 @@ export async function addPlanTaskStepAction(
 }
 
 export async function togglePlanTaskStepAction(form: FormData) {
-  const taskId = value(form, "taskId");
-  const stepId = value(form, "stepId");
-  if (!taskId || !stepId) return;
-  const { supabase } = await requireUser();
-  if (!(await getPlanTask(supabase, taskId))) return;
-  const step = (await listPlanTaskSteps(supabase, taskId)).find(
-    (item) => item.id === stepId,
-  );
-  if (!step) return;
-  await setPlanTaskStepCompleted(
-    supabase,
-    step,
-    value(form, "completed") === "true",
-  );
-  revalidatePath(`/calendar/tasks/${taskId}`);
+  try {
+    const taskId = value(form, "taskId");
+    const stepId = value(form, "stepId");
+    if (!taskId || !stepId) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    if (!(await getPlanTask(supabase, taskId)))
+      return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const step = (await listPlanTaskSteps(supabase, taskId)).find(
+      (item) => item.id === stepId,
+    );
+    if (!step) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await setPlanTaskStepCompleted(
+      supabase,
+      step,
+      value(form, "completed") === "true",
+    );
+    revalidatePath(`/calendar/tasks/${taskId}`);
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("togglePlanTaskStepAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }
 
 export async function deletePlanTaskStepAction(form: FormData) {
-  const taskId = value(form, "taskId");
-  const stepId = value(form, "stepId");
-  if (!taskId || !stepId) return;
-  const { supabase } = await requireUser();
-  if (!(await getPlanTask(supabase, taskId))) return;
-  await deletePlanTaskStep(supabase, stepId);
-  revalidatePath(`/calendar/tasks/${taskId}`);
+  try {
+    const taskId = value(form, "taskId");
+    const stepId = value(form, "stepId");
+    if (!taskId || !stepId) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    if (!(await getPlanTask(supabase, taskId)))
+      return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await deletePlanTaskStep(supabase, stepId);
+    revalidatePath(`/calendar/tasks/${taskId}`);
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("deletePlanTaskStepAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }
 
 export async function createPlanReminderAction(
@@ -269,32 +300,47 @@ export async function updatePlanReminderAction(
 }
 
 export async function togglePlanReminderAction(form: FormData) {
-  const id = value(form, "reminderId");
-  if (!id) return;
-  const { supabase } = await requireUser();
-  const reminder = await getPlanReminder(supabase, id);
-  if (!reminder) return;
-  await setPlanReminderCompleted(
-    supabase,
-    reminder,
-    value(form, "completed") === "true",
-  );
-  revalidatePath("/");
-  revalidatePath("/calendar");
-  revalidatePath(`/calendar/reminders/${id}`);
+  try {
+    const id = value(form, "reminderId");
+    if (!id) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    const reminder = await getPlanReminder(supabase, id);
+    if (!reminder) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await setPlanReminderCompleted(
+      supabase,
+      reminder,
+      value(form, "completed") === "true",
+    );
+    revalidatePath("/");
+    revalidatePath("/calendar");
+    revalidatePath(`/calendar/reminders/${id}`);
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("togglePlanReminderAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }
 
 export async function archivePlanReminderAction(form: FormData) {
-  const id = value(form, "reminderId");
-  if (!id) return;
-  const { supabase } = await requireUser();
-  if (!(await getPlanReminder(supabase, id))) return;
-  await setPlanReminderArchived(
-    supabase,
-    id,
-    value(form, "archived") === "true",
-  );
-  revalidatePath("/");
-  revalidatePath("/calendar");
-  redirect("/calendar?view=reminders");
+  try {
+    const id = value(form, "reminderId");
+    if (!id) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    const { supabase } = await requireUser();
+    if (!(await getPlanReminder(supabase, id)))
+      return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
+    await setPlanReminderArchived(
+      supabase,
+      id,
+      value(form, "archived") === "true",
+    );
+    revalidatePath("/");
+    revalidatePath("/calendar");
+    redirect("/calendar?view=reminders");
+    return { success: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    logDatabaseErrorInDev("archivePlanReminderAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
+  }
 }

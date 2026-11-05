@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
@@ -20,7 +21,7 @@ export function ReminderList({ reminders }: { reminders: PlanReminder[] }) {
           key={reminder.id}
           className="flex min-w-0 items-start gap-3 rounded-[1.25rem] bg-finance-surface-strong"
         >
-          <form action={togglePlanReminderAction}>
+          <ActionForm action={togglePlanReminderAction}>
             <input type="hidden" name="reminderId" value={reminder.id} />
             <input
               type="hidden"
@@ -38,7 +39,7 @@ export function ReminderList({ reminders }: { reminders: PlanReminder[] }) {
             >
               {reminder.is_completed ? "✓" : ""}
             </button>
-          </form>
+          </ActionForm>
           <Link
             href={`/calendar/reminders/${reminder.id}`}
             className="min-w-0 flex-1"

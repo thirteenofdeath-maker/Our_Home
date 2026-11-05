@@ -135,39 +135,48 @@ export async function updateChoreAction(
 
 export async function claimChoreAction(form: FormData) {
   const occurrenceId = stringValue(form, "occurrenceId");
-  if (!z.string().uuid().safeParse(occurrenceId).success) return;
+  if (!z.string().uuid().safeParse(occurrenceId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     await claimChore(supabase, occurrenceId);
     refresh();
   } catch (error) {
     logDatabaseErrorInDev("claimChoreAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 export async function completeChoreAction(form: FormData) {
   const occurrenceId = stringValue(form, "occurrenceId");
-  if (!z.string().uuid().safeParse(occurrenceId).success) return;
+  if (!z.string().uuid().safeParse(occurrenceId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     await completeChore(supabase, occurrenceId);
     refresh();
   } catch (error) {
     logDatabaseErrorInDev("completeChoreAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 export async function toggleChoreTemplateAction(form: FormData) {
   const templateId = stringValue(form, "templateId");
   const active = stringValue(form, "active") === "true";
-  if (!z.string().uuid().safeParse(templateId).success) return;
+  if (!z.string().uuid().safeParse(templateId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     await setChoreTemplateActive(supabase, templateId, active);
     refresh();
   } catch (error) {
     logDatabaseErrorInDev("toggleChoreTemplateAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 export async function deleteChoreTemplateAction(

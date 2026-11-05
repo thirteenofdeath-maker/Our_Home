@@ -131,8 +131,6 @@ async function digestCandidates(
     timedEventsResult,
     choresResult,
     petCareResult,
-    billsResult,
-    statementsResult,
     profilesResult,
     petsResult,
     inventoryResult,
@@ -178,18 +176,6 @@ async function digestCandidates(
       .gte("scheduled_at", startIso)
       .lt("scheduled_at", endIso),
     admin
-      .from("bill_occurrences")
-      .select("bills(scope,owner_user_id,household_id)")
-      .eq("status", "OPEN")
-      .gte("due_date", startDate)
-      .lte("due_date", endDate),
-    admin
-      .from("credit_card_statements")
-      .select("credit_card_accounts(wallets(scope,owner_user_id,household_id))")
-      .gt("statement_balance", 0)
-      .gte("due_date", startDate)
-      .lte("due_date", endDate),
-    admin
       .from("profiles")
       .select("id,birthday,share_birthday_with_household")
       .eq("share_birthday_with_household", true)
@@ -213,8 +199,6 @@ async function digestCandidates(
     timedEventsResult,
     choresResult,
     petCareResult,
-    billsResult,
-    statementsResult,
     profilesResult,
     petsResult,
     inventoryResult,
@@ -260,33 +244,6 @@ async function digestCandidates(
       petCareRecipients(memberRows, row.household_id, caregivers),
       "pets",
     );
-  }
-  for (const row of billsResult.data ?? []) {
-    const bill = Array.isArray(row.bills) ? row.bills[0] : row.bills;
-    if (bill)
-      addDigestCount(
-        counts,
-        bill.scope === "PERSONAL"
-          ? [bill.owner_user_id]
-          : (usersByHousehold.get(bill.household_id) ?? []),
-        "bills",
-      );
-  }
-  for (const row of statementsResult.data ?? []) {
-    const card = Array.isArray(row.credit_card_accounts)
-      ? row.credit_card_accounts[0]
-      : row.credit_card_accounts;
-    const wallet = Array.isArray(card?.wallets)
-      ? card.wallets[0]
-      : card?.wallets;
-    if (wallet)
-      addDigestCount(
-        counts,
-        wallet.scope === "PERSONAL"
-          ? [wallet.owner_user_id]
-          : (usersByHousehold.get(wallet.household_id) ?? []),
-        "bills",
-      );
   }
   for (const row of profilesResult.data ?? []) {
     if (!birthdayFallsInWindow(row.birthday, startDate, endDate)) continue;
@@ -399,8 +356,6 @@ async function scheduledCandidates(
     tasksResult,
     eventsResult,
     petResult,
-    billsResult,
-    statementsResult,
     birthdayProfilesResult,
     birthdayPetsResult,
     inventoryResult,
@@ -438,24 +393,6 @@ async function scheduledCandidates(
       : Promise.resolve({ data: [], error: null }),
     atMorning
       ? admin
-          .from("bill_occurrences")
-          .select(
-            "id,due_date,expected_amount,bill_id,bills(name,scope,owner_user_id,household_id)",
-          )
-          .eq("status", "OPEN")
-          .in("due_date", [local.date, tomorrow])
-      : Promise.resolve({ data: [], error: null }),
-    atMorning
-      ? admin
-          .from("credit_card_statements")
-          .select(
-            "id,card_account_id,due_date,statement_balance,credit_card_accounts(wallet_id,issuer,last_four,wallets(name,scope,owner_user_id,household_id))",
-          )
-          .in("due_date", [local.date, tomorrow])
-          .gt("statement_balance", 0)
-      : Promise.resolve({ data: [], error: null }),
-    atMorning
-      ? admin
           .from("profiles")
           .select("id,display_name,birthday,share_birthday_with_household")
           .eq("share_birthday_with_household", true)
@@ -485,8 +422,6 @@ async function scheduledCandidates(
     tasksResult,
     eventsResult,
     petResult,
-    billsResult,
-    statementsResult,
     birthdayProfilesResult,
     birthdayPetsResult,
     inventoryResult,
@@ -705,96 +640,6 @@ async function scheduledCandidates(
       users,
     });
   }
-  for (const row of billsResult.data ?? []) {
-    const bill = Array.isArray(row.bills) ? row.bills[0] : row.bills;
-    if (!bill) continue;
-    const kind = row.due_date === local.date ? "DUE_DAY" : "DAY_BEFORE";
-    candidates.push({
-      sourceType: "BILL",
-      sourceId: row.id,
-      occurrenceKey: row.due_date,
-      kind,
-      category: "finance",
-      title:
-        kind === "DAY_BEFORE" ? "บิลครบกำหนดพรุ่งนี้" : "บิลครบกำหนดวันนี้",
-      body: bill.name,
-      url: `/finance/bills/occurrences/${row.id}`,
-      scheduledFor: now.toISOString(),
-      users:
-        bill.scope === "PERSONAL"
-          ? [bill.owner_user_id]
-          : householdUsers(members, bill.household_id),
-    });
-  }
-
-  const statementIds = (statementsResult.data ?? []).map((row: any) => row.id);
-  const [allocationResult, resolutionResult] = statementIds.length
-    ? await Promise.all([
-        admin
-          .from("credit_card_statement_allocations")
-          .select(
-            "statement_id,amount,credit_card_liability_events(transactions(deleted_at))",
-          )
-          .in("statement_id", statementIds),
-        admin
-          .from("credit_card_statement_resolutions")
-          .select("statement_id")
-          .in("statement_id", statementIds),
-      ])
-    : [{ data: [] }, { data: [] }];
-  const allocations = allocationResult.data ?? [];
-  const resolved = new Set(
-    (resolutionResult.data ?? []).map(
-      (row: { statement_id: string }) => row.statement_id,
-    ),
-  );
-  const paid = new Map<string, number>();
-  for (const row of allocations) {
-    const event = Array.isArray(row.credit_card_liability_events)
-      ? row.credit_card_liability_events[0]
-      : row.credit_card_liability_events;
-    const transaction = Array.isArray(event?.transactions)
-      ? event.transactions[0]
-      : event?.transactions;
-    if (!transaction?.deleted_at)
-      paid.set(
-        row.statement_id,
-        (paid.get(row.statement_id) ?? 0) + Number(row.amount),
-      );
-  }
-  for (const row of statementsResult.data ?? []) {
-    if (
-      resolved.has(row.id) ||
-      Number(row.statement_balance) - (paid.get(row.id) ?? 0) <= 0
-    )
-      continue;
-    const card = Array.isArray(row.credit_card_accounts)
-      ? row.credit_card_accounts[0]
-      : row.credit_card_accounts;
-    const wallet = Array.isArray(card?.wallets)
-      ? card.wallets[0]
-      : card?.wallets;
-    if (!wallet) continue;
-    const kind = row.due_date === local.date ? "DUE_DAY" : "DAY_BEFORE";
-    candidates.push({
-      sourceType: "CARD",
-      sourceId: row.id,
-      occurrenceKey: row.due_date,
-      kind,
-      category: "finance",
-      title:
-        kind === "DAY_BEFORE"
-          ? "ยอดบัตรครบกำหนดพรุ่งนี้"
-          : "ยอดบัตรครบกำหนดวันนี้",
-      body: wallet.name,
-      url: `/wallets/${card.wallet_id}`,
-      scheduledFor: now.toISOString(),
-      users:
-        wallet.scope === "PERSONAL"
-          ? [wallet.owner_user_id]
-          : householdUsers(members, wallet.household_id),
-    });
-  }
   candidates.push(...(await digestCandidates(admin, now, memberRows)));
   return candidates;
 }
@@ -890,7 +735,7 @@ Deno.serve(async (request: Request) => {
   const defaultPreference = {
     plan_enabled: true,
     pets_enabled: true,
-    finance_enabled: true,
+    finance_enabled: false,
     inventory_enabled: true,
     member_birthdays_enabled: true,
     pet_birthdays_enabled: true,

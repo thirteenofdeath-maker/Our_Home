@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import { notFound } from "next/navigation";
 
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
@@ -56,7 +57,7 @@ export default async function ReminderDetailPage({
       >
         แก้ไข
       </FormSheetButton>
-      <form action={togglePlanReminderAction}>
+      <ActionForm action={togglePlanReminderAction}>
         <input type="hidden" name="reminderId" value={reminder.id} />
         <input
           type="hidden"
@@ -66,14 +67,14 @@ export default async function ReminderDetailPage({
         <button className={buttonClassName("primary", "md")} type="submit">
           {reminder.is_completed ? "ทำเครื่องหมายว่ายังไม่เสร็จ" : "เสร็จแล้ว"}
         </button>
-      </form>
-      <form action={archivePlanReminderAction}>
+      </ActionForm>
+      <ActionForm action={archivePlanReminderAction}>
         <input type="hidden" name="reminderId" value={reminder.id} />
         <input type="hidden" name="archived" value="true" />
         <button className={buttonClassName("secondary", "md")} type="submit">
           เก็บเข้าคลัง
         </button>
-      </form>
+      </ActionForm>
     </div>
   );
 }

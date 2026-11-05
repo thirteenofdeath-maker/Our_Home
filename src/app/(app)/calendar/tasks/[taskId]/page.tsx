@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/ui/ActionForm";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -53,7 +54,7 @@ export default async function PlanTaskPage({
         <TaskForm task={task} hasHousehold={Boolean(household)} />
       </Card>
       <div className="grid grid-cols-2 gap-3">
-        <form action={togglePlanTaskAction}>
+        <ActionForm action={togglePlanTaskAction}>
           <input type="hidden" name="taskId" value={task.id} />
           <input
             type="hidden"
@@ -63,8 +64,8 @@ export default async function PlanTaskPage({
           <Button type="submit" variant="secondary">
             {task.is_completed ? "เปิดงานอีกครั้ง" : "ทำเสร็จแล้ว"}
           </Button>
-        </form>
-        <form action={archivePlanTaskAction}>
+        </ActionForm>
+        <ActionForm action={archivePlanTaskAction}>
           <input type="hidden" name="taskId" value={task.id} />
           <input
             type="hidden"
@@ -74,7 +75,7 @@ export default async function PlanTaskPage({
           <Button type="submit" variant="ghost">
             {task.archived_at ? "นำออกจากคลัง" : "เก็บเข้าคลัง"}
           </Button>
-        </form>
+        </ActionForm>
       </div>
     </div>
   );

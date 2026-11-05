@@ -71,6 +71,7 @@ export async function createPetAction(
         household.id,
         id,
         file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS,
+        randomUUID(),
       )
     : null;
   try {
@@ -112,6 +113,7 @@ export async function updatePetAction(
         current.household_id,
         petId,
         file.type as keyof typeof PET_PHOTO_MIME_EXTENSIONS,
+        randomUUID(),
       )
     : current.photo_path;
   try {
@@ -121,6 +123,8 @@ export async function updatePetAction(
       await deletePetPhoto(supabase, current.photo_path);
   } catch (error) {
     logDatabaseErrorInDev("updatePetAction failed", error);
+    if (file && path && path !== current.photo_path)
+      await deletePetPhoto(supabase, path);
     return { error: "Could not update pet" };
   }
   revalidatePath("/pets");
@@ -132,12 +136,13 @@ export async function archivePetAction(formData: FormData) {
   const { supabase } = await requireUser();
   const petId = formData.get("petId");
   const archived = formData.get("archived") === "true";
-  if (typeof petId !== "string") return;
+  if (typeof petId !== "string")
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     await setPetArchived(supabase, petId, archived);
   } catch (error) {
     logDatabaseErrorInDev("archivePetAction failed", error);
-    return;
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   }
   revalidatePath("/pets");
   revalidatePath(`/pets/${petId}`);
@@ -256,14 +261,16 @@ export async function archivePetCareRecordAction(formData: FormData) {
   const { supabase } = await requireUser();
   const recordId = formData.get("recordId");
   const petId = formData.get("petId");
-  if (typeof recordId !== "string" || typeof petId !== "string") return;
+  if (typeof recordId !== "string" || typeof petId !== "string")
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     await archivePetCareRecord(supabase, recordId);
   } catch (error) {
     logDatabaseErrorInDev("archivePetCareRecordAction failed", error);
-    return;
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   }
   revalidatePath("/");
   revalidatePath("/calendar");
   revalidatePath(`/pets/${petId}`);
+  return { success: true };
 }

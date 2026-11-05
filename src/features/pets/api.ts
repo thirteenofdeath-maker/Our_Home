@@ -204,7 +204,7 @@ export async function uploadPetPhoto(
 ) {
   const { error } = await supabase.storage
     .from("pet-photos")
-    .upload(path, file, { contentType: file.type, upsert: true });
+    .upload(path, file, { contentType: file.type, upsert: false });
   if (error) throw error;
 }
 export async function deletePetPhoto(

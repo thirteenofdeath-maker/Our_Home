@@ -122,7 +122,8 @@ export async function updateShoppingItemAction(
 export async function toggleShoppingItemAction(form: FormData) {
   const itemId = stringValue(form, "itemId");
   const purchased = stringValue(form, "purchased") === "true";
-  if (!z.string().uuid().safeParse(itemId).success) return;
+  if (!z.string().uuid().safeParse(itemId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     await setShoppingItemPurchased(supabase, itemId, purchased);
@@ -130,12 +131,15 @@ export async function toggleShoppingItemAction(form: FormData) {
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("toggleShoppingItemAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 export async function archiveShoppingItemAction(form: FormData) {
   const itemId = stringValue(form, "itemId");
-  if (!z.string().uuid().safeParse(itemId).success) return;
+  if (!z.string().uuid().safeParse(itemId).success)
+    return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   try {
     const { supabase } = await requireUser();
     await setShoppingItemArchived(supabase, itemId);
@@ -143,7 +147,9 @@ export async function archiveShoppingItemAction(form: FormData) {
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveShoppingItemAction failed", error);
+    return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
+  return { success: true };
 }
 
 const shoppingExpenseSchema = z.object({

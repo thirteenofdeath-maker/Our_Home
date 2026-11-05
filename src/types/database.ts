@@ -1431,6 +1431,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      get_plan_workspace_summary: {
+        Args: { p_household_id: string | null; p_today: string };
+        Returns: Record<string, unknown>;
+      };
       is_household_member: {
         Args: { p_household_id: string };
         Returns: boolean;

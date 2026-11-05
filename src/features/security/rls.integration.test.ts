@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest";
 import { currentFinanceMonth, financeMonthRange, financeMonthToPeriodMonth } from "@/features/finance/domain/finance";
 
 /**
+ * LEGACY ledger integration suite. The current active-module security suite is
+ * supabase/tests/active_household_security.sql (five generated roles, rollback).
+ * Run this older suite only against a pre-retirement disposable database; the
+ * retired ledger RPC grants are intentionally absent from current releases.
+ *
  * RLS, table/column GRANTs, and triggers are database-level guarantees —
  * they cannot be meaningfully verified without a real Postgres instance
  * running the migrations in supabase/migrations/. There is no Docker/

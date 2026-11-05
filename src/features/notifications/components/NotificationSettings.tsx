@@ -38,7 +38,10 @@ export function NotificationSettings({
   initialPreferences: Preferences;
   initiallySubscribed: boolean;
 }) {
-  const [preferences, setPreferences] = useState(initialPreferences);
+  const [preferences, setPreferences] = useState({
+    ...initialPreferences,
+    finance_enabled: false,
+  });
   const [subscribed, setSubscribed] = useState(initiallySubscribed);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -172,7 +175,6 @@ export function NotificationSettings({
       "สัตว์เลี้ยง",
       "วัคซีน ยา และนัดดูแล ก่อนหนึ่งวันและวันครบกำหนด",
     ],
-    ["finance_enabled", "การเงิน", "บิลและยอดบัตร ก่อนหนึ่งวันและวันครบกำหนด"],
     [
       "inventory_enabled",
       "คลังของในบ้าน",

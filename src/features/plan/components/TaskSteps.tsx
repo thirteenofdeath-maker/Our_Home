@@ -1,4 +1,5 @@
 "use client";
+import { ActionForm } from "@/components/ui/ActionForm";
 
 import { useActionState } from "react";
 
@@ -31,7 +32,7 @@ export function TaskSteps({
             key={step.id}
             className="flex min-w-0 items-center gap-2 border-b border-finance-primary-soft/70 py-2 last:border-0"
           >
-            <form action={togglePlanTaskStepAction}>
+            <ActionForm action={togglePlanTaskStepAction}>
               <input type="hidden" name="taskId" value={taskId} />
               <input type="hidden" name="stepId" value={step.id} />
               <input
@@ -52,13 +53,13 @@ export function TaskSteps({
                   {step.is_completed ? "✓" : ""}
                 </span>
               </button>
-            </form>
+            </ActionForm>
             <p
               className={`min-w-0 flex-1 text-sm text-finance-text ${step.is_completed ? "text-finance-muted line-through" : ""}`}
             >
               {step.title}
             </p>
-            <form action={deletePlanTaskStepAction}>
+            <ActionForm action={deletePlanTaskStepAction}>
               <input type="hidden" name="taskId" value={taskId} />
               <input type="hidden" name="stepId" value={step.id} />
               <button
@@ -67,7 +68,7 @@ export function TaskSteps({
               >
                 ลบ
               </button>
-            </form>
+            </ActionForm>
           </div>
         ))}
       </div>
