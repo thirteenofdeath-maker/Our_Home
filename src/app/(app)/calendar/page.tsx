@@ -564,19 +564,21 @@ export default async function CalendarPage({
             </details>
           ) : null}
 
-          {canManageChores ? (
-            <ClearOverdueChoresButton
-              householdId={household.id}
-              beforeDate={today}
-              count={overdueChoreCount}
-            />
-          ) : null}
-          {overdueChores.length ? (
+          {overdueChoreCount > 0 ? (
             <section className="flex flex-col gap-3">
               <SectionHeading
                 title="เลยกำหนด"
-                count={overdueChores.length}
+                count={overdueChoreCount}
                 danger
+                action={
+                  canManageChores ? (
+                    <ClearOverdueChoresButton
+                      householdId={household.id}
+                      beforeDate={today}
+                      count={overdueChoreCount}
+                    />
+                  ) : null
+                }
               />
               {overdueChoreGroups.map((group) => (
                 <ChoreDayGroupHeader
@@ -814,11 +816,13 @@ function SectionHeading({
   count,
   suffix,
   danger = false,
+  action,
 }: {
   title: string;
   count: number;
   suffix?: string;
   danger?: boolean;
+  action?: ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -830,9 +834,12 @@ function SectionHeading({
       >
         {title}
       </h2>
-      <span className="text-sm text-finance-muted">
-        {count} รายการ{suffix ? ` · ${suffix}` : ""}
-      </span>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+        <span className="text-xs text-finance-muted">
+          {count} รายการ{suffix ? ` · ${suffix}` : ""}
+        </span>
+        {action}
+      </div>
     </div>
   );
 }
