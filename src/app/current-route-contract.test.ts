@@ -34,7 +34,7 @@ describe("current internal URL contract", () => {
     ).toContain("/calendar/inventory/${item.id}");
     expect(
       read("src/features/shopping/components/ShoppingItemCard.tsx"),
-    ).toContain("/calendar/shopping/${item.id}/expense");
+    ).toContain("/calendar/shopping/expense?item=${item.id}");
     expect(
       read("supabase/functions/dispatch-notifications/index.ts"),
     ).toContain("/calendar/inventory/${row.id}");

@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return ["/finance/:path*", "/wallets/:path*", "/categories/:path*"].map(
+      (source) => ({
+        source,
+        destination: "/calendar/expenses",
+        permanent: false,
+      }),
+    );
+  },
   allowedDevOrigins: ["192.168.1.6"],
   experimental: {
     useOffline: true,

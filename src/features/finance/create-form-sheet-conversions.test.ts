@@ -197,12 +197,10 @@ describe("Secondary wallet/household creation prompts elsewhere in the app also 
     }
   });
 
-  it("Onboarding's two creation cards ('สร้างกระเป๋าเงินส่วนตัว', 'สร้างครอบครัว') open their real forms directly, sharing the exact same triggers used elsewhere — no separate onboarding-only implementation", () => {
+  it("opens the household form directly from onboarding", () => {
     const source = read("src/app/(app)/onboarding/page.tsx");
-    expect(source).toContain("<AddWalletTrigger");
     expect(source).toContain("<AddHouseholdTrigger");
-    expect(source).not.toContain('"/wallets/new?scope=PERSONAL"');
-    expect(source).not.toContain('"/household/new"');
+    expect(source).not.toContain("<AddWalletTrigger");
   });
 
   it("AddWalletTrigger and AddHouseholdTrigger are each defined once and reused by every call site — never re-implemented per page", () => {

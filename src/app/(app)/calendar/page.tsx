@@ -16,7 +16,6 @@ import {
   shiftMonth,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
-import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
@@ -123,7 +122,6 @@ export default async function CalendarPage({
   const [
     events,
     archivedEvents,
-    financeItems,
     allTasks,
     allReminders,
     petCareRecords,
@@ -137,9 +135,6 @@ export default async function CalendarPage({
       : Promise.resolve([]),
     view === "calendar"
       ? listCalendarEvents(supabase, household?.id ?? null, user.id, true)
-      : Promise.resolve([]),
-    view === "calendar"
-      ? listCalendarFinanceItems(supabase, `${month}-01`, `${endMonth}-01`)
       : Promise.resolve([]),
     view === "calendar" || view === "tasks"
       ? listPlanTasks(supabase)
@@ -277,9 +272,6 @@ export default async function CalendarPage({
   const warrantyInventory = inventory.filter((item) =>
     isDateWithinDays(item.warranty_expires_on, today, 30),
   );
-  const financeDueToday = financeItems.filter(
-    (item) => item.date === today,
-  ).length;
   const cover = {
     calendar: {
       eyebrow: "สรุปแผนงานวันนี้",
@@ -289,7 +281,6 @@ export default async function CalendarPage({
         { value: todayEventCount, label: "กิจกรรม" },
         { value: todayTasks.length, label: "งานวันนี้" },
         { value: todayReminders.length, label: "เตือนวันนี้" },
-        { value: financeDueToday, label: "ครบกำหนด" },
       ],
     },
     tasks: {
@@ -393,7 +384,12 @@ export default async function CalendarPage({
             <AppIcon name="transfer" className="size-5 rotate-90" />
           </Link>
         ) : null}
-        <div className="absolute inset-x-4 bottom-4 grid grid-cols-4 gap-1.5">
+        <div
+          className="absolute inset-x-4 bottom-4 grid gap-1.5"
+          style={{
+            gridTemplateColumns: `repeat(${activeCover.metrics.length}, minmax(0, 1fr))`,
+          }}
+        >
           {activeCover.metrics.map((item) => (
             <div
               key={item.label}
@@ -411,7 +407,6 @@ export default async function CalendarPage({
       </section>
 
       <PlanTabs active={view} />
-
       {view === "calendar" ? (
         <>
           <AddCalendarEventFab />
@@ -420,7 +415,6 @@ export default async function CalendarPage({
             selected={selected}
             today={today}
             events={events}
-            financeItems={financeItems}
             tasks={allTasks}
             reminders={allReminders}
             petCareRecords={petCareRecords}
@@ -657,6 +651,13 @@ export default async function CalendarPage({
 
       {view === "shopping" && household ? (
         <>
+          {canEditHousehold ? (
+            <form id="shopping-receipt" action="/calendar/shopping/expense">
+              <button className="rounded-xl bg-finance-primary px-4 py-2 text-sm font-medium text-finance-primary-foreground">
+                ลงบิลรายการที่เลือก
+              </button>
+            </form>
+          ) : null}
           {canEditHousehold ? (
             <PlanCreateButton
               title="เพิ่มของที่ต้องซื้อ"

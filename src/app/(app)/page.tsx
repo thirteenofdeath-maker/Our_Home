@@ -1,6 +1,6 @@
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
@@ -10,13 +10,15 @@ import {
   bangkokDateKey,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
-import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
-import { listRecentFinanceTransactions } from "@/features/finance/api";
 import {
   getMyPrimaryHousehold,
   listHouseholdMembers,
 } from "@/features/household/api";
+import { listHouseholdExpenses } from "@/features/household-expenses/api";
+import { totalExpenseAmount } from "@/features/household-expenses/domain";
+import { ExpenseSetupNotice } from "@/features/household-expenses/ExpenseSetupNotice";
+import { ExpenseForm } from "@/features/household-expenses/ExpenseForm";
 import { listInventoryItems } from "@/features/inventory/api";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
@@ -30,10 +32,7 @@ import {
 } from "@/features/pets/domain/care-record";
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
-import { getFinanceReport } from "@/features/reports/api";
-import type { FinanceReport } from "@/features/reports/types";
 import { listShoppingItems } from "@/features/shopping/api";
-import { listMyWallets } from "@/features/wallets/api";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import {
   greetingForBangkok,
@@ -142,51 +141,18 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const today = bangkokDateKey(now);
   const tomorrow = shiftDate(today, 1);
   const upcomingEnd = shiftDate(today, 8);
-  const overdueStart = shiftDate(today, -365);
-  const todayStart = `${today}T00:00:00+07:00`;
-  const tomorrowStart = `${tomorrow}T00:00:00+07:00`;
 
-  const walletsPromise = listMyWallets(supabase);
   const householdPromise = getMyPrimaryHousehold(supabase, user.id);
   const profilePromise = getCurrentProfile(supabase, user.id);
   const tasksPromise = listPlanTasks(supabase);
   const remindersPromise = listPlanReminders(supabase);
-  const dueFinancePromise = listCalendarFinanceItems(
-    supabase,
-    overdueStart,
-    upcomingEnd,
-  );
-  const personalFinancePromise = getFinanceReport(
-    supabase,
-    "PERSONAL",
-    null,
-    todayStart,
-    tomorrowStart,
-  );
-  const recentTransactionsPromise = listRecentFinanceTransactions(supabase, {
-    limit: 5,
-  });
-  const [wallets, household] = await Promise.all([
-    walletsPromise,
-    householdPromise,
-  ]);
-
-  if (wallets.length === 0 && !household) {
-    redirect("/onboarding");
-  }
-
+  const household = await householdPromise;
   const householdId = household?.id ?? null;
 
   const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
-  const householdFinancePromise: Promise<FinanceReport | null> = householdId
-    ? getFinanceReport(
-        supabase,
-        "HOUSEHOLD",
-        householdId,
-        todayStart,
-        tomorrowStart,
-      )
-    : Promise.resolve(null);
+  const expensesPromise = householdId
+    ? listHouseholdExpenses(supabase, householdId, today.slice(0, 7))
+    : Promise.resolve([]);
   const petCarePromise: ReturnType<typeof listScheduledPetCareRecords> =
     householdId
       ? listScheduledPetCareRecords(
@@ -252,6 +218,19 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </p>
       </section>
 
+      {household ? (
+        <Suspense fallback={<HomeSecondarySkeleton />}>
+          <HomeExpenseSummary
+            expensesPromise={expensesPromise}
+            householdId={household.id}
+            userId={user.id}
+            today={today}
+            membersPromise={householdMembersPromise}
+            canEdit={household.myRole !== "observer"}
+          />
+        </Suspense>
+      ) : null}
+
       <Suspense fallback={<HomeTodaySkeleton />}>
         <HomeTodaySections
           today={today}
@@ -259,12 +238,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           eventsPromise={eventsPromise}
           tasksPromise={tasksPromise}
           remindersPromise={remindersPromise}
-          dueFinancePromise={dueFinancePromise}
           petCarePromise={petCarePromise}
           choresPromise={choresPromise}
           householdMembersPromise={householdMembersPromise}
-          personalFinancePromise={personalFinancePromise}
-          householdFinancePromise={householdFinancePromise}
           shoppingPromise={shoppingPromise}
           inventoryPromise={inventoryPromise}
         />
@@ -272,7 +248,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       <Suspense fallback={<HomeSecondarySkeleton />}>
         <HomeSecondarySections
-          recentTransactionsPromise={recentTransactionsPromise}
+          expensesPromise={expensesPromise}
           recentPetCareRecordsPromise={recentPetCareRecordsPromise}
         />
       </Suspense>
@@ -306,40 +282,15 @@ type CompactDailySummaryItem = Pick<
   "key" | "href" | "icon" | "label" | "detail"
 >;
 
-type FinanceDailySummaryItem = {
-  key: string;
-  currency: string;
-  personal: {
-    income: string;
-    expense: string;
-    due: number;
-  };
-  household: {
-    income: string;
-    expense: string;
-    due: number;
-  } | null;
-};
-
-const FINANCE_COMPLETE_STATUSES = new Set([
-  "PAID",
-  "POSTED",
-  "SKIPPED",
-  "RESOLVED",
-]);
-
 async function HomeTodaySections({
   today,
   tomorrow,
   eventsPromise,
   tasksPromise,
   remindersPromise,
-  dueFinancePromise,
   petCarePromise,
   choresPromise,
   householdMembersPromise,
-  personalFinancePromise,
-  householdFinancePromise,
   shoppingPromise,
   inventoryPromise,
 }: {
@@ -348,12 +299,9 @@ async function HomeTodaySections({
   eventsPromise: ReturnType<typeof listCalendarEvents>;
   tasksPromise: ReturnType<typeof listPlanTasks>;
   remindersPromise: ReturnType<typeof listPlanReminders>;
-  dueFinancePromise: ReturnType<typeof listCalendarFinanceItems>;
   petCarePromise: ReturnType<typeof listScheduledPetCareRecords>;
   choresPromise: ReturnType<typeof listChoreWorkspace>;
   householdMembersPromise: ReturnType<typeof listHouseholdMembers>;
-  personalFinancePromise: ReturnType<typeof getFinanceReport>;
-  householdFinancePromise: Promise<FinanceReport | null>;
   shoppingPromise: ReturnType<typeof listShoppingItems>;
   inventoryPromise: ReturnType<typeof listInventoryItems>;
 }) {
@@ -361,24 +309,18 @@ async function HomeTodaySections({
     events,
     tasks,
     reminders,
-    dueFinance,
     petCare,
     chores,
     householdMembers,
-    personalFinance,
-    householdFinance,
     shopping,
     inventory,
   ] = await Promise.all([
     eventsPromise,
     tasksPromise,
     remindersPromise,
-    dueFinancePromise,
     petCarePromise,
     choresPromise,
     householdMembersPromise,
-    personalFinancePromise,
-    householdFinancePromise,
     shoppingPromise,
     inventoryPromise,
   ]);
@@ -448,21 +390,6 @@ async function HomeTodaySections({
             completed: reminder.is_completed,
           };
         }),
-      ...dueFinance
-        .filter((item) => item.date === date)
-        .map((item) => ({
-          key: `finance-${item.source}-${item.sourceId}`,
-          href: item.href,
-          category: "การเงิน",
-          icon: "finance" as const,
-          title: item.title,
-          detail: FINANCE_COMPLETE_STATUSES.has(item.status)
-            ? "จัดการแล้ว"
-            : "ครบกำหนด",
-          timeLabel: "ทั้งวัน",
-          sortKey: "00:02",
-          completed: FINANCE_COMPLETE_STATUSES.has(item.status),
-        })),
       ...petCare
         .filter(
           (record) =>
@@ -564,25 +491,6 @@ async function HomeTodaySections({
           completed: false,
         };
       }),
-    ...dueFinance
-      .filter(
-        (item) =>
-          item.date < today && !FINANCE_COMPLETE_STATUSES.has(item.status),
-      )
-      .map((item) => {
-        const overdueDays = daysBetween(item.date, today);
-        return {
-          key: `overdue-finance-${item.source}-${item.sourceId}`,
-          href: item.href,
-          category: "การเงิน",
-          icon: "finance" as const,
-          title: item.title,
-          detail: `เลยกำหนด · ค้าง ${overdueDays} วัน`,
-          timeLabel: `${overdueDays} วัน`,
-          sortKey: `${item.date}-00:00`,
-          completed: false,
-        };
-      }),
   ].toSorted((a, b) => a.sortKey.localeCompare(b.sortKey));
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
   const attentionInventory = inventory.filter(
@@ -590,49 +498,6 @@ async function HomeTodaySections({
       isLowStock(item) ||
       isDateWithinDays(item.expiry_date, today, 30) ||
       isDateWithinDays(item.warranty_expires_on, today, 30),
-  );
-  const openFinanceDue = dueFinance.filter(
-    (item) =>
-      item.date === today && !FINANCE_COMPLETE_STATUSES.has(item.status),
-  );
-  const personalFinanceDue = openFinanceDue.filter(
-    (item) => item.scope === "PERSONAL",
-  ).length;
-  const householdFinanceDue = openFinanceDue.filter(
-    (item) => item.scope === "HOUSEHOLD",
-  ).length;
-  const financeCurrencies = [
-    ...new Set(
-      [...personalFinance.days, ...(householdFinance?.days ?? [])].map(
-        (item) => item.currency,
-      ),
-    ),
-  ].toSorted();
-  const financeSummaryItems: FinanceDailySummaryItem[] = financeCurrencies.map(
-    (currency) => {
-      const personal = personalFinance.days.find(
-        (item) => item.currency === currency,
-      ) ?? { income: "0.00", expense: "0.00" };
-      const household = householdFinance?.days.find(
-        (item) => item.currency === currency,
-      ) ?? { income: "0.00", expense: "0.00" };
-      return {
-        key: `finance-${currency}`,
-        currency,
-        personal: {
-          income: formatCurrency(personal.income, currency),
-          expense: formatCurrency(personal.expense, currency),
-          due: personalFinanceDue,
-        },
-        household: householdFinance
-          ? {
-              income: formatCurrency(household.income, currency),
-              expense: formatCurrency(household.expense, currency),
-              due: householdFinanceDue,
-            }
-          : null,
-      };
-    },
   );
   const todaySummary: DailySummaryItem[] = [
     ...(attentionInventory.length
@@ -683,17 +548,6 @@ async function HomeTodaySections({
           },
         ]
       : []),
-    ...(financeSummaryItems.length === 0
-      ? [
-          {
-            key: "finance-empty",
-            href: "/finance",
-            icon: "finance" as const,
-            label: "การเงินวันนี้",
-            detail: `ยังไม่มีรับ–จ่าย · ครบกำหนด ${personalFinanceDue + householdFinanceDue}`,
-          },
-        ]
-      : []),
   ];
   const currentWeek = weekDates(today);
 
@@ -705,7 +559,6 @@ async function HomeTodaySections({
         items={todayTimeline}
         summaryItems={todaySummary}
         compactSummaryItems={compactTodaySummary}
-        financeSummaryItems={financeSummaryItems}
         emptyText="วันนี้ยังไม่มีงานหรือนัดหมาย"
       />
 
@@ -773,17 +626,79 @@ async function HomeTodaySections({
   );
 }
 
+async function HomeExpenseSummary({
+  expensesPromise,
+  householdId,
+  userId,
+  today,
+  membersPromise,
+  canEdit,
+}: {
+  expensesPromise: ReturnType<typeof listHouseholdExpenses>;
+  householdId: string;
+  userId: string;
+  today: string;
+  membersPromise: ReturnType<typeof listHouseholdMembers>;
+  canEdit: boolean;
+}) {
+  const [expenses, members] = await Promise.all([
+    expensesPromise,
+    membersPromise,
+  ]);
+  if (expenses === null) return <ExpenseSetupNotice />;
+  return (
+    <Card className="landscape-span-full flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <Link
+          href="/calendar/expenses"
+          className="font-semibold text-finance-primary-strong"
+        >
+          ค่าใช้จ่ายบ้านเดือนนี้
+        </Link>
+        <p className="text-xl font-semibold tabular-nums">
+          {formatCurrency(totalExpenseAmount(expenses), "THB")}
+        </p>
+      </div>
+      {canEdit ? (
+        <FormSheetButton
+          sheetTitle="เพิ่มค่าใช้จ่าย"
+          tone="finance"
+          triggerClassName="rounded-xl bg-finance-primary px-3 py-2 text-sm font-medium text-finance-primary-foreground"
+          form={
+            <ExpenseForm
+              householdId={householdId}
+              defaultPayer={userId}
+              defaultDate={today}
+              members={members
+                .filter((member) => member.role !== "observer")
+                .map((member) => ({
+                  id: member.user_id,
+                  label:
+                    member.profile?.display_name ??
+                    member.profile?.email ??
+                    "สมาชิก",
+                }))}
+            />
+          }
+        >
+          + เพิ่มค่าใช้จ่าย
+        </FormSheetButton>
+      ) : null}
+    </Card>
+  );
+}
+
 async function HomeSecondarySections({
-  recentTransactionsPromise,
+  expensesPromise,
   recentPetCareRecordsPromise,
 }: {
-  recentTransactionsPromise: ReturnType<typeof listRecentFinanceTransactions>;
+  expensesPromise: ReturnType<typeof listHouseholdExpenses>;
   recentPetCareRecordsPromise: ReturnType<
     typeof listRecentHouseholdPetCareRecords
   >;
 }) {
-  const [recentTransactions, recentPetCareRecords] = await Promise.all([
-    recentTransactionsPromise,
+  const [expenses, recentPetCareRecords] = await Promise.all([
+    expensesPromise,
     recentPetCareRecordsPromise,
   ]);
   const recentPetCare = recentPetCareRecords.flatMap((record) =>
@@ -793,16 +708,16 @@ async function HomeSecondarySections({
   return (
     <TodaySection
       title="กิจกรรมล่าสุด"
-      href="/finance/transactions"
+      href="/calendar/expenses"
       linkLabel="ดูทั้งหมด"
     >
-      {recentTransactions.map((item) => (
+      {(expenses ?? []).slice(0, 5).map((item) => (
         <TodayItem
-          key={item.transactionId}
-          href={`/finance/transactions/${item.transactionId}`}
-          marker={item.creatorName ?? "การเงิน"}
-          title={item.title ?? item.categoryName ?? "รายการการเงิน"}
-          detail={formatCurrency(item.amount, item.currency)}
+          key={item.id}
+          href={`/calendar/expenses?expense=${item.id}`}
+          marker="ค่าใช้จ่ายบ้าน"
+          title={item.title}
+          detail={formatCurrency(item.amount, "THB")}
         />
       ))}
       {recentPetCare.map(({ pet, record }) => (
@@ -814,7 +729,7 @@ async function HomeSecondarySections({
           detail={petCareDateLabel(record.created_at)}
         />
       ))}
-      {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
+      {(expenses?.length ?? 0) === 0 && recentPetCare.length === 0 ? (
         <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
       ) : null}
     </TodaySection>
@@ -843,7 +758,6 @@ function TimelineCard({
   items,
   summaryItems = [],
   compactSummaryItems = [],
-  financeSummaryItems = [],
   emptyText,
   showProgress = true,
 }: {
@@ -852,7 +766,6 @@ function TimelineCard({
   items: TimelineItem[];
   summaryItems?: DailySummaryItem[];
   compactSummaryItems?: CompactDailySummaryItem[];
-  financeSummaryItems?: FinanceDailySummaryItem[];
   emptyText: string;
   showProgress?: boolean;
 }) {
@@ -934,39 +847,6 @@ function TimelineCard({
         </div>
       ) : null}
 
-      {financeSummaryItems.map((summary) => (
-        <section
-          key={summary.key}
-          aria-label={`การเงินวันนี้ ${summary.currency}`}
-          className="mt-2 rounded-[1rem] bg-finance-primary-soft/45 p-3"
-        >
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-finance-surface-strong text-finance-primary-strong">
-              <AppIcon name="finance" className="size-4" />
-            </span>
-            <p className="text-xs font-medium text-finance-muted">
-              การเงินวันนี้ · {summary.currency}
-            </p>
-          </div>
-          <div
-            className={`mt-2 grid gap-2 ${summary.household ? "grid-cols-2" : "grid-cols-1"}`}
-          >
-            <FinanceScopeSummary
-              href="/finance?scope=PERSONAL"
-              label="ส่วนตัว"
-              summary={summary.personal}
-            />
-            {summary.household ? (
-              <FinanceScopeSummary
-                href="/finance?scope=HOUSEHOLD"
-                label="ครอบครัว"
-                summary={summary.household}
-              />
-            ) : null}
-          </div>
-        </section>
-      ))}
-
       {compactSummaryItems.length ? (
         <div
           aria-label={`สถานะเรียบร้อย${title}`}
@@ -1044,36 +924,6 @@ function TimelineCard({
         </div>
       )}
     </Card>
-  );
-}
-
-function FinanceScopeSummary({
-  href,
-  label,
-  summary,
-}: {
-  href: string;
-  label: string;
-  summary: FinanceDailySummaryItem["personal"];
-}) {
-  return (
-    <Link
-      href={href}
-      className="min-w-0 rounded-[0.85rem] bg-finance-surface-strong/70 px-2.5 py-2 transition-colors hover:bg-finance-surface-strong"
-    >
-      <p className="text-xs font-semibold text-finance-text">{label}</p>
-      <p className="mt-1 truncate text-xs text-finance-muted">
-        รับ {summary.income}
-      </p>
-      <p className="truncate text-xs text-finance-muted">
-        จ่าย {summary.expense}
-      </p>
-      {summary.due ? (
-        <p className="mt-1 text-[11px] font-medium text-finance-primary-strong">
-          ครบกำหนด {summary.due}
-        </p>
-      ) : null}
-    </Link>
   );
 }
 
