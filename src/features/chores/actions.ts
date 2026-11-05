@@ -9,6 +9,7 @@ import type { ActionState } from "@/lib/types/action-state";
 import { resolveChoreSchedule } from "./schedule";
 import {
   claimChore,
+  clearOverdueChores,
   completeChore,
   createChoreTemplate,
   deleteChoreTemplate,
@@ -185,5 +186,35 @@ export async function deleteChoreTemplateAction(
   } catch (error) {
     logDatabaseErrorInDev("deleteChoreTemplateAction failed", error);
     return { error: "ลบตารางงานบ้านไม่สำเร็จ" };
+  }
+}
+
+export async function clearOverdueChoresAction(
+  _state: ActionState & { clearedCount?: number },
+  form: FormData,
+): Promise<ActionState & { clearedCount?: number }> {
+  const parsed = z
+    .object({
+      householdId: z.uuid(),
+      beforeDate: z.iso.date(),
+    })
+    .safeParse({
+      householdId: stringValue(form, "householdId"),
+      beforeDate: stringValue(form, "beforeDate"),
+    });
+  if (!parsed.success)
+    return { error: "ข้อมูลบ้านหรือวันที่ไม่ถูกต้อง กรุณาโหลดหน้าอีกครั้ง" };
+  try {
+    const { supabase } = await requireUser();
+    const clearedCount = await clearOverdueChores(
+      supabase,
+      parsed.data.householdId,
+      parsed.data.beforeDate,
+    );
+    refresh();
+    return { success: true, clearedCount };
+  } catch (error) {
+    logDatabaseErrorInDev("clearOverdueChoresAction failed", error);
+    return { error: "เคลียร์งานค้างไม่สำเร็จ กรุณาลองอีกครั้ง" };
   }
 }

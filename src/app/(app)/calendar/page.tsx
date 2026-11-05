@@ -16,10 +16,15 @@ import {
   shiftMonth,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
-import { listChoreWorkspace, materializeChores } from "@/features/chores/api";
+import {
+  countOverdueChores,
+  listChoreWorkspace,
+  materializeChores,
+} from "@/features/chores/api";
 import { toggleChoreTemplateAction } from "@/features/chores/actions";
 import { ChoreForm } from "@/features/chores/components/ChoreForm";
 import { DeleteChoreTemplateButton } from "@/features/chores/components/DeleteChoreTemplateButton";
+import { ClearOverdueChoresButton } from "@/features/chores/components/ClearOverdueChoresButton";
 import { ChoreOccurrenceCard } from "@/features/chores/components/ChoreOccurrenceCard";
 import {
   choreDayHeading,
@@ -161,6 +166,11 @@ export default async function CalendarPage({
       ? listHouseholdMembers(supabase, household.id)
       : Promise.resolve([]),
   ]);
+
+  const overdueChoreCount =
+    household && view === "chores"
+      ? await countOverdueChores(supabase, household.id, today)
+      : 0;
 
   const normalizedSearch = search.toLocaleLowerCase("th");
   const filteredTasks = allTasks.filter((task) => {
@@ -311,7 +321,7 @@ export default async function CalendarPage({
       subtitle: "แบ่งกันทำ บ้านก็เบาขึ้น",
       metrics: [
         { value: todayChores.length, label: "วันนี้" },
-        { value: overdueChores.length, label: "เลยกำหนด" },
+        { value: overdueChoreCount, label: "เลยกำหนด" },
         { value: upcomingChores.length, label: "14 วัน" },
         { value: completedChores.length, label: "เสร็จแล้ว" },
       ],
@@ -554,6 +564,13 @@ export default async function CalendarPage({
             </details>
           ) : null}
 
+          {canManageChores ? (
+            <ClearOverdueChoresButton
+              householdId={household.id}
+              beforeDate={today}
+              count={overdueChoreCount}
+            />
+          ) : null}
           {overdueChores.length ? (
             <section className="flex flex-col gap-3">
               <SectionHeading
