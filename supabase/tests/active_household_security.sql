@@ -103,6 +103,10 @@ begin
  photo:=h||'/'||(f->>'pet')||'/profile-'||gen_random_uuid()||'.jpg';
  insert into storage.objects(bucket_id,name) values('pet-photos',photo),('pet-photos',h||'/'||(f->>'pet')||'/profile.jpg');
  if (select count(*) from storage.objects where bucket_id='pet-photos' and name like h||'/%')<>2 then raise exception 'photo paths rejected'; end if;
+ perform public.update_pet((f->>'pet')::uuid,'Audit pet','CAT',null,'UNKNOWN',null,photo,array[]::uuid[]);
+ if (select photo_path from public.pets where id=(f->>'pet')::uuid)<>photo then raise exception 'versioned pet metadata rejected'; end if;
+ perform public.update_profile_details(h,'Audit admin',null,null,false,'#123456',(f->>'admin')||'/avatar-'||gen_random_uuid()||'.jpg');
+ if not exists(select 1 from public.profiles where id=(f->>'admin')::uuid and avatar_url like '%/avatar-%.jpg') then raise exception 'versioned avatar metadata rejected'; end if;
  perform set_config('request.jwt.claim.sub',f->>'observer',true);
  begin
   insert into storage.objects(bucket_id,name) values('pet-photos',h||'/'||(f->>'pet')||'/profile-'||gen_random_uuid()||'.jpg');
