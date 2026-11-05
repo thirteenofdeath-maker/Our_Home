@@ -38,7 +38,6 @@ describe("Today dashboard composition", () => {
     expect(source).toContain('category: "ปฏิทิน"');
     expect(source).toContain('category: "แผนงาน"');
     expect(source).toContain('category: "เตือนความจำ"');
-    expect(source).toContain('category: "การเงิน"');
     expect(source).toContain('category: "สัตว์เลี้ยง"');
     expect(source).toContain('category: "งานบ้าน"');
     expect(source).toContain('role="progressbar"');
@@ -47,16 +46,14 @@ describe("Today dashboard composition", () => {
     );
   });
 
-  it("shows one overdue dashboard for unfinished tasks, reminders, chores, and finance", () => {
+  it("shows one overdue dashboard for unfinished tasks, reminders, and chores", () => {
     expect(source).toContain("const overdueTimeline");
     expect(source).toContain("task.due_date < today");
     expect(source).toContain("reminderDate < today");
     expect(source).toContain("chore.due_date < today");
-    expect(source).toContain("item.date < today");
     expect(source).toContain("daysBetween");
     expect(source).toContain("showProgress={false}");
     expect(source).toContain('href: "/calendar?view=chores"');
-    expect(source).toContain("href: item.href");
   });
 
   it("shows the assigned household member on every chore timeline", () => {
@@ -68,36 +65,23 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("line-clamp-2 text-xs text-finance-muted");
   });
 
-  it("keeps household alerts and finance summary inside today's card", () => {
+  it("keeps household alerts inside today's card", () => {
     expect(source).toContain("const todaySummary");
     expect(source).toContain("summaryItems={todaySummary}");
     expect(source).toContain('label: "คลังของ"');
     expect(source).toContain('label: "รายการซื้อของ"');
-    expect(source).toContain("การเงินวันนี้");
-    expect(source).toContain("openFinanceDue");
-    expect(source).toContain("personalFinancePromise");
-    expect(source).toContain("householdFinancePromise");
-    expect(source).toContain("FinanceScopeSummary");
-    expect(source).toContain('label="ส่วนตัว"');
-    expect(source).toContain('label="ครอบครัว"');
-    expect(source).toContain('href="/finance?scope=PERSONAL"');
-    expect(source).toContain('href="/finance?scope=HOUSEHOLD"');
     expect(source).toContain("compactTodaySummary");
     expect(source).toContain('detail: "ซื้อครบแล้ว"');
     expect(source).toContain("grid-cols-1 gap-1.5 sm:grid-cols-2");
-    expect(source).not.toContain("min-[380px]:grid-cols-2");
   });
 
-  it("uses the scoped report read model so personal-funded household expenses appear once under household", () => {
+  it("uses the shared expense ledger for the monthly household total", () => {
     expect(source).toContain(
-      'getFinanceReport(\n    supabase,\n    "PERSONAL"',
+      "listHouseholdExpenses(supabase, householdId, today.slice(0, 7))",
     );
-    expect(source).toContain(
-      'getFinanceReport(\n        supabase,\n        "HOUSEHOLD"',
-    );
-    expect(source).not.toContain("getFinanceSummary");
-    expect(source).toContain('item.scope === "PERSONAL"');
-    expect(source).toContain('item.scope === "HOUSEHOLD"');
+    expect(source).toContain("totalExpenseAmount(expenses)");
+    expect(source).not.toContain("getFinanceReport");
+    expect(source).not.toContain("listMyWallets");
   });
 
   it("streams the cover before daily and secondary dashboard data", () => {
@@ -110,9 +94,7 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("async function HomeTodaySections");
     expect(source).toContain("async function HomeSecondarySections");
     expect(source).toContain("eventsPromise={eventsPromise}");
-    expect(source).toContain(
-      "recentTransactionsPromise={recentTransactionsPromise}",
-    );
+    expect(source).toContain("expensesPromise={expensesPromise}");
   });
 
   it("composes source modules without writing duplicate records", () => {
@@ -120,9 +102,7 @@ describe("Today dashboard composition", () => {
       "listCalendarEvents",
       "listPlanTasks",
       "listPlanReminders",
-      "listCalendarFinanceItems",
-      "getFinanceReport",
-      "listRecentFinanceTransactions",
+      "listHouseholdExpenses",
       "listRecentHouseholdPetCareRecords",
       "listChoreWorkspace",
       "listShoppingItems",

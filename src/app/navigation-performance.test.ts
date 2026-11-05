@@ -22,23 +22,20 @@ describe("native-like main navigation performance", () => {
     expect(join).toBeGreaterThan(reads);
   });
 
-  it("starts independent home reads before the onboarding gate", () => {
+  it("starts independent home reads while resolving the household", () => {
     const home = read("src/app/(app)/page.tsx");
-    const profileStart = home.indexOf("const profilePromise =");
-    const tasksStart = home.indexOf("const tasksPromise =");
-    const financeStart = home.indexOf("const personalFinancePromise =");
-    const onboardingGate = home.indexOf('redirect("/onboarding")');
-    const profileJoin = home.indexOf(
-      "const profile = await profilePromise;",
-      onboardingGate,
+    const householdJoin = home.indexOf(
+      "const household = await householdPromise;",
     );
-
-    expect(profileStart).toBeGreaterThan(-1);
-    expect(tasksStart).toBeGreaterThan(profileStart);
-    expect(financeStart).toBeGreaterThan(tasksStart);
-    expect(financeStart).toBeLessThan(onboardingGate);
-    expect(onboardingGate).toBeGreaterThan(profileStart);
-    expect(profileJoin).toBeGreaterThan(onboardingGate);
+    for (const readStart of [
+      "const profilePromise =",
+      "const tasksPromise =",
+      "const remindersPromise =",
+    ]) {
+      const start = home.indexOf(readStart);
+      expect(start).toBeGreaterThan(-1);
+      expect(start).toBeLessThan(householdJoin);
+    }
   });
 
   it("streams home dashboard groups behind independent suspense boundaries", () => {

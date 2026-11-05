@@ -14,14 +14,13 @@ import {
  * Pure navigation, nothing else — the "+" quick-add action lives in a
  * separate FloatingActionButton layer now (see FloatingActionButton.tsx
  * and each module's own FAB usage), never a cell inside this grid. Exactly
- * these five real destinations, always rendered as links, on every module
+ * these four real destinations, always rendered as links, on every module
  * (including deep/nested routes within one, AND every Finance-owned
  * secondary route family like /wallets or /categories — see AppShell.tsx
  * and app-section.ts, the shared source of truth both read).
  */
 export const NAV_ITEMS = [
   { href: "/", label: "หน้าหลัก", icon: "home", section: "home" },
-  { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
   { href: "/calendar", label: "แผนงาน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
   {
@@ -90,7 +89,7 @@ export function BottomNav() {
     >
       <ul
         className={cn(
-          "bottom-nav-list mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-x-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
+          "bottom-nav-list mx-auto grid max-w-xl grid-cols-4 items-center gap-1 overflow-x-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)]",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

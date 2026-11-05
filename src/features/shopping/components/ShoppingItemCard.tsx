@@ -33,7 +33,9 @@ export function ShoppingItemCard({
     (member) => member.user_id === item.purchased_by,
   );
   const purchased = Boolean(item.purchased_at);
-  const cannotUncheck = purchased && Boolean(item.expense_transaction_id);
+  const cannotUncheck =
+    purchased &&
+    Boolean(item.expense_transaction_id || item.household_expense_id);
 
   return (
     <Card
@@ -98,22 +100,35 @@ export function ShoppingItemCard({
             ) : (
               <span />
             )}
-            {canEdit || item.expense_transaction_id ? (
+            {canEdit || item.household_expense_id ? (
               <div className="flex shrink-0 items-center gap-1.5">
-                {item.expense_transaction_id ? (
+                {item.household_expense_id ? (
                   <Link
-                    href="/finance?scope=HOUSEHOLD"
+                    href={`/calendar/expenses?expense=${item.household_expense_id}`}
                     className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
                   >
-                    ดูในการเงินครอบครัว
+                    ดูค่าใช้จ่าย
                   </Link>
                 ) : canEdit ? (
-                  <Link
-                    href={`/calendar/shopping/${item.id}/expense`}
-                    className="rounded-full bg-finance-primary-soft px-2.5 py-1.5 text-xs font-medium text-finance-primary-strong"
-                  >
-                    สร้างรายจ่าย
-                  </Link>
+                  <>
+                    <label className="flex items-center gap-1 text-xs">
+                      <input
+                        type="checkbox"
+                        form="shopping-receipt"
+                        name="item"
+                        value={item.id}
+                      />
+                      เลือกเข้าบิล
+                    </label>
+                    {purchased ? (
+                      <Link
+                        href={`/calendar/shopping/expense?item=${item.id}`}
+                        className="text-xs font-medium text-finance-primary-strong"
+                      >
+                        ลงค่าใช้จ่าย
+                      </Link>
+                    ) : null}
+                  </>
                 ) : null}
                 {canEdit ? (
                   <details className="group relative">
