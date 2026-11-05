@@ -411,7 +411,10 @@ async function HomeTodaySections({
           };
         }),
       ...chores.occurrences
-        .filter((item) => item.due_date === date)
+        .filter(
+          (item) =>
+            item.due_date === date && item.completion_kind !== "CLEARED",
+        )
         .map((chore) => {
           const template = choreTemplates.get(chore.template_id);
           const time = template?.due_time?.slice(0, 5) ?? null;

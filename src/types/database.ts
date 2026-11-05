@@ -377,6 +377,7 @@ export interface Database {
           taken_over_by: string | null;
           completed_by: string | null;
           completed_at: string | null;
+          completion_kind: "DONE" | "CLEARED";
           created_at: string;
           updated_at: string;
         };
@@ -1644,6 +1645,10 @@ export interface Database {
       claim_chore_occurrence: {
         Args: { p_occurrence_id: string };
         Returns: undefined;
+      };
+      clear_overdue_chores: {
+        Args: { p_household_id: string; p_before_date: string };
+        Returns: number;
       };
       complete_chore_occurrence: {
         Args: { p_occurrence_id: string };

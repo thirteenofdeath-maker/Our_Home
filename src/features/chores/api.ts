@@ -137,3 +137,31 @@ export async function deleteChoreTemplate(
   });
   if (error) throw error;
 }
+
+export async function countOverdueChores(
+  supabase: Client,
+  householdId: string,
+  beforeDate: string,
+) {
+  const { count, error } = await supabase
+    .from("chore_occurrences")
+    .select("id", { count: "exact", head: true })
+    .eq("household_id", householdId)
+    .is("completed_at", null)
+    .lt("due_date", beforeDate);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function clearOverdueChores(
+  supabase: Client,
+  householdId: string,
+  beforeDate: string,
+) {
+  const { data, error } = await supabase.rpc("clear_overdue_chores", {
+    p_household_id: householdId,
+    p_before_date: beforeDate,
+  });
+  if (error) throw error;
+  return data;
+}

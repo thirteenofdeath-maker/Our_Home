@@ -23,6 +23,12 @@ export function ChoreOccurrenceCard({
   canParticipate: boolean;
   showDate?: boolean;
 }) {
+  const cleared = occurrence.completion_kind === "CLEARED";
+  const resolvedBy = members.find(
+    (member) => member.user_id === occurrence.completed_by,
+  );
+  const resolvedName =
+    resolvedBy?.profile?.display_name ?? resolvedBy?.profile?.email ?? "สมาชิก";
   const completed = Boolean(occurrence.completed_at);
   const assignedName = memberName(members, occurrence.assigned_member_id);
   const wasTakenOver =
@@ -36,7 +42,7 @@ export function ChoreOccurrenceCard({
         <span
           className={`flex size-10 shrink-0 items-center justify-center rounded-full text-lg ${completed ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary-strong"}`}
         >
-          {completed ? "✓" : "•"}
+          {cleared ? "–" : completed ? "✓" : "•"}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
@@ -99,7 +105,7 @@ export function ChoreOccurrenceCard({
           ) : null}
           {completed ? (
             <p className="mt-2 text-xs font-medium text-primary">
-              เสร็จโดย {assignedName}
+              {cleared ? "เคลียร์งานค้างโดย" : "เสร็จโดย"} {resolvedName}
             </p>
           ) : null}
         </div>
