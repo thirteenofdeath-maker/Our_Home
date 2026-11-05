@@ -5,6 +5,10 @@ import { Suspense, type ReactNode } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
+import {
+  CompletionButton,
+  type CompletionTarget,
+} from "@/features/today/components/CompletionButton";
 import { listCalendarEvents } from "@/features/calendar/api";
 import {
   bangkokDateKey,
@@ -233,6 +237,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       <Suspense fallback={<HomeTodaySkeleton />}>
         <HomeTodaySections
+          canParticipate={Boolean(household && household.myRole !== "observer")}
           today={today}
           tomorrow={tomorrow}
           eventsPromise={eventsPromise}
@@ -266,6 +271,7 @@ type TimelineItem = {
   timeLabel: string;
   sortKey: string;
   completed: boolean | null;
+  completion?: CompletionTarget;
 };
 
 type DailySummaryItem = {
@@ -283,6 +289,7 @@ type CompactDailySummaryItem = Pick<
 >;
 
 async function HomeTodaySections({
+  canParticipate,
   today,
   tomorrow,
   eventsPromise,
@@ -294,6 +301,7 @@ async function HomeTodaySections({
   shoppingPromise,
   inventoryPromise,
 }: {
+  canParticipate: boolean;
   today: string;
   tomorrow: string;
   eventsPromise: ReturnType<typeof listCalendarEvents>;
@@ -370,6 +378,10 @@ async function HomeTodaySections({
             : "ทั้งวัน",
           sortKey: task.due_time?.slice(0, 5) ?? "00:01",
           completed: task.is_completed,
+          completion:
+            task.scope === "PERSONAL" || canParticipate
+              ? { kind: "task" as const, id: task.id }
+              : undefined,
         })),
       ...reminders
         .filter(
@@ -388,6 +400,10 @@ async function HomeTodaySections({
             timeLabel: `${time} น.`,
             sortKey: time,
             completed: reminder.is_completed,
+            completion:
+              reminder.scope === "PERSONAL" || canParticipate
+                ? { kind: "reminder" as const, id: reminder.id }
+                : undefined,
           };
         }),
       ...petCare
@@ -428,6 +444,9 @@ async function HomeTodaySections({
             timeLabel: time ? `${time} น.` : "ทั้งวัน",
             sortKey: time ?? "00:03",
             completed: Boolean(chore.completed_at),
+            completion: canParticipate
+              ? { kind: "chore" as const, id: chore.id }
+              : undefined,
           };
         }),
     ].toSorted((a, b) =>
@@ -455,6 +474,10 @@ async function HomeTodaySections({
           timeLabel: `${overdueDays} วัน`,
           sortKey: `${task.due_date}-${task.due_time ?? "00:00"}`,
           completed: false,
+          completion:
+            task.scope === "PERSONAL" || canParticipate
+              ? { kind: "task" as const, id: task.id }
+              : undefined,
         };
       }),
     ...reminders
@@ -475,6 +498,10 @@ async function HomeTodaySections({
           timeLabel: `${overdueDays} วัน`,
           sortKey: toBangkokInput(reminder.reminds_at),
           completed: false,
+          completion:
+            reminder.scope === "PERSONAL" || canParticipate
+              ? { kind: "reminder" as const, id: reminder.id }
+              : undefined,
         };
       }),
     ...chores.occurrences
@@ -492,6 +519,9 @@ async function HomeTodaySections({
           timeLabel: `${overdueDays} วัน`,
           sortKey: `${chore.due_date}-${template?.due_time ?? "00:00"}`,
           completed: false,
+          completion: canParticipate
+            ? { kind: "chore" as const, id: chore.id }
+            : undefined,
         };
       }),
   ].toSorted((a, b) => a.sortKey.localeCompare(b.sortKey));
@@ -900,24 +930,31 @@ function TimelineCard({
                   )}
                 </span>
               </div>
-              <Link
-                href={item.href}
-                className={`mb-2 min-w-0 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55 ${item.completed ? "opacity-65" : ""}`}
+              <div
+                className={`mb-2 flex min-w-0 items-center gap-2 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55 ${item.completed ? "opacity-65" : ""}`}
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 rounded-full bg-finance-primary-soft px-2 py-0.5 text-[10px] font-medium text-finance-primary-strong">
-                    {item.category}
-                  </span>
-                  <p
-                    className={`min-w-0 flex-1 truncate font-medium text-finance-text ${item.completed ? "line-through" : ""}`}
-                  >
-                    {item.title}
+                <Link href={item.href} className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 rounded-full bg-finance-primary-soft px-2 py-0.5 text-[10px] font-medium text-finance-primary-strong">
+                      {item.category}
+                    </span>
+                    <p
+                      className={`min-w-0 flex-1 truncate font-medium text-finance-text ${item.completed ? "line-through" : ""}`}
+                    >
+                      {item.title}
+                    </p>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs text-finance-muted">
+                    {item.detail}
                   </p>
-                </div>
-                <p className="mt-1 line-clamp-2 text-xs text-finance-muted">
-                  {item.detail}
-                </p>
-              </Link>
+                </Link>
+                {item.completion && !item.completed ? (
+                  <CompletionButton
+                    target={item.completion}
+                    title={item.title}
+                  />
+                ) : null}
+              </div>
             </li>
           ))}
         </ol>

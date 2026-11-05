@@ -884,3 +884,34 @@ input[type="week"]::-webkit-datetime-edit {
     transform: none;
   }
 }
+
+/* A single press response covers native buttons, navigation and custom
+   controls. Independent scale preserves existing transforms and layout. */
+:where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+:where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary):not(:disabled):not([aria-disabled="true"]):active {
+  filter: brightness(0.9);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary) {
+    transition: scale 120ms ease-out, filter 120ms ease-out, background-color 120ms ease-out, opacity 120ms ease-out;
+  }
+
+  :where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary):not(:disabled):not([aria-disabled="true"]):active {
+    scale: 0.97;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary) {
+    transition: none;
+  }
+  :where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary):active {
+    transform: none;
+    scale: none;
+  }
+}

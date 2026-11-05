@@ -130,6 +130,7 @@ export async function togglePlanTaskAction(form: FormData) {
     const task = await getPlanTask(supabase, id);
     if (!task) return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
     await setPlanTaskCompleted(supabase, task, completed);
+    revalidatePath("/");
     revalidatePath("/calendar");
     revalidatePath(`/calendar/tasks/${id}`);
     return { success: true };

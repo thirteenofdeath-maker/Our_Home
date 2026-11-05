@@ -1,5 +1,6 @@
 import { ActionForm } from "@/components/ui/ActionForm";
 import { Card } from "@/components/ui/Card";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { HouseholdMemberWithProfile } from "@/features/household/types";
 import { claimChoreAction, completeChoreAction } from "../actions";
 import type { ChoreOccurrence, ChoreTemplate } from "../types";
@@ -79,7 +80,7 @@ export function ChoreOccurrenceCard({
             </p>
           ) : null}
           {!completed && canParticipate ? (
-            <div className="mt-3 flex gap-3 border-t border-border/70 pt-3 text-sm font-medium">
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-sm font-medium">
               {occurrence.assigned_member_id !== currentMemberId ? (
                 <ActionForm action={claimChoreAction}>
                   <input
@@ -87,9 +88,12 @@ export function ChoreOccurrenceCard({
                     name="occurrenceId"
                     value={occurrence.id}
                   />
-                  <button type="submit" className="text-primary">
+                  <SubmitButton
+                    variant="secondary"
+                    className="w-auto rounded-full border border-primary/20 px-4"
+                  >
                     รับงานแทน
-                  </button>
+                  </SubmitButton>
                 </ActionForm>
               ) : null}
               <ActionForm action={completeChoreAction}>
@@ -98,9 +102,10 @@ export function ChoreOccurrenceCard({
                   name="occurrenceId"
                   value={occurrence.id}
                 />
-                <button type="submit" className="text-primary">
+                <SubmitButton className="w-auto rounded-full px-4">
+                  <span aria-hidden="true">✓</span>
                   ทำเสร็จแล้ว
-                </button>
+                </SubmitButton>
               </ActionForm>
             </div>
           ) : null}
