@@ -14,7 +14,7 @@ import {
   countFamilyMembers,
 } from "@/features/household/domain/member";
 import { requireUser } from "@/lib/auth/require-user";
-import { listRecentFinanceTransactions } from "@/features/finance/api";
+import { listRecentHouseholdExpenses } from "@/features/household-expenses/api";
 import { listRecentHouseholdPetCareRecords } from "@/features/pets/api";
 import { PET_CARE_RECORD_LABEL } from "@/features/pets/domain/care-record";
 import Link from "next/link";
@@ -28,7 +28,7 @@ export default async function HouseholdPage() {
     return (
       <EmptyState
         title="ยังไม่มีครอบครัว"
-        description="สร้างครอบครัวเพื่อแชร์กระเป๋าเงินและหมวดหมู่ร่วมกัน"
+        description="สร้างครอบครัวเพื่อแบ่งงานและดูแลบ้านร่วมกัน"
         action={
           <AddHouseholdTrigger triggerClassName="flex h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground">
             สร้างครอบครัว
@@ -41,11 +41,7 @@ export default async function HouseholdPage() {
   const [members, petRecords, recentTransactions] = await Promise.all([
     listHouseholdMembers(supabase, household.id, { includeObservers: true }),
     listRecentHouseholdPetCareRecords(supabase, household.id, 5),
-    listRecentFinanceTransactions(supabase, {
-      limit: 5,
-      scope: "HOUSEHOLD",
-      householdId: household.id,
-    }),
+    listRecentHouseholdExpenses(supabase, household.id, 5),
   ]);
   // Same permission rule that already gates the "เพิ่มสมาชิก" AddMemberForm
   // on /household/members (canInviteRole(role, "member") is true for
@@ -126,7 +122,7 @@ export default async function HouseholdPage() {
                 </h2>
               </div>
               <p className="mt-1 text-sm text-finance-muted">
-                มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับงานและการเงินส่วนตัว
+                มีเพียงคุณที่ดูและแก้ไขได้ เหมาะกับงานและรายการเตือนส่วนตัว
               </p>
             </div>
             <div className="rounded-[1.4rem] bg-finance-primary-soft p-4 shadow-card">
@@ -151,11 +147,11 @@ export default async function HouseholdPage() {
             </div>
             {[
               ...recentTransactions.map((item) => ({
-                id: `finance-${item.transactionId}`,
-                href: `/finance/transactions/${item.transactionId}`,
-                title: item.title ?? item.categoryName ?? "รายการการเงิน",
-                detail: `${item.creatorName ?? "สมาชิก"} · การเงิน`,
-                at: item.occurredAt,
+                id: `expense-${item.id}`,
+                href: `/calendar/expenses?expense=${item.id}`,
+                title: item.title,
+                detail: `${members.find((member) => member.user_id === item.created_by)?.profile?.display_name ?? "สมาชิก"} · ค่าใช้จ่ายบ้าน`,
+                at: `${item.paid_on}T00:00:00+07:00`,
               })),
               ...petRecords.map((record) => ({
                 id: `pet-${record.id}`,

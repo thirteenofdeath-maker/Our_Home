@@ -5,9 +5,8 @@ import { useActionState, useState } from "react";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { useCloseFormSheetOnSuccess } from "@/components/ui/FormSheetButton";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import type { FinanceRecentTransaction } from "@/features/finance/types";
 import { initialActionState } from "@/lib/types/action-state";
-import { formatCurrency } from "@/lib/utils/money";
+import Link from "next/link";
 
 import {
   createPetCareRecordAction,
@@ -22,11 +21,9 @@ import type { PetCareRecordWithDocument } from "../types";
 
 export function PetCareRecordForm({
   petId,
-  transactions,
   record,
 }: {
   petId: string;
-  transactions: FinanceRecentTransaction[];
   record?: PetCareRecordWithDocument;
 }) {
   const [state, action] = useActionState(
@@ -38,9 +35,17 @@ export function PetCareRecordForm({
   );
   useCloseFormSheetOnSuccess(state.success);
   const suffix = record?.id ?? "new";
-  const hasCurrentTransaction = transactions.some(
-    (transaction) => transaction.transactionId === record?.transaction_id,
-  );
+
+  if (record?.record_type === "EXPENSE") {
+    return (
+      <p className="text-sm text-finance-muted">
+        รายการนี้เป็นค่าใช้จ่ายจากระบบเดิม ดูและบันทึกค่าใช้จ่ายปัจจุบันได้ที่{" "}
+        <Link className="underline" href="/calendar/expenses">
+          ค่าใช้จ่ายบ้าน
+        </Link>
+      </p>
+    );
+  }
 
   return (
     <form
@@ -58,11 +63,13 @@ export function PetCareRecordForm({
           value={type}
           onChange={(event) => setType(event.target.value as typeof type)}
         >
-          {PET_CARE_RECORD_TYPES.map((value) => (
-            <option key={value} value={value}>
-              {PET_CARE_RECORD_LABEL[value]}
-            </option>
-          ))}
+          {PET_CARE_RECORD_TYPES.filter((kind) => kind !== "EXPENSE").map(
+            (value) => (
+              <option key={value} value={value}>
+                {PET_CARE_RECORD_LABEL[value]}
+              </option>
+            ),
+          )}
         </Select>
       </Field>
       <Field label="ชื่อรายการ" htmlFor={`pet-care-title-${suffix}`}>
@@ -180,39 +187,14 @@ export function PetCareRecordForm({
       ) : (
         <input type="hidden" name="provider" value="" />
       )}
-      {type === "EXPENSE" ? (
-        <Field
-          label="เชื่อมกับรายการการเงิน"
-          htmlFor={`pet-care-transaction-${suffix}`}
-        >
-          <Select
-            id={`pet-care-transaction-${suffix}`}
-            name="transactionId"
-            required
-            defaultValue={record?.transaction_id ?? ""}
-          >
-            <option value="" disabled>
-              เลือกรายการ
-            </option>
-            {record?.transaction_id && !hasCurrentTransaction ? (
-              <option value={record.transaction_id}>รายการการเงินเดิม</option>
-            ) : null}
-            {transactions.map((transaction) => (
-              <option
-                key={transaction.transactionId}
-                value={transaction.transactionId}
-              >
-                {transaction.title ??
-                  transaction.categoryName ??
-                  "รายการการเงิน"}{" "}
-                · {formatCurrency(transaction.amount, transaction.currency)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      ) : (
-        <input type="hidden" name="transactionId" value="" />
-      )}
+      <input type="hidden" name="transactionId" value="" />
+      <p className="text-sm text-finance-muted">
+        ค่าใช้จ่ายสัตว์เลี้ยงบันทึกที่{" "}
+        <Link className="underline" href="/calendar/expenses">
+          ค่าใช้จ่ายบ้าน
+        </Link>{" "}
+        โดยเลือกหมวดสัตว์เลี้ยง
+      </p>
       {record ? (
         <p className="rounded-control bg-finance-primary-soft px-4 py-3 text-sm text-finance-muted">
           {record.document_path

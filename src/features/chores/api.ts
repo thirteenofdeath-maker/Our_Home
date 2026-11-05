@@ -225,3 +225,17 @@ export async function clearOverdueChores(
   if (error) throw error;
   return data;
 }
+
+export async function countCompletedChores(
+  client: Client,
+  householdId: string,
+) {
+  const { count, error } = await client
+    .from("chore_occurrences")
+    .select("id", { count: "exact", head: true })
+    .eq("household_id", householdId)
+    .not("completed_at", "is", null)
+    .eq("completion_kind", "DONE");
+  if (error) throw error;
+  return count ?? 0;
+}

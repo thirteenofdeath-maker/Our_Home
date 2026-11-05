@@ -29,13 +29,34 @@ describe("pet care record validation", () => {
   });
 
   it("requires a positive weight and keeps its unit", () => {
-    expect(petCareRecordSchema.safeParse({ ...base, recordType: "WEIGHT", value: "0" }).success).toBe(false);
-    expect(petCareRecordSchema.parse({ ...base, recordType: "WEIGHT", value: "4.25", unit: "kg" })).toMatchObject({ value: 4.25, unit: "kg" });
+    expect(
+      petCareRecordSchema.safeParse({
+        ...base,
+        recordType: "WEIGHT",
+        value: "0",
+      }).success,
+    ).toBe(false);
+    expect(
+      petCareRecordSchema.parse({
+        ...base,
+        recordType: "WEIGHT",
+        value: "4.25",
+        unit: "kg",
+      }),
+    ).toMatchObject({ value: 4.25, unit: "kg" });
   });
 
-  it("requires an existing finance transaction for expenses", () => {
-    expect(petCareRecordSchema.safeParse({ ...base, recordType: "EXPENSE" }).success).toBe(false);
-    expect(petCareRecordSchema.safeParse({ ...base, recordType: "EXPENSE", transactionId: "00000000-0000-4000-8000-000000000002" }).success).toBe(true);
+  it("routes expenses to the household expense system", () => {
+    expect(
+      petCareRecordSchema.safeParse({ ...base, recordType: "EXPENSE" }).success,
+    ).toBe(false);
+    expect(
+      petCareRecordSchema.safeParse({
+        ...base,
+        recordType: "EXPENSE",
+        transactionId: "00000000-0000-4000-8000-000000000002",
+      }).success,
+    ).toBe(false);
   });
 
   it("calculates the next care date when an interval is selected", () => {
@@ -50,12 +71,24 @@ describe("pet care record validation", () => {
 
 describe("pet care document rules", () => {
   it("allows supported files up to 15 MB", () => {
-    expect(validatePetDocument({ type: "application/pdf", size: MAX_PET_DOCUMENT_BYTES })).toBeNull();
+    expect(
+      validatePetDocument({
+        type: "application/pdf",
+        size: MAX_PET_DOCUMENT_BYTES,
+      }),
+    ).toBeNull();
     expect(validatePetDocument({ type: "image/gif", size: 1 })).toMatch(/JPEG/);
-    expect(validatePetDocument({ type: "image/png", size: MAX_PET_DOCUMENT_BYTES + 1 })).toMatch(/15 MB/);
+    expect(
+      validatePetDocument({
+        type: "image/png",
+        size: MAX_PET_DOCUMENT_BYTES + 1,
+      }),
+    ).toMatch(/15 MB/);
   });
 
   it("scopes storage paths to household, pet, and record", () => {
-    expect(petDocumentPath("household", "pet", "record", "application/pdf")).toBe("household/pet/record/document.pdf");
+    expect(
+      petDocumentPath("household", "pet", "record", "application/pdf"),
+    ).toBe("household/pet/record/document.pdf");
   });
 });

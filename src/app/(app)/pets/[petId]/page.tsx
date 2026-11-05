@@ -7,7 +7,6 @@ import { AppIcon } from "@/components/ui/AppIcon";
 import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { canInviteRole } from "@/features/household/domain/member";
-import { listRecentFinanceTransactions } from "@/features/finance/api";
 import { archivePetAction } from "@/features/pets/actions";
 import {
   getPet,
@@ -28,19 +27,15 @@ export default async function PetDetailPage({
   const { supabase, user } = await requireUser();
   const pet = await getPet(supabase, petId);
   if (!pet) notFound();
-  const [role, records, recentTransactions] = await Promise.all([
+  const [role, records] = await Promise.all([
     getPetHouseholdRole(supabase, pet.household_id, user.id),
     listPetCareRecords(supabase, pet.id),
-    listRecentFinanceTransactions(supabase, { limit: 30 }),
   ]);
   if (!role) notFound();
   const canManage = canInviteRole(role, "member");
   const age = ageFromBirthday(pet.birthday);
   const latestWeight = records.find(
     (record) => record.record_type === "WEIGHT",
-  );
-  const expenseTransactions = recentTransactions.filter(
-    (transaction) => transaction.transactionType === "EXPENSE",
   );
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -51,12 +46,7 @@ export default async function PetDetailPage({
           triggerClassName="app-fab fixed z-20 flex size-14 items-center justify-center rounded-full bg-finance-primary text-finance-primary-foreground shadow-[0_8px_24px_rgb(0_0_0_/_0.24)] transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-finance-primary bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]"
           sheetTitle="เพิ่มบันทึกการดูแล"
           tone="finance"
-          form={
-            <PetCareRecordForm
-              petId={pet.id}
-              transactions={expenseTransactions}
-            />
-          }
+          form={<PetCareRecordForm petId={pet.id} />}
         >
           <AppIcon name="plus" />
         </FormSheetButton>
@@ -111,7 +101,6 @@ export default async function PetDetailPage({
           userId={user.id}
           canManageAll={canManage}
           canEditOwn={role === "member"}
-          transactions={expenseTransactions}
         />
       </section>
       {canManage ? (
