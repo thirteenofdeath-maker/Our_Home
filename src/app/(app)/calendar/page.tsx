@@ -22,6 +22,7 @@ import {
 } from "@/features/calendar/domain/calendar";
 import {
   countOverdueChores,
+  countCompletedChores,
   listChoreWorkspace,
   materializeChores,
 } from "@/features/chores/api";
@@ -266,9 +267,10 @@ export default async function CalendarPage({
   const todayChores = chores.occurrences.filter(
     (item) => item.due_date === today,
   );
-  const completedChores = chores.occurrences.filter(
-    (item) => item.completed_at && item.completion_kind === "DONE",
-  );
+  const completedChoreCount =
+    household && view === "chores"
+      ? await countCompletedChores(supabase, household.id)
+      : 0;
   const shoppingBudget =
     summary.shopping.currencies === 1
       ? new Intl.NumberFormat("th-TH", {
@@ -324,7 +326,7 @@ export default async function CalendarPage({
         { value: todayChores.length, label: "วันนี้" },
         { value: overdueChoreCount, label: "เลยกำหนด" },
         { value: upcomingChores.length, label: "14 วัน" },
-        { value: completedChores.length, label: "เสร็จแล้ว" },
+        { value: completedChoreCount, label: "เสร็จแล้ว" },
       ],
     },
     shopping: {

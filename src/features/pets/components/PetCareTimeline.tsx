@@ -1,10 +1,8 @@
 import { ActionForm } from "@/components/ui/ActionForm";
-import Link from "next/link";
 
 import { buttonClassName } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
-import type { FinanceRecentTransaction } from "@/features/finance/types";
 
 import { archivePetCareRecordAction } from "../actions";
 import { PET_CARE_RECORD_LABEL, petCareDateLabel } from "../domain/care-record";
@@ -17,14 +15,12 @@ export function PetCareTimeline({
   userId,
   canManageAll,
   canEditOwn,
-  transactions,
 }: {
   petId: string;
   records: PetCareRecordWithDocument[];
   userId: string;
   canManageAll: boolean;
   canEditOwn: boolean;
-  transactions: FinanceRecentTransaction[];
 }) {
   if (!records.length) {
     return (
@@ -79,14 +75,6 @@ export function PetCareTimeline({
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
-              {record.transaction_id ? (
-                <Link
-                  className={buttonClassName("secondary", "md", "w-auto")}
-                  href={`/finance/transactions/${record.transaction_id}`}
-                >
-                  ดูรายการการเงิน
-                </Link>
-              ) : null}
               {record.documentUrl ? (
                 <a
                   className={buttonClassName("secondary", "md", "w-auto")}
@@ -108,13 +96,7 @@ export function PetCareTimeline({
                     )}
                     sheetTitle="แก้ไขบันทึกการดูแล"
                     tone="finance"
-                    form={
-                      <PetCareRecordForm
-                        petId={petId}
-                        transactions={transactions}
-                        record={record}
-                      />
-                    }
+                    form={<PetCareRecordForm petId={petId} record={record} />}
                   >
                     แก้ไข
                   </FormSheetButton>

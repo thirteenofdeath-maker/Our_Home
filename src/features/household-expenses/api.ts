@@ -40,3 +40,19 @@ export async function listHouseholdExpenses(
     if (data.length < pageSize) return rows;
   }
 }
+
+export async function listRecentHouseholdExpenses(
+  client: SupabaseClient<Database>,
+  householdId: string,
+  limit = 5,
+) {
+  const { data, error } = await client
+    .from("household_expenses")
+    .select("*")
+    .eq("household_id", householdId)
+    .order("paid_on", { ascending: false })
+    .order("id")
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}

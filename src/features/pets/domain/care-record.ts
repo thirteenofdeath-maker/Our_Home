@@ -23,7 +23,11 @@ export const PET_CARE_RECORD_LABEL: Record<PetCareRecordType, string> = {
 };
 
 const optionalText = (max: number) =>
-  z.string().trim().max(max).transform((value) => value || null);
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((value) => value || null);
 
 const optionalDateTime = z
   .string()
@@ -31,7 +35,9 @@ const optionalDateTime = z
     (value) => value === "" || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value),
     "วันและเวลาไม่ถูกต้อง",
   )
-  .transform((value) => (value ? new Date(`${value}:00+07:00`).toISOString() : null));
+  .transform((value) =>
+    value ? new Date(`${value}:00+07:00`).toISOString() : null,
+  );
 
 export const petCareRecordSchema = z
   .object({
@@ -41,24 +47,34 @@ export const petCareRecordSchema = z
     note: optionalText(5000),
     recordedAt: optionalDateTime,
     scheduledAt: optionalDateTime,
-    nextIntervalDays: z.union([
-      z.literal(""),
-      z.enum(["7", "30", "90", "180", "365"]),
-    ]).default(""),
+    nextIntervalDays: z
+      .union([z.literal(""), z.enum(["7", "30", "90", "180", "365"])])
+      .default(""),
     value: z.string().trim(),
     unit: optionalText(24),
     provider: optionalText(160),
-    transactionId: z.union([z.string().uuid(), z.literal("")]).transform((value) => value || null),
+    transactionId: z
+      .union([z.string().uuid(), z.literal("")])
+      .transform((value) => value || null),
   })
   .superRefine((value, context) => {
     if (value.recordType === "WEIGHT") {
       const weight = Number(value.value);
       if (!Number.isFinite(weight) || weight <= 0) {
-        context.addIssue({ code: "custom", path: ["value"], message: "กรุณากรอกน้ำหนักมากกว่า 0" });
+        context.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: "กรุณากรอกน้ำหนักมากกว่า 0",
+        });
       }
     }
-    if (value.recordType === "EXPENSE" && !value.transactionId) {
-      context.addIssue({ code: "custom", path: ["transactionId"], message: "กรุณาเลือกรายการการเงิน" });
+    if (value.recordType === "EXPENSE") {
+      context.addIssue({
+        code: "custom",
+        path: ["transactionId"],
+        message:
+          "บันทึกค่าใช้จ่ายสัตว์เลี้ยงที่ค่าใช้จ่ายบ้าน โดยเลือกหมวดสัตว์เลี้ยง",
+      });
     }
   })
   .transform((value) => ({
@@ -73,7 +89,7 @@ export const petCareRecordSchema = z
           ).toISOString()
         : null),
     value: value.recordType === "WEIGHT" ? Number(value.value) : null,
-    unit: value.recordType === "WEIGHT" ? value.unit ?? "kg" : null,
+    unit: value.recordType === "WEIGHT" ? (value.unit ?? "kg") : null,
     transactionId: value.recordType === "EXPENSE" ? value.transactionId : null,
   }));
 
@@ -87,7 +103,8 @@ export const PET_DOCUMENT_MIME_EXTENSIONS = {
 export const MAX_PET_DOCUMENT_BYTES = 15 * 1024 * 1024;
 
 export function validatePetDocument(file: Pick<File, "size" | "type">) {
-  if (!(file.type in PET_DOCUMENT_MIME_EXTENSIONS)) return "รองรับ JPEG, PNG, WebP หรือ PDF";
+  if (!(file.type in PET_DOCUMENT_MIME_EXTENSIONS))
+    return "รองรับ JPEG, PNG, WebP หรือ PDF";
   if (file.size > MAX_PET_DOCUMENT_BYTES) return "ไฟล์ต้องมีขนาดไม่เกิน 15 MB";
   return null;
 }
