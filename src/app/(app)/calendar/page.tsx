@@ -14,7 +14,6 @@ import {
   shiftMonth,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
-import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import {
   listPlanNotes,
@@ -74,7 +73,6 @@ export default async function CalendarPage({
   const [
     events,
     archivedEvents,
-    financeItems,
     allTasks,
     allReminders,
     activeNotes,
@@ -84,9 +82,6 @@ export default async function CalendarPage({
     listCalendarEvents(supabase, household?.id ?? null, user.id),
     view === "calendar"
       ? listCalendarEvents(supabase, household?.id ?? null, user.id, true)
-      : Promise.resolve([]),
-    view === "calendar"
-      ? listCalendarFinanceItems(supabase, `${month}-01`, `${endMonth}-01`)
       : Promise.resolve([]),
     listPlanTasks(supabase),
     listPlanReminders(supabase),
@@ -193,6 +188,20 @@ export default async function CalendarPage({
       </section>
 
       <div className="flex min-w-0 flex-col gap-5 lg:landscape:col-span-5">
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href="/shopping"
+            className="rounded-xl bg-finance-surface-strong p-3 text-center text-sm font-medium text-finance-primary-strong"
+          >
+            รายการซื้อของ
+          </Link>
+          <Link
+            href="/calendar/expenses"
+            className="rounded-xl bg-finance-surface-strong p-3 text-center text-sm font-medium text-finance-primary-strong"
+          >
+            ค่าใช้จ่ายบ้าน
+          </Link>
+        </div>
         <PlanTabs active={view} />
 
         {view === "calendar" ? (
@@ -203,7 +212,6 @@ export default async function CalendarPage({
               selected={selected}
               today={today}
               events={events}
-              financeItems={financeItems}
               tasks={allTasks}
               reminders={allReminders}
               petCareRecords={petCareRecords}

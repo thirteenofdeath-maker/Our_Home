@@ -22,15 +22,16 @@ describe("native-like main navigation performance", () => {
     expect(join).toBeGreaterThan(reads);
   });
 
-  it("starts the home profile read before the onboarding gate", () => {
+  it("starts the home profile read while resolving the household", () => {
     const home = read("src/app/(app)/page.tsx");
     const profileStart = home.indexOf("const profilePromise =");
-    const onboardingGate = home.indexOf('redirect("/onboarding")');
-    const profileJoin = home.indexOf("profilePromise,", onboardingGate);
+    const householdRead = home.indexOf("await getMyPrimaryHousehold(");
+    const profileJoin = home.indexOf("profilePromise,", householdRead);
 
     expect(profileStart).toBeGreaterThan(-1);
-    expect(onboardingGate).toBeGreaterThan(profileStart);
-    expect(profileJoin).toBeGreaterThan(onboardingGate);
+    expect(householdRead).toBeGreaterThan(profileStart);
+    expect(profileJoin).toBeGreaterThan(householdRead);
+    expect(home).not.toContain("listMyWallets");
   });
 
   it("loads recent pet care in one household query instead of one query per pet", () => {
@@ -40,7 +41,9 @@ describe("native-like main navigation performance", () => {
     );
     expect(home).toContain("listRecentHouseholdPetCareRecords(");
     expect(home).not.toContain("pets.map(async (pet)");
-    expect(index).toContain("on public.pet_care_records(household_id, created_at desc)");
+    expect(index).toContain(
+      "on public.pet_care_records(household_id, created_at desc)",
+    );
     expect(index).toContain("where archived_at is null");
   });
 

@@ -220,6 +220,21 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      household_expenses: {
+        Row: {
+          id: string;
+          household_id: string;
+          title: string;
+          category: string;
+          amount: string | number;
+          paid_on: string;
+          payer_id: string;
+          created_by: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       shopping_items: {
         Row: {
           id: string;
@@ -236,6 +251,7 @@ export interface Database {
           purchased_at: string | null;
           purchased_by: string | null;
           expense_transaction_id: string | null;
+          household_expense_id: string | null;
           archived_at: string | null;
           created_at: string;
           updated_at: string;
@@ -1478,6 +1494,24 @@ export interface Database {
       set_shopping_item_archived: {
         Args: { p_item_id: string; p_archived: boolean };
         Returns: Database["public"]["Tables"]["shopping_items"]["Row"];
+      };
+      mark_shopping_receipt_purchased: {
+        Args: { p_item_ids: string[] };
+        Returns: undefined;
+      };
+      save_household_expense: {
+        Args: {
+          p_id: string;
+          p_household_id: string;
+          p_title: string;
+          p_category: string;
+          p_amount: string;
+          p_paid_on: string;
+          p_payer_id: string;
+          p_item_ids: string[];
+          p_edit: boolean;
+        };
+        Returns: undefined;
       };
       create_shopping_item_expense: {
         Args: {

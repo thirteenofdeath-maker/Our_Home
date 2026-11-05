@@ -92,6 +92,22 @@ export default async function ShoppingPage() {
         </p>
       )}
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/calendar/expenses"
+          className="text-sm font-medium text-finance-primary-strong"
+        >
+          ดูค่าใช้จ่ายบ้าน
+        </Link>
+        {canEdit ? (
+          <form id="shopping-receipt" action="/shopping/expense">
+            <button className="rounded-xl bg-finance-primary px-4 py-2 text-sm font-medium text-finance-primary-foreground">
+              ลงบิลรายการที่เลือก
+            </button>
+          </form>
+        ) : null}
+      </div>
+
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-finance-text">ต้องซื้อ</h2>

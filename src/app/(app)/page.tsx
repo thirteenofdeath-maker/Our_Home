@@ -1,23 +1,24 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { AppIcon, type AppIconName } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
+import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { listCalendarEvents } from "@/features/calendar/api";
 import {
   bangkokDateKey,
   formatEventTime,
   toBangkokInput,
 } from "@/features/calendar/domain/calendar";
-import { listCalendarFinanceItems } from "@/features/calendar/finance";
 import { listChoreWorkspace } from "@/features/chores/api";
 import {
-  getFinanceSummary,
-  listRecentFinanceTransactions,
-} from "@/features/finance/api";
-import { getMyPrimaryHousehold } from "@/features/household/api";
+  getMyPrimaryHousehold,
+  listHouseholdMembers,
+} from "@/features/household/api";
+import { listHouseholdExpenses } from "@/features/household-expenses/api";
+import { totalExpenseAmount } from "@/features/household-expenses/domain";
+import { ExpenseForm } from "@/features/household-expenses/ExpenseForm";
 import { listInventoryItems } from "@/features/inventory/api";
 import { isDateWithinDays, isLowStock } from "@/features/inventory/types";
 import { getCurrentProfile } from "@/features/profile/api";
@@ -33,7 +34,6 @@ import {
 import { listPlanReminders, listPlanTasks } from "@/features/plan/api";
 import { planDateLabel, reminderDateLabel } from "@/features/plan/domain";
 import { listShoppingItems } from "@/features/shopping/api";
-import { listMyWallets } from "@/features/wallets/api";
 import {
   greetingForBangkok,
   homeCoverMode,
@@ -152,17 +152,8 @@ export default async function HomePage() {
   const { supabase, user } = await requireUser();
   const now = new Date();
 
-  const walletsPromise = listMyWallets(supabase);
-  const householdPromise = getMyPrimaryHousehold(supabase, user.id);
   const profilePromise = getCurrentProfile(supabase, user.id);
-  const [wallets, household] = await Promise.all([
-    walletsPromise,
-    householdPromise,
-  ]);
-
-  if (wallets.length === 0 && !household) {
-    redirect("/onboarding");
-  }
+  const household = await getMyPrimaryHousehold(supabase, user.id);
 
   const today = bangkokDateKey(now);
   const tomorrow = shiftDate(today, 1);
@@ -174,9 +165,8 @@ export default async function HomePage() {
     events,
     tasks,
     reminders,
-    dueFinance,
-    finance,
-    recentTransactions,
+    householdExpenses,
+    householdMembers,
     pets,
     petCare,
     recentPetCareRecords,
@@ -188,12 +178,12 @@ export default async function HomePage() {
     listCalendarEvents(supabase, householdId, user.id),
     listPlanTasks(supabase),
     listPlanReminders(supabase, { completed: false }),
-    listCalendarFinanceItems(supabase, today, upcomingEnd),
-    getFinanceSummary(supabase, {
-      start: `${today}T00:00:00+07:00`,
-      end: `${tomorrow}T00:00:00+07:00`,
-    }),
-    listRecentFinanceTransactions(supabase, { limit: 5 }),
+    householdId
+      ? listHouseholdExpenses(supabase, householdId, today.slice(0, 7))
+      : Promise.resolve([]),
+    householdId && household?.myRole !== "observer"
+      ? listHouseholdMembers(supabase, householdId)
+      : Promise.resolve([]),
     householdId ? listPetSummaries(supabase, householdId) : Promise.resolve([]),
     householdId
       ? listScheduledPetCareRecords(
@@ -470,38 +460,40 @@ export default async function HomePage() {
 
       <section className="grid min-w-0 grid-cols-2 gap-3 lg:landscape:col-span-7 lg:landscape:row-start-4">
         <DashboardCard
-          title="การเงิน"
-          href="/finance"
+          title="ค่าใช้จ่ายบ้าน"
+          href="/calendar/expenses"
           linkLabel="ดู"
           icon="wallet"
         >
-          <div className="space-y-2">
-            {finance.monthTotals.length ? (
-              finance.monthTotals.map((total) => (
-                <div
-                  key={total.currency}
-                  className="rounded-[1rem] bg-finance-primary-soft/60 p-3"
-                >
-                  <p className="text-xs text-finance-muted">
-                    รายจ่ายวันนี้ · {total.currency}
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-finance-text">
-                    {formatCurrency(total.expense, total.currency)}
-                  </p>
-                  <p className="text-xs text-emerald-700">
-                    รายรับ {formatCurrency(total.income, total.currency)}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <EmptyToday text="วันนี้ยังไม่มีรายการรับ–จ่าย" />
-            )}
-            {dueFinance.length ? (
-              <p className="text-xs text-finance-muted">
-                มี {dueFinance.length} บิลหรือค่างวดใกล้ครบกำหนด
-              </p>
-            ) : null}
-          </div>
+          <p className="text-xs text-finance-muted">จ่ายรวมเดือนนี้</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-finance-text">
+            {formatCurrency(totalExpenseAmount(householdExpenses), "THB")}
+          </p>
+          {household && household.myRole !== "observer" ? (
+            <FormSheetButton
+              sheetTitle="เพิ่มค่าใช้จ่าย"
+              tone="finance"
+              triggerClassName="mt-3 rounded-xl bg-finance-primary px-3 py-2 text-sm font-medium text-finance-primary-foreground"
+              form={
+                <ExpenseForm
+                  householdId={household.id}
+                  defaultPayer={user.id}
+                  defaultDate={today}
+                  members={householdMembers
+                    .filter((member) => member.role !== "observer")
+                    .map((member) => ({
+                      id: member.user_id,
+                      label:
+                        member.profile?.display_name ??
+                        member.profile?.email ??
+                        "สมาชิก",
+                    }))}
+                />
+              }
+            >
+              + เพิ่มค่าใช้จ่าย
+            </FormSheetButton>
+          ) : null}
         </DashboardCard>
 
         <DashboardCard
@@ -537,7 +529,11 @@ export default async function HomePage() {
         className="grid grid-cols-2 gap-2 rounded-[1.5rem] bg-finance-surface-strong p-2 shadow-card [&>*:last-child]:col-span-2 sm:grid-cols-5 sm:[&>*:last-child]:col-span-1 lg:landscape:col-span-5 lg:landscape:col-start-8 lg:landscape:row-start-2 lg:landscape:h-full"
       >
         <QuickLink href="/chores" icon="chores" label="งานบ้าน" />
-        <QuickLink href="/finance" icon="finance" label="เพิ่มรายการ" />
+        <QuickLink
+          href="/calendar/expenses"
+          icon="finance"
+          label="ค่าใช้จ่ายบ้าน"
+        />
         <QuickLink href="/shopping" icon="shopping" label="รายการซื้อของ" />
         <QuickLink href="/pets" icon="pets" label="บันทึกสัตว์เลี้ยง" />
         <QuickLink href="/inventory" icon="inventory" label="คลังของในบ้าน" />
@@ -545,17 +541,17 @@ export default async function HomePage() {
 
       <TodaySection
         title="กิจกรรมล่าสุด"
-        href="/finance/transactions"
+        href="/calendar/expenses"
         linkLabel="ดูทั้งหมด"
         className="lg:landscape:col-span-5 lg:landscape:col-start-8 lg:landscape:row-start-4"
       >
-        {recentTransactions.map((item) => (
+        {householdExpenses.slice(0, 5).map((expense) => (
           <TodayItem
-            key={item.transactionId}
-            href={`/finance/transactions/${item.transactionId}`}
-            marker={item.creatorName ?? "การเงิน"}
-            title={item.title ?? item.categoryName ?? "รายการการเงิน"}
-            detail={formatCurrency(item.amount, item.currency)}
+            key={expense.id}
+            href={`/calendar/expenses?expense=${expense.id}`}
+            marker="ค่าใช้จ่ายบ้าน"
+            title={expense.title}
+            detail={formatCurrency(expense.amount, "THB")}
           />
         ))}
         {recentPetCare.map(({ pet, record }) => (
@@ -567,7 +563,7 @@ export default async function HomePage() {
             detail={petCareDateLabel(record.created_at)}
           />
         ))}
-        {recentTransactions.length === 0 && recentPetCare.length === 0 ? (
+        {householdExpenses.length === 0 && recentPetCare.length === 0 ? (
           <EmptyToday text="ยังไม่มีกิจกรรมล่าสุด" />
         ) : null}
       </TodaySection>

@@ -32,7 +32,9 @@ export function ShoppingItemCard({
     (member) => member.user_id === item.purchased_by,
   );
   const purchased = Boolean(item.purchased_at);
-  const cannotUncheck = purchased && Boolean(item.expense_transaction_id);
+  const cannotUncheck =
+    purchased &&
+    Boolean(item.household_expense_id || item.expense_transaction_id);
 
   return (
     <Card
@@ -100,52 +102,67 @@ export function ShoppingItemCard({
               </span>
             ) : null}
           </div>
-          {canEdit ? (
-            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/70 pt-3 text-sm font-medium">
-              {item.expense_transaction_id ? (
-                <Link
-                  href={`/finance/transactions/${item.expense_transaction_id}`}
-                  className="text-finance-primary-strong"
-                >
-                  ดูรายจ่าย
-                </Link>
-              ) : (
-                <Link
-                  href={`/shopping/${item.id}/expense`}
-                  className="text-finance-primary-strong"
-                >
-                  สร้างรายจ่าย
-                </Link>
-              )}
-              <FormSheetButton
-                triggerClassName="text-finance-primary-strong"
-                ariaLabel={`แก้ไข ${item.name}`}
-                sheetTitle="แก้ไขรายการซื้อ"
-                form={
-                  <ShoppingItemForm
-                    householdId={item.household_id}
-                    members={members.map((member) => ({
-                      id: member.id,
-                      label:
-                        member.profile?.display_name ??
-                        member.profile?.email ??
-                        "สมาชิก",
-                    }))}
-                    item={item}
-                  />
-                }
-                tone="finance"
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/70 pt-3 text-sm font-medium">
+            {item.household_expense_id ? (
+              <Link
+                href={`/calendar/expenses?expense=${item.household_expense_id}`}
+                className="text-finance-primary-strong"
               >
-                แก้ไข
-              </FormSheetButton>
-              <form action={archiveShoppingItemAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <button type="submit" className="text-finance-muted">
-                  นำออกจากรายการ
-                </button>
-              </form>
-            </div>
-          ) : null}
+                ดูค่าใช้จ่าย
+              </Link>
+            ) : canEdit ? (
+              <>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    form="shopping-receipt"
+                    name="item"
+                    value={item.id}
+                  />
+                  เลือกเข้าบิล
+                </label>
+                {purchased ? (
+                  <Link
+                    href={`/shopping/expense?item=${item.id}`}
+                    className="text-finance-primary-strong"
+                  >
+                    ลงค่าใช้จ่าย
+                  </Link>
+                ) : null}
+              </>
+            ) : null}
+            {canEdit ? (
+              <>
+                <FormSheetButton
+                  triggerClassName="text-finance-primary-strong"
+                  ariaLabel={`แก้ไข ${item.name}`}
+                  sheetTitle="แก้ไขรายการซื้อ"
+                  form={
+                    <ShoppingItemForm
+                      householdId={item.household_id}
+                      members={members.map((member) => ({
+                        id: member.id,
+                        label:
+                          member.profile?.display_name ??
+                          member.profile?.email ??
+                          "สมาชิก",
+                      }))}
+                      item={item}
+                    />
+                  }
+                  tone="finance"
+                >
+                  แก้ไข
+                </FormSheetButton>
+                <form action={archiveShoppingItemAction}>
+                  <input type="hidden" name="itemId" value={item.id} />
+                  <button type="submit" className="text-finance-muted">
+                    นำออกจากรายการ
+                  </button>
+                </form>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
     </Card>

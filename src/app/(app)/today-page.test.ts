@@ -14,7 +14,7 @@ describe("Today dashboard composition", () => {
     expect(source).toContain("homeCoverMode(profile?.birthday, now)");
     expect(source).toContain("งานวันนี้");
     expect(source).toContain("ปฏิทินครอบครัว");
-    expect(source).toContain('title="การเงิน"');
+    expect(source).toContain('title="ค่าใช้จ่ายบ้าน"');
     expect(source).toContain('title="สัตว์เลี้ยง"');
     expect(source).toContain("ภาพรวมบ้าน");
     expect(source).toContain('title="งานบ้าน"');
@@ -28,9 +28,7 @@ describe("Today dashboard composition", () => {
       "listCalendarEvents",
       "listPlanTasks",
       "listPlanReminders",
-      "listCalendarFinanceItems",
-      "getFinanceSummary",
-      "listRecentFinanceTransactions",
+      "listHouseholdExpenses",
       "listPetSummaries",
       "listRecentHouseholdPetCareRecords",
       "listChoreWorkspace",

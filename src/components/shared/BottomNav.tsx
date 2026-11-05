@@ -10,18 +10,8 @@ import {
   type AppSection,
 } from "@/lib/navigation/app-section";
 
-/**
- * Pure navigation, nothing else — the "+" quick-add action lives in a
- * separate FloatingActionButton layer now (see FloatingActionButton.tsx
- * and each module's own FAB usage), never a cell inside this grid. Exactly
- * these five real destinations, always rendered as links, on every module
- * (including deep/nested routes within one, AND every Finance-owned
- * secondary route family like /wallets or /categories — see AppShell.tsx
- * and app-section.ts, the shared source of truth both read).
- */
 export const NAV_ITEMS = [
   { href: "/", label: "หน้าหลัก", icon: "home", section: "home" },
-  { href: "/finance", label: "การเงิน", icon: "finance", section: "finance" },
   { href: "/calendar", label: "แผนงาน", icon: "calendar", section: "calendar" },
   { href: "/pets", label: "สัตว์เลี้ยง", icon: "pets", section: "pets" },
   {
@@ -39,7 +29,7 @@ export const NAV_ITEMS = [
 
 /**
  * One floating-capsule architecture for every module — fixed above the
- * safe area, inset from the screen edges, rounded, elevated shadow, five
+ * safe area, inset from the screen edges, rounded, elevated shadow, four
  * equal columns. Only the color tokens differ: Finance routes get the
  * Finance V2 blue-gray accent (via `.finance-scope`), every other module
  * keeps the app's default primary accent — never a structural difference
@@ -92,7 +82,7 @@ export function BottomNav() {
     >
       <ul
         className={cn(
-          "mx-auto grid max-w-xl grid-cols-5 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)] lg:landscape:flex lg:landscape:max-w-none lg:landscape:flex-col lg:landscape:justify-center lg:landscape:gap-2 lg:landscape:overflow-visible lg:landscape:rounded-[1.75rem] lg:landscape:py-3",
+          "mx-auto grid max-w-xl grid-cols-4 items-center gap-1 overflow-hidden rounded-[2rem] p-1.5 shadow-[0_8px_28px_rgb(57_65_61_/_0.16)] lg:landscape:flex lg:landscape:max-w-none lg:landscape:flex-col lg:landscape:justify-center lg:landscape:gap-2 lg:landscape:overflow-visible lg:landscape:rounded-[1.75rem] lg:landscape:py-3",
           isFinance ? "bg-finance-surface-strong" : "bg-surface",
         )}
       >

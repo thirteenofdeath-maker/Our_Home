@@ -42,10 +42,9 @@ export function appSectionForPath(pathname: string): AppSection {
   return "neutral";
 }
 
-/** The five real BottomNav destinations — the only sections that ever get an active tab. */
+/** The four BottomNav destinations — the only sections that ever get an active tab. */
 export const BOTTOM_NAV_SECTIONS: readonly AppSection[] = [
   "home",
-  "finance",
   "calendar",
   "pets",
   "household",
