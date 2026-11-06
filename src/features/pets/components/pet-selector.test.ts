@@ -9,8 +9,9 @@ const source = readFileSync(
 
 describe("PetSelector", () => {
   it("keeps the selected pet visible after navigation", () => {
-    expect(source).toContain("selected.scrollIntoView");
-    expect(source).toContain('inline: "center"');
+    expect(source).toContain("list.scrollTo");
+    expect(source).toContain("selected.offsetWidth");
+    expect(source).not.toContain("scrollIntoView");
   });
 
   it("supports touch, keyboard and explicit horizontal controls", () => {

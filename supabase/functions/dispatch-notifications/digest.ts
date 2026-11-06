@@ -75,7 +75,9 @@ export function birthdayFallsInWindow(
   const startYear = Number(startDate.slice(0, 4));
   const endYear = Number(endDate.slice(0, 4));
   for (let year = startYear; year <= endYear; year++) {
-    const occurrence = `${year}-${monthDay}`;
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const observed = monthDay === "02-29" && !leap ? "02-28" : monthDay;
+    const occurrence = `${year}-${observed}`;
     if (occurrence >= startDate && occurrence <= endDate) return true;
   }
   return false;

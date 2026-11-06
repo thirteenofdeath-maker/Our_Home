@@ -8,6 +8,17 @@ import {
 } from "./digest";
 
 describe("notification digests", () => {
+  it("counts leap-day birthdays on the same observed day as calendar and individual reminders", () => {
+    expect(
+      birthdayFallsInWindow("2000-02-29", "2027-02-28", "2027-02-28"),
+    ).toBe(true);
+    expect(
+      birthdayFallsInWindow("2000-02-29", "2028-02-28", "2028-02-28"),
+    ).toBe(false);
+    expect(
+      birthdayFallsInWindow("2000-02-29", "2028-02-29", "2028-02-29"),
+    ).toBe(true);
+  });
   it("deduplicates recipients while accumulating categories", () => {
     const counts = new Map();
     addDigestCount(counts, ["a", "a", "b"], "tasks");

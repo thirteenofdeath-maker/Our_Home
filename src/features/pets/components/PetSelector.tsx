@@ -27,10 +27,12 @@ export function PetSelector({
     const selected = list?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!list || !selected) return;
 
-    selected.scrollIntoView({
+    list.scrollTo({
+      left:
+        selected.offsetLeft -
+        list.offsetLeft -
+        (list.clientWidth - selected.offsetWidth) / 2,
       behavior: "instant",
-      block: "nearest",
-      inline: "center",
     });
   }, [selectedPetId]);
 
@@ -39,7 +41,9 @@ export function PetSelector({
     if (!list) return;
     list.scrollBy({
       left: direction * list.clientWidth * 0.72,
-      behavior: "smooth",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
     });
   }, []);
 
