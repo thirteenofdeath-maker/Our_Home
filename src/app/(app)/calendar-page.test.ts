@@ -46,8 +46,10 @@ describe("Plan cover summary", () => {
     expect(source).toContain("<PlanTabs active={view} />");
     expect(source).not.toContain("<PlanModuleCard");
     expect(planTabs).toContain('aria-label="ศูนย์แผนงาน"');
-    expect(planTabs).toContain("วางแผน");
-    expect(planTabs).toContain("ดูแลบ้าน");
+    for (const label of ["ปฏิทิน", "งาน", "เตือน", "งานบ้าน", "ซื้อของ", "ค่าใช้จ่าย", "คลังของ"]) {
+      expect(planTabs).toContain(`label: "${label}"`);
+    }
+    expect(planTabs).not.toContain("householdViews");
     expect(planTabs).toContain('href: "/calendar?view=chores"');
     expect(planTabs).toContain('href: "/calendar?view=shopping"');
     expect(planTabs).toContain('href: "/calendar?view=inventory"');
