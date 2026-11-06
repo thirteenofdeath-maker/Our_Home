@@ -18,7 +18,7 @@ export function PetSelector({
   selectedPetId,
 }: {
   pets: PetSelectorItem[];
-  selectedPetId: string;
+  selectedPetId: string | null;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +77,19 @@ export function PetSelector({
         ref={listRef}
         className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] touch-pan-x [&::-webkit-scrollbar]:hidden"
       >
+        <Link
+          href="/pets"
+          aria-current={selectedPetId === null ? "true" : undefined}
+          className={`flex w-24 shrink-0 snap-center flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center focus-visible:outline-2 focus-visible:outline-finance-primary ${selectedPetId === null ? "border-finance-primary/30 bg-finance-primary-soft/55" : "border-transparent"}`}
+        >
+          <span className="flex size-14 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
+            <AppIcon name="pets" className="size-6" />
+          </span>
+          <span className="font-semibold text-finance-text">ภาพรวม</span>
+          <span className="text-xs text-finance-muted">
+            ทั้งหมด {pets.length} ตัว
+          </span>
+        </Link>
         {pets.map((pet) => {
           const isSelected = pet.id === selectedPetId;
           return (

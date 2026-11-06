@@ -8,6 +8,8 @@ import { canInviteRole } from "@/features/household/domain/member";
 import {
   listPetCareRecords,
   listPetsByArchiveState,
+  listRecentHouseholdPetCareRecords,
+  listScheduledPetCareRecords,
 } from "@/features/pets/api";
 import { AddPetFab } from "@/features/pets/components/AddPetFab";
 import {
@@ -35,12 +37,37 @@ export default async function PetsPage({
     household.id,
   );
   const canManage = canInviteRole(household.myRole, "member");
-  const featured =
-    active.find((pet) => pet.id === selectedPetId) ?? active[0] ?? null;
+  const featured = active.find((pet) => pet.id === selectedPetId) ?? null;
   const records = featured
     ? await listPetCareRecords(supabase, featured.id)
     : [];
   const age = featured ? ageFromBirthday(featured.birthday) : null;
+  const now = new Date();
+  const overviewEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const [scheduled, recent] =
+    !featured && active.length
+      ? await Promise.all([
+          listScheduledPetCareRecords(
+            supabase,
+            household.id,
+            now.toISOString(),
+            overviewEnd.toISOString(),
+          ),
+          listRecentHouseholdPetCareRecords(supabase, household.id, 5),
+        ])
+      : [[], []];
+  const activePetIds = new Set(active.map((pet) => pet.id));
+  const upcomingCare = scheduled.filter((record) =>
+    activePetIds.has(record.pet_id),
+  );
+  const recentCare = recent.filter((record) => activePetIds.has(record.pet_id));
+  const speciesSummary = Object.entries(SPECIES_LABEL)
+    .map(([species, label]) => {
+      const count = active.filter((pet) => pet.species === species).length;
+      return count ? `${label} ${count} ตัว` : null;
+    })
+    .filter(Boolean)
+    .join(" · ");
   const latestWeight = records.find(
     (record) => record.record_type === "WEIGHT",
   );
@@ -87,11 +114,105 @@ export default async function PetsPage({
         </header>
       </section>
 
-      <div className="landscape-pets-split flex min-w-0 flex-col gap-5">
+      {!featured && active.length ? (
+        <section
+          aria-labelledby="pet-overview-title"
+          className="flex min-w-0 flex-col gap-3"
+        >
+          <h2
+            id="pet-overview-title"
+            className="font-semibold text-finance-text"
+          >
+            ภาพรวมสัตว์เลี้ยง
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PetSummaryCard
+              icon="pets"
+              title="สัตว์เลี้ยงทั้งหมด"
+              value={`${active.length} ตัว`}
+              detail={speciesSummary}
+              tone="green"
+            />
+            <PetSummaryCard
+              icon="calendar"
+              title="ตารางดูแลใน 30 วัน"
+              value={`${upcomingCare.length} รายการ`}
+              detail={
+                upcomingCare[0]?.scheduled_at
+                  ? `ถัดไป ${petCareDateLabel(upcomingCare[0].scheduled_at)}`
+                  : "ยังไม่มีตารางดูแล"
+              }
+              tone="blue"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
+              <h3 className="font-semibold text-finance-text">
+                การดูแลที่กำลังจะถึง
+              </h3>
+              {upcomingCare.length ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {upcomingCare.slice(0, 3).map((record) => (
+                    <li key={record.id}>
+                      <Link
+                        href={`/pets/${record.pet_id}`}
+                        className="block rounded-xl bg-finance-primary-soft/30 p-3"
+                      >
+                        <p className="text-sm font-medium text-finance-text">
+                          {record.pet?.name ?? "สัตว์เลี้ยง"} · {record.title}
+                        </p>
+                        <p className="mt-1 text-xs text-finance-muted">
+                          {petCareDateLabel(record.scheduled_at!)}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-finance-muted">
+                  ไม่มีตารางดูแลใน 30 วันข้างหน้า
+                </p>
+              )}
+            </Card>
+            <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
+              <h3 className="font-semibold text-finance-text">
+                บันทึกล่าสุดของทุกตัว
+              </h3>
+              {recentCare.length ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {recentCare.map((record) => (
+                    <li key={record.id}>
+                      <Link
+                        href={`/pets/${record.pet_id}`}
+                        className="block rounded-xl bg-finance-primary-soft/30 p-3"
+                      >
+                        <p className="text-sm font-medium text-finance-text">
+                          {record.pet?.name ?? "สัตว์เลี้ยง"} · {record.title}
+                        </p>
+                        <p className="mt-1 text-xs text-finance-muted">
+                          {petCareDateLabel(record.recorded_at)}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-finance-muted">
+                  ยังไม่มีบันทึกการดูแล
+                </p>
+              )}
+            </Card>
+          </div>
+        </section>
+      ) : null}
+
+      <div
+        className={`${featured ? "landscape-pets-split" : ""} flex min-w-0 flex-col gap-5`}
+      >
         <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
           {active.length ? (
             <PetSelector
-              selectedPetId={featured!.id}
+              selectedPetId={featured?.id ?? null}
               pets={active.map((pet) => ({
                 id: pet.id,
                 name: pet.name,
@@ -181,7 +302,7 @@ export default async function PetsPage({
                 {age === null ? " · ยังไม่ระบุวันเกิด" : ` · อายุ ${age} ปี`}
               </p>
             </>
-          ) : (
+          ) : !active.length ? (
             <Card className="rounded-[1.5rem] bg-finance-surface-strong text-center">
               <p className="font-medium text-finance-text">
                 ยังไม่มีสัตว์เลี้ยง
@@ -190,7 +311,7 @@ export default async function PetsPage({
                 เพิ่มสัตว์เลี้ยงเพื่อเริ่มบันทึกสุขภาพและการดูแล
               </p>
             </Card>
-          )}
+          ) : null}
         </div>
       </div>
 
