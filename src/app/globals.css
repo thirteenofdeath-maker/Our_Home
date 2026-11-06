@@ -887,6 +887,11 @@ input[type="week"]::-webkit-datetime-edit {
 
 /* A single press response covers native buttons, navigation and custom
    controls. Independent scale preserves existing transforms and layout. */
+.app-cover.app-cover-with-footer {
+  height: auto !important;
+  min-height: 13.5rem;
+}
+
 :where(button, a[href], [role="button"], input[type="submit"], input[type="button"], summary) {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;

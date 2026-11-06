@@ -120,48 +120,47 @@ export default async function HouseholdExpensesPage({
         eyebrow="ดูแลค่าใช้จ่ายในบ้าน"
         title="ค่าใช้จ่ายบ้าน"
         subtitle="ติดตามรายจ่ายของบ้านไปด้วยกัน"
+        footer={
+          <section
+            aria-label="สรุปค่าใช้จ่ายเดือนที่เลือก"
+            className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-[1.15rem] bg-finance-surface-strong/95 p-3 backdrop-blur-sm"
+          >
+            <div className="min-w-0 max-w-full flex-[1_1_auto]">
+              <p className="text-xs text-finance-muted">รายจ่ายรวม</p>
+              <p className="mt-1 max-w-full text-2xl font-semibold leading-tight tabular-nums text-finance-text [overflow-wrap:anywhere]">
+                {formatCurrency(totalExpenseAmount(expenses), "THB")}
+              </p>
+            </div>
+            <nav
+              aria-label="เลือกเดือนค่าใช้จ่าย"
+              className="grid min-w-0 max-w-full flex-[0_1_11rem] grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center"
+            >
+              <Link
+                aria-label="เดือนก่อน"
+                href={`?month=${shiftMonth(month, -1)}`}
+                className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
+              >
+                <AppIcon name="chevron" className="size-4 rotate-180" />
+              </Link>
+              <p
+                className="min-w-0 break-words text-center text-xs font-medium text-finance-text"
+                aria-live="polite"
+              >
+                {monthLabel}
+              </p>
+              <Link
+                aria-label="เดือนถัดไป"
+                href={`?month=${shiftMonth(month, 1)}`}
+                className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
+              >
+                <AppIcon name="chevron" className="size-4" />
+              </Link>
+            </nav>
+          </section>
+        }
       />
       <PlanTabs active="expenses" />
       <div key="expenses" className="plan-content-transition contents">
-        <Card className="grid gap-3 rounded-[1.5rem] time-tinted-panel">
-          <div className="flex items-center justify-between gap-2">
-            <Link
-              aria-label="เดือนก่อน"
-              className="px-3 py-2"
-              href={`?month=${shiftMonth(month, -1)}`}
-            >
-              ‹
-            </Link>
-            <h2 className="font-semibold">{monthLabel}</h2>
-            <Link
-              aria-label="เดือนถัดไป"
-              className="px-3 py-2"
-              href={`?month=${shiftMonth(month, 1)}`}
-            >
-              ›
-            </Link>
-          </div>
-          <p className="text-sm text-finance-muted">จ่ายรวมเดือนนี้</p>
-          <p className="text-2xl font-semibold tabular-nums">
-            {formatCurrency(totalExpenseAmount(expenses), "THB")}
-          </p>
-          {Object.entries(expenseCategories).map(([category, label]) => {
-            const entries = expenses.filter(
-              (expense) => expense.category === category,
-            );
-            return entries.length ? (
-              <div
-                key={category}
-                className="flex justify-between gap-3 text-sm"
-              >
-                <span>{label}</span>
-                <span>
-                  {formatCurrency(totalExpenseAmount(entries), "THB")}
-                </span>
-              </div>
-            ) : null;
-          })}
-        </Card>
         <div className="flex flex-wrap items-center gap-3">
           {canEdit ? (
             <FormSheetButton
@@ -182,6 +181,39 @@ export default async function HouseholdExpensesPage({
           </Link>
         </div>
         <section aria-label="รายการค่าใช้จ่าย" className="grid gap-2">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <h2 className="font-semibold text-finance-text">
+              รายการค่าใช้จ่าย
+            </h2>
+            <span className="text-xs text-finance-muted">
+              {expenses.length} รายการ
+            </span>
+          </div>
+          {expenses.length > 0 ? (
+            <details className="rounded-[1rem] bg-finance-surface-strong p-3">
+              <summary className="min-h-11 content-center text-sm font-medium text-finance-primary-strong">
+                สรุปตามหมวดหมู่
+              </summary>
+              <div className="mt-2 grid gap-2">
+                {Object.entries(expenseCategories).map(([category, label]) => {
+                  const entries = expenses.filter(
+                    (expense) => expense.category === category,
+                  );
+                  return entries.length ? (
+                    <div
+                      key={category}
+                      className="flex justify-between gap-3 text-sm"
+                    >
+                      <span>{label}</span>
+                      <span>
+                        {formatCurrency(totalExpenseAmount(entries), "THB")}
+                      </span>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </details>
+          ) : null}
           {expenses.length === 0 ? (
             <Card>เดือนนี้ยังไม่มีค่าใช้จ่ายบ้าน</Card>
           ) : null}

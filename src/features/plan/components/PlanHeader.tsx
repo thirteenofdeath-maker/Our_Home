@@ -7,15 +7,19 @@ export function PlanHeader({
   subtitle,
   metrics = [],
   rightAction,
+  footer,
 }: {
   eyebrow: string;
   title: string;
   subtitle: string;
   metrics?: Array<{ value: number | string; label: string }>;
   rightAction?: ReactNode;
+  footer?: ReactNode;
 }) {
   return (
-    <section className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+    <section
+      className={`app-cover app-cover-calendar light-cover-copy time-cover relative overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:p-6 ${footer ? "app-cover-with-footer flex flex-col justify-between gap-5" : "h-48 sm:h-52"}`}
+    >
       <Image
         src="/art/plan-calendar.webp"
         alt="พื้นที่วางแผนและดูแลเรื่องสำคัญของบ้าน"
@@ -35,7 +39,9 @@ export function PlanHeader({
         <p className="mt-1 text-sm text-finance-muted">{subtitle}</p>
       </div>
       {rightAction}
-      {metrics.length > 0 ? (
+      {footer ? (
+        <div className="relative min-w-0">{footer}</div>
+      ) : metrics.length > 0 ? (
         <div
           className="absolute inset-x-4 bottom-4 grid gap-1.5"
           style={{
