@@ -26,16 +26,20 @@ export function CompletionButton({
 }) {
   const { action, field } = completionActions[target.kind];
   return (
-    <ActionForm action={action} className="shrink-0 max-w-28">
+    <ActionForm
+      action={action}
+      className="flex w-full min-w-0 flex-col items-end"
+    >
       <input type="hidden" name={field} value={target.id} />
       <input type="hidden" name="completed" value="true" />
       <SubmitButton
         variant="secondary"
         aria-label={`ทำเสร็จแล้ว: ${title}`}
         title="ทำเสร็จแล้ว"
-        className="size-11 w-11 rounded-full border border-primary/30 p-0 text-lg"
+        className="w-auto max-w-full rounded-full border border-primary/30 text-sm"
       >
         <span aria-hidden="true">✓</span>
+        <span>ทำเสร็จแล้ว</span>
       </SubmitButton>
     </ActionForm>
   );

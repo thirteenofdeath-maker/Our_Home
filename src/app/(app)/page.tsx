@@ -978,15 +978,15 @@ function TimelineCard({
                 </span>
               </div>
               <div
-                className={`mb-2 flex min-w-0 items-center gap-2 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55 ${item.completed ? "opacity-65" : ""}`}
+                className={`mb-2 min-w-0 rounded-[1rem] bg-finance-primary-soft/30 px-3 py-2.5 transition-colors hover:bg-finance-primary-soft/55 ${item.completed ? "opacity-65" : ""}`}
               >
-                <Link href={item.href} className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 rounded-full bg-finance-primary-soft px-2 py-0.5 text-[10px] font-medium text-finance-primary-strong">
+                <Link href={item.href} className="block min-w-0">
+                  <div className="min-w-0">
+                    <span className="inline-block rounded-full bg-finance-primary-soft px-2 py-0.5 text-[10px] font-medium text-finance-primary-strong">
                       {item.category}
                     </span>
                     <p
-                      className={`min-w-0 flex-1 truncate font-medium text-finance-text ${item.completed ? "line-through" : ""}`}
+                      className={`mt-1.5 min-w-0 break-words font-medium text-finance-text ${item.completed ? "line-through" : ""}`}
                     >
                       {item.title}
                     </p>
@@ -996,10 +996,12 @@ function TimelineCard({
                   </p>
                 </Link>
                 {item.completion && !item.completed ? (
-                  <CompletionButton
-                    target={item.completion}
-                    title={item.title}
-                  />
+                  <div className="mt-2 border-t border-finance-primary/10 pt-2">
+                    <CompletionButton
+                      target={item.completion}
+                      title={item.title}
+                    />
+                  </div>
                 ) : null}
               </div>
             </li>
