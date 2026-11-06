@@ -113,6 +113,15 @@ export default async function HouseholdExpensesPage({
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${month}-01T12:00:00Z`));
+  const totalLabel = formatCurrency(totalExpenseAmount(expenses), "THB");
+  const monthName = new Intl.DateTimeFormat("th-TH", {
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${month}-01T12:00:00Z`));
+  const yearLabel = new Intl.DateTimeFormat("th-TH", {
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${month}-01T12:00:00Z`));
 
   return (
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
@@ -123,35 +132,41 @@ export default async function HouseholdExpensesPage({
         footer={
           <section
             aria-label="สรุปค่าใช้จ่ายเดือนที่เลือก"
-            className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-[1.15rem] bg-finance-surface-strong/95 p-3 backdrop-blur-sm"
+            className="grid h-[3.25rem] min-w-0 grid-cols-2 gap-1.5"
           >
-            <div className="min-w-0 max-w-full flex-[1_1_auto]">
-              <p className="text-xs text-finance-muted">รายจ่ายรวม</p>
-              <p className="mt-1 max-w-full text-2xl font-semibold leading-tight tabular-nums text-finance-text [overflow-wrap:anywhere]">
-                {formatCurrency(totalExpenseAmount(expenses), "THB")}
+            <div className="flex min-w-0 flex-col items-center justify-center rounded-[0.9rem] bg-white/80 px-1 py-1 text-center backdrop-blur-sm">
+              <p
+                className={`max-w-full break-all font-semibold tabular-nums text-finance-text ${totalLabel.length > 13 ? "text-xs leading-4" : "text-base leading-6"}`}
+              >
+                {totalLabel}
+              </p>
+              <p className="text-[10px] leading-3 text-finance-muted">
+                รายจ่ายรวม
               </p>
             </div>
             <nav
               aria-label="เลือกเดือนค่าใช้จ่าย"
-              className="grid min-w-0 max-w-full flex-[0_1_11rem] grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center"
+              className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center rounded-[0.9rem] bg-white/80 text-center backdrop-blur-sm"
             >
               <Link
                 aria-label="เดือนก่อน"
                 href={`?month=${shiftMonth(month, -1)}`}
-                className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
+                className="flex h-11 w-8 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
               >
                 <AppIcon name="chevron" className="size-4 rotate-180" />
               </Link>
               <p
-                className="min-w-0 break-words text-center text-xs font-medium text-finance-text"
+                className="min-w-0 text-center text-[10px] font-medium leading-3 text-finance-text"
+                aria-label={monthLabel}
                 aria-live="polite"
               >
-                {monthLabel}
+                <span className="block">{monthName}</span>
+                <span className="mt-0.5 block">{yearLabel}</span>
               </p>
               <Link
                 aria-label="เดือนถัดไป"
                 href={`?month=${shiftMonth(month, 1)}`}
-                className="flex size-11 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
+                className="flex h-11 w-8 items-center justify-center rounded-full text-finance-primary-strong hover:bg-finance-primary-soft/40"
               >
                 <AppIcon name="chevron" className="size-4" />
               </Link>

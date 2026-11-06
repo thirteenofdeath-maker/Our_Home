@@ -18,7 +18,7 @@ export function PlanHeader({
 }) {
   return (
     <section
-      className={`app-cover app-cover-calendar light-cover-copy time-cover relative overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:p-6 ${footer ? "app-cover-with-footer flex flex-col justify-between gap-5" : "h-48 sm:h-52"}`}
+      className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6"
     >
       <Image
         src="/art/plan-calendar.webp"
@@ -40,7 +40,7 @@ export function PlanHeader({
       </div>
       {rightAction}
       {footer ? (
-        <div className="relative min-w-0">{footer}</div>
+        <div className="absolute inset-x-4 bottom-4 min-w-0">{footer}</div>
       ) : metrics.length > 0 ? (
         <div
           className="absolute inset-x-4 bottom-4 grid gap-1.5"
@@ -51,7 +51,7 @@ export function PlanHeader({
           {metrics.map((item) => (
             <div
               key={item.label}
-              className="min-w-0 rounded-[0.9rem] bg-white/80 px-1 py-1.5 text-center backdrop-blur-sm"
+              className="flex h-[3.25rem] min-w-0 flex-col justify-center rounded-[0.9rem] bg-white/80 px-1 py-1.5 text-center backdrop-blur-sm"
             >
               <p className="text-base font-semibold tabular-nums text-finance-text">
                 {item.value}
