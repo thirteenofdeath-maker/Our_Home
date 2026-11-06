@@ -58,7 +58,7 @@ export function PetSelector({
               type="button"
               onClick={() => scroll(-1)}
               aria-label="เลื่อนไปทางซ้าย"
-              className="flex size-9 items-center justify-center rounded-full bg-finance-surface-strong text-finance-muted shadow-sm transition-colors hover:text-finance-text focus-visible:outline-2 focus-visible:outline-finance-primary"
+              className="flex size-11 items-center justify-center rounded-full bg-finance-surface-strong text-finance-muted shadow-sm transition-colors hover:text-finance-text focus-visible:outline-2 focus-visible:outline-finance-primary"
             >
               <AppIcon name="chevron" className="size-4 rotate-180" />
             </button>
@@ -66,7 +66,7 @@ export function PetSelector({
               type="button"
               onClick={() => scroll(1)}
               aria-label="เลื่อนไปทางขวา"
-              className="flex size-9 items-center justify-center rounded-full bg-finance-surface-strong text-finance-muted shadow-sm transition-colors hover:text-finance-text focus-visible:outline-2 focus-visible:outline-finance-primary"
+              className="flex size-11 items-center justify-center rounded-full bg-finance-surface-strong text-finance-muted shadow-sm transition-colors hover:text-finance-text focus-visible:outline-2 focus-visible:outline-finance-primary"
             >
               <AppIcon name="chevron" className="size-4" />
             </button>
@@ -75,19 +75,23 @@ export function PetSelector({
       </div>
       <div
         ref={listRef}
-        className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-[1.5rem] bg-finance-surface-strong p-3 shadow-card [scrollbar-width:none] touch-pan-x [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain rounded-[1.25rem] bg-finance-surface-strong p-2 shadow-card [scrollbar-width:none] touch-pan-x [&::-webkit-scrollbar]:hidden"
       >
         <Link
           href="/pets"
           aria-current={selectedPetId === null ? "true" : undefined}
-          className={`flex w-24 shrink-0 snap-center flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center focus-visible:outline-2 focus-visible:outline-finance-primary ${selectedPetId === null ? "border-finance-primary/30 bg-finance-primary-soft/55" : "border-transparent"}`}
+          className={`flex w-20 shrink-0 snap-center flex-col items-center gap-1.5 rounded-[1rem] border px-1 py-2 text-center focus-visible:outline-2 focus-visible:outline-finance-primary ${selectedPetId === null ? "border-finance-primary/30 bg-finance-primary-soft/55" : "border-transparent"}`}
         >
           <span className="flex size-14 items-center justify-center rounded-full bg-finance-primary-soft text-finance-primary-strong">
             <AppIcon name="pets" className="size-6" />
           </span>
-          <span className="font-semibold text-finance-text">ภาพรวม</span>
-          <span className="text-xs text-finance-muted">
-            ทั้งหมด {pets.length} ตัว
+          <span className="min-w-0 max-w-full">
+            <span className="block text-sm font-semibold text-finance-text">
+              ภาพรวม
+            </span>
+            <span className="block text-xs text-finance-muted">
+              {pets.length} ตัว
+            </span>
           </span>
         </Link>
         {pets.map((pet) => {
@@ -97,7 +101,7 @@ export function PetSelector({
               key={pet.id}
               href={`/pets?pet=${pet.id}`}
               aria-current={isSelected ? "true" : undefined}
-              className={`flex w-24 shrink-0 snap-center flex-col items-center gap-2 rounded-[1.15rem] border p-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
+              className={`flex w-20 shrink-0 snap-center flex-col items-center gap-1.5 rounded-[1rem] border px-1 py-2 text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary ${
                 isSelected
                   ? "border-finance-primary/30 bg-finance-primary-soft/55"
                   : "border-transparent bg-transparent"
@@ -105,7 +109,7 @@ export function PetSelector({
             >
               <PetPhoto name={pet.name} url={pet.photoUrl} size="md" />
               <span className="min-w-0 max-w-full">
-                <span className="block truncate font-semibold text-finance-text">
+                <span className="block truncate text-sm font-semibold text-finance-text">
                   {pet.name}
                 </span>
                 <span className="block truncate text-xs text-finance-muted">

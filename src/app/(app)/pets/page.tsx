@@ -85,7 +85,7 @@ export default async function PetsPage({
     .toSorted((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))[0];
 
   return (
-    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-5 px-4 pb-8 pt-3">
+    <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
       {canManage ? <AddPetFab /> : null}
 
       <section className="app-cover app-cover-pets light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
@@ -109,106 +109,12 @@ export default async function PetsPage({
             สัตว์เลี้ยงของเรา
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-finance-muted">
-            ดูแลสุขภาพและตารางสำคัญในที่เดียว
+            สุขภาพและตารางดูแลของทุกตัว
           </p>
         </header>
       </section>
 
-      {!featured && active.length ? (
-        <section
-          aria-labelledby="pet-overview-title"
-          className="flex min-w-0 flex-col gap-3"
-        >
-          <h2
-            id="pet-overview-title"
-            className="font-semibold text-finance-text"
-          >
-            ภาพรวมสัตว์เลี้ยง
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <PetSummaryCard
-              icon="pets"
-              title="สัตว์เลี้ยงทั้งหมด"
-              value={`${active.length} ตัว`}
-              detail={speciesSummary}
-              tone="green"
-            />
-            <PetSummaryCard
-              icon="calendar"
-              title="ตารางดูแลใน 30 วัน"
-              value={`${upcomingCare.length} รายการ`}
-              detail={
-                upcomingCare[0]?.scheduled_at
-                  ? `ถัดไป ${petCareDateLabel(upcomingCare[0].scheduled_at)}`
-                  : "ยังไม่มีตารางดูแล"
-              }
-              tone="blue"
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
-              <h3 className="font-semibold text-finance-text">
-                การดูแลที่กำลังจะถึง
-              </h3>
-              {upcomingCare.length ? (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {upcomingCare.slice(0, 3).map((record) => (
-                    <li key={record.id}>
-                      <Link
-                        href={`/pets/${record.pet_id}`}
-                        className="block rounded-xl bg-finance-primary-soft/30 p-3"
-                      >
-                        <p className="text-sm font-medium text-finance-text">
-                          {record.pet?.name ?? "สัตว์เลี้ยง"} · {record.title}
-                        </p>
-                        <p className="mt-1 text-xs text-finance-muted">
-                          {petCareDateLabel(record.scheduled_at!)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-sm text-finance-muted">
-                  ไม่มีตารางดูแลใน 30 วันข้างหน้า
-                </p>
-              )}
-            </Card>
-            <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
-              <h3 className="font-semibold text-finance-text">
-                บันทึกล่าสุดของทุกตัว
-              </h3>
-              {recentCare.length ? (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {recentCare.map((record) => (
-                    <li key={record.id}>
-                      <Link
-                        href={`/pets/${record.pet_id}`}
-                        className="block rounded-xl bg-finance-primary-soft/30 p-3"
-                      >
-                        <p className="text-sm font-medium text-finance-text">
-                          {record.pet?.name ?? "สัตว์เลี้ยง"} · {record.title}
-                        </p>
-                        <p className="mt-1 text-xs text-finance-muted">
-                          {petCareDateLabel(record.recorded_at)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-sm text-finance-muted">
-                  ยังไม่มีบันทึกการดูแล
-                </p>
-              )}
-            </Card>
-          </div>
-        </section>
-      ) : null}
-
-      <div
-        className={`${featured ? "landscape-pets-split" : ""} flex min-w-0 flex-col gap-5`}
-      >
+      <div className="landscape-pets-split flex min-w-0 flex-col gap-4">
         <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
           {active.length ? (
             <PetSelector
@@ -224,6 +130,154 @@ export default async function PetsPage({
         </div>
 
         <div className="landscape-pets-column flex min-w-0 flex-col gap-3">
+          {!featured && active.length ? (
+            <section
+              aria-labelledby="pet-overview-title"
+              className="flex min-w-0 flex-col gap-3"
+            >
+              <h2
+                id="pet-overview-title"
+                className="font-semibold text-finance-text"
+              >
+                ภาพรวมสัตว์เลี้ยง
+              </h2>
+              <div className="grid grid-cols-2 gap-2.5">
+                <PetSummaryCard
+                  icon="pets"
+                  title="สัตว์เลี้ยงทั้งหมด"
+                  value={`${active.length} ตัว`}
+                  detail={speciesSummary}
+                  tone="green"
+                />
+                <PetSummaryCard
+                  icon="calendar"
+                  title="ตารางดูแลใน 30 วัน"
+                  value={`${upcomingCare.length} รายการ`}
+                  detail={
+                    upcomingCare[0]?.scheduled_at
+                      ? `ถัดไป ${petCareDateLabel(upcomingCare[0].scheduled_at)}`
+                      : "ยังไม่มีตารางดูแล"
+                  }
+                  tone="blue"
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
+                  <h3 className="font-semibold text-finance-text">
+                    การดูแลที่กำลังจะถึง
+                  </h3>
+                  {upcomingCare.length ? (
+                    <>
+                      <ul className="mt-2 divide-y divide-border/60">
+                        {upcomingCare.slice(0, 3).map((record) => (
+                          <li key={record.id}>
+                            <Link
+                              href={`/pets/${record.pet_id}`}
+                              className="block rounded-lg px-1 py-2.5 transition-colors hover:bg-finance-primary-soft/30"
+                            >
+                              <p className="text-sm font-medium text-finance-text">
+                                {record.pet?.name ?? "สัตว์เลี้ยง"} ·{" "}
+                                {record.title}
+                              </p>
+                              <p className="mt-1 text-xs text-finance-muted">
+                                {petCareDateLabel(record.scheduled_at!)}
+                              </p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      {upcomingCare.length > 3 ? (
+                        <details className="mt-2 border-t border-border/60 pt-2">
+                          <summary className="min-h-11 content-center text-sm font-medium text-finance-primary-strong">
+                            ดูอีก {upcomingCare.length - 3} รายการ
+                          </summary>
+                          <ul className="divide-y divide-border/60">
+                            {upcomingCare.slice(3).map((record) => (
+                              <li key={record.id}>
+                                <Link
+                                  href={`/pets/${record.pet_id}`}
+                                  className="block rounded-lg px-1 py-2.5"
+                                >
+                                  <p className="text-sm font-medium text-finance-text">
+                                    {record.pet?.name ?? "สัตว์เลี้ยง"} ·{" "}
+                                    {record.title}
+                                  </p>
+                                  <p className="mt-1 text-xs text-finance-muted">
+                                    {petCareDateLabel(record.scheduled_at!)}
+                                  </p>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="mt-2 text-sm text-finance-muted">
+                      ไม่มีตารางดูแลใน 30 วันข้างหน้า
+                    </p>
+                  )}
+                </Card>
+                <Card className="min-w-0 rounded-[1.5rem] bg-finance-surface-strong">
+                  <h3 className="font-semibold text-finance-text">
+                    บันทึกล่าสุดของทุกตัว
+                  </h3>
+                  {recentCare.length ? (
+                    <>
+                      <ul className="mt-2 divide-y divide-border/60">
+                        {recentCare.slice(0, 3).map((record) => (
+                          <li key={record.id}>
+                            <Link
+                              href={`/pets/${record.pet_id}`}
+                              className="block rounded-lg px-1 py-2.5 transition-colors hover:bg-finance-primary-soft/30"
+                            >
+                              <p className="text-sm font-medium text-finance-text">
+                                {record.pet?.name ?? "สัตว์เลี้ยง"} ·{" "}
+                                {record.title}
+                              </p>
+                              <p className="mt-1 text-xs text-finance-muted">
+                                {petCareDateLabel(record.recorded_at)}
+                              </p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      {recentCare.length > 3 ? (
+                        <details className="mt-2 border-t border-border/60 pt-2">
+                          <summary className="min-h-11 content-center text-sm font-medium text-finance-primary-strong">
+                            ดูอีก {recentCare.length - 3} รายการ
+                          </summary>
+                          <ul className="divide-y divide-border/60">
+                            {recentCare.slice(3).map((record) => (
+                              <li key={record.id}>
+                                <Link
+                                  href={`/pets/${record.pet_id}`}
+                                  className="block rounded-lg px-1 py-2.5"
+                                >
+                                  <p className="text-sm font-medium text-finance-text">
+                                    {record.pet?.name ?? "สัตว์เลี้ยง"} ·{" "}
+                                    {record.title}
+                                  </p>
+                                  <p className="mt-1 text-xs text-finance-muted">
+                                    {petCareDateLabel(record.recorded_at)}
+                                  </p>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="mt-2 text-sm text-finance-muted">
+                      ยังไม่มีบันทึกการดูแล
+                    </p>
+                  )}
+                </Card>
+              </div>
+            </section>
+          ) : null}
+
           {featured ? (
             <>
               <div className="flex items-center justify-between gap-3">
@@ -350,16 +404,18 @@ function PetSummaryCard({
           : "bg-[#f8efcf] text-[#9a7b32]";
   return (
     <Card className="min-w-0 rounded-[1.4rem] bg-finance-surface-strong p-3">
-      <span
-        className={`flex size-9 items-center justify-center rounded-full ${toneClass}`}
-      >
-        <AppIcon name={icon} className="size-4" />
-      </span>
-      <p className="mt-3 text-xs text-finance-muted">{title}</p>
-      <p className="mt-0.5 line-clamp-2 font-semibold text-finance-text">
+      <div className="flex items-center gap-2">
+        <span
+          className={`flex size-8 shrink-0 items-center justify-center rounded-full ${toneClass}`}
+        >
+          <AppIcon name={icon} className="size-4" />
+        </span>
+        <p className="min-w-0 text-xs text-finance-muted">{title}</p>
+      </div>
+      <p className="mt-2 line-clamp-2 text-lg font-semibold text-finance-text">
         {value}
       </p>
-      <p className="mt-1 truncate text-[11px] text-finance-muted">{detail}</p>
+      <p className="mt-1 break-words text-xs text-finance-muted">{detail}</p>
     </Card>
   );
 }
