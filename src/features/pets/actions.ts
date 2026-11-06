@@ -87,6 +87,8 @@ export async function createPetAction(
     if (path) await deletePetPhoto(supabase, path);
     return { error: "Could not create pet" };
   }
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/pets");
   redirect(`/pets?pet=${id}`);
 }
@@ -127,6 +129,8 @@ export async function updatePetAction(
       await deletePetPhoto(supabase, path);
     return { error: "Could not update pet" };
   }
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/pets");
   revalidatePath(`/pets/${petId}`);
   redirect(`/pets?pet=${petId}`);
@@ -144,6 +148,8 @@ export async function archivePetAction(formData: FormData) {
     logDatabaseErrorInDev("archivePetAction failed", error);
     return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };
   }
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/pets");
   revalidatePath(`/pets/${petId}`);
   redirect(`/pets/${petId}`);

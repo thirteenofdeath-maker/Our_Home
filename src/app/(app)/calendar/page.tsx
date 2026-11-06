@@ -1,3 +1,9 @@
+import { listSharedBirthdays } from "@/features/calendar/birthdays";
+import {
+  birthdayOccurrences,
+  withOwnBirthday,
+} from "@/features/calendar/domain/birthdays";
+import { getCurrentProfile } from "@/features/profile/api";
 import { PageNavigation } from "@/components/ui/PageNavigation";
 import { getWorkspaceSummary } from "@/features/plan/workspace-summary";
 import { ActionForm } from "@/components/ui/ActionForm";
@@ -123,6 +129,15 @@ export default async function CalendarPage({
     from: gridDays[0].date,
     to: shiftDate(gridDays[gridDays.length - 1].date, 1),
   };
+  const birthdaySourcesPromise =
+    view === "calendar"
+      ? Promise.all([
+          household && household.myRole !== "observer"
+            ? listSharedBirthdays(supabase, household.id)
+            : Promise.resolve([]),
+          getCurrentProfile(supabase, user.id),
+        ])
+      : Promise.resolve([[], null] as const);
   const taskStatus =
     query.status === "done" || query.status === "all" ? query.status : "open";
   const choresPromise =
@@ -227,10 +242,17 @@ export default async function CalendarPage({
       ? await countOverdueChores(supabase, household.id, today)
       : 0;
 
+  const [sharedBirthdays, ownProfile] = await birthdaySourcesPromise;
+  const birthdays = birthdayOccurrences(
+    withOwnBirthday([...sharedBirthdays], ownProfile, user.id),
+    calendarWindow.from,
+    calendarWindow.to,
+  );
+
   const filteredTasks = allTasks;
-  const todayEventCount = events.filter(
-    (event) => eventDate(event) === today,
-  ).length;
+  const todayEventCount =
+    events.filter((event) => eventDate(event) === today).length +
+    birthdays.filter((birthday) => birthday.date === today).length;
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
   const inventoryGroups = groupInventoryByCategory(inventory);
   const canEditHousehold = Boolean(
@@ -389,6 +411,7 @@ export default async function CalendarPage({
               selected={selected}
               today={today}
               events={events}
+              birthdays={birthdays}
               tasks={allTasks}
               reminders={allReminders}
               petCareRecords={petCareRecords}

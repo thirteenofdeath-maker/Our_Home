@@ -157,7 +157,7 @@ export function NotificationSettings({
     [
       "digest_mode_enabled",
       "รวมเป็นสรุป",
-      "งดแจ้งเตือนย่อยและรวมเรื่องสำคัญไว้ใน Push เดียว",
+      "รวมรายการทั่วไปเป็นสรุป ส่วนวันเกิดยังแจ้งแยกเวลา 09:00 น. ตามที่เปิดไว้",
     ],
     [
       "daily_digest_enabled",

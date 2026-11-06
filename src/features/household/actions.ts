@@ -47,6 +47,8 @@ export async function createHouseholdAction(
     return { error: "Could not create household" };
   }
 
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/household");
   redirect("/household");
 }
@@ -80,6 +82,8 @@ export async function addHouseholdMemberAction(
     };
   }
 
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/household");
   revalidatePath("/household/members");
   return { success: true };
@@ -113,6 +117,8 @@ export async function updateMemberPresentationAction(
     return { error: "Could not update member" };
   }
   revalidatePath("/household/members");
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/household");
   return {};
 }
@@ -142,6 +148,8 @@ export async function changeMemberRoleAction(
     return { error: "Could not change role" };
   }
   revalidatePath("/household/members");
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/household");
   return { success: true };
 }

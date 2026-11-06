@@ -9,6 +9,13 @@ import {
   CompletionButton,
   type CompletionTarget,
 } from "@/features/today/components/CompletionButton";
+import { listSharedBirthdays } from "@/features/calendar/birthdays";
+import {
+  birthdayOccurrences,
+  birthdayGreeting,
+  withOwnBirthday,
+  type CalendarBirthday,
+} from "@/features/calendar/domain/birthdays";
 import { listCalendarEvents } from "@/features/calendar/api";
 import {
   bangkokDateKey,
@@ -153,6 +160,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const household = await householdPromise;
   const householdId = household?.id ?? null;
 
+  const birthdayFeedPromise =
+    householdId && household?.myRole !== "observer"
+      ? listSharedBirthdays(supabase, householdId)
+      : Promise.resolve([]);
   const eventsPromise = listCalendarEvents(supabase, householdId, user.id);
   const expensesPromise = householdId
     ? listHouseholdExpenses(supabase, householdId, today.slice(0, 7))
@@ -185,10 +196,21 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     ? listInventoryItems(supabase, householdId)
     : Promise.resolve([]);
 
-  const profile = await profilePromise;
+  const [profile, sharedBirthdays] = await Promise.all([
+    profilePromise,
+    birthdayFeedPromise,
+  ]);
+  const birthdays = birthdayOccurrences(
+    withOwnBirthday(sharedBirthdays, profile, user.id),
+    today,
+    upcomingEnd,
+  );
+  const todayBirthdays = birthdays.filter((item) => item.date === today);
   const displayName =
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
-  const coverMode = themeOverride ?? homeCoverMode(profile?.birthday, now);
+  const coverMode = todayBirthdays.length
+    ? "birthday"
+    : (themeOverride ?? homeCoverMode(profile?.birthday, now));
   const coverStyle = HOME_COVER_STYLES[coverMode];
   const isBirthday = coverMode === "birthday";
   return (
@@ -210,9 +232,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
           {thaiToday(today)}
         </p>
-        <h1 className="relative mt-2 max-w-[72%] text-2xl font-semibold leading-tight text-finance-text">
+        <h1 className="relative mt-2 line-clamp-3 max-w-[80%] text-xl font-semibold leading-tight text-finance-text sm:text-2xl">
           {isBirthday
-            ? `สุขสันต์วันเกิด ${displayName} 🎉`
+            ? birthdayGreeting(todayBirthdays)
             : `${greetingForBangkok(now)} ${displayName}`}
         </h1>
         <p className="relative mt-2 max-w-[62%] text-sm leading-relaxed text-finance-muted">
@@ -237,6 +259,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       <Suspense fallback={<HomeTodaySkeleton />}>
         <HomeTodaySections
+          birthdays={birthdays}
           canParticipate={Boolean(household && household.myRole !== "observer")}
           today={today}
           tomorrow={tomorrow}
@@ -270,6 +293,7 @@ type TimelineItem = {
   detail: string;
   timeLabel: string;
   sortKey: string;
+  priority?: number;
   completed: boolean | null;
   completion?: CompletionTarget;
 };
@@ -289,6 +313,7 @@ type CompactDailySummaryItem = Pick<
 >;
 
 async function HomeTodaySections({
+  birthdays,
   canParticipate,
   today,
   tomorrow,
@@ -301,6 +326,7 @@ async function HomeTodaySections({
   shoppingPromise,
   inventoryPromise,
 }: {
+  birthdays: CalendarBirthday[];
   canParticipate: boolean;
   today: string;
   tomorrow: string;
@@ -344,8 +370,25 @@ async function HomeTodaySections({
   const choreAssigneeName = (memberId: string) =>
     choreMemberNames.get(memberId) ?? "สมาชิก";
 
-  const timelineForDate = (date: string): TimelineItem[] =>
-    [
+  const timelineForDate = (date: string): TimelineItem[] => {
+    const items: TimelineItem[] = [
+      ...birthdays
+        .filter((birthday) => birthday.date === date)
+        .map((birthday) => ({
+          key: birthday.key,
+          href: birthday.href,
+          category: "วันเกิด",
+          icon:
+            birthday.subject_type === "PET"
+              ? ("pets" as const)
+              : ("calendar" as const),
+          title: `🎂 วันเกิด ${birthday.display_name}`,
+          detail: `${birthday.subject_type === "PET" ? "สัตว์เลี้ยง" : "สมาชิก"} · ${birthday.personal ? "ส่วนตัว" : "ครอบครัว"}`,
+          timeLabel: "ทั้งวัน",
+          sortKey: "00:00",
+          priority: birthday.subject_type === "MEMBER" ? 0 : 1,
+          completed: null,
+        })),
       ...events
         .filter((event) => eventDate(event) === date)
         .map((event) => {
@@ -449,11 +492,15 @@ async function HomeTodaySections({
               : undefined,
           };
         }),
-    ].toSorted((a, b) =>
-      `${a.sortKey}-${a.category}-${a.title}`.localeCompare(
-        `${b.sortKey}-${b.category}-${b.title}`,
-      ),
+    ];
+    return items.toSorted(
+      (a, b) =>
+        (a.priority ?? 10) - (b.priority ?? 10) ||
+        `${a.sortKey}-${a.category}-${a.title}`.localeCompare(
+          `${b.sortKey}-${b.category}-${b.title}`,
+        ),
     );
+  };
 
   const todayTimeline = timelineForDate(today);
   const tomorrowTimeline = timelineForDate(tomorrow);

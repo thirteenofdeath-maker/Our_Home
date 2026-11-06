@@ -18,7 +18,7 @@ import {
   type DigestCounts,
   type DigestDetails,
 } from "./digest.ts";
-import { notificationPreferenceAllows } from "./preferences.ts";
+import { notificationDeliveryModeAllows, notificationPreferenceAllows } from "./preferences.ts";
 
 type Candidate = {
   sourceType:
@@ -752,14 +752,7 @@ Deno.serve(async (request: Request) => {
     const users = new Set<string>();
     for (const userId of new Set(candidate.users)) {
       const preference: any = prefs.get(userId) ?? defaultPreference;
-      const isDigest =
-        candidate.sourceType === "DAILY_DIGEST" ||
-        candidate.sourceType === "WEEKLY_DIGEST";
-      if (
-        candidate.sourceType !== "TEST" &&
-        (preference.digest_mode_enabled ? !isDigest : isDigest)
-      )
-        continue;
+      if (!notificationDeliveryModeAllows(candidate, preference.digest_mode_enabled)) continue;
       if (!notificationPreferenceAllows(candidate, preference)) continue;
       users.add(userId);
       historyRows.push({

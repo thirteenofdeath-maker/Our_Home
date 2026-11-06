@@ -12,6 +12,7 @@ import {
   toBangkokInput,
 } from "../domain/calendar";
 import type { CalendarEventView } from "../types";
+import type { CalendarBirthday } from "../domain/birthdays";
 import type { CalendarFinanceItem } from "../finance";
 import { togglePlanTaskAction } from "@/features/plan/actions";
 import { planDateLabel } from "@/features/plan/domain";
@@ -34,6 +35,7 @@ export function MonthCalendar({
   selected,
   today,
   events,
+  birthdays = [],
   financeItems = [],
   tasks = [],
   reminders = [],
@@ -43,6 +45,7 @@ export function MonthCalendar({
   selected: string;
   today: string;
   events: CalendarEventView[];
+  birthdays?: CalendarBirthday[];
   financeItems?: CalendarFinanceItem[];
   tasks?: PlanTask[];
   reminders?: PlanReminder[];
@@ -54,6 +57,15 @@ export function MonthCalendar({
     if (date) byDate.set(date, [...(byDate.get(date) ?? []), event]);
   }
   const selectedEvents = byDate.get(selected) ?? [];
+  const selectedBirthdays = birthdays.filter(
+    (birthday) => birthday.date === selected,
+  );
+  const birthdayCountByDate = new Map<string, number>();
+  for (const birthday of birthdays)
+    birthdayCountByDate.set(
+      birthday.date,
+      (birthdayCountByDate.get(birthday.date) ?? 0) + 1,
+    );
   const selectedFinance = financeItems.filter((item) => item.date === selected);
   const selectedTasks = tasks.filter((task) => task.due_date === selected);
   const selectedReminders = reminders.filter(
@@ -135,6 +147,7 @@ export function MonthCalendar({
           ))}
           {monthDays(month).map((day) => {
             const dayEvents = byDate.get(day.date) ?? [];
+            const birthdayCount = birthdayCountByDate.get(day.date) ?? 0;
             const isSelected = day.date === selected;
             const isToday = day.date === today;
             const financeCount = financeCountByDate.get(day.date) ?? 0;
@@ -146,7 +159,7 @@ export function MonthCalendar({
                 key={day.date}
                 href={`/calendar?month=${month}&date=${day.date}`}
                 aria-current={isToday ? "date" : undefined}
-                aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${petCareCount ? ` ดูแลสัตว์เลี้ยง ${petCareCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
+                aria-label={`${day.date} มีกิจกรรม ${dayEvents.length}${birthdayCount ? ` วันเกิด ${birthdayCount}` : ""}${taskCount ? ` งาน ${taskCount}` : ""}${reminderCount ? ` เตือน ${reminderCount}` : ""}${petCareCount ? ` ดูแลสัตว์เลี้ยง ${petCareCount}` : ""}${isToday ? " วันนี้" : ""}${isSelected ? " เลือกอยู่" : ""}${financeCount ? ` รายการการเงิน ${financeCount}` : ""}`}
                 data-selected={isSelected || undefined}
                 className={`mx-auto flex size-9 flex-col items-center justify-center rounded-full text-center transition-colors focus-visible:outline-2 focus-visible:outline-finance-primary sm:size-10 ${isSelected ? "bg-finance-primary text-finance-primary-foreground shadow-sm" : isToday ? "bg-finance-primary-soft text-finance-primary-strong ring-1 ring-finance-primary" : "text-finance-text hover:bg-finance-primary-soft/60"} ${day.inMonth ? "" : "opacity-30"}`}
               >
@@ -154,6 +167,14 @@ export function MonthCalendar({
                   {Number(day.date.slice(-2))}
                 </span>
                 <span className="mt-0.5 flex h-1.5 items-center gap-0.5">
+                  {birthdayCount ? (
+                    <span
+                      aria-hidden="true"
+                      className="text-[10px] leading-none"
+                    >
+                      🎂
+                    </span>
+                  ) : null}
                   {dayEvents.slice(0, 1).map((event) => (
                     <span
                       key={event.id}
@@ -195,7 +216,8 @@ export function MonthCalendar({
             </h2>
           </div>
           <span className="shrink-0 rounded-full bg-finance-primary-soft px-3 py-1 text-xs font-medium text-finance-primary-strong">
-            {selectedEvents.length +
+            {selectedBirthdays.length +
+              selectedEvents.length +
               selectedFinance.length +
               selectedTasks.length +
               selectedReminders.length +
@@ -203,6 +225,25 @@ export function MonthCalendar({
             รายการ
           </span>
         </div>
+        {selectedBirthdays.map((birthday) => (
+          <Link key={birthday.key} href={birthday.href}>
+            <Card className="flex items-start gap-3 rounded-[1.25rem] border border-finance-primary/25 bg-finance-primary-soft/40">
+              <span aria-hidden="true" className="text-xl">
+                🎂
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-finance-text">
+                  วันเกิด {birthday.display_name}
+                </p>
+                <p className="mt-1 text-sm text-finance-muted">
+                  ทั้งวัน ·{" "}
+                  {birthday.subject_type === "PET" ? "สัตว์เลี้ยง" : "สมาชิก"} ·{" "}
+                  {birthday.personal ? "ส่วนตัว" : "ครอบครัว"}
+                </p>
+              </div>
+            </Card>
+          </Link>
+        ))}
         {selectedEvents.length ? (
           selectedEvents.map((event) => (
             <Link key={event.id} href={`/calendar/${event.id}`}>
@@ -223,11 +264,11 @@ export function MonthCalendar({
               </Card>
             </Link>
           ))
-        ) : (
+        ) : !selectedBirthdays.length ? (
           <Card className="rounded-[1.25rem] bg-finance-surface-strong">
             <p className="text-sm text-finance-muted">ไม่มีกิจกรรมในวันนี้</p>
           </Card>
-        )}
+        ) : null}
         {selectedFinance.map((item) => (
           <Link key={`${item.source}-${item.sourceId}`} href={item.href}>
             <Card className="rounded-[1.25rem] bg-finance-surface-strong">

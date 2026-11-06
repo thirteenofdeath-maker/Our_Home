@@ -5,6 +5,24 @@ export type PreferenceCandidate = {
   preferenceKey?: string;
 };
 
+// Birthdays keep their explicit 09:00 reminders even when ordinary tasks
+// and appointments are delivered as a digest. Topic/timing switches still apply.
+export function notificationDeliveryModeAllows(
+  candidate: PreferenceCandidate,
+  digestMode: boolean,
+) {
+  if (
+    candidate.sourceType === "TEST" ||
+    candidate.sourceType === "MEMBER_BIRTHDAY" ||
+    candidate.sourceType === "PET_BIRTHDAY"
+  )
+    return true;
+  const isDigest =
+    candidate.sourceType === "DAILY_DIGEST" ||
+    candidate.sourceType === "WEEKLY_DIGEST";
+  return digestMode ? isDigest : !isDigest;
+}
+
 export function notificationPreferenceAllows(
   candidate: PreferenceCandidate,
   preference: Record<string, boolean>,

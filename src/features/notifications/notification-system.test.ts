@@ -96,9 +96,8 @@ describe("push notification system", () => {
       "digest_mode_enabled boolean not null default true",
     );
     expect(digestMigration).toContain("'DAILY_DIGEST','WEEKLY_DIGEST'");
-    expect(dispatcher).toContain('candidate.sourceType === "DAILY_DIGEST"');
     expect(dispatcher).toContain(
-      "preference.digest_mode_enabled ? !isDigest : isDigest",
+      "notificationDeliveryModeAllows(candidate, preference.digest_mode_enabled)",
     );
   });
 

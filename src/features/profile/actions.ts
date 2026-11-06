@@ -112,6 +112,8 @@ export async function updateProfileAction(
   ) {
     await deleteAvatar(supabase, current.avatar_url);
   }
+  revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/household/members");
   revalidatePath("/profile/edit");
   redirect("/household/members");
