@@ -8,6 +8,7 @@ import { PageNavigation } from "@/components/ui/PageNavigation";
 import { getWorkspaceSummary } from "@/features/plan/workspace-summary";
 import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
+import { z } from "zod";
 import { PlanHeader } from "@/features/plan/components/PlanHeader";
 import type { ReactNode } from "react";
 
@@ -61,7 +62,7 @@ import { ReminderForm } from "@/features/plan/components/ReminderForm";
 import { ReminderList } from "@/features/plan/components/ReminderList";
 import { TaskForm } from "@/features/plan/components/TaskForm";
 import { TaskList } from "@/features/plan/components/TaskList";
-import { listShoppingItems } from "@/features/shopping/api";
+import { getShoppingItem, listShoppingItems } from "@/features/shopping/api";
 import { ShoppingItemCard } from "@/features/shopping/components/ShoppingItemCard";
 import { ShoppingItemForm } from "@/features/shopping/components/ShoppingItemForm";
 import { requireUser } from "@/lib/auth/require-user";
@@ -109,6 +110,8 @@ export default async function CalendarPage({
   const household = await getMyPrimaryHousehold(supabase, user.id);
   const now = new Date();
   const view = activeView(query.view);
+  const focusedShoppingId =
+    view === "shopping" && typeof query.item === "string" ? query.item : null;
   const month = monthKey(
     typeof query.month === "string" ? query.month : undefined,
     now,
@@ -213,8 +216,14 @@ export default async function CalendarPage({
       : Promise.resolve([]),
     choresPromise,
     household && view === "shopping"
-      ? listShoppingItems(supabase, household.id, pageRequest)
-      : Promise.resolve([]),
+      ? focusedShoppingId === null
+        ? listShoppingItems(supabase, household.id, pageRequest)
+        : z.uuid().safeParse(focusedShoppingId).success
+          ? getShoppingItem(supabase, household.id, focusedShoppingId).then(
+              (item) => (item ? [item] : []),
+            )
+          : []
+      : [],
     household && view === "inventory"
       ? listInventoryItems(supabase, household.id, pageRequest)
       : Promise.resolve([]),
@@ -229,7 +238,7 @@ export default async function CalendarPage({
       ? allTasks
       : view === "reminders"
         ? allReminders
-        : view === "shopping"
+        : view === "shopping" && focusedShoppingId === null
           ? shopping
           : view === "inventory"
             ? inventory
@@ -662,6 +671,14 @@ export default async function CalendarPage({
 
         {view === "shopping" && household ? (
           <>
+            {focusedShoppingId !== null ? (
+              <Link
+                href="/calendar?view=shopping"
+                className="min-h-11 self-start content-center rounded-full border border-finance-primary/30 px-4 text-sm font-medium text-finance-primary-strong"
+              >
+                ดูรายการซื้อทั้งหมด
+              </Link>
+            ) : null}
             {canEditHousehold ? (
               <form id="shopping-receipt" action="/calendar/shopping/expense">
                 <button className="rounded-xl bg-finance-primary px-4 py-2 text-sm font-medium text-finance-primary-foreground">
@@ -691,34 +708,46 @@ export default async function CalendarPage({
               </ReadOnlyNotice>
             )}
 
-            <section className="flex flex-col gap-3">
-              <SectionHeading
-                title="ต้องซื้อ"
-                count={summary.shopping.pending}
-              />
-              {pendingShopping.length ? (
-                pendingShopping.map((item) => (
-                  <ShoppingItemCard
-                    key={item.id}
-                    item={item}
-                    members={members}
-                    canEdit={canEditHousehold}
-                  />
-                ))
-              ) : (
-                <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
-                  {summary.shopping.pending
-                    ? "ไม่มีรายการต้องซื้อในหน้านี้"
-                    : "ซื้อครบแล้ว บ้านพร้อมมาก 🎉"}
-                </Card>
-              )}
-            </section>
+            {focusedShoppingId === null || !purchasedShopping.length ? (
+              <section className="flex flex-col gap-3">
+                <SectionHeading
+                  title="ต้องซื้อ"
+                  count={
+                    focusedShoppingId === null
+                      ? summary.shopping.pending
+                      : pendingShopping.length
+                  }
+                />
+                {pendingShopping.length ? (
+                  pendingShopping.map((item) => (
+                    <ShoppingItemCard
+                      key={item.id}
+                      item={item}
+                      members={members}
+                      canEdit={canEditHousehold}
+                    />
+                  ))
+                ) : (
+                  <Card className="rounded-[1.35rem] bg-finance-surface-strong text-center text-sm text-finance-muted">
+                    {focusedShoppingId !== null
+                      ? "รายการนี้ไม่อยู่ในรายการซื้อแล้ว"
+                      : summary.shopping.pending
+                        ? "ไม่มีรายการต้องซื้อในหน้านี้"
+                        : "ซื้อครบแล้ว บ้านพร้อมมาก 🎉"}
+                  </Card>
+                )}
+              </section>
+            ) : null}
 
             {purchasedShopping.length ? (
               <section className="flex flex-col gap-3">
                 <SectionHeading
                   title="ซื้อแล้ว"
-                  count={summary.shopping.purchased}
+                  count={
+                    focusedShoppingId === null
+                      ? summary.shopping.purchased
+                      : purchasedShopping.length
+                  }
                 />
                 {purchasedShopping.map((item) => (
                   <ShoppingItemCard

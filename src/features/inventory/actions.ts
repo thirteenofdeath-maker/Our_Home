@@ -187,6 +187,7 @@ export async function adjustInventoryQuantityAction(form: FormData) {
     if (error) throw error;
     revalidatePath("/calendar");
     revalidatePath(`/calendar/inventory/${parsed.data.itemId}`);
+    revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("adjustInventoryQuantityAction failed", error);
     return { error: "บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง" };
@@ -194,31 +195,37 @@ export async function adjustInventoryQuantityAction(form: FormData) {
   return { success: true };
 }
 
+type SendInventoryState = ActionState & { shoppingItemId?: string };
+
 export async function sendInventoryToShoppingAction(
-  _state: ActionState,
+  _state: SendInventoryState,
   form: FormData,
-): Promise<ActionState> {
+): Promise<SendInventoryState> {
   const itemId = value(form, "itemId");
   if (!z.string().uuid().safeParse(itemId).success) {
     return { error: "ข้อมูลรายการไม่ถูกต้อง" };
   }
   try {
     const { supabase } = await requireUser();
-    const { error } = await supabase.rpc("send_inventory_item_to_shopping", {
-      p_item_id: itemId,
-    });
+    const { data: shoppingItemId, error } = await supabase.rpc(
+      "send_inventory_item_to_shopping",
+      { p_item_id: itemId },
+    );
     if (error) throw error;
     revalidatePath("/calendar");
     revalidatePath(`/calendar/inventory/${itemId}`);
     revalidatePath("/");
-    return { success: true };
+    return { success: true, shoppingItemId };
   } catch (error) {
     logDatabaseErrorInDev("sendInventoryToShoppingAction failed", error);
     return { error: "ส่งไปยังรายการซื้อไม่สำเร็จ กรุณาลองใหม่" };
   }
 }
 
-export async function archiveInventoryItemAction(form: FormData) {
+export async function archiveInventoryItemAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
   const itemId = value(form, "itemId");
   if (!z.string().uuid().safeParse(itemId).success)
     return { error: "ไม่พบรายการหรือข้อมูลไม่ถูกต้อง" };

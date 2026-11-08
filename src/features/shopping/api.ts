@@ -34,11 +34,13 @@ export async function listShoppingItems(
 
 export async function getShoppingItem(
   supabase: SupabaseClient<Database>,
+  householdId: string,
   itemId: string,
 ): Promise<ShoppingItem | null> {
   const { data, error } = await supabase
     .from("shopping_items")
     .select("*")
+    .eq("household_id", householdId)
     .eq("id", itemId)
     .is("archived_at", null)
     .maybeSingle();

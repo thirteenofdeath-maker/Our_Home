@@ -5,35 +5,46 @@ import { useActionState } from "react";
 
 import { AppIcon } from "@/components/ui/AppIcon";
 import { Spinner } from "@/components/ui/Spinner";
-import { initialActionState } from "@/lib/types/action-state";
+import { cn } from "@/lib/utils/cn";
 import { sendInventoryToShoppingAction } from "../actions";
 
 export function SendInventoryToShoppingButton({
   itemId,
   itemName,
+  pendingShoppingId,
+  canEdit = true,
+  compact = false,
 }: {
   itemId: string;
   itemName: string;
+  pendingShoppingId?: string;
+  canEdit?: boolean;
+  compact?: boolean;
 }) {
   const [state, action, pending] = useActionState(
     sendInventoryToShoppingAction,
-    initialActionState,
+    {},
   );
 
-  if (state.success) {
+  const shoppingItemId = pendingShoppingId ?? state.shoppingItemId;
+  if (shoppingItemId) {
     return (
-      <div
-        className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1"
-        role="status"
-        aria-live="polite"
-      >
-        <span className="flex min-h-8 items-center gap-1.5 rounded-full bg-[#e3efdf] px-3 text-xs font-medium text-[#4f6754]">
-          <span aria-hidden="true">✓</span>
-          เพิ่มในรายการซื้อแล้ว
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span
+          role="status"
+          aria-live="polite"
+          className="rounded-full bg-finance-primary-soft px-3 py-1.5 text-xs font-medium text-finance-primary-strong"
+        >
+          {state.shoppingItemId === shoppingItemId
+            ? "เพิ่มในรายการซื้อแล้ว · รอซื้อ"
+            : "รอซื้อ"}
         </span>
         <Link
-          href="/calendar?view=shopping"
-          className="min-h-8 content-center text-xs font-medium text-finance-primary-strong underline underline-offset-2"
+          href={`/calendar?view=shopping&item=${shoppingItemId}`}
+          className={cn(
+            "content-center rounded-full px-2 font-medium text-finance-primary-strong underline underline-offset-2",
+            compact ? "min-h-8 text-xs" : "min-h-11 text-sm",
+          )}
         >
           ดูรายการซื้อ
         </Link>
@@ -41,13 +52,18 @@ export function SendInventoryToShoppingButton({
     );
   }
 
+  if (!canEdit) return null;
+
   return (
     <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="itemId" value={itemId} />
       <button
         type="submit"
         disabled={pending}
-        className="flex min-h-8 items-center gap-1.5 rounded-full bg-finance-primary-soft px-3 text-xs font-medium text-finance-primary-strong disabled:cursor-wait disabled:opacity-70"
+        className={cn(
+          "flex items-center gap-1.5 rounded-full bg-finance-primary px-4 font-medium text-finance-primary-foreground disabled:cursor-wait disabled:opacity-70",
+          compact ? "min-h-8 text-xs" : "min-h-11 text-sm",
+        )}
         aria-label={`ส่ง ${itemName} ไปรายการซื้อ`}
       >
         {pending ? (

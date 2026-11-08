@@ -1,8 +1,6 @@
-import { ActionForm } from "@/components/ui/ActionForm";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
-import { adjustInventoryQuantityAction } from "../actions";
 import {
   INVENTORY_CATEGORY_LABEL,
   inventoryDateLabel,
@@ -12,6 +10,7 @@ import {
   type InventoryItem,
 } from "../types";
 import { SendInventoryToShoppingButton } from "./SendInventoryToShoppingButton";
+import { InventoryQuantityButtons } from "./InventoryQuantityButtons";
 
 export function InventoryItemCard({
   item,
@@ -25,7 +24,6 @@ export function InventoryItemCard({
   showCategory?: boolean;
 }) {
   const low = isLowStock(item);
-  const quantity = Number(item.quantity);
   return (
     <Card className="rounded-[0.9rem] border border-border/65 bg-finance-surface-strong p-2.5 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -73,33 +71,7 @@ export function InventoryItemCard({
           <span className="mr-1 text-sm font-semibold tabular-nums text-finance-primary-strong">
             {inventoryQuantityLabel(item)}
           </span>
-          {canEdit ? (
-            <>
-              <ActionForm action={adjustInventoryQuantityAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <input type="hidden" name="delta" value="-1" />
-                <button
-                  type="submit"
-                  disabled={quantity <= 0}
-                  className="flex size-8 items-center justify-center rounded-full border border-finance-primary/30 text-base text-finance-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={`ลดจำนวน ${item.name}`}
-                >
-                  −
-                </button>
-              </ActionForm>
-              <ActionForm action={adjustInventoryQuantityAction}>
-                <input type="hidden" name="itemId" value={item.id} />
-                <input type="hidden" name="delta" value="1" />
-                <button
-                  type="submit"
-                  className="flex size-8 items-center justify-center rounded-full border border-finance-primary/30 text-base text-finance-primary-strong"
-                  aria-label={`เพิ่มจำนวน ${item.name}`}
-                >
-                  +
-                </button>
-              </ActionForm>
-            </>
-          ) : null}
+          {canEdit ? <InventoryQuantityButtons item={item} compact /> : null}
         </div>
       </div>
       {canEdit && low ? (
@@ -107,6 +79,7 @@ export function InventoryItemCard({
           <SendInventoryToShoppingButton
             itemId={item.id}
             itemName={item.name}
+            compact
           />
         </div>
       ) : null}

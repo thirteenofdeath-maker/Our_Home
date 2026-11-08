@@ -77,16 +77,18 @@ describe("household inventory schema", () => {
 
   it("reports send-to-shopping progress and result instead of failing silently", () => {
     expect(inventoryActions).toMatch(
-      /sendInventoryToShoppingAction\([\s\S]*Promise<ActionState>/,
+      /sendInventoryToShoppingAction\([\s\S]*Promise<SendInventoryState>/,
     );
-    expect(inventoryActions).toContain("return { success: true }");
+    expect(inventoryActions).toContain(
+      "return { success: true, shoppingItemId }",
+    );
     expect(inventoryActions).toContain(
       "ส่งไปยังรายการซื้อไม่สำเร็จ กรุณาลองใหม่",
     );
     expect(sendToShoppingButton).toContain("useActionState(");
     expect(sendToShoppingButton).toContain("กำลังส่ง…");
     expect(sendToShoppingButton).toContain("เพิ่มในรายการซื้อแล้ว");
-    expect(sendToShoppingButton).toContain("/calendar?view=shopping");
+    expect(sendToShoppingButton).toContain("/calendar?view=shopping&item=");
     expect(sendToShoppingButton).toContain('aria-live="polite"');
     expect(inventoryItemCard).toContain("<SendInventoryToShoppingButton");
     expect(inventoryItemCard).not.toContain(

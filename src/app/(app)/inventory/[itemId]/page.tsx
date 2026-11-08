@@ -1,10 +1,10 @@
 import { ActionForm } from "@/components/ui/ActionForm";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { Card } from "@/components/ui/Card";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormSheetButton } from "@/components/ui/FormSheetButton";
 import { getMyPrimaryHousehold } from "@/features/household/api";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/features/inventory/actions";
 import { InventoryDocumentForm } from "@/features/inventory/components/InventoryDocumentForm";
 import { InventoryItemForm } from "@/features/inventory/components/InventoryItemForm";
+import { InventoryQuantityButtons } from "@/features/inventory/components/InventoryQuantityButtons";
 import { SendInventoryToShoppingButton } from "@/features/inventory/components/SendInventoryToShoppingButton";
 import {
   INVENTORY_CATEGORY_LABEL,
@@ -25,6 +26,7 @@ import {
   inventoryQuantityLabel,
   isLowStock,
 } from "@/features/inventory/types";
+import { getShoppingItem } from "@/features/shopping/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -42,30 +44,46 @@ export async function InventoryDetailPage({
     getMyPrimaryHousehold(supabase, user.id),
   ]);
   if (!item || !household || item.household_id !== household.id) notFound();
-  const documents = await listInventoryDocuments(supabase, item.id);
+  const [documents, shoppingItem] = await Promise.all([
+    listInventoryDocuments(supabase, item.id),
+    item.shopping_item_id
+      ? getShoppingItem(supabase, household.id, item.shopping_item_id)
+      : null,
+  ]);
+  const pendingShoppingId =
+    shoppingItem && !shoppingItem.purchased_at ? shoppingItem.id : undefined;
   const canEdit = household.myRole !== "observer";
+  const stockStatus =
+    Number(item.quantity) === 0
+      ? "หมดแล้ว"
+      : isLowStock(item)
+        ? "ควรเติม"
+        : null;
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
       <PageHeader title={item.name} backHref="/calendar?view=inventory" />
       <Card className="rounded-[1.5rem] time-tinted-panel">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-finance-primary-strong">
-              {INVENTORY_CATEGORY_LABEL[item.category]}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-finance-text">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-finance-primary-strong">
+            {INVENTORY_CATEGORY_LABEL[item.category]}
+          </p>
+          <AppIcon
+            name="inventory"
+            className="size-8 shrink-0 text-finance-primary-strong/60"
+          />
+        </div>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="min-w-0" aria-live="polite">
+            <h1 className="break-words text-2xl font-semibold text-finance-text">
               {inventoryQuantityLabel(item)}
             </h1>
-            {isLowStock(item) ? (
+            {stockStatus ? (
               <p className="mt-1 text-sm font-medium text-[#a9513d]">
-                ถึงระดับที่ควรเติมแล้ว
+                {stockStatus}
               </p>
             ) : null}
           </div>
-          <AppIcon
-            name="inventory"
-            className="size-10 text-finance-primary-strong/60"
-          />
+          {canEdit ? <InventoryQuantityButtons item={item} /> : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-finance-muted">
           {item.location ? (
@@ -111,35 +129,27 @@ export async function InventoryDetailPage({
           </p>
         ) : null}
       </Card>
-      {canEdit ? (
-        <div className="flex flex-wrap gap-2">
-          <FormSheetButton
-            triggerClassName="rounded-full border border-finance-primary/30 px-4 py-2.5 text-sm font-medium text-finance-primary-strong"
-            ariaLabel={`แก้ไข ${item.name}`}
-            sheetTitle="แก้ไขของในคลัง"
-            form={<InventoryItemForm householdId={household.id} item={item} />}
-            tone="finance"
-          >
-            แก้ไข
-          </FormSheetButton>
+      {canEdit || pendingShoppingId ? (
+        <div className="flex flex-wrap items-start gap-2">
           <SendInventoryToShoppingButton
             itemId={item.id}
             itemName={item.name}
+            pendingShoppingId={pendingShoppingId}
+            canEdit={canEdit}
           />
-          {item.shopping_item_id ? (
-            <Link
-              href="/calendar?view=shopping"
-              className="rounded-full border border-finance-primary/30 px-4 py-2.5 text-sm font-medium text-finance-primary-strong"
+          {canEdit ? (
+            <FormSheetButton
+              triggerClassName="min-h-11 rounded-full border border-finance-primary/30 px-4 py-2.5 text-sm font-medium text-finance-primary-strong"
+              ariaLabel={`แก้ไข ${item.name}`}
+              sheetTitle="แก้ไขของในคลัง"
+              form={
+                <InventoryItemForm householdId={household.id} item={item} />
+              }
+              tone="finance"
             >
-              ดูรายการซื้อ
-            </Link>
+              แก้ไข
+            </FormSheetButton>
           ) : null}
-          <ActionForm action={archiveInventoryItemAction}>
-            <input type="hidden" name="itemId" value={item.id} />
-            <button className="rounded-full border border-border px-4 py-2.5 text-sm text-finance-muted">
-              นำออกจากคลัง
-            </button>
-          </ActionForm>
         </div>
       ) : null}
       <section className="flex flex-col gap-3">
@@ -210,6 +220,19 @@ export async function InventoryDetailPage({
           </Card>
         )}
       </section>
+      {canEdit ? (
+        <div className="flex justify-start border-t border-border pt-3">
+          <ConfirmDialog
+            triggerLabel="นำออกจากคลัง"
+            triggerClassName="min-h-11 rounded-full border border-danger/40 px-4 text-sm font-medium text-danger"
+            sheetTitle="นำออกจากคลัง?"
+            description={`“${item.name}” จะถูกซ่อนจากคลังของในบ้าน`}
+            confirmLabel="นำออกจากคลัง"
+            action={archiveInventoryItemAction}
+            hiddenFields={{ itemId: item.id }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
