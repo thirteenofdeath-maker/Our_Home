@@ -9,7 +9,8 @@ describe("offline-first PWA foundation", () => {
   it("pre-caches an offline fallback and app assets", () => {
     const worker = read("public/sw.js");
     expect(worker).toContain('const OFFLINE_URL = "/offline.html"');
-    expect(worker).toContain("cache.addAll(PRECACHE_URLS)");
+    expect(worker).toMatch(/cache\.addAll\(\s*PRECACHE_URLS\.map/);
+    expect(worker).toContain('cache: "reload"');
     expect(worker).toContain("cacheFirst(request)");
   });
 

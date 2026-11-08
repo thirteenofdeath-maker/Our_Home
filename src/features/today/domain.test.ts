@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { greetingForBangkok, homeCoverMode } from "./domain";
+import {
+  greetingForBangkok,
+  homeCoverMode,
+  parseHomeCoverTime,
+} from "./domain";
 
 describe("Today greeting in Bangkok time", () => {
   it.each([
@@ -41,4 +45,12 @@ describe("Today cover in Bangkok time", () => {
       "birthday",
     );
   });
+});
+
+it("accepts only the seven explicit Home artwork overrides", () => {
+  expect(parseHomeCoverTime("morning")).toBe("morning");
+  expect(parseHomeCoverTime("late-night")).toBe("late-night");
+  expect(parseHomeCoverTime(["evening", "night"])).toBe("evening");
+  expect(parseHomeCoverTime("birthday")).toBeNull();
+  expect(parseHomeCoverTime(undefined)).toBeNull();
 });

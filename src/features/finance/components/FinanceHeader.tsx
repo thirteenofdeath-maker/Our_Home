@@ -3,16 +3,16 @@ import Image from "next/image";
 /** Shared cover for the Finance overview and every module. */
 export function FinanceHeader() {
   return (
-    <section className="app-cover app-cover-finance light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+    <section className="app-cover app-cover-finance relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
       <Image
         src="/art/finance-corner.webp"
         alt="กระเป๋าเงิน เหรียญ และแผนการเงินของบ้าน"
         fill
         priority
         sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
-        className="app-cover-image time-cover-image object-cover object-center"
+        className="app-cover-image object-cover object-center"
       />
-      <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+      <div aria-hidden="true" className="app-cover-overlay absolute inset-0" />
       <div className="relative max-w-[58%]">
         <p className="text-xs font-medium text-finance-primary-strong">
           ดูแลเงินอย่างสบายใจ

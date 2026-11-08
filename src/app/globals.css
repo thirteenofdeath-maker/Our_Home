@@ -1,227 +1,65 @@
 @import "tailwindcss";
 
-/* Seven Bangkok-time palettes. The bootstrap in app/layout.tsx selects the
-   correct data attribute before first paint; TimeThemeController keeps an
-   already-open PWA in sync at each time boundary. Semantic colors such as
-   income, expense and danger deliberately stay stable across every theme. */
+/* Shared Cozy colors for the app shell, forms, and content. */
 :root {
   color-scheme: light;
 
-  --time-background: #fff9ef;
-  --time-surface: #fffdf8;
-  --time-surface-muted: #f8f2e8;
-  --time-border: #e4eee0;
-  --time-foreground: #352e2c;
-  --time-foreground-muted: #685f58;
-  --time-primary: #607a65;
-  --time-primary-strong: #4f6754;
-  --time-primary-soft: #e4eee0;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #f8f2e8;
-  --time-income: #789b63;
-  --time-expense: #e96c55;
-  --time-transfer: #66859d;
-  --time-finance-income: #5e9467;
-  --time-finance-expense: #e87862;
-  --time-finance-transfer: #6597b7;
-  --time-semantic-foreground: #ffffff;
-  --time-danger: #b3492f;
-  --time-danger-foreground: #ffffff;
+  --cozy-background: #fff9ef;
+  --cozy-surface: #fffdf8;
+  --cozy-surface-muted: #f8f2e8;
+  --cozy-border: #e8e0d3;
+  --cozy-foreground: #352e2c;
+  --cozy-foreground-muted: #685f58;
+  --cozy-primary: #607a65;
+  --cozy-primary-strong: #4f6754;
+  --cozy-primary-soft: #e4eee0;
+  --cozy-primary-foreground: #ffffff;
+  --cozy-secondary: #f8f2e8;
+  --cozy-income: #789b63;
+  --cozy-expense: #e96c55;
+  --cozy-transfer: #66859d;
+  --cozy-finance-income: #5e9467;
+  --cozy-finance-expense: #e87862;
+  --cozy-finance-transfer: #6597b7;
+  --cozy-semantic-foreground: #ffffff;
+  --cozy-danger: #b3492f;
+  --cozy-danger-foreground: #ffffff;
 
-  --time-cover-surface: #f0f4e9;
-  --time-cover-overlay-start: rgb(255 252 242 / 0.98);
-  --time-cover-overlay-middle: rgb(239 244 229 / 0.9);
-  --time-cover-overlay-end: rgb(213 229 210 / 0.08);
-  --time-cover-image-filter: saturate(0.9) brightness(1.03);
-  --time-cover-text: #352e2c;
-  --time-cover-muted: #685f58;
-  --time-cover-accent: #4f6754;
+  --cozy-cover-surface: #f0f4e9;
+  --cozy-cover-overlay-start: rgb(255 252 242 / 0.98);
+  --cozy-cover-overlay-middle: rgb(239 244 229 / 0.9);
+  --cozy-cover-overlay-end: rgb(213 229 210 / 0.08);
+  --cozy-cover-image-filter: saturate(0.9) brightness(1.03);
 
-  --color-background: var(--time-background);
-  --color-surface: var(--time-surface);
-  --color-surface-muted: var(--time-surface-muted);
-  --color-border: var(--time-border);
-  --color-foreground: var(--time-foreground);
-  --color-foreground-muted: var(--time-foreground-muted);
+  --color-background: var(--cozy-background);
+  --color-surface: var(--cozy-surface);
+  --color-surface-muted: var(--cozy-surface-muted);
+  --color-border: var(--cozy-border);
+  --color-foreground: var(--cozy-foreground);
+  --color-foreground-muted: var(--cozy-foreground-muted);
 
-  --color-primary: var(--time-primary);
-  --color-primary-strong: var(--time-primary-strong);
-  --color-primary-foreground: var(--time-primary-foreground);
-  --color-primary-soft: var(--time-primary-soft);
-  --color-secondary: var(--time-secondary);
+  --color-primary: var(--cozy-primary);
+  --color-primary-strong: var(--cozy-primary-strong);
+  --color-primary-foreground: var(--cozy-primary-foreground);
+  --color-primary-soft: var(--cozy-primary-soft);
+  --color-secondary: var(--cozy-secondary);
 
-  --color-income: var(--time-income);
-  --color-expense: var(--time-expense);
-  --color-transfer: var(--time-transfer);
-  --finance-hero: var(--time-primary);
+  --color-income: var(--cozy-income);
+  --color-expense: var(--cozy-expense);
+  --color-transfer: var(--cozy-transfer);
+  --finance-hero: var(--cozy-primary);
 
-  --color-danger: var(--time-danger);
-  --color-danger-foreground: var(--time-danger-foreground);
+  --color-danger: var(--cozy-danger);
+  --color-danger-foreground: var(--cozy-danger-foreground);
+  --color-danger-soft: #fbe7df;
+  --color-warning: #8b4d17;
+  --color-warning-soft: #fff0d9;
 
   --radius-control: 0.75rem;
   --radius-card: 1.25rem;
   --radius-sheet: 1.25rem;
   --shadow-card:
     0 1px 2px rgb(57 65 61 / 0.03), 0 8px 24px rgb(57 65 61 / 0.06);
-}
-
-html[data-time-theme="late-morning"] {
-  --time-background: #fff4e8;
-  --time-surface: #fffbf5;
-  --time-surface-muted: #f2e6d8;
-  --time-border: #d9e3c3;
-  --time-foreground: #4f4439;
-  --time-foreground-muted: #675f57;
-  --time-primary: #6f7653;
-  --time-primary-strong: #555d3f;
-  --time-primary-soft: #d9e3c3;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #f2e6d8;
-  --time-cover-surface: #f7ebdd;
-  --time-cover-overlay-start: rgb(255 250 243 / 0.98);
-  --time-cover-overlay-middle: rgb(246 234 220 / 0.9);
-  --time-cover-overlay-end: rgb(217 227 195 / 0.09);
-  --time-cover-image-filter: saturate(0.96) brightness(1.02);
-  --time-cover-text: #4f4439;
-  --time-cover-muted: #675f57;
-  --time-cover-accent: #555d3f;
-}
-
-html[data-time-theme="midday"] {
-  --time-background: #fff3e2;
-  --time-surface: #fffaf1;
-  --time-surface-muted: #e9d8c7;
-  --time-border: #d9c29c;
-  --time-foreground: #514238;
-  --time-foreground-muted: #6e6158;
-  --time-primary: #7c6c4f;
-  --time-primary-strong: #5f513b;
-  --time-primary-soft: #e9d8c7;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #d9c29c;
-  --time-cover-surface: #f3e1cb;
-  --time-cover-overlay-start: rgb(255 248 237 / 0.98);
-  --time-cover-overlay-middle: rgb(241 221 199 / 0.9);
-  --time-cover-overlay-end: rgb(217 194 156 / 0.1);
-  --time-cover-image-filter: saturate(1.03) brightness(1.02);
-  --time-cover-text: #514238;
-  --time-cover-muted: #6e6158;
-  --time-cover-accent: #5f513b;
-}
-
-html[data-time-theme="afternoon"] {
-  --time-background: #fff7d1;
-  --time-surface: #fffbdf;
-  --time-surface-muted: #ebc9a7;
-  --time-border: #d8b181;
-  --time-foreground: #544238;
-  --time-foreground-muted: #6f6257;
-  --time-primary: #7e6b4c;
-  --time-primary-strong: #604d35;
-  --time-primary-soft: #ebc9a7;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #d8b181;
-  --time-cover-surface: #f2d9b3;
-  --time-cover-overlay-start: rgb(255 248 231 / 0.98);
-  --time-cover-overlay-middle: rgb(244 223 195 / 0.9);
-  --time-cover-overlay-end: rgb(224 184 135 / 0.1);
-  --time-cover-image-filter: saturate(1.05) brightness(1.01);
-  --time-cover-text: #544238;
-  --time-cover-muted: #6f6257;
-  --time-cover-accent: #604d35;
-}
-
-html[data-time-theme="evening"] {
-  --time-background: #ffd6c6;
-  --time-surface: #fff1eb;
-  --time-surface-muted: #f7b89c;
-  --time-border: #e98a72;
-  --time-foreground: #513c35;
-  --time-foreground-muted: #72584f;
-  --time-primary: #715348;
-  --time-primary-strong: #624339;
-  --time-primary-soft: #f7b89c;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #e98a72;
-  --time-cover-surface: #f6c7b4;
-  --time-cover-overlay-start: rgb(255 241 235 / 0.98);
-  --time-cover-overlay-middle: rgb(249 202 183 / 0.9);
-  --time-cover-overlay-end: rgb(185 111 111 / 0.12);
-  --time-cover-image-filter: saturate(0.92) brightness(0.94);
-  --time-cover-text: #513c35;
-  --time-cover-muted: #72584f;
-  --time-cover-accent: #624339;
-}
-
-/* Night keeps the page softly lit instead of turning every large surface navy.
-   Deep blues remain the accent, so the app still feels time-aware without
-   fighting the warm cover illustrations or flattening every card together. */
-html[data-time-theme="night"] {
-  color-scheme: light;
-  --time-background: #eef2f4;
-  --time-surface: #fffaf2;
-  --time-surface-muted: #dce4ea;
-  --time-border: #c6d3db;
-  --time-foreground: #20364a;
-  --time-foreground-muted: #5d6d79;
-  --time-primary: #20364a;
-  --time-primary-strong: #081c30;
-  --time-primary-soft: #dce4ea;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #f2d8b5;
-  --time-income: #5f9369;
-  --time-expense: #cf6856;
-  --time-transfer: #5d88a3;
-  --time-finance-income: #5f9369;
-  --time-finance-expense: #cf6856;
-  --time-finance-transfer: #5d88a3;
-  --time-semantic-foreground: #ffffff;
-  --time-danger: #b94f3d;
-  --time-danger-foreground: #ffffff;
-  --time-cover-surface: #dce6ed;
-  --time-cover-overlay-start: rgb(241 246 249 / 0.98);
-  --time-cover-overlay-middle: rgb(211 224 232 / 0.92);
-  --time-cover-overlay-end: rgb(32 54 74 / 0.16);
-  --time-cover-image-filter: saturate(0.72) brightness(0.86) contrast(0.92);
-  --time-cover-text: #20364a;
-  --time-cover-muted: #5d6d79;
-  --time-cover-accent: #20364a;
-}
-
-html[data-time-theme="late-night"] {
-  color-scheme: light;
-  --time-background: #e8eef2;
-  --time-surface: #f9f7f2;
-  --time-surface-muted: #d7e1e8;
-  --time-border: #bccbd5;
-  --time-foreground: #1b2d40;
-  --time-foreground-muted: #586b79;
-  --time-primary: #1b2d40;
-  --time-primary-strong: #061523;
-  --time-primary-soft: #dce4ea;
-  --time-primary-foreground: #ffffff;
-  --time-secondary: #ead5b8;
-  --time-income: #5f9369;
-  --time-expense: #c95f50;
-  --time-transfer: #587f99;
-  --time-finance-income: #5f9369;
-  --time-finance-expense: #c95f50;
-  --time-finance-transfer: #587f99;
-  --time-semantic-foreground: #ffffff;
-  --time-danger: #b94f3d;
-  --time-danger-foreground: #ffffff;
-  --time-cover-surface: #cbd8e2;
-  --time-cover-overlay-start: rgb(232 239 244 / 0.98);
-  --time-cover-overlay-middle: rgb(193 211 222 / 0.92);
-  --time-cover-overlay-end: rgb(6 21 35 / 0.25);
-  --time-cover-image-filter: saturate(0.62) brightness(0.76) contrast(0.9);
-  --time-cover-text: #1b2d40;
-  --time-cover-muted: #586b79;
-  --time-cover-accent: #1b2d40;
-}
-
-html[data-time-theme="morning"] {
-  color-scheme: light;
 }
 
 /* Cover focal points are art-directed for the two real device families.
@@ -271,9 +109,8 @@ html[data-time-theme="morning"] {
 }
 
 /*
- * Finance Design V2 — a distinct, self-contained token set for the "soft
- * finance dashboard" direction. Pets/Calendar/Household never apply
- * either class below, so they render exactly as before.
+ * Finance and the shared app sections use aliases for Cozy colors.
+ * Finance keeps dedicated colors for transaction types.
  *
  * Split into two classes so the token set itself never depends on an
  * ancestor also opting in:
@@ -291,29 +128,26 @@ html[data-time-theme="morning"] {
  * `.finance-scope` is `.finance-vars` PLUS background-color/color set
  * directly — for page-level wrappers that want the whole subtree
  * tinted, unchanged from before this split.
- *
- * Finance preserves its semantic chart colors but now inherits the current
- * time palette for canvas, cards, type, controls and primary actions.
  */
 .finance-vars,
 .finance-scope,
 .finance-ui-tone {
-  --finance-background: var(--time-background);
-  --finance-surface: var(--time-surface-muted);
-  --finance-surface-strong: var(--time-surface);
+  --finance-background: var(--cozy-background);
+  --finance-surface: var(--cozy-surface-muted);
+  --finance-surface-strong: var(--cozy-surface);
 
-  --finance-primary: var(--time-primary);
-  --finance-primary-strong: var(--time-primary-strong);
-  --finance-primary-soft: var(--time-primary-soft);
-  --finance-primary-foreground: var(--time-primary-foreground);
+  --finance-primary: var(--cozy-primary);
+  --finance-primary-strong: var(--cozy-primary-strong);
+  --finance-primary-soft: var(--cozy-primary-soft);
+  --finance-primary-foreground: var(--cozy-primary-foreground);
 
-  --finance-text: var(--time-foreground);
-  --finance-muted: var(--time-foreground-muted);
+  --finance-text: var(--cozy-foreground);
+  --finance-muted: var(--cozy-foreground-muted);
 
-  --finance-income: var(--time-finance-income);
-  --finance-expense: var(--time-finance-expense);
-  --finance-transfer: var(--time-finance-transfer);
-  --finance-semantic-foreground: var(--time-semantic-foreground);
+  --finance-income: var(--cozy-finance-income);
+  --finance-expense: var(--cozy-finance-expense);
+  --finance-transfer: var(--cozy-finance-transfer);
+  --finance-semantic-foreground: var(--cozy-semantic-foreground);
 
   --finance-warning: #d39b45;
 }
@@ -394,6 +228,9 @@ html[data-time-theme="morning"] {
   --color-finance-hero: var(--finance-hero);
   --color-danger: var(--color-danger);
   --color-danger-foreground: var(--color-danger-foreground);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
   --radius-sheet: var(--radius-sheet);
@@ -741,58 +578,33 @@ body {
   }
 }
 
-/* Decorative summary panels use the same atmosphere as the current time
-   palette, instead of keeping a pale daytime gradient after the app turns
-   dark at 20:00. */
-.time-tinted-panel {
+.cozy-panel {
   background: linear-gradient(
     145deg,
-    color-mix(in srgb, var(--time-primary-soft) 72%, var(--time-surface)),
-    var(--time-surface) 58%,
-    color-mix(in srgb, var(--time-secondary) 48%, var(--time-surface))
+    color-mix(in srgb, var(--cozy-primary-soft) 72%, var(--cozy-surface)),
+    var(--cozy-surface) 58%,
+    color-mix(in srgb, var(--cozy-secondary) 48%, var(--cozy-surface))
   );
-  color: var(--time-foreground);
+  color: var(--cozy-foreground);
 }
 
-/* Main-page covers share the same Bangkok-time atmosphere as the app canvas.
-   The bootstrap swaps these variables before first paint, so Server Component
-   covers stay time-aware without hydration work or duplicate client state. */
-.time-cover {
-  background-color: var(--time-cover-surface);
+.app-cover {
+  background-color: var(--cozy-cover-surface);
 }
 
-.time-cover-image {
-  filter: var(--time-cover-image-filter);
+.app-cover-image {
+  filter: var(--cozy-cover-image-filter);
   transform: scale(1.015);
 }
 
-.time-cover-overlay {
+.app-cover-overlay {
   background: linear-gradient(
     90deg,
-    var(--time-cover-overlay-start) 0%,
-    var(--time-cover-overlay-middle) 44%,
-    var(--time-cover-overlay-end) 78%,
+    var(--cozy-cover-overlay-start) 0%,
+    var(--cozy-cover-overlay-middle) 50%,
+    var(--cozy-cover-overlay-end) 84%,
     transparent 100%
   );
-}
-
-.light-cover-copy {
-  --finance-text: var(--time-cover-text);
-  --finance-muted: var(--time-cover-muted);
-  --finance-primary-strong: var(--time-cover-accent);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  body,
-  .finance-scope,
-  .time-cover,
-  .time-cover-image,
-  .time-cover-overlay {
-    transition:
-      background-color 400ms ease,
-      color 400ms ease,
-      filter 400ms ease;
-  }
 }
 
 /*

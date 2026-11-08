@@ -16,7 +16,16 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) =>
+        cache.addAll(
+          PRECACHE_URLS.map(
+            (path) =>
+              new Request(new URL(path, self.location.origin), {
+                cache: "reload",
+              }),
+          ),
+        ),
+      )
       .then(() => self.skipWaiting()),
   );
 });

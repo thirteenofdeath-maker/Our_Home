@@ -39,7 +39,7 @@ export default async function CalendarEventPage({
     <div className="finance-scope -mx-4 -mt-2 flex flex-col gap-4 px-4 pb-8 pt-2">
       <PageHeader title={event.title} backHref="/calendar" />
       <AddCalendarEventFab />
-      <Card className="rounded-[1.5rem] time-tinted-panel">
+      <Card className="rounded-[1.5rem] cozy-panel">
         <p className="text-sm text-finance-muted">
           {event.scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}
         </p>

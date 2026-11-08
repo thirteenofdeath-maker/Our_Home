@@ -48,9 +48,9 @@ import { NotificationBell } from "@/features/notifications/components/Notificati
 import {
   greetingForBangkok,
   homeCoverMode,
+  parseHomeCoverTime,
   type HomeCoverMode,
 } from "@/features/today/domain";
-import { parseTimeTheme } from "@/features/theme/time-theme";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -148,7 +148,7 @@ const HOME_COVER_STYLES: Record<
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   const { supabase, user } = await requireUser();
   const now = new Date();
-  const themeOverride = parseTimeTheme((await searchParams).timeTheme);
+  const coverOverride = parseHomeCoverTime((await searchParams).timeTheme);
   const today = bangkokDateKey(now);
   const tomorrow = shiftDate(today, 1);
   const upcomingEnd = shiftDate(today, 8);
@@ -210,23 +210,23 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     profile?.display_name || user.email?.split("@")[0] || "คุณ";
   const coverMode = todayBirthdays.length
     ? "birthday"
-    : (themeOverride ?? homeCoverMode(profile?.birthday, now));
+    : (coverOverride ?? homeCoverMode(profile?.birthday, now));
   const coverStyle = HOME_COVER_STYLES[coverMode];
   const isBirthday = coverMode === "birthday";
   return (
     <div className="landscape-home-grid finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
-      <section className="app-cover app-cover-home light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-home relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src={coverStyle.src}
           alt={coverStyle.alt}
           fill
           priority
           sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
-          className="app-cover-image time-cover-image object-cover object-center"
+          className="app-cover-image object-cover object-center"
         />
         <div
           aria-hidden="true"
-          className="time-cover-overlay absolute inset-0"
+          className="app-cover-overlay absolute inset-0"
         />
         <NotificationBell />
         <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">

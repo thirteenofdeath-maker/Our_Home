@@ -50,7 +50,7 @@ export default async function GoalsPage({
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      <section className="rounded-[1.6rem] time-tinted-panel p-5 shadow-card">
+      <section className="rounded-[1.6rem] cozy-panel p-5 shadow-card">
         <p className="text-sm font-medium text-finance-muted">
           เงินออมในเป้าหมาย
         </p>

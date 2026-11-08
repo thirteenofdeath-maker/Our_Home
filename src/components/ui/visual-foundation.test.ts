@@ -6,25 +6,27 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("mobile visual foundation", () => {
-  it("uses all seven approved Bangkok-time palettes as shared tokens", () => {
-    const css = read("src/app/globals.css").toLowerCase();
-    for (const value of [
-      "#fff9ef",
-      "#fff4e8",
-      "#fff3e2",
-      "#fff7d1",
-      "#ffd6c6",
-      "#081c30",
-      "#061523",
-      "#789b63",
-      "#e96c55",
-    ])
-      expect(css).toContain(value);
-    expect(css).toContain("--finance-hero: var(--time-primary)");
+  it("uses one Cozy palette across the app and offline shell", () => {
+    const css = read("src/app/globals.css");
+    const layout = read("src/app/layout.tsx");
+    const manifest = read("src/app/manifest.ts");
+    const offline = read("public/offline.html");
+    expect(css).toContain("--cozy-background: #fff9ef");
+    expect(css).toContain("--cozy-surface: #fffdf8");
+    expect(css).toContain("--cozy-primary: #607a65");
+    expect(css).toContain("--finance-hero: var(--cozy-primary)");
     expect(css).toContain("--color-finance-hero: var(--finance-hero)");
     expect(css).toContain(
       "--color-finance-primary-foreground: var(--finance-primary-foreground)",
     );
+    expect(css).not.toContain("data-time-theme");
+    expect(layout).not.toContain("TimeThemeController");
+    expect(layout).not.toContain("timeThemeBootstrap");
+    expect(layout).toContain('themeColor: "#607a65"');
+    expect(manifest).toContain('theme_color: "#607a65"');
+    expect(manifest).toContain('background_color: "#fff9ef"');
+    expect(offline).toContain('name="theme-color" content="#607a65"');
+    expect(offline).toContain("background: #fff9ef");
   });
 
   it("uses shared soft cards and grouped controls", () => {
@@ -51,21 +53,10 @@ describe("mobile visual foundation", () => {
     }
   });
 
-  it("ties every main-page cover to the shared Bangkok-time palette", () => {
+  it("applies the shared Cozy treatment to each main-page cover", () => {
     const css = read("src/app/globals.css");
-    for (const token of [
-      "--time-cover-surface",
-      "--time-cover-overlay-start",
-      "--time-cover-image-filter",
-      "--time-cover-text",
-      "--time-cover-muted",
-      "--time-cover-accent",
-    ]) {
-      expect(css).toContain(token);
-    }
-    expect(css).toContain(".time-cover-overlay");
-    expect(css).toContain('html[data-time-theme="night"]');
-    expect(css).toContain('html[data-time-theme="late-night"]');
+    expect(css).toContain(".app-cover-overlay");
+    expect(css).toContain("var(--cozy-cover-overlay-start)");
 
     for (const path of [
       "src/app/(app)/page.tsx",
@@ -75,9 +66,9 @@ describe("mobile visual foundation", () => {
       "src/app/(app)/household/page.tsx",
     ]) {
       const source = read(path);
-      expect(source, path).toContain("time-cover");
-      expect(source, path).toContain("time-cover-image");
-      expect(source, path).toContain("time-cover-overlay");
+      expect(source, path).toContain("app-cover");
+      expect(source, path).toContain("app-cover-image");
+      expect(source, path).toContain("app-cover-overlay");
     }
   });
 
@@ -97,13 +88,14 @@ describe("mobile visual foundation", () => {
     }
   });
 
-  it("supports a query-only seven-theme QA mode without adding cover labels", () => {
+  it("limits the time override to Home artwork", () => {
     const layout = read("src/app/layout.tsx");
-    const controller = read("src/components/shared/TimeThemeController.tsx");
     const home = read("src/app/(app)/page.tsx");
-    expect(layout).toContain("timeTheme");
-    expect(controller).toContain('get("timeTheme")');
-    expect(home).toContain("themeOverride ?? homeCoverMode");
+    expect(layout).not.toContain("timeTheme");
+    expect(home).toContain(
+      "parseHomeCoverTime((await searchParams).timeTheme)",
+    );
+    expect(home).toContain("coverOverride ?? homeCoverMode");
     expect(home).not.toContain("ป้ายช่วงเวลา");
   });
 

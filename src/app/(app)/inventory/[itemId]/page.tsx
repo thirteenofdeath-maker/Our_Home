@@ -53,16 +53,16 @@ export async function InventoryDetailPage({
   const pendingShoppingId =
     shoppingItem && !shoppingItem.purchased_at ? shoppingItem.id : undefined;
   const canEdit = household.myRole !== "observer";
-  const stockStatus =
-    Number(item.quantity) === 0
-      ? "หมดแล้ว"
-      : isLowStock(item)
-        ? "ควรเติม"
-        : null;
+  const outOfStock = Number(item.quantity) === 0;
+  const stockStatus = outOfStock
+    ? "หมดแล้ว"
+    : isLowStock(item)
+      ? "ควรเติม"
+      : null;
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
       <PageHeader title={item.name} backHref="/calendar?view=inventory" />
-      <Card className="rounded-[1.5rem] time-tinted-panel">
+      <Card className="rounded-[1.5rem] cozy-panel">
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-finance-primary-strong">
             {INVENTORY_CATEGORY_LABEL[item.category]}
@@ -78,7 +78,9 @@ export async function InventoryDetailPage({
               {inventoryQuantityLabel(item)}
             </h1>
             {stockStatus ? (
-              <p className="mt-1 text-sm font-medium text-[#a9513d]">
+              <p
+                className={`mt-1 text-sm font-medium ${outOfStock ? "text-danger" : "text-warning"}`}
+              >
                 {stockStatus}
               </p>
             ) : null}

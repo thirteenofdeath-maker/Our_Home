@@ -1,14 +1,22 @@
 const BANGKOK_TIME_ZONE = "Asia/Bangkok";
 
-export type HomeCoverMode =
-  | "birthday"
-  | "morning"
-  | "late-morning"
-  | "midday"
-  | "afternoon"
-  | "evening"
-  | "night"
-  | "late-night";
+const HOME_COVER_TIMES = [
+  "morning",
+  "late-morning",
+  "midday",
+  "afternoon",
+  "evening",
+  "night",
+  "late-night",
+] as const;
+
+type HomeCoverTime = (typeof HOME_COVER_TIMES)[number];
+export type HomeCoverMode = "birthday" | HomeCoverTime;
+
+export function parseHomeCoverTime(value: string | string[] | undefined) {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return HOME_COVER_TIMES.find((time) => time === candidate) ?? null;
+}
 
 export function bangkokHour(now = new Date()) {
   const hour = new Intl.DateTimeFormat("en-US", {
@@ -38,7 +46,7 @@ export function greetingForBangkok(now = new Date()) {
   }
 }
 
-function homeTimeCoverMode(now: Date): Exclude<HomeCoverMode, "birthday"> {
+function homeTimeCoverMode(now: Date): HomeCoverTime {
   const hour = bangkokHour(now);
   if (hour >= 5 && hour < 8) return "morning";
   if (hour >= 8 && hour < 11) return "late-morning";

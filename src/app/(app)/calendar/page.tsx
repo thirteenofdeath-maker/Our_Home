@@ -799,7 +799,7 @@ export default async function CalendarPage({
                           {INVENTORY_CATEGORY_LABEL[category]}
                         </h3>
                         {lowStockCount ? (
-                          <span className="rounded-full bg-[#fce5db] px-2 py-0.5 text-xs font-medium text-[#a9513d]">
+                          <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                             ควรเติม {lowStockCount}
                           </span>
                         ) : null}

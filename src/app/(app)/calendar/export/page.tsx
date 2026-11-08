@@ -24,7 +24,7 @@ export default function CalendarExportPage() {
   return (
     <div className="finance-scope flex min-w-0 flex-col gap-5 pb-8">
       <PageHeader title="ส่งออกปฏิทิน" backHref="/calendar" />
-      <section className="rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
+      <section className="rounded-[1.65rem] cozy-panel p-5 shadow-card">
         <div className="flex items-center gap-4">
           <span className="flex size-14 items-center justify-center rounded-full bg-white/85 text-finance-primary-strong">
             <AppIcon name="calendar" className="size-7" />

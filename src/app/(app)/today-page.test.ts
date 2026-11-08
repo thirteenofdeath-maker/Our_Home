@@ -144,10 +144,10 @@ describe("Today dashboard composition", () => {
     expect(source).not.toMatch(/brightness-|saturate-|hue-rotate|sepia-/u);
   });
 
-  it("uses the shared time-aware cover palette for every home artwork", () => {
-    expect(source).toContain("light-cover-copy time-cover");
-    expect(source).toContain("app-cover-image time-cover-image");
-    expect(source).toContain("time-cover-overlay");
+  it("uses the shared Cozy cover treatment for every home artwork", () => {
+    expect(source).toContain("app-cover app-cover-home");
+    expect(source).toContain("app-cover-image object-cover");
+    expect(source).toContain("app-cover-overlay");
     expect(source).toContain("text-finance-text");
     expect(source).toContain("text-finance-muted");
     expect(source).not.toContain("from-[#081c30]/90");

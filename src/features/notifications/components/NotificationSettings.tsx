@@ -209,7 +209,7 @@ export function NotificationSettings({
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-[1.5rem] time-tinted-panel p-5 shadow-card">
+      <section className="rounded-[1.5rem] cozy-panel p-5 shadow-card">
         <div className="flex items-center gap-3">
           <span className="flex size-12 items-center justify-center rounded-full bg-white/80 text-2xl">
             🔔

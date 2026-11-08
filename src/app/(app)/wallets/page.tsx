@@ -78,7 +78,7 @@ export default async function WalletsPage({
       >
         <AppIcon name="plus" />
       </FormSheetButton>
-      <section className="relative overflow-hidden rounded-[1.65rem] time-tinted-panel p-5 shadow-card">
+      <section className="relative overflow-hidden rounded-[1.65rem] cozy-panel p-5 shadow-card">
         <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
         <p className="relative text-sm font-medium text-finance-muted">
           ยอดรวม{scope === "PERSONAL" ? "ส่วนตัว" : "ครอบครัว"}

@@ -125,7 +125,7 @@ export default async function DebtsPage({
         ]}
       />
 
-      <div className="time-tinted-panel relative overflow-hidden rounded-[1.6rem] p-5 shadow-card">
+      <div className="cozy-panel relative overflow-hidden rounded-[1.6rem] p-5 shadow-card">
         <div className="absolute -right-5 -top-8 size-28 rounded-full bg-white/45" />
         <p className="relative text-sm font-medium text-finance-muted">
           {direction === "LIABILITY"

@@ -17,18 +17,16 @@ export function PlanHeader({
   footer?: ReactNode;
 }) {
   return (
-    <section
-      className="app-cover app-cover-calendar light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6"
-    >
+    <section className="app-cover app-cover-calendar relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
       <Image
         src="/art/plan-calendar.webp"
         alt="พื้นที่วางแผนและดูแลเรื่องสำคัญของบ้าน"
         fill
         priority
         sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
-        className="app-cover-image time-cover-image object-cover object-center"
+        className="app-cover-image object-cover object-center"
       />
-      <div aria-hidden="true" className="time-cover-overlay absolute inset-0" />
+      <div aria-hidden="true" className="app-cover-overlay absolute inset-0" />
       <div className="relative max-w-[62%]">
         <p className="text-xs font-medium text-finance-primary-strong">
           {eyebrow}

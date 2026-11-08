@@ -88,18 +88,18 @@ export default async function PetsPage({
     <div className="finance-scope -mx-4 -mt-2 flex min-w-0 flex-col gap-4 px-4 pb-8 pt-3">
       {canManage ? <AddPetFab /> : null}
 
-      <section className="app-cover app-cover-pets light-cover-copy time-cover relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
+      <section className="app-cover app-cover-pets relative h-48 overflow-hidden rounded-[1.75rem] p-5 shadow-card sm:h-52 sm:p-6">
         <Image
           src="/art/pets-garden.webp"
           alt="เหล่าสัตว์เลี้ยงพักผ่อนในสวนของบ้าน"
           fill
           priority
           sizes="(orientation: landscape) and (min-width: 1024px) calc(100vw - 7rem), (min-width: 700px) calc(100vw - 3rem), 100vw"
-          className="app-cover-image time-cover-image object-cover object-center"
+          className="app-cover-image object-cover object-center"
         />
         <div
           aria-hidden="true"
-          className="time-cover-overlay absolute inset-0"
+          className="app-cover-overlay absolute inset-0"
         />
         <header className="relative max-w-[58%]">
           <p className="text-xs font-medium text-finance-primary-strong">

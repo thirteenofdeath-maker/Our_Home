@@ -24,6 +24,7 @@ export function InventoryItemCard({
   showCategory?: boolean;
 }) {
   const low = isLowStock(item);
+  const outOfStock = Number(item.quantity) === 0;
   return (
     <Card className="rounded-[0.9rem] border border-border/65 bg-finance-surface-strong p-2.5 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -32,9 +33,11 @@ export function InventoryItemCard({
             <h3 className="truncate text-sm font-semibold text-finance-text">
               {item.name}
             </h3>
-            {low ? (
-              <span className="shrink-0 rounded-full bg-[#fce5db] px-1.5 py-0.5 text-[11px] font-medium text-[#a9513d]">
-                ควรเติม
+            {outOfStock || low ? (
+              <span
+                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${outOfStock ? "bg-danger-soft text-danger" : "bg-warning-soft text-warning"}`}
+              >
+                {outOfStock ? "หมดแล้ว" : "ควรเติม"}
               </span>
             ) : null}
           </div>
