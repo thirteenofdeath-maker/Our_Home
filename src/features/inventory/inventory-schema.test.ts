@@ -88,9 +88,17 @@ describe("household inventory schema", () => {
     expect(sendToShoppingButton).toContain("useActionState(");
     expect(sendToShoppingButton).toContain("กำลังส่ง…");
     expect(sendToShoppingButton).toContain("เพิ่มในรายการซื้อแล้ว");
-    expect(sendToShoppingButton).toContain("/calendar?view=shopping&item=");
+    expect(sendToShoppingButton).toContain(
+      "/calendar?view=shopping&item=${pendingShoppingId}",
+    );
+    expect(sendToShoppingButton).not.toContain(
+      "pendingShoppingId ?? state.shoppingItemId",
+    );
     expect(sendToShoppingButton).toContain('aria-live="polite"');
     expect(inventoryItemCard).toContain("<SendInventoryToShoppingButton");
+    expect(inventoryItemCard).toContain(
+      "pendingShoppingId={pendingShoppingId}",
+    );
     expect(inventoryItemCard).not.toContain(
       "<form action={sendInventoryToShoppingAction}>",
     );

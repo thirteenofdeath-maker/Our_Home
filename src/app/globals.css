@@ -27,7 +27,7 @@
 
   --cozy-cover-surface: #f0f4e9;
   --cozy-cover-overlay-start: rgb(255 252 242 / 0.98);
-  --cozy-cover-overlay-middle: rgb(239 244 229 / 0.9);
+  --cozy-cover-overlay-middle: rgb(239 244 229 / 0.94);
   --cozy-cover-overlay-end: rgb(213 229 210 / 0.08);
   --cozy-cover-image-filter: saturate(0.9) brightness(1.03);
 
@@ -601,8 +601,8 @@ body {
   background: linear-gradient(
     90deg,
     var(--cozy-cover-overlay-start) 0%,
-    var(--cozy-cover-overlay-middle) 50%,
-    var(--cozy-cover-overlay-end) 84%,
+    var(--cozy-cover-overlay-middle) 69%,
+    var(--cozy-cover-overlay-end) 97%,
     transparent 100%
   );
 }

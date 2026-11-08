@@ -26,8 +26,7 @@ export function SendInventoryToShoppingButton({
     {},
   );
 
-  const shoppingItemId = pendingShoppingId ?? state.shoppingItemId;
-  if (shoppingItemId) {
+  if (pendingShoppingId) {
     return (
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span
@@ -35,12 +34,12 @@ export function SendInventoryToShoppingButton({
           aria-live="polite"
           className="rounded-full bg-finance-primary-soft px-3 py-1.5 text-xs font-medium text-finance-primary-strong"
         >
-          {state.shoppingItemId === shoppingItemId
+          {state.shoppingItemId === pendingShoppingId
             ? "เพิ่มในรายการซื้อแล้ว · รอซื้อ"
             : "รอซื้อ"}
         </span>
         <Link
-          href={`/calendar?view=shopping&item=${shoppingItemId}`}
+          href={`/calendar?view=shopping&item=${pendingShoppingId}`}
           className={cn(
             "content-center rounded-full px-2 font-medium text-finance-primary-strong underline underline-offset-2",
             compact ? "min-h-8 text-xs" : "min-h-11 text-sm",

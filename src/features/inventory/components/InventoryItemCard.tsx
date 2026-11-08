@@ -14,11 +14,13 @@ import { InventoryQuantityButtons } from "./InventoryQuantityButtons";
 
 export function InventoryItemCard({
   item,
+  pendingShoppingId,
   canEdit,
   today,
   showCategory = true,
 }: {
   item: InventoryItem;
+  pendingShoppingId?: string;
   canEdit: boolean;
   today: string;
   showCategory?: boolean;
@@ -77,11 +79,13 @@ export function InventoryItemCard({
           {canEdit ? <InventoryQuantityButtons item={item} compact /> : null}
         </div>
       </div>
-      {canEdit && low ? (
+      {pendingShoppingId || (canEdit && (outOfStock || low)) ? (
         <div className="mt-2 flex justify-end border-t border-border/50 pt-2">
           <SendInventoryToShoppingButton
             itemId={item.id}
             itemName={item.name}
+            pendingShoppingId={pendingShoppingId}
+            canEdit={canEdit}
             compact
           />
         </div>

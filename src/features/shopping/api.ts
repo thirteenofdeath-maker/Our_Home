@@ -48,6 +48,23 @@ export async function getShoppingItem(
   return data;
 }
 
+export async function listPendingShoppingItemIds(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  itemIds: string[],
+): Promise<Set<string>> {
+  if (!itemIds.length) return new Set();
+  const { data, error } = await supabase
+    .from("shopping_items")
+    .select("id")
+    .eq("household_id", householdId)
+    .in("id", itemIds)
+    .is("archived_at", null)
+    .is("purchased_at", null);
+  if (error) throw error;
+  return new Set(data.map((item) => item.id));
+}
+
 export async function createShoppingItem(
   supabase: SupabaseClient<Database>,
   params: {

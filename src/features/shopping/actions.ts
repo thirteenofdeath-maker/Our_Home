@@ -128,6 +128,7 @@ export async function toggleShoppingItemAction(form: FormData) {
     const { supabase } = await requireUser();
     await setShoppingItemPurchased(supabase, itemId, purchased);
     revalidatePath("/calendar");
+    revalidatePath("/calendar/inventory/[itemId]", "page");
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("toggleShoppingItemAction failed", error);
@@ -144,6 +145,7 @@ export async function archiveShoppingItemAction(form: FormData) {
     const { supabase } = await requireUser();
     await setShoppingItemArchived(supabase, itemId);
     revalidatePath("/calendar");
+    revalidatePath("/calendar/inventory/[itemId]", "page");
     revalidatePath("/");
   } catch (error) {
     logDatabaseErrorInDev("archiveShoppingItemAction failed", error);

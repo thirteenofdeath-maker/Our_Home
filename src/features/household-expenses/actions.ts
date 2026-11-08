@@ -57,6 +57,9 @@ export async function saveHouseholdExpenseAction(
   revalidatePath("/calendar/expenses");
   revalidatePath("/calendar");
   revalidatePath("/shopping");
+  if (input.itemIds.length) {
+    revalidatePath("/calendar/inventory/[itemId]", "page");
+  }
   if (input.itemIds.length || input.edit) {
     redirect(`/calendar/expenses?month=${input.paidOn.slice(0, 7)}`);
   }
@@ -85,6 +88,7 @@ export async function markReceiptPurchasedAction(
   }
   revalidatePath("/");
   revalidatePath("/calendar");
+  revalidatePath("/calendar/inventory/[itemId]", "page");
   revalidatePath("/shopping");
   redirect("/calendar?view=shopping");
 }

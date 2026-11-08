@@ -26,7 +26,7 @@ import {
   inventoryQuantityLabel,
   isLowStock,
 } from "@/features/inventory/types";
-import { getShoppingItem } from "@/features/shopping/api";
+import { listPendingShoppingItemIds } from "@/features/shopping/api";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -44,14 +44,18 @@ export async function InventoryDetailPage({
     getMyPrimaryHousehold(supabase, user.id),
   ]);
   if (!item || !household || item.household_id !== household.id) notFound();
-  const [documents, shoppingItem] = await Promise.all([
+  const [documents, pendingShoppingIds] = await Promise.all([
     listInventoryDocuments(supabase, item.id),
-    item.shopping_item_id
-      ? getShoppingItem(supabase, household.id, item.shopping_item_id)
-      : null,
+    listPendingShoppingItemIds(
+      supabase,
+      household.id,
+      item.shopping_item_id ? [item.shopping_item_id] : [],
+    ),
   ]);
   const pendingShoppingId =
-    shoppingItem && !shoppingItem.purchased_at ? shoppingItem.id : undefined;
+    item.shopping_item_id && pendingShoppingIds.has(item.shopping_item_id)
+      ? item.shopping_item_id
+      : undefined;
   const canEdit = household.myRole !== "observer";
   const outOfStock = Number(item.quantity) === 0;
   const stockStatus = outOfStock

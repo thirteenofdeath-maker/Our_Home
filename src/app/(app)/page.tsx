@@ -229,10 +229,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           className="app-cover-overlay absolute inset-0"
         />
         <NotificationBell />
-        <p className="relative max-w-[72%] text-xs font-medium text-finance-muted">
+        <p className="relative max-w-[68%] text-xs font-medium text-finance-muted">
           {thaiToday(today)}
         </p>
-        <h1 className="relative mt-2 line-clamp-3 max-w-[80%] text-xl font-semibold leading-tight text-finance-text sm:text-2xl">
+        <h1 className="relative mt-2 line-clamp-3 max-w-[68%] text-xl font-semibold leading-tight text-finance-text sm:text-2xl">
           {isBirthday
             ? birthdayGreeting(todayBirthdays)
             : `${greetingForBangkok(now)} ${displayName}`}

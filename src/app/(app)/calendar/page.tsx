@@ -62,7 +62,11 @@ import { ReminderForm } from "@/features/plan/components/ReminderForm";
 import { ReminderList } from "@/features/plan/components/ReminderList";
 import { TaskForm } from "@/features/plan/components/TaskForm";
 import { TaskList } from "@/features/plan/components/TaskList";
-import { getShoppingItem, listShoppingItems } from "@/features/shopping/api";
+import {
+  getShoppingItem,
+  listPendingShoppingItemIds,
+  listShoppingItems,
+} from "@/features/shopping/api";
 import { ShoppingItemCard } from "@/features/shopping/components/ShoppingItemCard";
 import { ShoppingItemForm } from "@/features/shopping/components/ShoppingItemForm";
 import { requireUser } from "@/lib/auth/require-user";
@@ -264,6 +268,16 @@ export default async function CalendarPage({
     birthdays.filter((birthday) => birthday.date === today).length;
   const pendingShopping = shopping.filter((item) => !item.purchased_at);
   const inventoryGroups = groupInventoryByCategory(inventory);
+  const pendingInventoryShoppingIds =
+    household && view === "inventory"
+      ? await listPendingShoppingItemIds(
+          supabase,
+          household.id,
+          inventory.flatMap((item) =>
+            item.shopping_item_id ? [item.shopping_item_id] : [],
+          ),
+        )
+      : new Set<string>();
   const canEditHousehold = Boolean(
     household && household.myRole !== "observer",
   );
@@ -816,6 +830,14 @@ export default async function CalendarPage({
                           <InventoryItemCard
                             key={item.id}
                             item={item}
+                            pendingShoppingId={
+                              item.shopping_item_id &&
+                              pendingInventoryShoppingIds.has(
+                                item.shopping_item_id,
+                              )
+                                ? item.shopping_item_id
+                                : undefined
+                            }
                             canEdit={canEditHousehold}
                             today={today}
                             showCategory={false}
